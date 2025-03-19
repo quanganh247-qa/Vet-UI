@@ -11,6 +11,7 @@ import { lazy, Suspense } from "react";
 const AppointmentFlow = lazy(() => import("@/pages/appointment-flow"));
 const CheckIn = lazy(() => import("@/pages/check-in"));
 const PatientManagement = lazy(() => import("@/pages/patient-management"));
+const SoapNotes = lazy(() => import("@/pages/soap-notes"));
 import Sidebar from "@/components/layout/sidebar";
 import Topbar from "@/components/layout/topbar";
 import { useState } from "react";
@@ -27,6 +28,7 @@ function Router() {
         <Route path="/appointment-flow" component={AppointmentFlow} />
         <Route path="/check-in/:id?" component={CheckIn} />
         <Route path="/patient/:id" component={PatientManagement} />
+        <Route path="/soap-notes/:id" component={SoapNotes} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

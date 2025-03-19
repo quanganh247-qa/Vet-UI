@@ -244,8 +244,51 @@ const CheckIn = () => {
                 </TabsContent>
                 
                 <TabsContent value="soap-notes" className="pt-4">
-                  <div className="border rounded-md p-4 text-gray-500">
-                    SOAP Notes will be available after check-in.
+                  <div className="border rounded-md p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-medium text-gray-800">SOAP Notes</h3>
+                      <Button 
+                        onClick={() => setLocation(`/soap-notes/${appointment.id}`)}
+                        className="bg-[#2C7BE5] hover:bg-blue-700"
+                      >
+                        <svg className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        Open SOAP Notes
+                      </Button>
+                    </div>
+                    
+                    <div className="bg-yellow-50 p-3 rounded-md text-sm text-yellow-800 mb-4 flex items-start">
+                      <svg className="h-5 w-5 mr-2 mt-0.5 text-yellow-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 9v4m0 4h.01M8.4 3.57A12 12 0 0 0 7 3c-1.857 0-3.635.553-5.2 1.6l3.2 9.6 7-4.2 3 4.2 7-9.6c-1.6-1.2-3.2-1.6-4.8-1.6-.927 0-1.86.187-2.735.56" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <div>
+                        <span className="font-medium">Pre-exam documentation:</span> Nurses can document subjective information from the client before the doctor enters the exam room. This helps streamline the appointment workflow.
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">Chief Complaint</label>
+                        <Textarea 
+                          placeholder="Enter the main reason for the visit as described by the client..." 
+                          className="min-h-[80px]"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">History of Present Illness</label>
+                        <Textarea 
+                          placeholder="Enter additional details about the condition, duration, severity..." 
+                          className="min-h-[80px]"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 text-sm text-gray-500">
+                      Complete SOAP notes will be available after opening the full SOAP editor.
+                    </div>
                   </div>
                 </TabsContent>
                 
