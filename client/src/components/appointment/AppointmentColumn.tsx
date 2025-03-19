@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus } from 'lucide-react';
-import AppointmentCard from './AppointmentCard';
 import { Appointment } from '../../types';
+import AppointmentCard from './AppointmentCard';
 
 interface AppointmentColumnProps {
   title: string;
@@ -22,25 +22,41 @@ const AppointmentColumn: React.FC<AppointmentColumnProps> = ({
   getTypeColorClass,
   formatTime
 }) => {
+  // Get color class for column header based on title
+  const getColumnHeaderClass = () => {
+    switch (title.toLowerCase()) {
+      case 'scheduled':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'checked in':
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'in progress':
+        return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+      case 'completed':
+        return 'bg-green-50 text-green-700 border-green-200';
+      default:
+        return 'bg-gray-50 text-gray-700 border-gray-200';
+    }
+  };
+
   return (
-    <div className="flex-1 min-w-[280px] max-w-sm">
-      <div className="bg-gray-100 px-3 py-2 rounded-t-lg border border-b-0">
+    <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className={`px-4 py-3 border-b ${getColumnHeaderClass()}`}>
         <div className="flex justify-between items-center">
           <h3 className="font-medium">{title}</h3>
-          <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">
-            {appointments.length}
-          </span>
+          <span className="text-xs bg-white px-2 py-0.5 rounded-full">{appointments.length}</span>
         </div>
       </div>
       
-      <div className="bg-gray-50 p-3 rounded-b-lg border border-t-0 h-[calc(100vh-220px)] overflow-y-auto">
+      <div className="p-3 space-y-3 max-h-[calc(100vh-220px)] overflow-y-auto">
         {appointments.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg">
-            <p className="text-gray-500 text-sm mb-2">No appointments</p>
-            <button className="flex items-center text-xs text-indigo-600 px-2 py-1 rounded-md hover:bg-indigo-50">
-              <Plus size={14} className="mr-1" />
-              Add appointment
-            </button>
+          <div className="text-center text-gray-400 py-6">
+            <div className="mb-2">No appointments</div>
+            {title === 'Scheduled' && (
+              <button className="inline-flex items-center text-xs text-indigo-600 hover:text-indigo-800">
+                <Plus size={14} className="mr-1" />
+                Add Appointment
+              </button>
+            )}
           </div>
         ) : (
           appointments.map(appointment => (

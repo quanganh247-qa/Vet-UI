@@ -1,5 +1,5 @@
 import React from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { Search, MoreHorizontal, Info } from 'lucide-react';
 import { Appointment } from '../../types';
 
 interface ListViewProps {
@@ -22,121 +22,93 @@ const ListView: React.FC<ListViewProps> = ({
   setSelectedAppointmentId
 }) => {
   return (
-    <div className="p-4">
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Time
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Patient
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Service
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Doctor
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Room
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredAppointments
-                .sort((a, b) => {
-                  // Sort by time
-                  const timeA = a.time_slot.start_time;
-                  const timeB = b.time_slot.start_time;
-                  return timeA.localeCompare(timeB);
-                })
-                .map(appointment => (
-                  <tr 
-                    key={appointment.id} 
-                    className={`hover:bg-gray-50 cursor-pointer ${
-                      selectedAppointmentId === appointment.id ? 'bg-indigo-50' : ''
-                    }`}
-                    onClick={() => handleAppointmentClick(appointment.id)}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {appointment.time_slot.start_time} - {appointment.time_slot.end_time}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-gray-200 mr-2 flex items-center justify-center text-gray-500">
-                          🐾
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {appointment.pet.pet_name}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {appointment.pet.pet_breed}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${getTypeColorClass(appointment.service.service_name)}`}>
-                        {appointment.service.service_name}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {appointment.doctor_name}
-                    </td>
-                    
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {appointment.room_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${getStatusColorClass(appointment.state)}`}>
-                        {appointment.state}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
-                        <button 
-                          className="text-indigo-600 hover:text-indigo-900"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAppointmentClick(appointment.id);
-                          }}
-                        >
-                          Details
-                        </button>
-                        <button 
-                          className="text-gray-500 hover:text-gray-700"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsQuickActionsOpen(true);
-                            setSelectedAppointmentId(appointment.id);
-                          }}
-                        >
-                          <MoreHorizontal size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-              ))}
-            </tbody>
-          </table>
+    <div className="bg-white rounded-lg shadow-sm">
+      {/* Search Bar */}
+      <div className="p-3 border-b">
+        <div className="flex items-center bg-gray-100 rounded-md px-3 py-2">
+          <Search size={16} className="text-gray-400 mr-2" />
+          <input
+            type="text"
+            placeholder="Search appointments..."
+            className="bg-transparent border-none w-full focus:outline-none text-sm"
+          />
         </div>
-        
-        {filteredAppointments.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No appointments found matching your filters
+      </div>
+      
+      {/* Table Header */}
+      <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-xs font-medium text-gray-600 uppercase tracking-wider">
+        <div className="col-span-1">Time</div>
+        <div className="col-span-2">Patient</div>
+        <div className="col-span-2">Owner</div>
+        <div className="col-span-2">Type</div>
+        <div className="col-span-2">Doctor</div>
+        <div className="col-span-2">Status</div>
+        <div className="col-span-1">Actions</div>
+      </div>
+      
+      {/* Table Body */}
+      <div className="divide-y">
+        {filteredAppointments.length === 0 ? (
+          <div className="p-6 text-center text-gray-500">
+            No appointments found for the selected filters
           </div>
+        ) : (
+          filteredAppointments.map(appointment => (
+            <div
+              key={appointment.id}
+              onClick={() => handleAppointmentClick(appointment.id)}
+              className={`grid grid-cols-12 gap-2 px-4 py-3 text-sm hover:bg-gray-50 ${
+                selectedAppointmentId === appointment.id ? 'bg-indigo-50' : ''
+              }`}
+            >
+              <div className="col-span-1 font-medium">
+                {appointment.time_slot?.start_time || appointment.start_time || "00:00 AM"}
+              </div>
+              
+              <div className="col-span-2 truncate">
+                {appointment.pet?.pet_name || "Pet"}
+                <div className="text-xs text-gray-500">{appointment.pet?.pet_breed || "Breed"}</div>
+              </div>
+              
+              <div className="col-span-2 truncate">
+                {appointment.owner?.owner_name || "Owner"}
+                {appointment.priority === 'high' && (
+                  <span className="ml-1 text-red-600">
+                    <Info size={12} />
+                  </span>
+                )}
+              </div>
+              
+              <div className="col-span-2">
+                <span className={`px-2 py-0.5 rounded-full text-xs ${getTypeColorClass(appointment.type || 'check-up')}`}>
+                  {appointment.service?.service_name || appointment.type || "Check-up"}
+                </span>
+              </div>
+              
+              <div className="col-span-2 truncate">
+                {appointment.doctor_name || "Doctor"}
+              </div>
+              
+              <div className="col-span-2">
+                <span className={`px-2 py-0.5 rounded-full text-xs ${getStatusColorClass(appointment.status || 'scheduled')}`}>
+                  {appointment.state || appointment.status || "Scheduled"}
+                </span>
+              </div>
+              
+              <div className="col-span-1 flex justify-end">
+                <button
+                  className="p-1 rounded-full hover:bg-gray-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedAppointmentId(appointment.id);
+                    setIsQuickActionsOpen(true);
+                  }}
+                >
+                  <MoreHorizontal size={16} />
+                </button>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>
