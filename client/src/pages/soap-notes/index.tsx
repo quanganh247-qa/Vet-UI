@@ -281,7 +281,7 @@ const SoapNotes = () => {
                         placeholder="Enter diagnosis or assessment of the condition..."
                         className="min-h-[100px]"
                         value={soapData.assessment}
-                        onChange={(e) => handleInputChange('assessment', e.target.value)}
+                        onChange={(e: InputChangeEvent) => handleInputChange('assessment', e.target.value)}
                       />
                     </div>
                     
@@ -293,7 +293,7 @@ const SoapNotes = () => {
                         placeholder="Enter treatment plan, medications, follow-up instructions..."
                         className="min-h-[100px]"
                         value={soapData.plan}
-                        onChange={(e) => handleInputChange('plan', e.target.value)}
+                        onChange={(e: InputChangeEvent) => handleInputChange('plan', e.target.value)}
                       />
                     </div>
                   </TabsContent>
@@ -307,7 +307,7 @@ const SoapNotes = () => {
                         placeholder="Enter client's description of the problem..."
                         className="min-h-[300px]"
                         value={soapData.subjective}
-                        onChange={(e) => handleInputChange('subjective', e.target.value)}
+                        onChange={(e: InputChangeEvent) => handleInputChange('subjective', e.target.value)}
                       />
                     </div>
                   </TabsContent>
@@ -321,7 +321,7 @@ const SoapNotes = () => {
                         placeholder="Enter physical exam findings, vital signs, test results..."
                         className="min-h-[300px]"
                         value={soapData.objective}
-                        onChange={(e) => handleInputChange('objective', e.target.value)}
+                        onChange={(e: InputChangeEvent) => handleInputChange('objective', e.target.value)}
                       />
                     </div>
                   </TabsContent>
@@ -335,7 +335,7 @@ const SoapNotes = () => {
                         placeholder="Enter diagnosis or assessment of the condition..."
                         className="min-h-[300px]"
                         value={soapData.assessment}
-                        onChange={(e) => handleInputChange('assessment', e.target.value)}
+                        onChange={(e: InputChangeEvent) => handleInputChange('assessment', e.target.value)}
                       />
                     </div>
                   </TabsContent>
@@ -349,7 +349,7 @@ const SoapNotes = () => {
                         placeholder="Enter treatment plan, medications, follow-up instructions..."
                         className="min-h-[300px]"
                         value={soapData.plan}
-                        onChange={(e) => handleInputChange('plan', e.target.value)}
+                        onChange={(e: InputChangeEvent) => handleInputChange('plan', e.target.value)}
                       />
                     </div>
                   </TabsContent>
