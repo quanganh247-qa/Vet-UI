@@ -1,8 +1,8 @@
 import React from 'react';
-import { FileText, Users, X, ExternalLink, Phone, MessageSquare, Edit, XCircle, CheckCircle, Calendar, DollarSign } from 'lucide-react';
+import { X, Clock, CheckCircle, User, Phone, Mail, Calendar, MapPin, FileText, MessageSquare } from 'lucide-react';
 import { Appointment, QueueItem } from '../../types';
-import AppointmentQueue from './AppointmentQueue';
-import AppointmentDetails from './AppointmentDetails';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 
 interface AppointmentSidebarProps {
   showSidebar: boolean;
@@ -15,7 +15,7 @@ interface AppointmentSidebarProps {
   getStatusColorClass: (status: string) => string;
 }
 
-const AppointmentSidebar: React.FC<AppointmentSidebarProps> = ({
+export const AppointmentSidebar: React.FC<AppointmentSidebarProps> = ({
   showSidebar,
   setShowSidebar,
   sidebarContent,
@@ -26,146 +26,231 @@ const AppointmentSidebar: React.FC<AppointmentSidebarProps> = ({
   getStatusColorClass
 }) => {
   if (!showSidebar) return null;
-
-  return (
-    <div className="w-1/4 border-l bg-white overflow-auto">
-      {/* Sidebar Header */}
-      <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-        <h3 className="font-medium">
-          {sidebarContent === 'queue' && 'Waiting List'}
-          {sidebarContent === 'details' && 'Appointment Details'}
-          {sidebarContent === 'new' && 'New Appointment'}
-        </h3>
-
-        <div className="flex">
-          <button
-            className="p-1 text-gray-500 hover:text-gray-700 rounded hover:bg-gray-100 mr-1"
-            onClick={() => setSidebarContent(
-              sidebarContent === 'queue' ? 'details' :
-                sidebarContent === 'details' ? 'queue' : 'queue'
-            )}
-          >
-            {sidebarContent === 'queue' ? <FileText size={16} /> : <Users size={16} />}
-          </button>
-          <button
-            className="p-1 text-gray-500 hover:text-gray-700 rounded hover:bg-gray-100"
-            onClick={() => setShowSidebar(false)}
-          >
-            <X size={16} />
-          </button>
-        </div>
-      </div>
-
-      {/* Sidebar Content */}
-      {sidebarContent === 'queue' && (
-        <div className="p-4">
-          <div className="mb-4 flex justify-between items-center">
-            <h4 className="font-medium">Waiting Patients ({queueData.length})</h4>
-            <button className="text-xs text-indigo-600 hover:text-indigo-800">
-              Show waiting room display
-            </button>
+  
+  // Render queue tab content
+  const renderQueueContent = () => {
+    return (
+      <div>
+        {queueData.length === 0 ? (
+          <div className="p-6 text-center text-gray-500">
+            No patients in the queue
           </div>
-
-          {queueData.length > 0 ? (
-            <div className="space-y-3">
-              {queueData
-                .sort((a, b) => {
-                  if (a.priority === 'urgent' && b.priority !== 'urgent') return -1;
-                  if (a.priority !== 'urgent' && b.priority === 'urgent') return 1;
-                  return a.position - b.position;
-                })
-                .map(queueItem => {
-                  return (
-                    <div
-                      key={queueItem.id}
-                      className={`border rounded overflow-hidden ${queueItem.priority === 'urgent' ? 'border-red-400' : 'border-gray-200'
-                        }`}
-                    >
-                      <div className={`px-3 py-2 ${getStatusColorClass(queueItem.status)}`}>
-                        <div className="flex justify-between items-center">
-                          <div className="font-medium text-sm">#{queueItem.position}: {queueItem.patientName}</div>
-                          {queueItem.priority === 'urgent' && (
-                            <span className="text-xs bg-red-200 text-red-800 px-2 py-0.5 rounded-full">
-                              Priority
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="p-3">
-                        <div className="grid grid-cols-2 gap-2 text-sm mb-2">
-                          <div>
-                            <div className="text-gray-500 text-xs">Doctor</div>
-                            <div>{queueItem.doctor}</div>
-                          </div>
-                          <div>
-                            <div className="text-gray-500 text-xs">Type</div>
-                            <div>{queueItem.appointmentType}</div>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 text-sm mb-2">
-                          <div>
-                            <div className="text-gray-500 text-xs">Wait Time</div>
-                            <div className={queueItem.actualWaitTime > '15 min' ? 'text-red-600' : ''}>
-                              {queueItem.actualWaitTime}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-gray-500 text-xs">Since</div>
-                            <div>{queueItem.waitingSince}</div>
-                          </div>
-                        </div>
-
-                        <div className="mt-3 flex justify-end space-x-2">
-                          <button
-                            className="px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
-                            onClick={() => handleStatusChange(queueItem.id, 'In Progress')}
-                          >
-                            Start Exam
-                          </button>
-                          <button className="px-2 py-1 border text-xs rounded hover:bg-gray-50">
-                            Notify
-                          </button>
-                        </div>
+        ) : (
+          <div className="divide-y max-h-[calc(100vh-180px)] overflow-y-auto">
+            {queueData.map((item) => (
+              <div key={item.id} className="p-4 hover:bg-gray-50">
+                <div className="flex items-start">
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mr-3">
+                    <span className="font-medium text-indigo-600">{item.position}</span>
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="flex justify-between">
+                      <div className="font-medium">{item.patientName}</div>
+                      <div className={`px-2 py-0.5 rounded-full text-xs ${getStatusColorClass(item.status)}`}>
+                        {item.status}
                       </div>
                     </div>
-                  );
-                })
-              }
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              No patients waiting
-            </div>
-          )}
-
-          <div className="mt-6">
-            <h4 className="font-medium mb-3">Wait Time Statistics</h4>
-            <div className="bg-gray-50 p-3 rounded">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="text-gray-500">Average Wait Time</div>
-                  <div className="text-xl font-bold text-indigo-600">12 min</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Patients waiting &gt;15 min</div>
-                  <div className="text-xl font-bold text-red-600">1</div>
+                    
+                    <div className="mt-1 text-xs text-gray-500">
+                      {item.appointmentType} • {item.doctor}
+                    </div>
+                    
+                    <div className="mt-2 flex justify-between items-center">
+                      <div className="flex items-center text-xs">
+                        <Clock size={12} className="mr-1 text-gray-400" />
+                        <span className="text-gray-600">Waiting: {item.waitingSince}</span>
+                      </div>
+                      
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="h-6 text-xs"
+                          onClick={() => {
+                            // Handle check-in logic
+                          }}
+                        >
+                          Check In
+                        </Button>
+                        
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          className="h-6 text-xs"
+                          onClick={() => {
+                            // Handle start appointment logic
+                          }}
+                        >
+                          Start
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+  
+  // Render patient details tab content
+  const renderPatientContent = () => {
+    if (!selectedAppointment) {
+      return (
+        <div className="p-6 text-center text-gray-500">
+          Select an appointment to view patient details
+        </div>
+      );
+    }
+    
+    return (
+      <div className="p-4 space-y-4 max-h-[calc(100vh-180px)] overflow-y-auto">
+        {/* Patient Info */}
+        <div className="flex items-center">
+          <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+            <User size={24} className="text-indigo-600" />
+          </div>
+          <div className="ml-4">
+            <div className="font-medium">{selectedAppointment.pet.pet_name}</div>
+            <div className="text-sm text-gray-500">{selectedAppointment.pet.pet_breed}</div>
           </div>
         </div>
-      )}
-
-      {sidebarContent === 'details' && selectedAppointment && (
-        <div className="p-4">
-          <AppointmentDetails
-            appointment={selectedAppointment}
-            handleStatusChange={handleStatusChange}
-          />
+        
+        {/* Contact Info */}
+        <div className="bg-gray-50 rounded-md p-3">
+          <div className="text-sm font-medium mb-2">Owner Information</div>
+          <div className="space-y-2">
+            <div className="flex items-center text-sm">
+              <User size={14} className="mr-2 text-gray-400" />
+              <span>{selectedAppointment.owner.owner_name}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <Phone size={14} className="mr-2 text-gray-400" />
+              <span>{selectedAppointment.owner.owner_phone}</span>
+            </div>
+            {selectedAppointment.owner.owner_email && (
+              <div className="flex items-center text-sm">
+                <Mail size={14} className="mr-2 text-gray-400" />
+                <span>{selectedAppointment.owner.owner_email}</span>
+              </div>
+            )}
+          </div>
         </div>
-      )}
+        
+        {/* Appointment Details */}
+        <div className="border rounded-md p-3">
+          <div className="text-sm font-medium mb-2">Appointment Details</div>
+          <div className="space-y-2">
+            <div className="flex items-center text-sm">
+              <Calendar size={14} className="mr-2 text-gray-400" />
+              <span>{new Date(selectedAppointment.date).toLocaleDateString()}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <Clock size={14} className="mr-2 text-gray-400" />
+              <span>{selectedAppointment.time_slot.start_time} - {selectedAppointment.time_slot.end_time}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <User size={14} className="mr-2 text-gray-400" />
+              <span>{selectedAppointment.doctor_name}</span>
+            </div>
+            {selectedAppointment.room_name && (
+              <div className="flex items-center text-sm">
+                <MapPin size={14} className="mr-2 text-gray-400" />
+                <span>{selectedAppointment.room_name}</span>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Reason for Visit */}
+        <div className="border rounded-md p-3">
+          <div className="text-sm font-medium mb-2">Reason for Visit</div>
+          <p className="text-sm">
+            {selectedAppointment.reason || "No reason provided"}
+          </p>
+        </div>
+        
+        {/* Quick Actions */}
+        <div className="grid grid-cols-4 gap-2">
+          <Button
+            variant="outline"
+            className="flex flex-col items-center justify-center h-16 px-1"
+            onClick={() => handleStatusChange(selectedAppointment.id, 'checked-in')}
+          >
+            <CheckCircle size={16} className="mb-1" />
+            <span className="text-xs">Check In</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            className="flex flex-col items-center justify-center h-16 px-1"
+            onClick={() => handleStatusChange(selectedAppointment.id, 'in-progress')}
+          >
+            <Clock size={16} className="mb-1" />
+            <span className="text-xs">Start</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            className="flex flex-col items-center justify-center h-16 px-1"
+            onClick={() => {
+              // Handle notes action
+            }}
+          >
+            <FileText size={16} className="mb-1" />
+            <span className="text-xs">Notes</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            className="flex flex-col items-center justify-center h-16 px-1"
+            onClick={() => {
+              // Handle message action
+            }}
+          >
+            <MessageSquare size={16} className="mb-1" />
+            <span className="text-xs">Message</span>
+          </Button>
+        </div>
+      </div>
+    );
+  };
+  
+  return (
+    <div className="fixed top-0 right-0 w-96 h-full bg-white border-l shadow-lg z-40 flex flex-col">
+      <div className="p-4 border-b flex justify-between items-center">
+        <h3 className="font-medium">
+          {sidebarContent === 'patient' ? 'Patient Details' : 'Appointment Queue'}
+        </h3>
+        <button 
+          onClick={() => setShowSidebar(false)}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          <X size={18} />
+        </button>
+      </div>
+      
+      <Tabs 
+        defaultValue={sidebarContent} 
+        onValueChange={setSidebarContent}
+        className="flex-1 flex flex-col"
+      >
+        <TabsList className="grid grid-cols-2 mx-4 mt-2">
+          <TabsTrigger value="patient">Patient</TabsTrigger>
+          <TabsTrigger value="queue">Queue</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="patient" className="flex-1 p-0 m-0">
+          {renderPatientContent()}
+        </TabsContent>
+        
+        <TabsContent value="queue" className="flex-1 p-0 m-0">
+          {renderQueueContent()}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

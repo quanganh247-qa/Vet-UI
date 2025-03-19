@@ -1,77 +1,65 @@
 import React from 'react';
-import { Users, Presentation } from 'lucide-react';
+import { Users, DoorOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ResourceStatusBarProps {
   showResourceManagement: boolean;
   setShowResourceManagement: (show: boolean) => void;
 }
 
-const ResourceStatusBar: React.FC<ResourceStatusBarProps> = ({
+export const ResourceStatusBar: React.FC<ResourceStatusBarProps> = ({
   showResourceManagement,
   setShowResourceManagement
 }) => {
   return (
-    <div className="flex justify-between items-center bg-white p-3 border-b shadow-sm">
+    <div className="bg-gray-50 border-b px-4 py-2 flex items-center justify-between">
       <div className="flex items-center space-x-6">
-        <div>
-          <div className="text-xs text-gray-500">Veterinarians</div>
-          <div className="flex items-center">
-            <span className="flex h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-            <span className="font-medium">3 available</span>
-            <span className="mx-1 text-gray-400">/</span>
-            <span className="text-gray-500">1 busy</span>
+        {/* Staff Status Summary */}
+        <div className="flex items-center">
+          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+            <Users size={16} className="text-indigo-600" />
+          </div>
+          <div className="ml-2">
+            <div className="text-xs font-medium">Staff</div>
+            <div className="flex items-center space-x-1">
+              <span className="h-2 w-2 rounded-full bg-green-500"></span>
+              <span className="text-xs text-gray-600">4 Available</span>
+              <span className="text-xs text-gray-400">|</span>
+              <span className="h-2 w-2 rounded-full bg-red-500"></span>
+              <span className="text-xs text-gray-600">2 Occupied</span>
+            </div>
           </div>
         </div>
-        
-        <div>
-          <div className="text-xs text-gray-500">Nurses</div>
-          <div className="flex items-center">
-            <span className="flex h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-            <span className="font-medium">2 available</span>
-            <span className="mx-1 text-gray-400">/</span>
-            <span className="text-gray-500">2 busy</span>
+
+        {/* Room Status Summary */}
+        <div className="flex items-center">
+          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+            <DoorOpen size={16} className="text-blue-600" />
           </div>
-        </div>
-        
-        <div>
-          <div className="text-xs text-gray-500">Exam Rooms</div>
-          <div className="flex items-center">
-            <span className="flex h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-            <span className="font-medium">2 available</span>
-            <span className="mx-1 text-gray-400">/</span>
-            <span className="text-gray-500">2 in use</span>
-          </div>
-        </div>
-        
-        <div>
-          <div className="text-xs text-gray-500">Surgery Rooms</div>
-          <div className="flex items-center">
-            <span className="flex h-2 w-2 rounded-full bg-yellow-500 mr-2"></span>
-            <span className="font-medium">1 available</span>
-            <span className="mx-1 text-gray-400">/</span>
-            <span className="text-gray-500">1 in use</span>
+          <div className="ml-2">
+            <div className="text-xs font-medium">Rooms</div>
+            <div className="flex items-center space-x-1">
+              <span className="h-2 w-2 rounded-full bg-green-500"></span>
+              <span className="text-xs text-gray-600">3 Available</span>
+              <span className="text-xs text-gray-400">|</span>
+              <span className="h-2 w-2 rounded-full bg-red-500"></span>
+              <span className="text-xs text-gray-600">2 Occupied</span>
+              <span className="text-xs text-gray-400">|</span>
+              <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
+              <span className="text-xs text-gray-600">1 Cleaning</span>
+            </div>
           </div>
         </div>
       </div>
       
-      <div className="flex">
-        <button 
-          onClick={() => setShowResourceManagement(!showResourceManagement)}
-          className={`px-3 py-1.5 text-sm rounded flex items-center ${
-            showResourceManagement 
-              ? 'bg-indigo-100 text-indigo-700' 
-              : 'text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <Users size={16} className="mr-1.5" />
-          Resource Management
-        </button>
-        
-        <button className="px-3 py-1.5 text-sm rounded flex items-center text-gray-700 hover:bg-gray-100 ml-2">
-          <Presentation size={16} className="mr-1.5" />
-          Waiting Room Display
-        </button>
-      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setShowResourceManagement(!showResourceManagement)}
+        className="text-xs"
+      >
+        {showResourceManagement ? 'Hide Resources' : 'Show Resources'}
+      </Button>
     </div>
   );
 };
