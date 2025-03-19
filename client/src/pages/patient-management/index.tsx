@@ -15,16 +15,9 @@ import {
   FilePlus2,
   XCircle
 } from 'lucide-react';
-import {
-  getPatientById,
-  getAppointmentsByPatientId,
-  getMedicalRecordsByPatientId,
-  getVaccinesByPatientId,
-  type Patient,
-  type Appointment,
-  type MedicalRecord,
-  type Vaccine
-} from '@/data/mock-data';
+import { Appointment, Patient } from '@/types';
+import { MedicalRecord, Vaccine } from '@/data/mock-data';
+
 
 const PatientManagement = () => {
   const { id } = useParams<{ id?: string }>();

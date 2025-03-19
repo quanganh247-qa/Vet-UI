@@ -45,8 +45,8 @@ const TimelineView: React.FC<TimelineViewProps> = ({
 
   // Place appointment on timeline
   const getAppointmentPosition = (appointment: Appointment) => {
-    const startHour = parseInt(appointment.start_time.split(':')[0]);
-    const startMinute = parseInt(appointment.start_time.split(':')[1]);
+    const startHour = parseInt(appointment.time_slot.start_time.split(':')[0]);
+    const startMinute = parseInt(appointment.time_slot.start_time.split(':')[1]);
     
     // Calculate position as percentage
     const position = (startHour - 8) * 60 + startMinute;
@@ -120,7 +120,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                           {appointment.reason}
                         </div>
                         <div className="overflow-hidden text-xs whitespace-nowrap overflow-ellipsis">
-                          {appointment.type}
+                          {appointment.service.service_name}
                         </div>
                       </div>
                     );

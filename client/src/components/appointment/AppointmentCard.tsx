@@ -23,8 +23,8 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
   const timeDisplay = () => {
     if (appointment.time_slot?.start_time) {
       return formatTime(appointment.time_slot.start_time);
-    } else if (appointment.start_time) {
-      return formatTime(appointment.start_time);
+    } else if (appointment.time_slot?.start_time) {
+      return formatTime(appointment.time_slot?.start_time);
     }
     return "00:00 AM";
   };
@@ -41,10 +41,10 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
   const isPriority = appointment.priority === 'urgent' || appointment.priority === 'high';
 
   // Get status class
-  const statusClass = getStatusColorClass(appointment.status || appointment.state || 'scheduled');
+  const statusClass = getStatusColorClass(appointment.state || 'scheduled');
   
   // Get type class
-  const typeClass = getTypeColorClass(appointment.type || appointment.service?.service_name || 'check-up');
+  const typeClass = getTypeColorClass(appointment.service?.service_name || 'check-up');
 
   return (
     <div
@@ -94,7 +94,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
           </div>
           
           <span className={`text-xs px-2 py-0.5 rounded-full ${typeClass}`}>
-            {appointment.service?.service_name || appointment.type || "Check-up"}
+            {appointment.service?.service_name || "Check-up"}
           </span>
         </div>
         
@@ -106,7 +106,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
           <div className="mt-2 pt-2 border-t text-xs text-gray-500 flex items-center justify-between">
             <span>Dr. {appointment.doctor_name}</span>
             
-            {appointment.status === 'in-progress' && (
+            {appointment.state === 'in-progress' && (
               <span className="flex items-center text-indigo-600">
                 <FileText size={12} className="mr-1" />
                 SOAP

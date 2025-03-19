@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { useParams } from 'wouter';
-import AppointmentToolbar from '@/components/appointment-flow/AppointmentToolbar';
-import StatusOverview from '@/components/appointment-flow/StatusOverview';
-import ResourceStatusBar from '@/components/appointment-flow/ResourceStatusBar';
-import ResourceManagement from '@/components/appointment-flow/ResourceManagement';
-import AppointmentCard from '@/components/appointment-flow/AppointmentCard';
-import AppointmentSidebar from '@/components/appointment-flow/AppointmentSidebar';
-import ColumnView from '@/components/appointment-flow/ColumnView';
-import QuickActionsPanel from '@/components/appointment-flow/QuickActionsPanel';
-import TimelineView from '@/components/appointment-flow/TimelineView';
-import ListView from '@/components/appointment-flow/ListView';
+
 import { Appointment, QueueItem, Room, Staff } from '@/types';
+import AppointmentToolbar from '@/components/appointment/AppointmentToolbar';
+import AppointmentSidebar from '@/components/appointment/AppointmentSidebar';
+import AppointmentCard from '@/components/appointment/AppointmentCard';
+import ColumnView from '@/components/appointment/ColumnView';
+import ListView from '@/components/appointment/ListView';
+import QuickActionsPanel from '@/components/appointment/QuickActionsPanel';
+import StatusOverview from '@/components/appointment/StatusOverview';
+import ResourceStatusBar from '@/components/appointment/ResourceStatusBar';
+import ResourceManagement from '@/components/appointment/ResourceManagement';
+import TimelineView from '@/components/appointment/TimelineView';
+
 
 const AppointmentFlow = () => {
   const { id } = useParams();
@@ -105,7 +107,7 @@ const AppointmentFlow = () => {
 
   const filteredAppointments = appointments.filter(appointment => {
     const statusMatch = filterStatus === 'all' || appointment.state.toLowerCase() === filterStatus.toLowerCase();
-    const doctorMatch = filterDoctor === 'all' || appointment.doctor_name === filterDoctor;
+    const doctorMatch = filterDoctor === 'all' || appointment.doctor.doctor_name === filterDoctor;
     const typeMatch = filterType === 'all' || appointment.service.service_name.toLowerCase() === filterType.toLowerCase();
     return statusMatch && doctorMatch && typeMatch;
   });
@@ -202,7 +204,6 @@ const AppointmentFlow = () => {
               getStatusColorClass={getStatusColorClass}
               getTypeColorClass={getTypeColorClass}
               formatTime={formatTime}
-              renderAppointmentCard={renderAppointmentCard}
             />
           )}
 

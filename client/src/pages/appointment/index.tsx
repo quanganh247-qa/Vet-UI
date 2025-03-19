@@ -12,9 +12,8 @@ import {
   List, 
   Plus,
 } from 'lucide-react';
-import KanbanView from './kanban';
-import ListView from './list';
-import TimelineView from './timeline';
+import ListView from '@/components/appointment/ListView';
+
 
 // Main Appointment Flow Component
 const AppointmentFlow = () => {
@@ -153,9 +152,9 @@ const AppointmentFlow = () => {
           </div>
         </div>
         
-        {activeView === 'kanban' && <KanbanView />}
+        {/* {activeView === 'kanban' && <KanbanView />}
         {activeView === 'list' && <ListView />}
-        {activeView === 'timeline' && <TimelineView />}
+        {activeView === 'timeline' && <TimelineView />} */}
       </div>
     </div>
   );

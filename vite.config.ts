@@ -22,6 +22,15 @@ export default defineConfig({
         ]
       : []),
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8088',
+        changeOrigin: true
+      }
+    },
+    cors: true
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),

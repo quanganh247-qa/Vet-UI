@@ -1,11 +1,14 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import Dashboard from "@/pages/dashboard";
 import Appointments from "@/pages/appointments";
 import Patients from "@/pages/patients";
 import Staff from "@/pages/staff";
 import Analytics from "@/pages/analytics";
 import NotFound from "@/pages/not-found";
-import { lazy, Suspense } from "react";
+import { LoginForm } from "@/pages/login";
+import React, { lazy, Suspense } from "react";
+import { AuthProvider } from "@/context/auth-context"; // Add this import
+
 
 // Use lazy loading for new components
 const AppointmentFlow = lazy(() => import("@/pages/appointment-flow"));
@@ -16,6 +19,15 @@ const MedicalRecords = lazy(() => import("@/pages/medical-records"));
 import Sidebar from "@/components/layout/sidebar";
 import Topbar from "@/components/layout/topbar";
 import { useState } from "react";
+
+// Create LoginPage component that uses LoginForm
+const LoginPage = () => {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <LoginForm />
+    </div>
+  );
+};
 
 function Router() {
   return (
@@ -39,19 +51,38 @@ function Router() {
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [location] = useLocation();
 
+  React.useEffect(() => {
+    if (!localStorage.getItem('access_token') && location !== '/login') {
+      window.location.href = '/login';
+    }
+  }, [location]);
+
+  // If we're on the login page, render only the LoginPage
+  if (location === '/login') {
+    return (
+      <AuthProvider>
+        <LoginPage />
+      </AuthProvider>
+    );
+  }
+
+  // Otherwise render the main layout with sidebar and content
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-darkText">
-      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar openSidebar={() => setSidebarOpen(true)} />
+    <AuthProvider>
+      <div className="flex h-screen overflow-hidden bg-background text-darkText">
+        <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
         
-        <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
-          <Router />
-        </main>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Topbar openSidebar={() => setSidebarOpen(true)} />
+          
+          <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
+            <Router />
+          </main>
+        </div>
       </div>
-    </div>
+    </AuthProvider>
   );
 }
 
