@@ -5,6 +5,12 @@ import Patients from "@/pages/patients";
 import Staff from "@/pages/staff";
 import Analytics from "@/pages/analytics";
 import NotFound from "@/pages/not-found";
+import { lazy, Suspense } from "react";
+
+// Use lazy loading for new components
+const AppointmentFlow = lazy(() => import("@/pages/appointment-flow"));
+const CheckIn = lazy(() => import("@/pages/check-in"));
+const PatientManagement = lazy(() => import("@/pages/patient-management"));
 import Sidebar from "@/components/layout/sidebar";
 import Topbar from "@/components/layout/topbar";
 import { useState } from "react";
@@ -17,6 +23,9 @@ function Router() {
       <Route path="/patients" component={Patients} />
       <Route path="/staff" component={Staff} />
       <Route path="/analytics" component={Analytics} />
+      <Route path="/appointment-flow" component={AppointmentFlow} />
+      <Route path="/check-in/:id?" component={CheckIn} />
+      <Route path="/patient/:id" component={PatientManagement} />
       <Route component={NotFound} />
     </Switch>
   );
