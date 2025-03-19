@@ -17,17 +17,19 @@ import { useState } from "react";
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/appointments" component={Appointments} />
-      <Route path="/patients" component={Patients} />
-      <Route path="/staff" component={Staff} />
-      <Route path="/analytics" component={Analytics} />
-      <Route path="/appointment-flow" component={AppointmentFlow} />
-      <Route path="/check-in/:id?" component={CheckIn} />
-      <Route path="/patient/:id" component={PatientManagement} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<div className="flex items-center justify-center h-full"><p>Loading...</p></div>}>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/appointments" component={Appointments} />
+        <Route path="/patients" component={Patients} />
+        <Route path="/staff" component={Staff} />
+        <Route path="/analytics" component={Analytics} />
+        <Route path="/appointment-flow" component={AppointmentFlow} />
+        <Route path="/check-in/:id?" component={CheckIn} />
+        <Route path="/patient/:id" component={PatientManagement} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 
