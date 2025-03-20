@@ -45,6 +45,8 @@ export interface Pet {
 export interface Owner {
   owner_name: string;
   owner_phone: string;
+  owner_email: string;
+  owner_address: string;
 }
 
 export interface TimeSlot {

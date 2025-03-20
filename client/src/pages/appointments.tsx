@@ -9,8 +9,10 @@ import { getFormattedStatus, getStatusColor } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Appointment } from "@/types";
 import { getAppointmentsByDate } from "@/services/appointment-services";
+import { useLocation } from "wouter";
 
 const Appointments = () => {
+  const [, setLocation] = useLocation();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,13 +24,9 @@ const Appointments = () => {
 
   const isLoading = appointmentsLoading;
 
-  // Sửa lại cách lọc dữ liệu
   const filteredAppointments = appointmentsData?.data && Array.isArray(appointmentsData.data)
     ? appointmentsData.data.filter((appointment: Appointment) => {
 
-      console.log('Appointment state:', appointment.state);
-      console.log('Status filter:', statusFilter);
-      console.log(appointment.state.toLowerCase())
       if (statusFilter !== "all") {
         return appointment.state.toLowerCase() === statusFilter.toLowerCase();
       }
@@ -127,7 +125,7 @@ const Appointments = () => {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pet & Owner</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
@@ -220,6 +218,8 @@ const Appointments = () => {
                           variant="outline"
                           size="sm"
                           className="text-xs text-[#2C7BE5] border-[#2C7BE5] hover:bg-[#2C7BE5] hover:text-white"
+                          // onClick={() => setLocation(`/appointment-flow/${appointment.id}`)}
+                          onClick={() => setLocation(`/check-in/${appointment.id}`)}
                         >
                           View
                         </Button>

@@ -15,8 +15,8 @@ import {
   FilePlus2,
   XCircle
 } from 'lucide-react';
-import { Appointment, Patient } from '@/types';
-import { MedicalRecord, Vaccine } from '@/data/mock-data';
+// import { Appointment, Patient } from '@/types';
+import { Appointment, getAppointmentsByPatientId, getMedicalRecordsByPatientId, getPatientById, getVaccinesByPatientId, MedicalRecord, Patient, Vaccine } from '@/data/mock-data';
 
 
 const PatientManagement = () => {

@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus } from "lucide-react";
-import { Patient } from "@shared/schema";
 import { getRelativeTime } from "@/lib/utils";
+import { Patient } from "@/data/mock-data";
 
 const RecentPatients = () => {
   const { data: patientsData, isLoading } = useQuery({

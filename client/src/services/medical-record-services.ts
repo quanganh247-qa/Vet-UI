@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const getPatientById = async (pet_id: number) => {
+export const getMedicalRecordsByPatientId = async (pet_id: number) => {
     const token = localStorage.getItem('access_token');
     if (!token) {
         throw new Error('No access token found');
