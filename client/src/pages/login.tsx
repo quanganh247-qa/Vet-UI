@@ -54,7 +54,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin, disabled }) => {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="text-3xl font-bold text-indigo-900 inline-flex items-center">
-            aewan<span className="text-red-500">*</span>
+            VetPractice<span className="text-red-500">*</span>
           </div>
         </div>
 

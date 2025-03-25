@@ -27,7 +27,7 @@ export interface Appointment {
   patient_id: number;
   doctor_id: number;
   type: string;
-  status: 'scheduled' | 'checked-in' | 'in-progress' | 'completed' | 'waiting';
+  status: 'scheduled' | 'checked-in' | 'in-progress' | 'completed' | 'waiting' | 'Scheduled' | 'Checked In' | 'In Progress' | 'Completed' | 'Waiting';
   date: string;
   start_time: string;
   end_time: string;
@@ -381,6 +381,29 @@ export const mockVaccines: Vaccine[] = [
     site: 'Left shoulder'
   }
 ];
+
+export interface Invoice {
+  id: number;
+  patient_id: number;
+  amount: number;
+  date: string;
+  status: string;
+}
+
+// Mock invoices
+export const mockInvoices: Invoice[] = [
+  {
+    id: 1,
+    patient_id: 1, // Max
+    amount: 100,
+    date: '3/15/2024',
+    status: 'paid'
+  }
+];
+
+
+
+
 
 // Helper functions
 export const getPatientById = (id: number): Patient | undefined => {

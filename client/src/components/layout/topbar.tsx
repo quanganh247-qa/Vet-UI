@@ -1,22 +1,21 @@
 import { Bell, Search, Menu, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import MobileMenu from "./mobile-menu";
+import { useAuth } from "@/context/auth-context";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 
 interface TopbarProps {
   openSidebar: () => void;
 }
 
 const Topbar = ({ openSidebar }: TopbarProps) => {
+  const { doctor } = useAuth();
+
   return (
     <header className="bg-white shadow-sm z-10">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center md:hidden">
-          <button 
-            type="button" 
-            className="text-gray-500 hover:text-gray-600"
-            onClick={openSidebar}
-          >
-            <Menu className="h-6 w-6" />
-          </button>
+          <MobileMenu className="text-gray-500 hover:text-gray-600" />
           <h1 className="text-lg font-display font-medium ml-3 text-[#12263F]">Dashboard</h1>
         </div>
         
@@ -34,10 +33,7 @@ const Topbar = ({ openSidebar }: TopbarProps) => {
         </div>
         
         <div className="flex items-center">
-          <button className="p-2 mr-2 text-gray-500 hover:text-gray-600 relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-[#FF6B6B]"></span>
-          </button>
+          <NotificationCenter className="mr-2" />
           <button className="p-2 mr-3 text-gray-500 hover:text-gray-600">
             <MessageSquare className="h-5 w-5" />
           </button>

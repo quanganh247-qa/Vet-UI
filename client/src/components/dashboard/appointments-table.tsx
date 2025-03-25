@@ -4,8 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { MoreVertical, Filter } from "lucide-react";
 import { getFormattedStatus, getStatusColor } from "@/lib/utils";
-import { Appointment, Patient, Staff } from "@shared/schema";
-
+import { Appointment, Patient, Staff } from "@/types";
 interface AppointmentRowProps {
   appointment: Appointment;
   patient: Patient;

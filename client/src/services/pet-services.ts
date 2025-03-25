@@ -12,3 +12,16 @@ export const getPatientById = async (pet_id: number) => {
     });
     return response.data;
 };
+
+export const getAllPatients = async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        throw new Error('No access token found');
+    }
+    const response = await axios.get(`/api/v1/pets`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+    return response.data;
+};

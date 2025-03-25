@@ -5,16 +5,12 @@ import {
   FileText, 
   PenTool, 
   Pill, 
-  Thermometer, 
-  Heart, 
-  Weight, 
   Activity,
   Download,
   Printer,
   Edit
 } from 'lucide-react';
-import { MedicalRecord, Doctor } from '../../types';
-
+import { MedicalRecord, Doctor } from '@/types';
 interface MedicalRecordDetailProps {
   record: MedicalRecord;
   doctor?: Doctor;

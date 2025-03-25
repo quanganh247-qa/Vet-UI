@@ -1,139 +1,126 @@
-import React, { useState } from 'react';
-import { useParams } from 'wouter';
+import React, { useState, useEffect } from 'react';
+import { useParams, useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 
 import { Appointment, QueueItem, Room, Staff } from '@/types';
-import AppointmentToolbar from '@/components/appointment/AppointmentToolbar';
-import AppointmentSidebar from '@/components/appointment/AppointmentSidebar';
-import AppointmentCard from '@/components/appointment/AppointmentCard';
-import ColumnView from '@/components/appointment/ColumnView';
-import ListView from '@/components/appointment/ListView';
-import QuickActionsPanel from '@/components/appointment/QuickActionsPanel';
-import StatusOverview from '@/components/appointment/StatusOverview';
-import ResourceStatusBar from '@/components/appointment/ResourceStatusBar';
-import ResourceManagement from '@/components/appointment/ResourceManagement';
-import TimelineView from '@/components/appointment/TimelineView';
+import { getAllAppointments } from '@/services/appointment-services';
+import { getRooms } from '@/services/room-services';
+import { ArrowLeft, Calendar, Loader2 } from 'lucide-react';
+import { queryClient } from '@/lib/queryClient';
+import EnhancedAppointmentFlowboard from '@/components/appointment/EnhancedAppointmentFlowboard';
+import { useListAppointmentsQueue } from '@/hooks/use-appointment';
+import { Link } from 'wouter';
+import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
 
+// Utility function to invalidate related queries
+const invalidateRelatedQueries = async (patterns: string[]) => {
+  for (const pattern of patterns) {
+    await queryClient.invalidateQueries({ queryKey: [pattern] });
+  }
+};
 
 const AppointmentFlow = () => {
   const { id } = useParams();
-  const [viewMode, setViewMode] = useState('columns');
+  const [, navigate] = useLocation();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterDoctor, setFilterDoctor] = useState('all');
-  const [filterType, setFilterType] = useState('all');
-  const [showSidebar, setShowSidebar] = useState(true);
-  const [sidebarContent, setSidebarContent] = useState('queue');
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
-  const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
-  const [showResourceManagement, setShowResourceManagement] = useState(false);
+  const [, setShowSidebar] = useState(true);
+  const [, setSidebarContent] = useState('queue');
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(
+    id ? parseInt(id) : null
+  );
 
-  // Use your existing appointment data from API
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [queueData, setQueueData] = useState<QueueItem[]>([]);
-  const [staff, setStaff] = useState<Staff[]>([]);
-  const [rooms, setRooms] = useState<Room[]>([]);
-
-  // Your existing helper functions
-  const formatTime = (timeString: string): string => {
-    return timeString;
-  };
-
-  const formatDate = (date: Date): string => {
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const goToPreviousDay = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(selectedDate.getDate() - 1);
-    setSelectedDate(newDate);
-  };
-
-  const goToNextDay = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(selectedDate.getDate() + 1);
-    setSelectedDate(newDate);
-  };
-
-  const goToToday = () => {
-    setSelectedDate(new Date());
-  };
-
-  const getStatusColorClass = (status: string): string => {
-    switch (status.toLowerCase()) {
-      case 'checked in':
-      case 'arrived':
-        return 'bg-blue-500 text-white';
-      case 'in progress':
-        return 'bg-purple-500 text-white';
-      case 'waiting':
-        return 'bg-yellow-500 text-white';
-      case 'completed':
-        return 'bg-green-500 text-white';
-      case 'confirmed':
-      case 'scheduled':
-        return 'bg-green-200 text-green-800';
-      case 'no show':
-        return 'bg-red-500 text-white';
-      case 'cancelled':
-        return 'bg-gray-500 text-white';
-      default:
-        return 'bg-gray-200 text-gray-800';
-    }
-  };
-
-  const getTypeColorClass = (type: string): string => {
-    switch (type.toLowerCase()) {
-      case 'check-up':
-        return 'bg-green-100 text-green-800';
-      case 'surgery':
-        return 'bg-red-100 text-red-800';
-      case 'sick visit':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'vaccination':
-        return 'bg-blue-100 text-blue-800';
-      case 'grooming':
-        return 'bg-orange-100 text-orange-800';
-      case 'new patient':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const filteredAppointments = appointments.filter(appointment => {
-    const statusMatch = filterStatus === 'all' || appointment.state.toLowerCase() === filterStatus.toLowerCase();
-    const doctorMatch = filterDoctor === 'all' || appointment.doctor.doctor_name === filterDoctor;
-    const typeMatch = filterType === 'all' || appointment.service.service_name.toLowerCase() === filterType.toLowerCase();
-    return statusMatch && doctorMatch && typeMatch;
+  // Fetch appointments data
+  const { 
+    data: appointmentsData, 
+    isLoading: isLoadingAppointments,
+    refetch: refetchAppointments 
+  } = useQuery({
+    queryKey: ['appointments'],
+    queryFn: () => getAllAppointments(selectedDate,"false"),
+    enabled: true,
   });
+  
+  // Fetch rooms data
+  const { 
+    data: roomsData, 
+    isLoading: isLoadingRooms 
+  } = useQuery({
+    queryKey: ['rooms'],
+    queryFn: getRooms,
+    enabled: true,
+  });
+  
+  
+  const appointments = appointmentsData?.data || [];
 
-  const groupedAppointments = {
-    scheduled: filteredAppointments.filter(a => a.state === 'Scheduled' || a.state === 'Confirmed'),
-    arrived: filteredAppointments.filter(a => a.state === 'Arrived' || a.state === 'Checked In' || a.state === 'Waiting'),
-    inProgress: filteredAppointments.filter(a => a.state === 'In Progress'),
-    completed: filteredAppointments.filter(a => a.state === 'Completed')
+  const rooms = roomsData?.data || [];
+  
+  // Generate queue data based on appointments
+  const { data: queueData } = useListAppointmentsQueue();
+
+  // Mock staff data until connected to backend
+  const staff = [
+    { id: 1, name: 'Dr. Smith', role: 'Veterinarian', status: 'Available', avatar: '' },
+    { id: 2, name: 'Dr. Johnson', role: 'Veterinarian', status: 'Busy', avatar: '' },
+    { id: 3, name: 'Sarah Wilson', role: 'Technician', status: 'Available', avatar: '' },
+    { id: 4, name: 'Mike Brown', role: 'Assistant', status: 'Busy', avatar: '' },
+  ];
+  
+  // Update state after appointment is processed
+  const handleStatusChange = async (appointmentId: number, newStatus: string) => {
+    try {
+      // Here you would make API call to update status
+      // For now simulating locally
+      const updatedAppointments = appointments.map((appointment: Appointment) => {
+        if (appointment.id === appointmentId) {
+          return { ...appointment, state: newStatus };
+        }
+        return appointment;
+      });
+      
+      // Update cache and trigger refresh
+      queryClient.setQueryData(['appointments', selectedDate.toISOString().split('T')[0]], {
+        ...appointmentsData,
+        data: updatedAppointments
+      });
+      
+      // Invalidate related queries to ensure fresh data 
+      await invalidateRelatedQueries([
+        'appointments',
+        'rooms'
+      ]);
+      
+      // Select the next patient if the current one was completed
+      if (newStatus === 'Completed' && selectedAppointmentId === appointmentId) {
+        const nextPatient = queueData?.[0]?.id;
+        if (nextPatient) {
+          setSelectedAppointmentId(nextPatient);
+        } else {
+          setSelectedAppointmentId(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating appointment status:', error);
+    }
   };
 
-  const selectedAppointment = appointments.find(a => a.id === selectedAppointmentId);
+  // Effect to show appointment details when ID is provided in URL
+  useEffect(() => {
+    if (id && parseInt(id) > 0) {
+      setSelectedAppointmentId(parseInt(id));
+      setSidebarContent('details');
+      setShowSidebar(true);
+    }
+  }, [id]);
 
   const handleAppointmentClick = (id: number) => {
     setSelectedAppointmentId(id);
     setSidebarContent('details');
     setShowSidebar(true);
-  };
-
-  const handleStatusChange = (appointmentId: number, newStatus: string) => {
-    setAppointments(appointments.map(appointment => {
-      if (appointment.id === appointmentId) {
-        return { ...appointment, state: newStatus };
-      }
-      return appointment;
-    }));
+    
+    // Update URL without page reload
+    navigate(`/appointment-flow/${id}`, { replace: true });
   };
 
   const handleNewAppointment = () => {
@@ -142,112 +129,118 @@ const AppointmentFlow = () => {
     setShowSidebar(true);
   };
 
-  const renderAppointmentCard = (appointment: Appointment) => {
-    return (
-      <AppointmentCard
-        key={appointment.id}
-        appointment={appointment}
-        selectedAppointmentId={selectedAppointmentId}
-        handleAppointmentClick={handleAppointmentClick}
-        getStatusColorClass={getStatusColorClass}
-        getTypeColorClass={getTypeColorClass}
-        formatTime={formatTime}
-      />
-    );
+  // Format date
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
-  return (
-    <div className="h-screen bg-gray-50">
-      <AppointmentToolbar
-        selectedDate={selectedDate}
-        formatDate={formatDate}
-        goToPreviousDay={goToPreviousDay}
-        goToNextDay={goToNextDay}
-        goToToday={goToToday}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        filterStatus={filterStatus}
-        setFilterStatus={setFilterStatus}
-        filterDoctor={filterDoctor}
-        setFilterDoctor={setFilterDoctor}
-        filterType={filterType}
-        setFilterType={setFilterType}
-        handleNewAppointment={handleNewAppointment}
-      />
+  // Navigate to previous day
+  const goToPreviousDay = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(selectedDate.getDate() - 1);
+    setSelectedDate(newDate);
+  };
 
-      <div className="flex-1 overflow-hidden flex">
-        <div className={`${showSidebar ? 'w-3/4' : 'w-full'} flex-shrink-0 overflow-auto transition-all duration-300 ease-in-out`}>
-          <StatusOverview
-            scheduledCount={groupedAppointments.scheduled.length}
-            waitingCount={groupedAppointments.arrived.length}
-            inProgressCount={groupedAppointments.inProgress.length}
-            completedCount={groupedAppointments.completed.length}
-          />
+  // Navigate to next day
+  const goToNextDay = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(selectedDate.getDate() + 1);
+    setSelectedDate(newDate);
+  };
 
-          <ResourceStatusBar
-            showResourceManagement={showResourceManagement}
-            setShowResourceManagement={setShowResourceManagement}
-          />
+  // Navigate to today
+  const goToToday = () => {
+    setSelectedDate(new Date());
+  };
 
-          <ResourceManagement
-            showResourceManagement={showResourceManagement}
-            setShowResourceManagement={setShowResourceManagement}
-            staff={staff}
-            rooms={rooms}
-          />
-
-          {viewMode === 'columns' && (
-            <ColumnView
-              groupedAppointments={groupedAppointments}
-              selectedAppointmentId={selectedAppointmentId}
-              handleAppointmentClick={handleAppointmentClick}
-              getStatusColorClass={getStatusColorClass}
-              getTypeColorClass={getTypeColorClass}
-              formatTime={formatTime}
-            />
-          )}
-
-          {viewMode === 'timeline' && (
-            <TimelineView
-              filteredAppointments={filteredAppointments}
-              staff={staff}
-              rooms={rooms}
-              handleAppointmentClick={handleAppointmentClick}
-              getStatusColorClass={getStatusColorClass}
-            />
-          )}
-
-          {viewMode === 'list' && (
-            <ListView
-              filteredAppointments={filteredAppointments}
-              selectedAppointmentId={selectedAppointmentId}
-              handleAppointmentClick={handleAppointmentClick}
-              getStatusColorClass={getStatusColorClass}
-              getTypeColorClass={getTypeColorClass}
-              setIsQuickActionsOpen={setIsQuickActionsOpen}
-              setSelectedAppointmentId={setSelectedAppointmentId}
-            />
-          )}
-
-          <QuickActionsPanel
-            isQuickActionsOpen={isQuickActionsOpen}
-            setIsQuickActionsOpen={setIsQuickActionsOpen}
-            selectedAppointmentId={selectedAppointmentId}
-            handleStatusChange={handleStatusChange}
-          />
-        </div>
-
-        <AppointmentSidebar
-          showSidebar={showSidebar}
-          setShowSidebar={setShowSidebar}
-          sidebarContent={sidebarContent}
-          setSidebarContent={setSidebarContent}
-          selectedAppointment={selectedAppointment}
-          queueData={queueData}
-          handleStatusChange={handleStatusChange}
-          getStatusColorClass={getStatusColorClass}
-        />
+  // Show loading state
+  if (isLoadingAppointments || isLoadingRooms) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mb-4" />
+        <p className="text-indigo-600 font-medium">Loading appointment data...</p>
       </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+      {/* Back button and page title */}
+      <div className="bg-gradient-to-r from-indigo-500 to-indigo-700 px-6 py-3 flex items-center">
+        <Link href="/dashboard" className="text-white flex items-center hover:bg-indigo-700/30 rounded-md px-2 py-1 transition-colors">
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          <span className="text-sm font-medium">Back to Dashboard</span>
+        </Link>
+        <h1 className="text-white font-medium ml-4">Appointment Flow</h1>
+      </div>
+      
+      {/* Date selector and controls */}
+      <div className="bg-gradient-to-b from-indigo-50 to-white pt-4 pb-3 px-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex items-center divide-x">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 rounded-none rounded-l-lg"
+                onClick={goToPreviousDay}
+              >
+                <ArrowLeft className="h-4 w-4 text-gray-500" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-3 rounded-none"
+                onClick={goToToday}
+              >
+                <Calendar className="h-4 w-4 mr-1.5 text-indigo-600" />
+                <span>Today</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 rounded-none rounded-r-lg"
+                onClick={goToNextDay}
+              >
+                <ArrowLeft className="h-4 w-4 text-gray-500 transform rotate-180" />
+              </Button>
+            </div>
+            
+            <h2 className="text-lg font-semibold text-gray-800">
+              {formatDate(selectedDate)}
+            </h2>
+          </div>
+          
+          <div>
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">{appointments.length}</span> appointments | 
+              <span className="font-medium ml-1">{queueData?.length || 0}</span> in queue
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <EnhancedAppointmentFlowboard
+        appointments={appointments}
+        doctors={staff.filter(s => s.role === 'Veterinarian').map(s => ({
+          doctor_id: s.id,
+          doctor_name: s.name,
+          doctor_phone: '',
+          doctor_email: '',
+          doctor_specialty: s.role,
+          doctor_avatar: s.avatar || ''
+        }))}
+        rooms={rooms}
+        staff={staff}
+        onAppointmentUpdate={(appointment) => handleStatusChange(appointment.id, appointment.state)}
+        onAppointmentCreate={handleNewAppointment}
+        onAppointmentDelete={() => {}}
+      />
     </div>
   );
 };
