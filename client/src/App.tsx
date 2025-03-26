@@ -13,6 +13,8 @@ import Sidebar from "@/components/layout/sidebar";
 import Topbar from "@/components/layout/topbar";
 import { useState } from "react"; 
 import Chatbot from "./pages/chatbot";
+import { PatientsPage } from "@/pages/patient/patients";
+import { PatientDetailPage } from "@/pages/patient/patient-detail";
 // Use lazy loading for new components
 const AppointmentFlow = lazy(() => import("@/pages/appointment-flow"));
 const CheckIn = lazy(() => import("@/pages/check-in"));
@@ -47,6 +49,8 @@ function Router() {
         <Route path="/treatment/:petId" component={TreatmentManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/notifications" component={NotificationsAdmin as React.ComponentType<RouteComponentProps>} />
         <Route path="/chatbot" component={Chatbot as React.ComponentType<RouteComponentProps>} />
+        <Route path="/patients" component={PatientsPage as React.ComponentType<RouteComponentProps>} />
+        <Route path="/patients/:id" component={PatientDetailPage as React.ComponentType<RouteComponentProps>} />
         <Route component={NotFound as React.ComponentType<RouteComponentProps>} />
       </Switch>
     </Suspense>
