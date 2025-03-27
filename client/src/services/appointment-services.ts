@@ -118,22 +118,33 @@ export const getAppointmentById = async (id: number) => {
   }
 };
 
-
 export const getAppointmentsQueue = async () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-        throw new Error('No access token found');
+    try {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            throw new Error('No access token found');
+        }
+
+        const response = await axios.get(`/api/v1/appointments/queue`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        console.log("Appointments Queue Response:", response.data);
+
+        // Check if response.data has a data property
+        if (response.data && response.data.data) {
+            return response.data.data; // Return the data property
+        }
+
+        // If there's no data property, return the response.data itself
+        return response.data || [];
+    } catch (error) {
+        console.error("Error fetching appointments queue:", error);
+        return []; // Return empty array on error
     }
-
-    const response = await axios.get(`/api/v1/appointments/queue`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
-
-    return response.data;
 };
-
 
 export const getHistoryAppointments= async (pet_id: number) => {
     const token = localStorage.getItem('access_token');

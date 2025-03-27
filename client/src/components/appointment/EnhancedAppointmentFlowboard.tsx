@@ -74,24 +74,26 @@ const EnhancedAppointmentFlowboard: React.FC<
   const queryClient = useQueryClient();
 
   // Queue data (patients waiting, estimated times)
-  const { data: queueData = [] } = useListAppointmentsQueue();
+  const { data: queueData } = useListAppointmentsQueue();
+
+  console.log("Queue data 2:", queueData);
 
   // Add location for navigation
   const [, setLocation] = useLocation();
 
-  // Refresh queue data periodically and when appointments change
-  useEffect(() => {
-    // Refresh queue data when component mounts
-    queryClient.invalidateQueries({ queryKey: ["appointmentsQueue"] });
+  // // Refresh queue data periodically and when appointments change
+  // useEffect(() => {
+  //   // Refresh queue data when component mounts
+  //   queryClient.invalidateQueries({ queryKey: ["appointmentsQueue"] });
 
-    // Set up an interval to refresh queue data every 30 seconds
-    const interval = setInterval(() => {
-      queryClient.invalidateQueries({ queryKey: ["appointmentsQueue"] });
-    }, 30000);
+  //   // Set up an interval to refresh queue data every 30 seconds
+  //   const interval = setInterval(() => {
+  //     queryClient.invalidateQueries({ queryKey: ["appointmentsQueue"] });
+  //   }, 30000);
 
-    // Clean up interval on component unmount
-    return () => clearInterval(interval);
-  }, [queryClient]);
+  //   // Clean up interval on component unmount
+  //   return () => clearInterval(interval);
+  // }, [queryClient]);
 
   // Format time (e.g., 9:00 AM)
   const formatTime = (timeString: string) => {
@@ -1170,20 +1172,20 @@ const EnhancedAppointmentFlowboard: React.FC<
               <div className="p-4">
                 <div className="mb-4 flex justify-between items-center">
                   <h4 className="font-medium">
-                    Patients waiting ({queueData.length})
+                    Patients waiting ({queueData?.length})
                   </h4>
                   <button className="text-xs text-indigo-600 hover:text-indigo-800">
                     Show waiting screen
                   </button>
                 </div>
 
-                {queueData.length > 0 ? (
+                {queueData?.length > 0 ? (
                   <div className="space-y-3">
                     {queueData
                       .sort((a: QueueItem, b: QueueItem) => {
-                        if (a.priority === "urgent" && b.priority !== "urgent")
+                        if (a.priority === "high" && b.priority !== "high")
                           return -1;
-                        if (a.priority !== "urgent" && b.priority === "urgent")
+                        if (a.priority !== "high" && b.priority === "high")
                           return 1;
                         return a.position - b.position;
                       })
@@ -1196,7 +1198,7 @@ const EnhancedAppointmentFlowboard: React.FC<
                           <div
                             key={queueItem.id}
                             className={`border rounded overflow-hidden ${
-                              queueItem.priority === "urgent"
+                              queueItem.priority === "high"
                                 ? "border-red-400"
                                 : "border-gray-200"
                             }`}

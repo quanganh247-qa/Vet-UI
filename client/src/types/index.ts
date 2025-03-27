@@ -40,6 +40,7 @@ export interface Doctor {
 export interface Service {
   service_name: string;
   service_duration: number;
+  service_amount: number;
 }
 
 export interface Pet {
@@ -95,8 +96,23 @@ export interface Staff {
   id: number;
   name: string;
   role: string;
+  specialty?: string;
   status: string;
-  avatar: string;
+  is_active: boolean;
+  email?: string;
+  phone?: string;
+  address?: string;
+  bio?: string;
+  education?: string;
+  experience?: string[];
+  certifications?: string[];
+  languages?: string[];
+  schedule?: {
+    day: string;
+    hours: string;
+  }[];
+  image_url?: string;
+  avatar?: string;
 }
 
 export interface Room {
@@ -246,3 +262,28 @@ export interface ErrorResponse {
 }
 
 
+
+
+export interface QRCodeInformation {
+  accountNo: string | "220220222419";
+  accountName: string | "DINH HUU QUANG ANH";
+  acqId: string | "970422";
+  amount: number | 0;
+  addInfo: string | "Thank you for your payment";
+  format: string | "text";
+  template: string | "E4jYBZ1";
+  order_id: number | 0;
+}
+
+export interface GenerateQRCodeResponse {
+	Code: string; // Mã trạng thái trả về
+	Desc: string; // Mô tả trạng thái
+	Data: GenerateQRData; // Dữ liệu trả về
+}
+
+export interface GenerateQRData {
+	AcpID: number; // Mã ngân hàng
+	AccountName: string; // Tên tài khoản
+	QRCode: string; // Dữ liệu QR code
+	QRDataURL: string; // Dữ liệu QR code dạng base64
+}

@@ -58,6 +58,7 @@ const AppointmentFlow = () => {
   
   // Generate queue data based on appointments
   const { data: queueData } = useListAppointmentsQueue();
+  console.log("Queue Data:", queueData);
 
   // Mock staff data until connected to backend
   const staff = [
@@ -129,35 +130,6 @@ const AppointmentFlow = () => {
     setShowSidebar(true);
   };
 
-  // Format date
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  // Navigate to previous day
-  const goToPreviousDay = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(selectedDate.getDate() - 1);
-    setSelectedDate(newDate);
-  };
-
-  // Navigate to next day
-  const goToNextDay = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(selectedDate.getDate() + 1);
-    setSelectedDate(newDate);
-  };
-
-  // Navigate to today
-  const goToToday = () => {
-    setSelectedDate(new Date());
-  };
-
   // Show loading state
   if (isLoadingAppointments || isLoadingRooms) {
     return (
@@ -177,10 +149,11 @@ const AppointmentFlow = () => {
           <span className="text-sm font-medium">Back to Dashboard</span>
         </Link>
         <h1 className="text-white font-medium ml-4">Appointment Flow</h1>
+
       </div>
       
       {/* Date selector and controls */}
-      <div className="bg-gradient-to-b from-indigo-50 to-white pt-4 pb-3 px-6 shadow-sm">
+      {/* <div className="bg-gradient-to-b from-indigo-50 to-white pt-4 pb-3 px-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex items-center divide-x">
@@ -223,7 +196,7 @@ const AppointmentFlow = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       <EnhancedAppointmentFlowboard
         appointments={appointments}
@@ -236,7 +209,7 @@ const AppointmentFlow = () => {
           doctor_avatar: s.avatar || ''
         }))}
         rooms={rooms}
-        staff={staff}
+        staff={staff as Staff[]}
         onAppointmentUpdate={(appointment) => handleStatusChange(appointment.id, appointment.state)}
         onAppointmentCreate={handleNewAppointment}
         onAppointmentDelete={() => {}}

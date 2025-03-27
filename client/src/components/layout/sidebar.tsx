@@ -18,12 +18,14 @@ import {
   FileText,
   Activity,
   PawPrint,
-  BookOpen
+  BookOpen,
+  LogOut
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/context/auth-context";
 
 interface SidebarProps {
   open: boolean;
@@ -31,9 +33,10 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ open, setOpen }: SidebarProps) => {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [notifications, setNotifications] = useState(3); // Example notification count
+  const { doctor, logout } = useAuth();
 
   // Save collapsed state to localStorage
   useEffect(() => {
@@ -52,6 +55,11 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
     return location === path;
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   const mainLinks = [
     { name: "Dashboard", path: "/", icon: <Home className="h-5 w-5" /> },
     { name: "Appointments", path: "/appointments", icon: <Calendar className="h-5 w-5" /> },
@@ -67,8 +75,8 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
   // ];
 
   const practiceLinks = [
+    { name: "Catalog Management", path: "/catalog", icon: <BookOpen className="h-5 w-5" /> },
     { name: "Veterinary Staff", path: "/staff", icon: <Stethoscope className="h-5 w-5" /> },
-    { name: "Analytics", path: "/analytics", icon: <BarChart className="h-5 w-5" /> },
     { name: "Chatbot", path: "/chatbot", icon: <MessageCircle className="h-5 w-5" /> },
     { name: "Billing", path: "/billing", icon: <DollarSign className="h-5 w-5" /> }
   ];
@@ -312,6 +320,25 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                   </div>
                 </Link>
               ))}
+              
+              {/* Logout button */}
+              <div
+                className={cn(
+                  "flex items-center text-gray-700 rounded-lg cursor-pointer",
+                  collapsed ? "justify-center px-2 py-3" : "px-3 py-2",
+                  "hover:bg-gray-100 mt-2"
+                )}
+                title={collapsed ? "Logout" : undefined}
+                onClick={handleLogout}
+              >
+                <span className={cn(
+                  "flex-shrink-0 text-red-500",
+                  collapsed ? "" : "mr-3"
+                )}>
+                  <LogOut className="h-5 w-5" />
+                </span>
+                {!collapsed && <span className="text-red-500">Logout</span>}
+              </div>
             </div>
           </div>
         </nav>
@@ -328,12 +355,16 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             <div className="flex items-center">
               <Avatar className="h-9 w-9 border-2 border-indigo-200">
                 <AvatarImage src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?ixlib=rb-1.2.1&auto=format&fit=crop&w=256&q=80" alt="Dr. Sarah Wilson" />
-                <AvatarFallback className="bg-indigo-100 text-indigo-800">SW</AvatarFallback>
+                <AvatarFallback className="bg-indigo-100 text-indigo-800">
+                  {doctor ? doctor.username.charAt(0).toUpperCase() : 'SW'}
+                </AvatarFallback>
               </Avatar>
               
               {!collapsed && (
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">Dr. Sarah Wilson</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {doctor ? `Dr. ${doctor.username}` : 'Dr. Sarah Wilson'}
+                  </p>
                   <p className="text-xs text-gray-500">Lead Veterinarian</p>
                 </div>
               )}
@@ -344,6 +375,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 variant="ghost" 
                 size="icon"
                 className="h-8 w-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600"
+                onClick={() => navigate('/settings')}
               >
                 <Settings className="h-4 w-4" />
               </Button>
