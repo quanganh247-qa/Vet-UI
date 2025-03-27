@@ -13,16 +13,23 @@ import Sidebar from "@/components/layout/sidebar";
 import Topbar from "@/components/layout/topbar";
 import { useState } from "react"; 
 import Chatbot from "./pages/chatbot";
+import { Toaster } from "@/components/ui/toaster";
 import { PatientsPage } from "@/pages/patient/patients";
 import { PatientDetailPage } from "@/pages/patient/patient-detail";
+import Billing from "@/pages/billing";
+import CatalogManagement from "./pages/catalog-management";
+import Prescription from "./pages/prescription";
+
 // Use lazy loading for new components
 const AppointmentFlow = lazy(() => import("@/pages/appointment-flow"));
 const CheckIn = lazy(() => import("@/pages/check-in"));
 const PatientManagement = lazy(() => import("@/pages/patient-management"));
 const SoapNotes = lazy(() => import("@/pages/soap-notes"));
-const MedicalRecords = lazy(() => import("@/pages/medical-records"));
-const WorkflowNavigation = lazy(() => import("@/components/WorkflowNavigation")); 
 const TreatmentManagement = lazy(() => import("@/pages/treatment"));
+const MedicalRecords = lazy(() => import("@/pages/medical-records"));
+const WorkflowNavigation = lazy(() => import("@/components/WorkflowNavigation"));
+const LabManagement = lazy(() => import("@/pages/lab-management"));
+const FollowUp = lazy(() => import("@/pages/follow-up"));
 
 // Create LoginPage component that uses LoginForm
 const LoginPage = () => {
@@ -45,12 +52,17 @@ function Router() {
         <Route path="/appointment/:id/check-in" component={CheckIn as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id" component={PatientManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/soap" component={SoapNotes as React.ComponentType<RouteComponentProps>} />
+        <Route path="/appointment/:id/lab-management" component={LabManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/patient/:petId/treatment" component={TreatmentManagement as React.ComponentType<RouteComponentProps>} />
-        <Route path="/treatment/:petId" component={TreatmentManagement as React.ComponentType<RouteComponentProps>} />
+        <Route path="/appointment/:id/prescription" component={Prescription as React.ComponentType<RouteComponentProps>} />
+        <Route path="/appointment/:id/follow-up" component={FollowUp as React.ComponentType<RouteComponentProps>} />
+        <Route path="/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} />
         <Route path="/notifications" component={NotificationsAdmin as React.ComponentType<RouteComponentProps>} />
         <Route path="/chatbot" component={Chatbot as React.ComponentType<RouteComponentProps>} />
         <Route path="/patients" component={PatientsPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/patients/:id" component={PatientDetailPage as React.ComponentType<RouteComponentProps>} />
+        <Route path="/billing" component={Billing as React.ComponentType<RouteComponentProps>} />
+        <Route path="/catalog" component={CatalogManagement as React.ComponentType<RouteComponentProps>} />
         <Route component={NotFound as React.ComponentType<RouteComponentProps>} />
       </Switch>
     </Suspense>
@@ -80,17 +92,18 @@ function App() {
   return (
     <AuthProvider>
       <NotificationProvider>
-        <div className="flex h-screen overflow-hidden bg-background text-darkText">
-          <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-          
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* <Topbar openSidebar={() => setSidebarOpen(true)} /> */}
+          <div className="flex h-screen overflow-hidden bg-background text-darkText">
+            <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
             
-            <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
-              <Router />
-            </main>
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* <Topbar openSidebar={() => setSidebarOpen(true)} /> */}
+              
+              <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
+                <Router />
+              </main>
+            </div>
           </div>
-        </div>
+          <Toaster />
       </NotificationProvider>
     </AuthProvider>
   );

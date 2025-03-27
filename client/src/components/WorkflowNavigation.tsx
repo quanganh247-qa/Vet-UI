@@ -10,31 +10,35 @@ import {
   FileText,
   ChevronRight,
   UserCircle,
-  Receipt
+  Receipt,
+  FlaskConical,
+  CalendarClock
 } from 'lucide-react';
 
 type WorkflowNavigationProps = {
   appointmentId?: string;
   petId?: string;
-  currentStep: 'patient-details' | 'check-in' | 'examination' | 'soap' | 'treatment' | 'prescription' | 'records';
+  currentStep: 'check-in' | 'examination' | 'soap' | 'diagnostic' | 'treatment' | 'prescription' | 'follow-up';
 };
 
-const WorkflowNavigation = ({ appointmentId, petId, currentStep }: WorkflowNavigationProps) => {
+const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, petId, currentStep }) => {
   const [, navigate] = useLocation();
 
-  // Định nghĩa các bước trong quy trình khám bệnh
+  // Định nghĩa các bước trong quy trình khám bệnh theo thứ tự mới
   const workflowSteps = [
     { id: 'check-in', label: 'Check-in', icon: UserRound, path: `/appointment/${appointmentId}/check-in` },
-    { id: 'examination', label: 'Khám', icon: Stethoscope, path: `/appointment/${appointmentId}` },
+    { id: 'examination', label: 'Examination', icon: Stethoscope, path: `/appointment/${appointmentId}` },
     { id: 'soap', label: 'SOAP', icon: FileText, path: `/appointment/${appointmentId}/soap` },
-    { id: 'treatment', label: 'Điều trị', icon: Tablets, path: `/appointment/${appointmentId}/patient/${petId}/treatment` },
-    { id: 'prescription', label: 'Kê đơn', icon: Receipt, path: `/appointment/${appointmentId}/prescription` },
+    { id: 'diagnostic', label: 'Lab/Imaging', icon: FlaskConical, path: `/appointment/${appointmentId}/lab-management` },
+    { id: 'treatment', label: 'Treatment', icon: Tablets, path: `/appointment/${appointmentId}/patient/${petId}/treatment` },
+    { id: 'prescription', label: 'Prescription', icon: Receipt, path: `/appointment/${appointmentId}/prescription` },
+    { id: 'follow-up', label: 'Follow-up', icon: CalendarClock, path: `/appointment/${appointmentId}/follow-up` },
   ];
 
   return (
     <div className="workflow-navigation bg-white shadow-sm rounded-lg border border-gray-200 p-2 mb-4">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-medium text-gray-500 uppercase pl-2">Quy trình khám</div>
+        <div className="text-xs font-medium text-gray-500 uppercase pl-2">Workflow</div>
         
         <div className="flex items-center space-x-1 overflow-x-auto hide-scrollbar">
           {workflowSteps.map((step, index) => {

@@ -4,7 +4,24 @@ import { LineChart, BarChart, PieChart, Line, Bar, Pie, XAxis, YAxis, CartesianG
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, Users, Activity, RefreshCw, TrendingUp, ArrowUpRight, ArrowDownRight, Clipboard, BarChart2 } from "lucide-react";
+import { 
+  Calendar, 
+  Clock, 
+  Users, 
+  Activity, 
+  RefreshCw, 
+  TrendingUp, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  Clipboard, 
+  BarChart2, 
+  DollarSign, 
+  CalendarCheck
+} from "lucide-react";
+import { format } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { getDashboardData } from "@/services/dashboard-service";
+import { Badge } from "@/components/ui/badge";
 
 interface StatisticsProps {
   clinicId?: string;
@@ -20,193 +37,41 @@ const RealTimeStatistics: React.FC<StatisticsProps> = ({
   const [timeRange, setTimeRange] = useState<"today" | "week" | "month">("today");
   const [chartView, setChartView] = useState<"appointments" | "revenue" | "patients" | "procedures">("appointments");
   const [isAutoRefresh, setIsAutoRefresh] = useState(true);
-  const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   
-  // Dummy data - in a real app, this would come from an API
-  const [stats, setStats] = useState({
-    today: {
-      totalAppointments: 24,
-      completedAppointments: 16,
-      cancelledAppointments: 2,
-      averageWaitTime: 12, // minutes
-      revenue: 3250,
-      newPatients: 5,
-      appointmentsByType: [
-        { name: "Check-up", value: 10 },
-        { name: "Vaccination", value: 6 },
-        { name: "Surgery", value: 3 },
-        { name: "Emergency", value: 2 },
-        { name: "Other", value: 3 }
-      ],
-      appointmentsByHour: [
-        { hour: "8 AM", appointments: 3 },
-        { hour: "9 AM", appointments: 4 },
-        { hour: "10 AM", appointments: 2 },
-        { hour: "11 AM", appointments: 3 },
-        { hour: "12 PM", appointments: 1 },
-        { hour: "1 PM", appointments: 2 },
-        { hour: "2 PM", appointments: 3 },
-        { hour: "3 PM", appointments: 3 },
-        { hour: "4 PM", appointments: 3 },
-        { hour: "5 PM", appointments: 0 }
-      ],
-      revenueByService: [
-        { service: "Exams", amount: 1200 },
-        { service: "Procedures", amount: 850 },
-        { service: "Medications", amount: 650 },
-        { service: "Lab Tests", amount: 350 },
-        { service: "Other", amount: 200 }
-      ],
-      performanceMetrics: {
-        appointmentsPerHour: 3.2,
-        averageAppointmentDuration: 24, // minutes
-        patientSatisfaction: 4.7
-      },
-      comparisonToLastWeek: {
-        appointments: +15, // percentage
-        revenue: +8,
-        newPatients: +20
-      }
-    },
-    week: {
-      // similar structure but with weekly data
-      totalAppointments: 122,
-      completedAppointments: 98,
-      cancelledAppointments: 8,
-      averageWaitTime: 14,
-      revenue: 15800,
-      newPatients: 18,
-      appointmentsByType: [
-        { name: "Check-up", value: 45 },
-        { name: "Vaccination", value: 32 },
-        { name: "Surgery", value: 15 },
-        { name: "Emergency", value: 12 },
-        { name: "Other", value: 18 }
-      ],
-      appointmentsByDay: [
-        { day: "Mon", appointments: 25 },
-        { day: "Tue", appointments: 22 },
-        { day: "Wed", appointments: 18 },
-        { day: "Thu", appointments: 20 },
-        { day: "Fri", appointments: 27 },
-        { day: "Sat", appointments: 10 },
-        { day: "Sun", appointments: 0 }
-      ],
-      revenueByService: [
-        { service: "Exams", amount: 5200 },
-        { service: "Procedures", amount: 4100 },
-        { service: "Medications", amount: 3200 },
-        { service: "Lab Tests", amount: 2100 },
-        { service: "Other", amount: 1200 }
-      ],
-      performanceMetrics: {
-        appointmentsPerHour: 3.0,
-        averageAppointmentDuration: 26,
-        patientSatisfaction: 4.5
-      },
-      comparisonToLastWeek: {
-        appointments: +5,
-        revenue: +10,
-        newPatients: -3
-      }
-    },
-    month: {
-      // similar structure but with monthly data
-      totalAppointments: 512,
-      completedAppointments: 428,
-      cancelledAppointments: 42,
-      averageWaitTime: 15,
-      revenue: 68500,
-      newPatients: 78,
-      appointmentsByType: [
-        { name: "Check-up", value: 210 },
-        { name: "Vaccination", value: 124 },
-        { name: "Surgery", value: 64 },
-        { name: "Emergency", value: 48 },
-        { name: "Other", value: 66 }
-      ],
-      appointmentsByWeek: [
-        { week: "Week 1", appointments: 120 },
-        { week: "Week 2", appointments: 135 },
-        { week: "Week 3", appointments: 122 },
-        { week: "Week 4", appointments: 135 }
-      ],
-      revenueByService: [
-        { service: "Exams", amount: 22500 },
-        { service: "Procedures", amount: 18200 },
-        { service: "Medications", amount: 14500 },
-        { service: "Lab Tests", amount: 8500 },
-        { service: "Other", amount: 4800 }
-      ],
-      performanceMetrics: {
-        appointmentsPerHour: 3.1,
-        averageAppointmentDuration: 25,
-        patientSatisfaction: 4.6
-      },
-      comparisonToLastMonth: {
-        appointments: +8,
-        revenue: +12,
-        newPatients: +15
-      }
-    }
+  // Use React Query to fetch dashboard data
+  const { 
+    data: dashboardData,
+    isLoading,
+    refetch
+  } = useQuery({
+    queryKey: ['dashboardData'],
+    queryFn: getDashboardData
   });
   
-  // Colors for charts
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28BFC'];
-  
-  // In a real app, this would fetch data from an API
-  const fetchStats = async () => {
-    setLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // In a real app, this would update with fresh data from the backend
-    // For now, we're just updating the timestamp
-    setLastUpdated(new Date());
-    setLoading(false);
-  };
-  
+  // Set up interval for auto-refresh
   useEffect(() => {
-    // Initial fetch
-    fetchStats();
-    
-    // Set up interval for auto-refresh
     let interval: NodeJS.Timeout | null = null;
     
     if (isAutoRefresh) {
-      interval = setInterval(fetchStats, refreshInterval);
+      interval = setInterval(() => {
+        refetch();
+        setLastUpdated(new Date());
+      }, refreshInterval);
     }
     
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isAutoRefresh, refreshInterval]);
+  }, [isAutoRefresh, refreshInterval, refetch]);
   
-  // Get the current data based on the selected time range
-  const currentData = stats[timeRange];
+  // Colors for charts
+  const COLORS = ['#4f46e5', '#16a34a', '#ea580c', '#2563eb', '#7c3aed'];
   
-  // Get the appropriate time series data based on time range
-  const getTimeSeriesData = () => {
-    if (timeRange === "today") {
-      return (currentData as any).appointmentsByHour || [];
-    } else if (timeRange === "week") {
-      return (currentData as any).appointmentsByDay || [];
-    } else {
-      return (currentData as any).appointmentsByWeek || [];
-    }
-  };
-  
-  // Get the appropriate x-axis key based on time range
-  const getXAxisKey = () => {
-    if (timeRange === "today") {
-      return "hour";
-    } else if (timeRange === "week") {
-      return "day";
-    } else {
-      return "week";
-    }
+  // Handle manual refresh
+  const handleRefresh = () => {
+    refetch();
+    setLastUpdated(new Date());
   };
   
   // Render comparison indicator with arrow
@@ -230,304 +95,391 @@ const RealTimeStatistics: React.FC<StatisticsProps> = ({
     }
   };
   
+  // Custom tooltip for charts
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 border rounded-md shadow-md text-sm">
+          <p className="font-medium text-gray-900">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={`item-${index}`} style={{ color: entry.color }}>
+              {entry.name}: {entry.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+  
+  if (isLoading || !dashboardData) {
+    return (
+      <Card className="bg-gradient-to-br from-white to-gray-50 border-none shadow-md">
+        <CardHeader className="pb-3">
+          <CardTitle>Clinic Performance</CardTitle>
+          <CardDescription>Loading statistics and metrics...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="flex flex-col items-center">
+            <div className="w-10 h-10 border-4 border-t-indigo-600 border-indigo-200 rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-500">Loading dashboard data...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   return (
-    <Card>
+    <Card className="bg-gradient-to-br from-white to-gray-50 border-none shadow-md">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Clinic Performance</CardTitle>
+            <CardTitle className="text-indigo-900 flex items-center">
+              <Activity className="h-5 w-5 mr-2 text-indigo-600" />
+              Clinic Performance
+            </CardTitle>
             <CardDescription>Real-time statistics and key metrics</CardDescription>
           </div>
           
           <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-1 text-sm text-gray-500">
-              <Clock size={14} />
-              <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
+            <div className="flex items-center space-x-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+              <Clock size={12} />
+              <span>{format(lastUpdated, 'h:mm a')}</span>
             </div>
             
             <Button 
               variant="outline"
               size="sm"
-              className={isAutoRefresh ? "bg-blue-50 text-blue-600" : ""}
-              onClick={() => setIsAutoRefresh(!isAutoRefresh)}
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="h-8 text-indigo-700 border-indigo-200 hover:bg-indigo-50"
             >
-              <RefreshCw size={14} className="mr-1" />
-              {isAutoRefresh ? "Auto-refresh on" : "Auto-refresh off"}
+              <RefreshCw size={14} className={`mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
             </Button>
             
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              disabled={loading}
-              onClick={fetchStats}
-            >
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            </Button>
+            <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
+              <SelectTrigger className="w-[130px] h-8 text-xs">
+                <SelectValue placeholder="Select range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </div>
-        
-        <div className="flex justify-between mt-4">
-          <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Time Range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Tabs value={chartView} onValueChange={(value: any) => setChartView(value)}>
-            <TabsList>
-              <TabsTrigger value="appointments">
-                <Calendar size={14} className="mr-1" />
-                Appointments
-              </TabsTrigger>
-              <TabsTrigger value="revenue">
-                <TrendingUp size={14} className="mr-1" />
-                Revenue
-              </TabsTrigger>
-              <TabsTrigger value="patients">
-                <Users size={14} className="mr-1" />
-                Patients
-              </TabsTrigger>
-              <TabsTrigger value="procedures">
-                <Activity size={14} className="mr-1" />
-                Procedures
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
       </CardHeader>
       
       <CardContent>
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="text-sm font-medium text-gray-500">Total Appointments</div>
-                <div className="text-2xl font-bold mt-1">{currentData.totalAppointments}</div>
+        {/* Key metrics */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+          <Card className="bg-white shadow-sm border-none">
+            <CardContent className="p-4">
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500 mb-1 flex items-center">
+                  <CalendarCheck size={12} className="mr-1 text-indigo-500" />
+                  Appointments Today
+                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-gray-900">
+                    {dashboardData.metrics.appointmentsToday}
+                  </span>
+                  <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-100">
+                    {dashboardData.metrics.completedAppointments} completed
+                  </Badge>
+                </div>
+                <div className="mt-1">
+                  {renderComparison(15)}
+                </div>
               </div>
-              <div className="rounded-full bg-blue-100 p-2">
-                <Calendar size={20} className="text-blue-600" />
-              </div>
-            </div>
-            <div className="mt-2 text-xs">
-              {renderComparison(
-                timeRange === "month" 
-                  ? (currentData as any).comparisonToLastMonth?.appointments || 0
-                  : (currentData as any).comparisonToLastWeek?.appointments || 0
-              )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
           
-          <div className="p-4 bg-green-50 rounded-lg">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="text-sm font-medium text-gray-500">Revenue</div>
-                <div className="text-2xl font-bold mt-1">${currentData.revenue}</div>
+          <Card className="bg-white shadow-sm border-none">
+            <CardContent className="p-4">
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500 mb-1 flex items-center">
+                  <Users size={12} className="mr-1 text-green-500" />
+                  New Patients
+                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-gray-900">
+                    {dashboardData.metrics.newPatients}
+                  </span>
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100">
+                    This week
+                  </Badge>
+                </div>
+                <div className="mt-1">
+                  {renderComparison(20)}
+                </div>
               </div>
-              <div className="rounded-full bg-green-100 p-2">
-                <TrendingUp size={20} className="text-green-600" />
-              </div>
-            </div>
-            <div className="mt-2 text-xs">
-              {renderComparison(
-                timeRange === "month" 
-                  ? (currentData as any).comparisonToLastMonth?.revenue || 0
-                  : (currentData as any).comparisonToLastWeek?.revenue || 0
-              )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
           
-          <div className="p-4 bg-purple-50 rounded-lg">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="text-sm font-medium text-gray-500">New Patients</div>
-                <div className="text-2xl font-bold mt-1">{currentData.newPatients}</div>
+          <Card className="bg-white shadow-sm border-none">
+            <CardContent className="p-4">
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500 mb-1 flex items-center">
+                  <DollarSign size={12} className="mr-1 text-blue-500" />
+                  Revenue
+                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-gray-900">
+                    ${dashboardData.metrics.totalRevenue.toLocaleString()}
+                  </span>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100">
+                    MTD
+                  </Badge>
+                </div>
+                <div className="mt-1">
+                  {renderComparison(8)}
+                </div>
               </div>
-              <div className="rounded-full bg-purple-100 p-2">
-                <Users size={20} className="text-purple-600" />
-              </div>
-            </div>
-            <div className="mt-2 text-xs">
-              {renderComparison(
-                timeRange === "month" 
-                  ? (currentData as any).comparisonToLastMonth?.newPatients || 0
-                  : (currentData as any).comparisonToLastWeek?.newPatients || 0
-              )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
           
-          <div className="p-4 bg-amber-50 rounded-lg">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="text-sm font-medium text-gray-500">Avg. Wait Time</div>
-                <div className="text-2xl font-bold mt-1">{currentData.averageWaitTime} min</div>
+          <Card className="bg-white shadow-sm border-none">
+            <CardContent className="p-4">
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500 mb-1 flex items-center">
+                  <Clipboard size={12} className="mr-1 text-amber-500" />
+                  Pending Bills
+                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-gray-900">
+                    {dashboardData.metrics.pendingBills}
+                  </span>
+                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-100">
+                    To process
+                  </Badge>
+                </div>
+                <div className="mt-1">
+                  {renderComparison(-5)}
+                </div>
               </div>
-              <div className="rounded-full bg-amber-100 p-2">
-                <Clock size={20} className="text-amber-600" />
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white shadow-sm border-none">
+            <CardContent className="p-4">
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500 mb-1 flex items-center">
+                  <TrendingUp size={12} className="mr-1 text-purple-500" />
+                  Completion Rate
+                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-gray-900">
+                    {Math.round((dashboardData.metrics.completedAppointments / dashboardData.metrics.appointmentsToday) * 100)}%
+                  </span>
+                  <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-100">
+                    Today
+                  </Badge>
+                </div>
+                <div className="mt-1">
+                  {renderComparison(3)}
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
         
-        <div className="grid grid-cols-3 gap-6">
-          {/* Main Chart */}
-          <div className="col-span-2 bg-white p-4 rounded-lg border">
-            <h3 className="text-sm font-medium mb-4">
-              {chartView === "appointments" && "Appointment Distribution"}
-              {chartView === "revenue" && "Revenue Breakdown"}
-              {chartView === "patients" && "Patient Statistics"}
-              {chartView === "procedures" && "Procedures Performed"}
-            </h3>
-            
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                {chartView === "appointments" ? (
-                  <BarChart
-                    data={getTimeSeriesData()}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey={getXAxisKey()} />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="appointments" fill="#0088FE" name="Appointments" />
-                  </BarChart>
-                ) : chartView === "revenue" ? (
-                  <BarChart
-                    data={currentData.revenueByService}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="service" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => [`$${value}`, 'Revenue']} />
-                    <Legend />
-                    <Bar dataKey="amount" fill="#00C49F" name="Revenue" />
-                  </BarChart>
-                ) : chartView === "patients" ? (
-                  <LineChart
-                    data={getTimeSeriesData()}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey={getXAxisKey()} />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="appointments" stroke="#A28BFC" name="Patient Visits" activeDot={{ r: 8 }} />
-                  </LineChart>
-                ) : (
-                  <PieChart>
-                    <Pie
-                      data={currentData.appointmentsByType}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                      nameKey="name"
-                      label={({name, value}) => `${name}: ${value}`}
-                    >
-                      {currentData.appointmentsByType.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [value, 'Procedures']} />
-                    <Legend />
-                  </PieChart>
-                )}
-              </ResponsiveContainer>
-            </div>
+        {/* Charts */}
+        <Tabs defaultValue="appointments" className="mt-2">
+          <div className="flex justify-between items-center mb-4">
+            <TabsList>
+              <TabsTrigger value="appointments" onClick={() => setChartView("appointments")}>
+                <Calendar className="h-4 w-4 mr-2" />
+                Appointments
+              </TabsTrigger>
+              <TabsTrigger value="revenue" onClick={() => setChartView("revenue")}>
+                <DollarSign className="h-4 w-4 mr-2" />
+                Revenue
+              </TabsTrigger>
+              <TabsTrigger value="patients" onClick={() => setChartView("patients")}>
+                <Users className="h-4 w-4 mr-2" />
+                Patients
+              </TabsTrigger>
+              <TabsTrigger value="procedures" onClick={() => setChartView("procedures")}>
+                <Activity className="h-4 w-4 mr-2" />
+                Procedures
+              </TabsTrigger>
+            </TabsList>
           </div>
           
-          {/* Stats & Metrics */}
-          <div className="bg-white p-4 rounded-lg border">
-            <h3 className="text-sm font-medium mb-4">Performance Metrics</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <div className="text-xs text-gray-500 mb-1">Appointments Per Hour</div>
-                <div className="flex items-center">
-                  <div className="text-xl font-bold">
-                    {currentData.performanceMetrics.appointmentsPerHour}
+          <TabsContent value="appointments" className="mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="bg-white shadow-sm border-none">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Appointment Distribution</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[240px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={dashboardData.appointmentDistribution}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={2}
+                          dataKey="count"
+                          nameKey="category"
+                        >
+                          {dashboardData.appointmentDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend 
+                          layout="horizontal" 
+                          verticalAlign="bottom" 
+                          align="center"
+                          formatter={(value) => <span className="text-xs text-gray-600">{value}</span>} 
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
-                  <div className="ml-2 text-xs text-gray-500">
-                    Target: 3.5
-                  </div>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full" 
-                    style={{ width: `${Math.min(100, (currentData.performanceMetrics.appointmentsPerHour / 3.5) * 100)}%` }}
-                  ></div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
               
-              <div>
-                <div className="text-xs text-gray-500 mb-1">Average Appointment Duration</div>
-                <div className="flex items-center">
-                  <div className="text-xl font-bold">
-                    {currentData.performanceMetrics.averageAppointmentDuration} min
+              <Card className="bg-white shadow-sm border-none">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Daily Appointments Trend</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[240px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={dashboardData.appointmentDistribution}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                        <XAxis dataKey="category" tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar dataKey="count" name="Appointments" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                  <div className="ml-2 text-xs text-gray-500">
-                    Target: 25 min
-                  </div>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                  <div 
-                    className={`h-2 rounded-full ${
-                      currentData.performanceMetrics.averageAppointmentDuration <= 25 
-                        ? "bg-green-600" 
-                        : "bg-amber-500"
-                    }`}
-                    style={{ width: `${Math.min(100, (currentData.performanceMetrics.averageAppointmentDuration / 25) * 100)}%` }}
-                  ></div>
-                </div>
-              </div>
-              
-              <div>
-                <div className="text-xs text-gray-500 mb-1">Patient Satisfaction</div>
-                <div className="flex items-center">
-                  <div className="text-xl font-bold">
-                    {currentData.performanceMetrics.patientSatisfaction} / 5
-                  </div>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                  <div 
-                    className="bg-green-600 h-2 rounded-full" 
-                    style={{ width: `${(currentData.performanceMetrics.patientSatisfaction / 5) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-              
-              <div className="pt-4 border-t">
-                <h4 className="text-sm font-medium mb-2">Appointment Status</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Completed</span>
-                    <span className="font-medium">{currentData.completedAppointments} ({Math.round((currentData.completedAppointments / currentData.totalAppointments) * 100)}%)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Cancelled</span>
-                    <span className="font-medium">{currentData.cancelledAppointments} ({Math.round((currentData.cancelledAppointments / currentData.totalAppointments) * 100)}%)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>In Progress</span>
-                    <span className="font-medium">
-                      {currentData.totalAppointments - currentData.completedAppointments - currentData.cancelledAppointments} 
-                      ({Math.round(((currentData.totalAppointments - currentData.completedAppointments - currentData.cancelledAppointments) / currentData.totalAppointments) * 100)}%)
-                    </span>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
-          </div>
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="revenue" className="mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="bg-white shadow-sm border-none lg:col-span-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Revenue Trend (Last 7 Days)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[240px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={dashboardData.revenueData}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                        <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="amount"
+                          name="Revenue"
+                          stroke="#2563eb"
+                          strokeWidth={2}
+                          dot={{ r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="patients" className="mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="bg-white shadow-sm border-none lg:col-span-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Patient Growth (Last 6 Months)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[240px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={dashboardData.patientTrend}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                        <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar dataKey="patients" name="New Patients" fill="#16a34a" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="procedures" className="mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="bg-white shadow-sm border-none">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Procedures Distribution</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[240px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={dashboardData.procedureData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={2}
+                          dataKey="value"
+                          nameKey="name"
+                        >
+                          {dashboardData.procedureData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend 
+                          layout="horizontal" 
+                          verticalAlign="bottom" 
+                          align="center"
+                          formatter={(value) => <span className="text-xs text-gray-600">{value}</span>}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-white shadow-sm border-none">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Procedures by Count</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[240px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={dashboardData.procedureData} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f0f0f0" />
+                        <XAxis type="number" tick={{ fontSize: 12 }} />
+                        <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={90} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar dataKey="value" name="Procedures" fill="#7c3aed" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

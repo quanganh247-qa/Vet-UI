@@ -25,7 +25,17 @@ export const useListAppointments = (date: Date, option: string) => {
 export const useListAppointmentsQueue = () => {
   return useQuery({
     queryKey: ["appointmentsQueue"],
-    queryFn: () => getAppointmentsQueue(),
+    queryFn: async () => {
+      try {
+        const data = await getAppointmentsQueue();
+        console.log("Queue data in hook:", data);
+        return data;
+      } catch (error) {
+        console.error("Error in useListAppointmentsQueue:", error);
+        return [];
+      }
+    },
+    refetchOnWindowFocus: false,
   });
 };
 
