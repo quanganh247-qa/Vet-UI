@@ -94,7 +94,6 @@ const TreatmentManagement: React.FC = () => {
 
   const selectedTreatment = treatments && treatments.find((t: Treatment) => t.id === selectedTreatmentId);
 
-  console.log("selectedTreatment", selectedTreatment);
 
   const { data: phases, isLoading: isPhasesLoading } = useTreatmentPhasesData(
     selectedTreatment?.id?.toString() || ""

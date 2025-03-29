@@ -317,6 +317,27 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        {/* Widget xét nghiệm */}
+        <div className="col-span-1">
+          {doctor && (
+            <Card className="shadow-md border-none overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-3">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-lg font-semibold text-indigo-900">Xét nghiệm gần đây</CardTitle>
+                  <Link href="/pending-lab-tests">
+                    <Button variant="ghost" size="sm" className="h-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
+                      Xem tất cả <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+             
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

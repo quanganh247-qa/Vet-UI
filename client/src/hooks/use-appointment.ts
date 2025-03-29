@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getAllAppointments,
   getAppointmentById,
   getAppointmentsQueue,
   getHistoryAppointments,
+  updateAppointmentById,
 } from "@/services/appointment-services";
 import { getPatientById } from "@/services/pet-services";
 
@@ -28,14 +29,13 @@ export const useListAppointmentsQueue = () => {
     queryFn: async () => {
       try {
         const data = await getAppointmentsQueue();
-        console.log("Queue data in hook:", data);
         return data;
       } catch (error) {
         console.error("Error in useListAppointmentsQueue:", error);
         return [];
       }
     },
-    refetchOnWindowFocus: false,
+    // refetchOnWindowFocus: false,
   });
 };
 
@@ -44,5 +44,29 @@ export const useHistoryAppointments = (pet_id: number) => {
     queryKey: ["historyAppointments", pet_id],
     queryFn: () => getHistoryAppointments(pet_id),
     enabled: !!pet_id,
+  });
+};
+
+export const useUpdateAppointmentStatus = (id: number, updateData: {
+  payment_status?: string;
+  state_id?: number;
+  room_id?: number;
+  notes?: string;
+  appointment_reason?: string;
+  reminder_send?: boolean;
+  arrival_time?: string;
+}) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => updateAppointmentById(id, updateData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointmentsQueue"] });
+    },
+    onError: (error) => {
+      console.error("Error in useUpdateAppointmentStatus:", error);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointmentsQueue"] });
+    },
   });
 };

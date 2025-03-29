@@ -20,23 +20,20 @@ import {
   ClipboardEdit,
   Printer,
   NotebookText,
-  FileBarChart
+  FileBarChart,
+  Info
 } from "lucide-react";
-import {
-  getAppointmentById,
-  getPatientById,
-  getDoctorById,
-  type Appointment,
-  type Patient,
-  type Doctor,
-} from "@/data/mock-data";
+
 import { Badge } from "@/components/ui/badge";
 import QuickNotes from "@/components/medical-records/QuickNotes";
 import { useGetSOAP, useUpdateSOAP } from "@/hooks/use-soap";
 import { useAppointmentData } from "@/hooks/use-appointment";
 import { usePatientData } from "@/hooks/use-pet";
-import { formatAppointmentTime, formatTimeRange, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import WorkflowNavigation from "@/components/WorkflowNavigation";
+import { toast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ObjectiveData } from "@/types";
 
 type InputChangeEvent = React.ChangeEvent<HTMLTextAreaElement>;
 
@@ -46,13 +43,13 @@ const SoapNotes = () => {
   const [isRecording, setIsRecording] = useState(false);
 
   const { data: appointment, isLoading: isAppointmentLoading, error: appointmentError } = useAppointmentData(id);
-  const { data: soapData = { subjective: '', objective: '', assessment: '', plan: '' }, isLoading: isSoapLoading, error: soapError } = useGetSOAP(appointment?.id);
+  const { data: soapData = { subjective: '', objective: {}, assessment: '', plan: '' }, isLoading: isSoapLoading, error: soapError } = useGetSOAP(appointment?.id);
   const { data: patient, isLoading: isPatientLoading, error: patientError } = usePatientData(appointment?.pet?.pet_id);
   const updateSoapMutation = useUpdateSOAP();
 
   const [localSoapData, setLocalSoapData] = useState({
     subjective: '',
-    objective: '',
+    objective: {},
     assessment: '',
     plan: ''
   });
@@ -62,7 +59,7 @@ const SoapNotes = () => {
     if (soapData) {
       setLocalSoapData({
         subjective: soapData.subjective || '',
-        objective: soapData.objective || '',
+        objective: soapData.objective || {},
         assessment: soapData.assessment || '',
         plan: soapData.plan || '',
       });
@@ -76,6 +73,50 @@ const SoapNotes = () => {
     }));
   };
 
+  // Format objective data into a readable format
+  const formatObjectiveData = (data: any): string => {
+    if (!data || Object.keys(data).length === 0) {
+      return "No examination data available.";
+    }
+
+    let formattedText = "## CLINICAL EXAMINATION RESULTS\n\n";
+
+    // Format vital signs
+    if (data.vital_signs) {
+      formattedText += "### Vital Signs\n";
+      if (data.vital_signs.weight) formattedText += `- Weight: ${data.vital_signs.weight} kg\n`;
+      if (data.vital_signs.temperature) formattedText += `- Temperature: ${data.vital_signs.temperature} °C\n`;
+      if (data.vital_signs.heart_rate) formattedText += `- Heart Rate: ${data.vital_signs.heart_rate} bpm\n`;
+      if (data.vital_signs.respiratory_rate) formattedText += `- Respiratory Rate: ${data.vital_signs.respiratory_rate} rpm\n`;
+      if (data.vital_signs.general_notes) formattedText += `\n**General Notes:** ${data.vital_signs.general_notes}\n`;
+      formattedText += "\n";
+    }
+
+    // Format systems examination
+    if (data.systems) {
+      formattedText += "### Systems Examination\n";
+      
+      const systemPairs = [
+        { name: "Cardiovascular", value: data.systems.cardiovascular },
+        { name: "Respiratory", value: data.systems.respiratory },
+        { name: "Gastrointestinal", value: data.systems.gastrointestinal },
+        { name: "Musculoskeletal", value: data.systems.musculoskeletal },
+        { name: "Neurological", value: data.systems.neurological },
+        { name: "Skin/Coat", value: data.systems.skin },
+        { name: "Eyes", value: data.systems.eyes },
+        { name: "Ears", value: data.systems.ears }
+      ];
+
+      systemPairs.forEach(system => {
+        if (system.value) {
+          formattedText += `- **${system.name}:** ${system.value}\n`;
+        }
+      });
+    }
+
+    return formattedText;
+  };
+
   const toggleRecording = () => {
     setIsRecording(!isRecording);
     // Implement speech-to-text functionality here
@@ -83,17 +124,51 @@ const SoapNotes = () => {
 
   const handleSave = async () => {
     if (!appointment?.id) return;
+
+    const defaultObjective: ObjectiveData = {
+      vital_signs: {
+        weight: '',
+        temperature: '',
+        heart_rate: '',
+        respiratory_rate: '',
+        general_notes: ''
+      },
+      systems: {
+        cardiovascular: '',
+        respiratory: '',
+        gastrointestinal: '',
+        musculoskeletal: '',
+        neurological: '',
+        skin: '',
+        eyes: '',
+        ears: ''
+      }
+    };
     
     try {
+      // Ensure we don't overwrite the objective data
+      const currentData = soapData || { subjective: '', objective: defaultObjective, assessment: '', plan: '' };
+      
       await updateSoapMutation.mutateAsync({
         appointmentID: appointment.id,
-        ...localSoapData
+        subjective: localSoapData.subjective,
+        objective: currentData.objective, // Keep the original objective data
+        assessment: localSoapData.assessment,
+        plan: localSoapData.plan,
       });
 
-      // alert("SOAP notes saved successfully!");
+      toast({
+        title: "SOAP Notes Saved",
+        description: "Assessment and treatment plan have been saved successfully.",
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
     } catch (error) {
       console.error("Error saving SOAP notes:", error);
-      // alert("Failed to save SOAP notes. Please try again.");
+      toast({
+        title: "Save Failed",
+        description: "An error occurred while saving SOAP notes.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -126,6 +201,9 @@ const SoapNotes = () => {
       </div>
     );
   }
+
+  // Format the objective data
+  const formattedObjectiveText = formatObjectiveData(localSoapData.objective);
 
   return (
     <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
@@ -183,7 +261,7 @@ const SoapNotes = () => {
             <div className="relative">
               <div className="h-28 w-28 rounded-xl shadow-md overflow-hidden flex-shrink-0 border-4 border-white">
                 <img
-                  src={patient.image_url || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=256&q=80"}
+                  src={patient?.data_image ? `data:image/png;base64,${patient.data_image}` : "/fallback-image.png"}
                   alt={patient.name}
                   className="h-full w-full object-cover"
                   onError={(e) => {
@@ -288,6 +366,18 @@ const SoapNotes = () => {
               </Button>
             </div>
           </div>
+          
+          {/* Guidance alert */}
+          <div className="p-4 m-4 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-blue-500" />
+              <h3 className="font-medium text-blue-700">Diagnostic Guidance</h3>
+            </div>
+            <p className="text-blue-600 text-sm mt-1">
+              The "Subjective" and "Objective" sections have been updated from previous information gathering. 
+              Please focus on the "Assessment" section to provide your professional diagnosis based on the symptoms and examination results.
+            </p>
+          </div>
 
           <div className="p-6">
             <Tabs defaultValue="all" className="w-full">
@@ -329,12 +419,12 @@ const SoapNotes = () => {
                   <div className="flex items-center gap-2 mb-2">
                     <FileText className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700">
-                      S - Subjective (Patient/Client Report)
+                      S - Subjective (Owner's Report)
                     </label>
                   </div>
                   <Textarea
-                    placeholder="Enter client's description of the problem..."
-                    className="min-h-[100px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
+                    placeholder="Enter owner's description of the problem..."
+                    className="min-h-[150px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
                     value={localSoapData.subjective}
                     onChange={(e: InputChangeEvent) =>
                       handleInputChange("subjective", e.target.value)
@@ -345,30 +435,30 @@ const SoapNotes = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Activity className="h-4 w-4 text-indigo-600" />
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-sm font-medium text-gray-700 flex items-center">
                       O - Objective (Clinical Findings)
+                      <Badge className="ml-2 bg-yellow-100 text-yellow-800 border-yellow-200">Read-only</Badge>
                     </label>
                   </div>
                   <Textarea
-                    placeholder="Enter physical exam findings, vital signs, test results..."
-                    className="min-h-[100px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
-                    value={localSoapData.objective}
-                    onChange={(e: InputChangeEvent) =>
-                      handleInputChange("objective", e.target.value)
-                    }
+                    placeholder="Physical examination findings, vital signs, test results..."
+                    className="min-h-[200px] resize-none bg-gray-50 border-gray-200 font-mono whitespace-pre-wrap"
+                    value={formattedObjectiveText}
+                    readOnly
                   />
                 </div>
 
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <ClipboardEdit className="h-4 w-4 text-indigo-600" />
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-sm font-medium text-gray-700 flex items-center">
                       A - Assessment (Diagnosis)
+                      <Badge className="ml-2 bg-green-100 text-green-800 border-green-200">Update here</Badge>
                     </label>
                   </div>
                   <Textarea
                     placeholder="Enter diagnosis or assessment of the condition..."
-                    className="min-h-[100px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
+                    className="min-h-[200px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-indigo-200 bg-indigo-50"
                     value={localSoapData.assessment}
                     onChange={(e: InputChangeEvent) =>
                       handleInputChange("assessment", e.target.value)
@@ -376,7 +466,7 @@ const SoapNotes = () => {
                   />
                 </div>
 
-                {/* <div>
+                <div>
                   <div className="flex items-center gap-2 mb-2">
                     <FileBarChart className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700">
@@ -385,26 +475,27 @@ const SoapNotes = () => {
                   </div>
                   <Textarea
                     placeholder="Enter treatment plan, medications, follow-up instructions..."
-                    className="min-h-[100px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
+                    className="min-h-[200px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
                     value={localSoapData.plan}
                     onChange={(e: InputChangeEvent) =>
                       handleInputChange("plan", e.target.value)
                     }
                   />
-                </div> */}
+                </div>
               </TabsContent>
 
+              {/* Tab Subjective */}
               <TabsContent value="subjective" className="py-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <FileText className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700">
-                      S - Subjective (Patient/Client Report)
+                      S - Subjective (Owner's Report)
                     </label>
                   </div>
                   <Textarea
-                    placeholder="Enter client's description of the problem..."
-                    className="min-h-[300px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
+                    placeholder="Enter owner's description of the problem..."
+                    className="min-h-[400px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
                     value={localSoapData.subjective}
                     onChange={(e: InputChangeEvent) =>
                       handleInputChange("subjective", e.target.value)
@@ -413,8 +504,16 @@ const SoapNotes = () => {
                 </div>
               </TabsContent>
 
+              {/* Tab Objective - read-only */}
               <TabsContent value="objective" className="py-4">
                 <div>
+                  <Alert className="mb-4 bg-yellow-50 border-yellow-200">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                    <AlertTitle className="text-yellow-800">Note</AlertTitle>
+                    <AlertDescription className="text-yellow-700">
+                      Clinical examination information can only be updated in the Examination section. Here you can only view the results.
+                    </AlertDescription>
+                  </Alert>
                   <div className="flex items-center gap-2 mb-2">
                     <Activity className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700">
@@ -422,18 +521,25 @@ const SoapNotes = () => {
                     </label>
                   </div>
                   <Textarea
-                    placeholder="Enter physical exam findings, vital signs, test results..."
-                    className="min-h-[300px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
-                    value={localSoapData.objective}
-                    onChange={(e: InputChangeEvent) =>
-                      handleInputChange("objective", e.target.value)
-                    }
+                    placeholder="Physical examination findings, vital signs, test results..."
+                    className="min-h-[400px] resize-none bg-gray-50 border-gray-200 font-mono whitespace-pre-wrap"
+                    value={formattedObjectiveText}
+                    readOnly
                   />
                 </div>
               </TabsContent>
 
+              {/* Tab Assessment - Main diagnostic tab */}
               <TabsContent value="assessment" className="py-4">
                 <div>
+                  <Alert className="mb-4 bg-green-50 border-green-200">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertTitle className="text-green-800">Make Your Diagnosis</AlertTitle>
+                    <AlertDescription className="text-green-700">
+                      Based on the information collected from the client and clinical examination results, 
+                      record your diagnosis here. This is critical for determining the treatment plan.
+                    </AlertDescription>
+                  </Alert>
                   <div className="flex items-center gap-2 mb-2">
                     <ClipboardEdit className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700">
@@ -442,7 +548,7 @@ const SoapNotes = () => {
                   </div>
                   <Textarea
                     placeholder="Enter diagnosis or assessment of the condition..."
-                    className="min-h-[300px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
+                    className="min-h-[400px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-indigo-200 bg-indigo-50"
                     value={localSoapData.assessment}
                     onChange={(e: InputChangeEvent) =>
                       handleInputChange("assessment", e.target.value)
@@ -451,6 +557,7 @@ const SoapNotes = () => {
                 </div>
               </TabsContent>
 
+              {/* Tab Plan */}
               {/* <TabsContent value="plan" className="py-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
@@ -461,7 +568,7 @@ const SoapNotes = () => {
                   </div>
                   <Textarea
                     placeholder="Enter treatment plan, medications, follow-up instructions..."
-                    className="min-h-[300px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
+                    className="min-h-[400px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
                     value={localSoapData.plan}
                     onChange={(e: InputChangeEvent) =>
                       handleInputChange("plan", e.target.value)
@@ -478,8 +585,18 @@ const SoapNotes = () => {
                 className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
               >
                 <Save className="h-4 w-4 mr-2" />
-                Save Notes
+                Save Diagnosis
               </Button>
+
+              <Button
+                variant="outline"
+                onClick={handleSave}
+                className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Labs
+              </Button>
+
               <Button
                 onClick={handleProceedToTreatment}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"

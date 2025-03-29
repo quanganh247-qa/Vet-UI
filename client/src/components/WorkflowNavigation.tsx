@@ -12,28 +12,45 @@ import {
   UserCircle,
   Receipt,
   FlaskConical,
-  CalendarClock
+  CalendarClock,
+  ClipboardList
 } from 'lucide-react';
 
-type WorkflowNavigationProps = {
+interface WorkflowNavigationProps {
   appointmentId?: string;
   petId?: string;
-  currentStep: 'check-in' | 'examination' | 'soap' | 'diagnostic' | 'treatment' | 'prescription' | 'follow-up';
-};
+  currentStep: 'check-in' | 'examination' | 'soap' | 'diagnostic' | 'treatment' | 'prescription' | 'follow-up' | 'patient-details' | 'pending-lab';
+  isNurseView?: boolean;
+}
 
-const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, petId, currentStep }) => {
+const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, petId, currentStep, isNurseView = false }) => {
   const [, navigate] = useLocation();
 
-  // Định nghĩa các bước trong quy trình khám bệnh theo thứ tự mới
-  const workflowSteps = [
+  // Nurse workflow - only check-in step
+  const nurseWorkflowSteps = [
     { id: 'check-in', label: 'Check-in', icon: UserRound, path: `/appointment/${appointmentId}/check-in` },
-    { id: 'examination', label: 'Examination', icon: Stethoscope, path: `/appointment/${appointmentId}` },
+  ];
+
+  // Doctor workflow - starts with patient-management and continues with examination
+  const doctorWorkflowSteps = [
+    { id: 'patient-details', label: 'Patient Info', icon: ClipboardList, path: `/appointment/${appointmentId}` },
+    { id: 'examination', label: 'Examination', icon: Stethoscope, path: `/appointment/${appointmentId}/examination` },
     { id: 'soap', label: 'SOAP', icon: FileText, path: `/appointment/${appointmentId}/soap` },
     { id: 'diagnostic', label: 'Lab/Imaging', icon: FlaskConical, path: `/appointment/${appointmentId}/lab-management` },
     { id: 'treatment', label: 'Treatment', icon: Tablets, path: `/appointment/${appointmentId}/patient/${petId}/treatment` },
     { id: 'prescription', label: 'Prescription', icon: Receipt, path: `/appointment/${appointmentId}/prescription` },
     { id: 'follow-up', label: 'Follow-up', icon: CalendarClock, path: `/appointment/${appointmentId}/follow-up` },
   ];
+
+  // Choose workflow based on role
+  const workflowSteps = isNurseView ? nurseWorkflowSteps : doctorWorkflowSteps;
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
+
+  const activeIndex = workflowSteps.findIndex(step => step.id === currentStep);
+  const progressPercentage = activeIndex !== -1 ? ((activeIndex + 1) / workflowSteps.length) * 100 : 0;
 
   return (
     <div className="workflow-navigation bg-white shadow-sm rounded-lg border border-gray-200 p-2 mb-4">
@@ -51,7 +68,7 @@ const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, 
                   variant={isCurrent ? "default" : "outline"}
                   size="sm"
                   className={`flex items-center gap-1 ${isCurrent ? 'bg-indigo-600 text-white' : 'text-gray-700'}`}
-                  onClick={() => navigate(step.path)}
+                  onClick={() => handleNavigation(step.path)}
                   disabled={!appointmentId && (step.id !== 'patient-details' && step.id !== 'records')}
                 >
                   <IconComponent className="h-3.5 w-3.5" />
@@ -65,6 +82,10 @@ const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, 
             );
           })}
         </div>
+      </div>
+      {/* Progress Indicator */}
+      <div className="w-full bg-gray-200 h-2 rounded-full mt-4">
+        <div className="bg-indigo-600 h-2 rounded-full transition-all duration-300" style={{ width: `${progressPercentage}%` }}></div>
       </div>
     </div>
   );

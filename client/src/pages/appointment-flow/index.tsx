@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
-
 import { Appointment, QueueItem, Room, Staff } from '@/types';
 import { getAllAppointments } from '@/services/appointment-services';
 import { getRooms } from '@/services/room-services';
@@ -10,8 +9,7 @@ import { queryClient } from '@/lib/queryClient';
 import EnhancedAppointmentFlowboard from '@/components/appointment/EnhancedAppointmentFlowboard';
 import { useListAppointmentsQueue } from '@/hooks/use-appointment';
 import { Link } from 'wouter';
-import { format } from 'date-fns';
-import { Button } from '@/components/ui/button';
+
 
 // Utility function to invalidate related queries
 const invalidateRelatedQueries = async (patterns: string[]) => {
@@ -53,12 +51,11 @@ const AppointmentFlow = () => {
   
   
   const appointments = appointmentsData?.data || [];
-
+  
   const rooms = roomsData?.data || [];
   
   // Generate queue data based on appointments
   const { data: queueData } = useListAppointmentsQueue();
-  console.log("Queue Data:", queueData);
 
   // Mock staff data until connected to backend
   const staff = [
@@ -141,7 +138,7 @@ const AppointmentFlow = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="w-full mx-auto bg-white rounded-lg shadow-md overflow-hidden">
       {/* Back button and page title */}
       <div className="bg-gradient-to-r from-indigo-500 to-indigo-700 px-6 py-3 flex items-center">
         <Link href="/dashboard" className="text-white flex items-center hover:bg-indigo-700/30 rounded-md px-2 py-1 transition-colors">
@@ -152,55 +149,10 @@ const AppointmentFlow = () => {
 
       </div>
       
-      {/* Date selector and controls */}
-      {/* <div className="bg-gradient-to-b from-indigo-50 to-white pt-4 pb-3 px-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex items-center divide-x">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 rounded-none rounded-l-lg"
-                onClick={goToPreviousDay}
-              >
-                <ArrowLeft className="h-4 w-4 text-gray-500" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 px-3 rounded-none"
-                onClick={goToToday}
-              >
-                <Calendar className="h-4 w-4 mr-1.5 text-indigo-600" />
-                <span>Today</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 rounded-none rounded-r-lg"
-                onClick={goToNextDay}
-              >
-                <ArrowLeft className="h-4 w-4 text-gray-500 transform rotate-180" />
-              </Button>
-            </div>
-            
-            <h2 className="text-lg font-semibold text-gray-800">
-              {formatDate(selectedDate)}
-            </h2>
-          </div>
-          
-          <div>
-            <div className="text-sm text-gray-600">
-              <span className="font-medium">{appointments.length}</span> appointments | 
-              <span className="font-medium ml-1">{queueData?.length || 0}</span> in queue
-            </div>
-          </div>
-        </div>
-      </div> */}
-
+      {/* Flowboard takes up full width */}
       <EnhancedAppointmentFlowboard
         appointments={appointments}
-        doctors={staff.filter(s => s.role === 'Veterinarian').map(s => ({
+        doctors={staff.map(s => ({
           doctor_id: s.id,
           doctor_name: s.name,
           doctor_phone: '',

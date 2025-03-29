@@ -52,8 +52,6 @@ export const checkInAppointment = async (
 
     // Debug the URL that will be constructed
     const url = `/api/v1/appointment/check-in/${id}`;
-    console.log("API URL:", url);
-    console.log("Parameters:", { room_id, priority });
 
     const response = await axios.post(
       `/api/v1/appointment/check-in/${id}`,
@@ -119,44 +117,96 @@ export const getAppointmentById = async (id: number) => {
 };
 
 export const getAppointmentsQueue = async () => {
-    try {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-            throw new Error('No access token found');
-        }
-
-        const response = await axios.get(`/api/v1/appointments/queue`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        console.log("Appointments Queue Response:", response.data);
-
-        // Check if response.data has a data property
-        if (response.data && response.data.data) {
-            return response.data.data; // Return the data property
-        }
-
-        // If there's no data property, return the response.data itself
-        return response.data || [];
-    } catch (error) {
-        console.error("Error fetching appointments queue:", error);
-        return []; // Return empty array on error
-    }
-};
-
-export const getHistoryAppointments= async (pet_id: number) => {
+  try {
     const token = localStorage.getItem('access_token');
     if (!token) {
-        throw new Error('No access token found');
+      throw new Error('No access token found');
     }
 
-    const response = await axios.get(`/api/v1/appointments/pet/${pet_id}/history`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+    const response = await axios.get(`/api/v1/appointments/queue`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
-    return response.data;
+    console.log("Appointments Queue Response:", response.data);
+
+    // Check if response.data has a data property
+    if (response.data && response.data.data) {
+      return response.data.data; // Return the data property
+    }
+
+    // If there's no data property, return the response.data itself
+    return response.data || [];
+  } catch (error) {
+    console.error("Error fetching appointments queue:", error);
+    return []; // Return empty array on error
+  }
 };
+
+export const getHistoryAppointments = async (pet_id: number) => {
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    throw new Error('No access token found');
+  }
+
+  const response = await axios.get(`/api/v1/appointments/pet/${pet_id}/history`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.data;
+};
+
+
+export const updateAppointmentById = async (id: number, updateData: {
+  payment_status?: string;
+  state_id?: number;
+  room_id?: number;
+  notes?: string;
+  appointment_reason?: string;
+  reminder_send?: boolean;
+  arrival_time?: string;
+  priority?: string;
+}) => {
+  try {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('No access token found');
+    }
+
+    const response = await axios.put(
+      `/api/v1/appointment/${id}`,
+      updateData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error updating appointment:", error);
+    throw error;
+  }
+};
+
+
+export const addAppointmentToQueue = async (appointment: any) => {
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    throw new Error('No access token found');
+  }
+
+  const response = await axios.post(`/api/v1/appointments/queue`, appointment, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.data;
+
+}

@@ -287,3 +287,26 @@ export interface GenerateQRData {
 	QRCode: string; // Dữ liệu QR code
 	QRDataURL: string; // Dữ liệu QR code dạng base64
 }
+export interface ObjectiveData {
+  vital_signs: VitalSigns;
+  systems: Systems;
+}
+
+export interface VitalSigns {
+  weight: string;
+  temperature: string;
+  heart_rate: string;
+  respiratory_rate: string;
+  general_notes: string;
+}
+
+export interface Systems {
+  cardiovascular: string;
+  respiratory: string;
+  gastrointestinal: string;
+  musculoskeletal: string;
+  neurological: string;
+  skin: string;
+  eyes: string;
+  ears: string;
+}

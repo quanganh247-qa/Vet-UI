@@ -5,12 +5,14 @@ export const createSOAP = async (appointmentID: string, subjective: string) => {
   if (!token) {
     throw new Error("No access token found");
   }
-  const soap = {
-    subjective,
-  };
   const response = await axios.post(
     `/api/v1/appointment/${appointmentID}/soap`,
-    { soap },
+    {
+      subjective,
+      objective: "", // Add defaults or pass these as parameters
+      assessment: "",
+      plan: "",
+    },
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -36,25 +38,32 @@ export const getSOAP = async (appointmentID: string) => {
   return response.data;
 };
 
-export const updateSOAP = async (appointmentID: string, subjective: string, objective: string, assessment: string) => {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    throw new Error("No access token found");
-  }
-  const soap = {
-    subjective,
-    objective,
-    assessment,
-    // plan,
-  };
-  const response = await axios.put(
-    `/api/v1/appointment/${appointmentID}/soap`,
-    { soap },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+export const updateSOAP = async (appointmentID: string, requestBody: any) => {
+  try {
+    // Double-check requestBody
+    if (!requestBody) {
+      console.error("Request body is null");
+      throw new Error("Request body không thể trống");
     }
-  );
-  return response.data;
+
+    const response = await fetch(`/api/v1/appointment/${appointmentID}/soap`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("API Error Response:", errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating SOAP note:', error);
+    throw error;
+  }
 };

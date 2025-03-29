@@ -61,7 +61,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
   };
 
   const mainLinks = [
-    { name: "Dashboard", path: "/", icon: <Home className="h-5 w-5" /> },
+    { name: "Dashboard", path: "/dashboard", icon: <Home className="h-5 w-5" /> },
     { name: "Appointments", path: "/appointments", icon: <Calendar className="h-5 w-5" /> },
     { name: "Flowboard", path: "/appointment-flow", icon: <Activity className="h-5 w-5" /> },
     { name: "Patients", path: "/patients", icon: <PawPrint className="h-5 w-5" /> },
