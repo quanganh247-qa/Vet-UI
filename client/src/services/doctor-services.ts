@@ -12,3 +12,17 @@ export const getDoctorById = async (doctor_id: number) => {
     });
     return response.data;
 };
+
+
+export const getDoctors = async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        throw new Error('No access token found');
+    }
+    const response = await axios.get('/api/v1/doctors', {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+    return response.data;
+};

@@ -188,6 +188,7 @@ export interface TreatmentPhase {
 
 export interface Treatment {
   id: number;
+  name: string;
   type: string;
   status: string;
   start_date: string;
@@ -261,8 +262,16 @@ export interface ErrorResponse {
   details?: string;
 }
 
-
-
+export interface QuickLinkRequest {
+  bank_id: string | "mbbank";
+  account_no: string | "220220222419";
+  template: string | "print";
+  description: string | "Thank you for your payment";
+  amount: number | 0;
+  account_name: string | "DINH HUU QUANG ANH";
+  order_id: number | 0;
+  test_order_id: number | 0;
+}
 
 export interface QRCodeInformation {
   accountNo: string | "220220222419";
@@ -309,4 +318,106 @@ export interface Systems {
   skin: string;
   eyes: string;
   ears: string;
+}
+
+
+
+export interface TestCategory {
+  id: string;
+  name: string;
+  icon_name: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  tests: Test[];
+}
+
+export interface Test {
+  id: string;
+  
+  name: string;
+  description: string;
+  price: string;
+  turnaround_time: string;
+}
+
+export interface CreateInvoiceRequest {
+	invoice_number: string;
+	amount: number;
+	date: string;
+	due_date: string;
+	status: string;
+	description: string;
+	customer_name: string;
+	items: InvoiceItem[];
+}
+
+export interface InvoiceItem {
+	name: string;
+	price: number;
+	quantity: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface CreateTreatmentPhaseRequest {
+  phase_name: string;
+  description: string;
+  start_date: string;
+  status: string;
+}
+
+export interface TreatmentPhase {
+  id: number;
+  treatment_id: number;
+  phase_name: string;
+  description: string;
+  status: string;
+  start_date: string;
+  created_at: string;
+}
+
+
+export interface AssignMedicineRequest {
+  medicine_id: number;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  notes: string;
+}
+
+export interface PhaseMedicine {
+  phase_id: number;
+  medicine_id: number;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  notes: string;
+  created_at: string;
+  quantity: number;
+  is_received: boolean;
+}
+
+export interface CreateTreatmentRequest {
+  pet_id: number;
+  doctor_id: number;
+  name: string;
+  type: string;
+  diseases: string;
+  start_date: string;
+  status: string;
+  notes: string;
+}
+
+export interface CreateTreatmentPhaseRequest {
+  phase_name: string;
+  description: string;
+  start_date: string;
+  status: string;
 }

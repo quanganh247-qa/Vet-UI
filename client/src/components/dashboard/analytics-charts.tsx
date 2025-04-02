@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
 import {
   BarChart,
   Bar,
@@ -18,6 +17,8 @@ import {
   LineChart,
   Line,
 } from "recharts";
+import { useAppointmentAnalytics } from "@/hooks/use-appointment";
+import { TimeRange, useDateRange } from "@/hooks/use-date-range";
 
 const AppointmentTypeChart = ({ data }: { data: Record<string, number> }) => {
   const chartData = Object.entries(data || {}).map(([name, value]) => ({
@@ -101,10 +102,11 @@ const DailyCheckinsChart = ({
 };
 
 const AnalyticsCharts = () => {
-  const [timeRange, setTimeRange] = useState("week");
+  const { timeRange, setTimeRange, dateRange } = useDateRange();
 
-  const { data: analyticsData, isLoading } = useQuery({
-    queryKey: ["/api/analytics/date/today"],
+  const { data: analyticsData, isLoading } = useAppointmentAnalytics({
+    start_date: dateRange.startDate,
+    end_date: dateRange.endDate,
   });
 
   return (
@@ -114,7 +116,7 @@ const AnalyticsCharts = () => {
           Analytics
         </h2>
         <div>
-          <Select defaultValue="week" onValueChange={setTimeRange}>
+          <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
             <SelectTrigger className="text-sm border-0 text-gray-500 focus:outline-none bg-transparent h-8 w-32">
               <SelectValue placeholder="This Week" />
             </SelectTrigger>

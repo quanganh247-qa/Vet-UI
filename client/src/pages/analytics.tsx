@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Input } from "@/components/ui/input";
 import {
   LineChart,
@@ -29,23 +29,39 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { useAppointmentAnalytics, useListAppointments } from "@/hooks/use-appointment";
+import { useDateRange, TimeRange } from "@/hooks/use-date-range";
+
+interface Appointment {
+  id: string;
+  status: 'scheduled' | 'in_progress' | 'completed' | 'canceled';
+  // Add other appointment fields as needed
+}
 
 const Analytics = () => {
-  const [dateRange, setDateRange] = useState("week");
+  const { timeRange, setTimeRange, dateRange } = useDateRange();
   const [selectedDate, setSelectedDate] = useState(new Date());
   
-  const { data: analyticsData, isLoading } = useQuery({
-    queryKey: ['/api/analytics/date/today'],
+  // Update selectedDate when timeRange changes
+  useEffect(() => {
+    if (dateRange.startDate) {
+      setSelectedDate(parseISO(dateRange.startDate));
+    }
+  }, [dateRange.startDate]);
+  
+  const { data: analyticsData, isLoading } = useAppointmentAnalytics({
+    start_date: dateRange.startDate,
+    end_date: dateRange.endDate,
   });
   
-  const { data: appointmentsData, isLoading: appointmentsLoading } = useQuery({
-    queryKey: ['/api/appointments/date/today'],
-  });
+  const { data: appointmentsData, isLoading: appointmentsLoading } = useListAppointments(selectedDate, "true");
   
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const date = new Date(e.target.value);
     if (!isNaN(date.getTime())) {
       setSelectedDate(date);
+      // Update timeRange to 'custom' when manually selecting a date
+      setTimeRange('custom');
     }
   };
   
@@ -121,9 +137,9 @@ const Analytics = () => {
                 <Skeleton className="h-10 w-20 mx-auto mt-2" />
               ) : (
                 <p className="text-3xl font-display font-semibold text-[#12263F] mt-2">
-                  {appointmentsData ? 
-                    Math.round((appointmentsData.filter((a: any) => a.status === 'completed').length / 
-                      (appointmentsData.length || 1)) * 100) : 0}%
+                  {appointmentsData?.data?.length > 0 ? 
+                    Math.round((appointmentsData.data.filter((a: Appointment) => a.status === 'completed').length / 
+                      appointmentsData.data.length) * 100) : 0}%
                 </p>
               )}
               <p className="text-xs text-green-500 mt-2">
@@ -183,15 +199,16 @@ const Analytics = () => {
             Revenue
           </TabsTrigger>
           <div className="ml-auto flex items-center pr-4">
-            <Select defaultValue="week" onValueChange={setDateRange}>
+            <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
               <SelectTrigger className="text-sm border-0 text-gray-500 focus:outline-none bg-transparent h-8 w-32">
                 <SelectValue placeholder="This Week" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="last-week">Last Week</SelectItem>
                 <SelectItem value="month">This Month</SelectItem>
-                <SelectItem value="quarter">This Quarter</SelectItem>
-                <SelectItem value="year">This Year</SelectItem>
+                <SelectItem value="last-month">Last Month</SelectItem>
+                <SelectItem value="custom">Custom Date</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -287,10 +304,10 @@ const Analytics = () => {
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart 
                       data={[
-                        { name: 'Scheduled', value: appointmentsData?.filter((a: any) => a.status === 'scheduled').length || 0 },
-                        { name: 'In Progress', value: appointmentsData?.filter((a: any) => a.status === 'in_progress').length || 0 },
-                        { name: 'Completed', value: appointmentsData?.filter((a: any) => a.status === 'completed').length || 0 },
-                        { name: 'Canceled', value: appointmentsData?.filter((a: any) => a.status === 'canceled').length || 0 }
+                        { name: 'Scheduled', value: appointmentsData.filter((a: Appointment)   => a.status === 'scheduled').length },
+                        { name: 'In Progress', value: appointmentsData.filter((a: Appointment) => a.status === 'in_progress').length },
+                        { name: 'Completed', value: appointmentsData.filter((a: Appointment) => a.status === 'completed').length },
+                        { name: 'Canceled', value: appointmentsData.filter((a: Appointment) => a.status === 'canceled').length }
                       ]}
                     >
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />

@@ -47,7 +47,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { usePatientData } from '@/hooks/use-pet';
 import { useAppointmentData } from '@/hooks/use-appointment';
-import { useCreateTest } from '@/hooks/use-test';
+import { useCreateTest, useListTests, useCreateTestOrder } from '@/hooks/use-test';
 import WorkflowNavigation from "@/components/WorkflowNavigation";
 import { cn } from "@/lib/utils";
 
@@ -80,142 +80,57 @@ const LabManagement: React.FC = () => {
   const { data: appointment, isLoading: isAppointmentLoading } = useAppointmentData(appointmentId);
   const { data: patient, isLoading: isPatientLoading } = usePatientData(appointment?.pet?.pet_id);
   
-  // Create test mutation
-  const createTest = useCreateTest();
+  // Fetch test categories from API
+  const { data: apiTestCategories, isLoading: isTestCategoriesLoading } = useListTests();
   
-  // Test categories with their respective tests
-  const testCategories: TestCategory[] = [
-    {
-      id: 'blood',
-      name: 'Blood Tests',
-      icon: <Beaker className="h-5 w-5 text-red-500" />,
-      description: 'Check blood count, liver and kidney enzymes',
-      tests: [
-        { 
-          id: 'cbc', 
-          name: 'Complete Blood Count (CBC)', 
-          description: 'Measures red blood cells, white blood cells, and platelets',
-          price: '$45',
-          turnaroundTime: '1-2 hours'
-        },
-        { 
-          id: 'chemistry', 
-          name: 'Chemistry Panel', 
-          description: 'Evaluates organ function, particularly liver and kidneys',
-          price: '$65',
-          turnaroundTime: '1-2 hours'
-        },
-        { 
-          id: 'electrolytes', 
-          name: 'Electrolytes', 
-          description: 'Measures sodium, potassium, chloride, and bicarbonate levels',
-          price: '$35',
-          turnaroundTime: '1 hour'
-        },
-        { 
-          id: 'thyroid', 
-          name: 'Thyroid Function', 
-          description: 'Evaluates thyroid hormone levels',
-          price: '$55',
-          turnaroundTime: '24 hours'
-        }
-      ]
-    },
-    {
-      id: 'stool-urine',
-      name: 'Stool & Urine Tests',
-      icon: <Microscope className="h-5 w-5 text-amber-500" />,
-      description: 'Look for parasites and infections',
-      tests: [
-        { 
-          id: 'urinalysis', 
-          name: 'Urinalysis', 
-          description: 'Evaluates urine for signs of infection, inflammation, and other abnormalities',
-          price: '$35',
-          turnaroundTime: '1 hour'
-        },
-        { 
-          id: 'fecal', 
-          name: 'Fecal Analysis', 
-          description: 'Checks for intestinal parasites and digestive abnormalities',
-          price: '$40',
-          turnaroundTime: '24 hours'
-        },
-        { 
-          id: 'urine-culture', 
-          name: 'Urine Culture', 
-          description: 'Identifies specific bacteria causing urinary tract infections',
-          price: '$50',
-          turnaroundTime: '48-72 hours'
-        }
-      ]
-    },
-    {
-      id: 'imaging',
-      name: 'Ultrasound/X-ray',
-      icon: <ScanLine className="h-5 w-5 text-blue-500" />,
-      description: 'Check internal organs, broken bones, intestinal obstruction, bladder stones',
-      tests: [
-        { 
-          id: 'xray', 
-          name: 'X-ray', 
-          description: 'Evaluates bones, lungs, and abdominal structures',
-          price: '$95',
-          turnaroundTime: '30 minutes'
-        },
-        { 
-          id: 'ultrasound', 
-          name: 'Ultrasound', 
-          description: 'Examines soft tissue structures like organs and masses',
-          price: '$125',
-          turnaroundTime: '45 minutes'
-        },
-        { 
-          id: 'dental-xray', 
-          name: 'Dental X-ray', 
-          description: 'Evaluates dental health and tooth roots',
-          price: '$85',
-          turnaroundTime: '30 minutes'
-        }
-      ]
-    },
-    {
-      id: 'quicktest',
-      name: 'Quick Tests',
-      icon: <Tablet className="h-5 w-5 text-green-500" />,
-      description: 'Disease-specific rapid tests (Parvo, FIP, Leptospira, etc)',
-      tests: [
-        { 
-          id: 'parvo', 
-          name: 'Parvovirus Test (Dogs)', 
-          description: 'Detects canine parvovirus infection',
-          price: '$45',
-          turnaroundTime: '10-15 minutes'
-        },
-        { 
-          id: 'fip', 
-          name: 'FIP Test (Cats)', 
-          description: 'Screens for feline infectious peritonitis',
-          price: '$55',
-          turnaroundTime: '15-20 minutes'
-        },
-        { 
-          id: 'leptospira', 
-          name: 'Leptospirosis Test', 
-          description: 'Detects leptospira infection',
-          price: '$50',
-          turnaroundTime: '15 minutes'
-        },
-        { 
-          id: 'heartworm', 
-          name: 'Heartworm Test', 
-          description: 'Screens for heartworm infection',
-          price: '$35',
-          turnaroundTime: '10 minutes'
-        }
-      ]
-    }
-  ];
+  // Create test mutations
+  const createTest = useCreateTest();
+  const createTestOrders = useCreateTestOrder();
+  
+  // Map API test categories to UI format with icons
+  const testCategories = React.useMemo(() => {
+    if (!apiTestCategories) return [];
+
+    console.log("apiTestCategories", apiTestCategories);
+    
+    return apiTestCategories.map((category: any) => {
+      // Map icon_name to react component
+      let icon;
+      switch (category.icon_name) {
+        case 'blood':
+          icon = <Beaker className="h-5 w-5 text-red-500" />;
+          break;
+        case 'stool-urine':
+          icon = <Microscope className="h-5 w-5 text-amber-500" />;
+          break;
+        case 'imaging':
+          icon = <ScanLine className="h-5 w-5 text-blue-500" />;
+          break;
+        case 'quicktest':
+          icon = <Tablet className="h-5 w-5 text-green-500" />;
+          break;
+        default:
+          icon = <FlaskConical className="h-5 w-5 text-indigo-500" />;
+      }
+      
+      // Map test fields to match UI component expectations
+      const mappedTests = category.tests.map((test: any) => ({
+        id: test.id,
+        name: test.name,
+        description: test.description,
+        price: test.price,
+        turnaroundTime: test.turnaround_time
+      }));
+      
+      return {
+        id: category.id,
+        name: category.name,
+        icon,
+        description: category.description,
+        tests: mappedTests
+      };
+    });
+  }, [apiTestCategories]);
   
   // Count selected tests
   const selectedTestsCount = Object.values(selectedTests).filter(Boolean).length;
@@ -224,8 +139,8 @@ const LabManagement: React.FC = () => {
   const getSelectedTestObjects = () => {
     const result: Test[] = [];
     
-    testCategories.forEach(category => {
-      category.tests.forEach(test => {
+    testCategories.forEach((category: any) => {
+      category.tests.forEach((test: any) => {
         if (selectedTests[test.id]) {
           result.push(test);
         }
@@ -235,12 +150,35 @@ const LabManagement: React.FC = () => {
     return result;
   };
   
-  // Get total price
   const getTotalPrice = () => {
-    return getSelectedTestObjects().reduce((total, test) => {
-      const price = test.price ? parseFloat(test.price.replace('$', '')) : 0;
-      return total + price;
-    }, 0).toFixed(2);
+    // Hàm tính tổng tiền
+    const calculateTotal = () => {
+      return getSelectedTestObjects().reduce((total, test) => {
+        if (!test.price) return total;
+        
+        // Chuyển đổi giá trị sang string và loại bỏ tất cả ký tự không phải số
+        const cleanedPrice = String(test.price).replace(/\D/g, '');
+        
+        // Chuyển đổi sang number và cộng vào tổng
+        return total + parseInt(cleanedPrice || '0', 10);
+      }, 0);
+    };
+  
+    // Hàm định dạng hiển thị VND
+    const formatVND = (amount: number) => {
+      return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+        currencyDisplay: 'symbol',
+        minimumFractionDigits: 0
+      }).format(amount);
+    };
+  
+    const total = calculateTotal();
+    return {
+      raw: total,          // Giá trị số: 150000
+      formatted: formatVND(total) // Định dạng: "150.000 ₫"
+    };
   };
   
   // Toggle test selection
@@ -253,7 +191,7 @@ const LabManagement: React.FC = () => {
   
   // Order the selected tests
   const orderTests = async () => {
-    if (!appointmentId || !appointment?.patient_id || !appointment?.doctor_id) {
+    if (!appointmentId) {
       toast({
         title: "Error",
         description: "Missing required information to order tests",
@@ -276,14 +214,19 @@ const LabManagement: React.FC = () => {
       const petId = parseInt(appointment.patient_id);
       const doctorId = parseInt(appointment.doctor_id);
       
-      // For each selected test, create a test order
-      for (const test of selectedTestObjects) {
-        await createTest.mutateAsync({
-          petID: petId,
-          doctorID: doctorId,
-          testType: test.id
-        });
+      // Get all selected test IDs
+      const testIDs = selectedTestObjects.map(test => test.id);
+
+      const payload = {
+        appointmentID: parseInt(appointmentId),
+        testIDs: testIDs.map(Number),
+        notes: notes
       }
+
+      // console.log("payload", payload);
+      
+      // Create all test orders in a single batch request
+      await createTestOrders.mutateAsync(payload);
       
       toast({
         title: "Tests ordered successfully",
@@ -293,7 +236,7 @@ const LabManagement: React.FC = () => {
       
       // Close dialog and navigate back
       setShowConfirmDialog(false);
-      navigate(`/appointment/${appointmentId}`);
+      navigate(`/appointment-flow`);
     } catch (error) {
       console.error('Error ordering tests:', error);
       toast({
@@ -308,14 +251,50 @@ const LabManagement: React.FC = () => {
     navigate(`/appointment/${appointmentId}`);
   };
   
-  if (isAppointmentLoading || isPatientLoading || !appointment || !patient) {
+  if (isAppointmentLoading || isPatientLoading || isTestCategoriesLoading || !appointment || !patient) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-12 h-12 border-4 border-t-indigo-600 border-b-indigo-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
           <p className="text-indigo-600 font-medium">
-            Loading patient details...
+            Loading data...
           </p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (testCategories.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
+        {/* Header with gradient background */}
+        <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
+              onClick={handleBackToAppointment}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              <span className="text-sm font-medium">Back to Appointment</span>
+            </Button>
+            <h1 className="text-white font-semibold text-lg">Laboratory Tests</h1>
+          </div>
+        </div>
+        <div className="p-8 text-center">
+          <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">No Test Categories Available</h2>
+          <p className="text-gray-600">
+            There are no laboratory test categories configured in the system.
+            Please contact your administrator to set up test categories.
+          </p>
+          <Button 
+            className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white"
+            onClick={handleBackToAppointment}
+          >
+            Return to Appointment
+          </Button>
         </div>
       </div>
     );
@@ -470,7 +449,7 @@ const LabManagement: React.FC = () => {
               <Tabs defaultValue={testCategories[0].id} className="w-full">
                 <div className="px-6 py-3 border-b border-gray-200 bg-gray-50">
                   <TabsList className="inline-flex p-1 bg-gray-100 rounded-md">
-                    {testCategories.map(category => (
+                    {testCategories.map((category: any) => (
                       <TabsTrigger 
                         key={category.id} 
                         value={category.id}
@@ -484,7 +463,7 @@ const LabManagement: React.FC = () => {
                 </div>
                 
                 <div className="p-6">
-                  {testCategories.map(category => (
+                  {testCategories.map((category: any) => (
                     <TabsContent key={category.id} value={category.id} className="mt-0 pt-3">
                       <div className="mb-4">
                         <h3 className="text-lg font-semibold text-gray-800 mb-1 flex items-center gap-2">
@@ -495,7 +474,7 @@ const LabManagement: React.FC = () => {
                       </div>
                       
                       <div className="space-y-4">
-                        {category.tests.map(test => (
+                        {category.tests.map((test: any) => (
                           <div 
                             key={test.id} 
                             className={cn(
@@ -522,11 +501,11 @@ const LabManagement: React.FC = () => {
                                 </Label>
                                 <p className="text-sm text-gray-500 mt-1">{test.description}</p>
                                 <div className="flex mt-3 items-center gap-4">
-                                  {test.price && (
+                                  {/* {test.price && (
                                     <span className="text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-md font-medium">
                                       {test.price}
                                     </span>
-                                  )}
+                                  )} */}
                                   {test.turnaroundTime && (
                                     <span className="text-sm text-gray-600 flex items-center">
                                       <Clock className="h-3 w-3 mr-1 text-indigo-500" />
@@ -560,10 +539,10 @@ const LabManagement: React.FC = () => {
               <CardContent className="pt-6">
                 {selectedTestsCount > 0 ? (
                   <>
-                    <div className="mb-6 p-3 bg-indigo-50 border border-indigo-100 rounded-md text-center">
+                    {/* <div className="mb-6 p-3 bg-indigo-50 border border-indigo-100 rounded-md text-center">
                       <div className="text-sm text-indigo-600">Total Estimated Cost</div>
                       <div className="text-2xl font-bold text-indigo-700 mt-1">${getTotalPrice()}</div>
-                    </div>
+                    </div> */}
                     
                     <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                       {getSelectedTestObjects().map(test => (
@@ -591,7 +570,7 @@ const LabManagement: React.FC = () => {
                     </div>
                     
                     {/* Priority selection */}
-                    <div className="mt-6 border-t border-gray-100 pt-4">
+                    {/* <div className="mt-6 border-t border-gray-100 pt-4">
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Processing Priority</h4>
                       <RadioGroup value={priority} onValueChange={setPriority} className="gap-2">
                         <div className="flex items-center space-x-2">
@@ -603,7 +582,7 @@ const LabManagement: React.FC = () => {
                           <Label htmlFor="urgent" className="text-sm">Urgent (additional fee may apply)</Label>
                         </div>
                       </RadioGroup>
-                    </div>
+                    </div> */}
                     
                     {/* Notes section */}
                     <div className="mt-4">
@@ -634,13 +613,6 @@ const LabManagement: React.FC = () => {
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Place Test Order
                 </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full text-gray-600 border-gray-300"
-                  onClick={handleBackToAppointment}
-                >
-                  Save Draft
-                </Button>
               </CardFooter>
             </Card>
           </div>
@@ -649,60 +621,75 @@ const LabManagement: React.FC = () => {
       
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl">Confirm Test Order</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-md p-0 overflow-hidden bg-white">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle className="text-xl font-semibold">Confirm Test Order</DialogTitle>
+            <DialogDescription className="text-gray-600">
               You are about to order {selectedTestsCount} test{selectedTestsCount !== 1 ? 's' : ''} for {patient.name}.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <div className="flex justify-between items-center mb-2">
-                <h4 className="font-medium text-gray-700">Selected Tests:</h4>
-                <Badge className="bg-blue-100 text-blue-700">Total: ${getTotalPrice()}</Badge>
-              </div>
-              <div className="max-h-[200px] overflow-y-auto border border-gray-200 rounded-md p-2">
-                <ul className="divide-y divide-gray-100">
-                  {getSelectedTestObjects().map(test => (
-                    <li key={test.id} className="py-2 px-1 flex justify-between items-center">
-                      <div className="flex-1">
-                        <span className="text-sm font-medium">{test.name}</span>
-                        <div className="flex gap-3 mt-1">
-                          <span className="text-xs text-gray-500">{test.price}</span>
-                          <span className="text-xs text-gray-500">{test.turnaroundTime}</span>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+          <div className="px-6">
+            <div className="mb-2 flex justify-between items-center">
+              <h4 className="text-base font-medium text-gray-700">Selected Tests:</h4>
+              <Badge className="bg-blue-100 text-blue-700 text-xs">
+                Total: {getTotalPrice().formatted} VND
+              </Badge>
             </div>
             
-            <Alert className="bg-amber-50 border-amber-200">
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
-              <AlertTitle className="text-amber-800 text-sm font-medium">Important Information</AlertTitle>
-              <AlertDescription className="text-amber-700 text-xs">
-                These tests will be sent to the laboratory for processing. Results will appear in the patient's record once completed.
-                {priority === 'urgent' && ' Urgent processing has been requested and may incur additional fees.'}
-              </AlertDescription>
-            </Alert>
+            <div className="max-h-[300px] overflow-y-auto border border-gray-200 rounded-lg">
+              <ul className="divide-y divide-gray-100">
+                {getSelectedTestObjects().map(test => (
+                  <li key={test.id} className="p-3">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-gray-800">{test.name}</span>
+                      <div className="flex items-center gap-4 mt-1">
+                        {test.price && (
+                          <span className="text-sm text-gray-600">{test.price}</span>
+                        )}
+                        {test.turnaroundTime && (
+                          <span className="text-sm text-gray-600 flex items-center">
+                            <Clock className="h-3 w-3 mr-1 text-gray-500" />
+                            {test.turnaroundTime}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div className="my-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
+              <div className="flex items-start">
+                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="ml-3">
+                  <h3 className="font-medium text-amber-800">Important Information</h3>
+                  <p className="text-sm text-amber-700 mt-1">
+                    These tests will be sent to the laboratory for processing.
+                    Results will appear in the patient's record once completed.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
           
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
-              <X className="h-4 w-4 mr-1" />
-              Cancel
-            </Button>
-            <Button 
-              onClick={orderTests} 
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+          <div className="flex border-t border-gray-100 mt-2">
+            <button 
+              onClick={() => setShowConfirmDialog(false)}
+              className="flex-1 py-4 px-5 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-center text-gray-700 font-medium"
             >
-              <Check className="h-4 w-4 mr-1" />
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </button>
+            <button 
+              onClick={orderTests}
+              className="flex-1 py-4 px-5 bg-indigo-600 hover:bg-indigo-700 transition-colors text-white flex items-center justify-center font-medium"
+            >
+              <Check className="h-4 w-4 mr-2" />
               Confirm Order
-            </Button>
-          </DialogFooter>
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

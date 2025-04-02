@@ -329,7 +329,7 @@ const RealTimeStatistics: React.FC<StatisticsProps> = ({
                           dataKey="count"
                           nameKey="category"
                         >
-                          {dashboardData.appointmentDistribution.map((entry, index) => (
+                          {dashboardData.appointmentDistribution.map((entry: any, index: number) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
@@ -392,29 +392,6 @@ const RealTimeStatistics: React.FC<StatisticsProps> = ({
                           activeDot={{ r: 6 }}
                         />
                       </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="patients" className="mt-0">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="bg-white shadow-sm border-none lg:col-span-2">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Patient Growth (Last 6 Months)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[240px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dashboardData.patientTrend}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                        <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                        <YAxis tick={{ fontSize: 12 }} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="patients" name="New Patients" fill="#16a34a" radius={[4, 4, 0, 0]} />
-                      </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </CardContent>

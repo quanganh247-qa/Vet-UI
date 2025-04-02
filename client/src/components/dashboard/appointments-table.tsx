@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 import { MoreVertical, Filter } from "lucide-react";
 import { getFormattedStatus, getStatusColor } from "@/lib/utils";
 import { Appointment, Patient, Staff } from "@/types";
+import { useListAppointments } from "@/hooks/use-appointment";
+import { useDoctors } from "@/hooks/use-doctor";
+import { usePatientsData } from "@/hooks/use-pet";
+
 interface AppointmentRowProps {
   appointment: Appointment;
   patient: Patient;
@@ -12,7 +16,7 @@ interface AppointmentRowProps {
 }
 
 const AppointmentRow = ({ appointment, patient, doctor }: AppointmentRowProps) => {
-  const statusColors = getStatusColor(appointment.status);
+  const statusColors = getStatusColor(appointment.state);
   
   return (
     <tr>
@@ -20,12 +24,12 @@ const AppointmentRow = ({ appointment, patient, doctor }: AppointmentRowProps) =
         <div className="flex items-center">
           <img 
             className="h-8 w-8 rounded-full object-cover" 
-            src={patient.image_url || "https://via.placeholder.com/40"} 
+            src={patient.data_image || "https://via.placeholder.com/40"} 
             alt={patient.name} 
           />
           <div className="ml-3">
             <p className="text-sm font-medium text-[#12263F]">{patient.name}</p>
-            <p className="text-xs text-gray-500">{patient.owner_name}</p>
+            <p className="text-xs text-gray-500">{patient.username}</p>
           </div>
         </div>
       </td>
@@ -33,7 +37,7 @@ const AppointmentRow = ({ appointment, patient, doctor }: AppointmentRowProps) =
         <p className="text-sm text-[#12263F]">{format(new Date(appointment.date), 'h:mm a')}</p>
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
-        <p className="text-sm text-[#12263F]">{appointment.type.replace('_', ' ')}</p>
+        <p className="text-sm text-[#12263F]">{appointment.service.service_name}</p>
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
         <p className="text-sm text-[#12263F]">{doctor.name}</p>
@@ -42,7 +46,7 @@ const AppointmentRow = ({ appointment, patient, doctor }: AppointmentRowProps) =
         <div className="flex items-center">
           <span className={`h-2 w-2 rounded-full mr-2 ${statusColors.dotColor}`}></span>
           <span className={`text-sm font-medium ${statusColors.textColor}`}>
-            {getFormattedStatus(appointment.status)}
+            {getFormattedStatus(appointment.state)}
           </span>
         </div>
       </td>
@@ -56,28 +60,18 @@ const AppointmentRow = ({ appointment, patient, doctor }: AppointmentRowProps) =
 };
 
 const AppointmentsTable = () => {
-  const dateToFetch = "today";
-  
-  const { data: appointmentsData, isLoading: appointmentsLoading } = useQuery({
-    queryKey: [`/api/appointments/date/${dateToFetch}`],
-  });
-  
-  const { data: patientsData, isLoading: patientsLoading } = useQuery({
-    queryKey: ['/api/patients'],
-  });
-  
-  const { data: staffData, isLoading: staffLoading } = useQuery({
-    queryKey: ['/api/staff'],
-  });
+  const { data: appointmentsData, isLoading: appointmentsLoading } = useListAppointments(new Date(), "true");
+  const { data: patientsData, isLoading: patientsLoading } = usePatientsData();
+  const { data: staffData, isLoading: staffLoading } = useDoctors();
   
   const isLoading = appointmentsLoading || patientsLoading || staffLoading;
-  
+
   const getPatientById = (id: number) => {
-    return patientsData?.find((patient: Patient) => patient.id === id);
+    return patientsData && Array.isArray(patientsData) ? patientsData.find((patient: Patient) => patient.petid === id) : undefined;
   };
   
   const getDoctorById = (id: number) => {
-    return staffData?.find((staff: Staff) => staff.id === id);
+    return staffData && Array.isArray(staffData) ? staffData.find((staff: Staff) => staff.id === id) : undefined;
   };
   
   return (
@@ -140,8 +134,8 @@ const AppointmentsTable = () => {
               ))
             ) : appointmentsData?.length > 0 ? (
               appointmentsData.map((appointment: Appointment) => {
-                const patient = getPatientById(appointment.patient_id);
-                const doctor = getDoctorById(appointment.doctor_id);
+                const patient = getPatientById(appointment.pet.pet_id);
+                const doctor = getDoctorById(appointment.doctor.doctor_id);
                 
                 if (!patient || !doctor) return null;
                 

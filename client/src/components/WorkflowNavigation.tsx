@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { 
@@ -26,6 +26,11 @@ interface WorkflowNavigationProps {
 const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, petId, currentStep, isNurseView = false }) => {
   const [, navigate] = useLocation();
 
+  useEffect(() => {
+    // Log props when component mounts or updates to help debug
+    console.log("WorkflowNavigation props:", { appointmentId, petId, currentStep });
+  }, [appointmentId, petId, currentStep]);
+
   // Nurse workflow - only check-in step
   const nurseWorkflowSteps = [
     { id: 'check-in', label: 'Check-in', icon: UserRound, path: `/appointment/${appointmentId}/check-in` },
@@ -37,7 +42,7 @@ const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, 
     { id: 'examination', label: 'Examination', icon: Stethoscope, path: `/appointment/${appointmentId}/examination` },
     { id: 'soap', label: 'SOAP', icon: FileText, path: `/appointment/${appointmentId}/soap` },
     { id: 'diagnostic', label: 'Lab/Imaging', icon: FlaskConical, path: `/appointment/${appointmentId}/lab-management` },
-    { id: 'treatment', label: 'Treatment', icon: Tablets, path: `/appointment/${appointmentId}/patient/${petId}/treatment` },
+    { id: 'treatment', label: 'Treatment', icon: Tablets, path: `/appointment/${appointmentId}/patient/${petId}/treatment?appointmentId=${appointmentId}` },
     { id: 'prescription', label: 'Prescription', icon: Receipt, path: `/appointment/${appointmentId}/prescription` },
     { id: 'follow-up', label: 'Follow-up', icon: CalendarClock, path: `/appointment/${appointmentId}/follow-up` },
   ];
@@ -46,7 +51,12 @@ const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, 
   const workflowSteps = isNurseView ? nurseWorkflowSteps : doctorWorkflowSteps;
 
   const handleNavigation = (path: string) => {
-    navigate(path);
+    console.log("Navigating to:", path);
+    if (!path.includes("undefined")) {
+      navigate(path);
+    } else {
+      console.error("Navigation prevented: path contains undefined values", path);
+    }
   };
 
   const activeIndex = workflowSteps.findIndex(step => step.id === currentStep);

@@ -41,12 +41,16 @@ export const getStatusColor = (status: string): {
 } => {
   switch (status) {
     case "completed":
+    case "Completed":
       return { bgColor: "bg-green-100", textColor: "text-green-700", dotColor: "bg-green-500" };
     case "in_progress":
+    case "In Progress":
       return { bgColor: "bg-yellow-100", textColor: "text-yellow-700", dotColor: "bg-yellow-500" };
     case "scheduled":
+    case "Scheduled":
       return { bgColor: "bg-blue-100", textColor: "text-blue-700", dotColor: "bg-blue-500" };
     case "canceled":
+    case "Canceled":
       return { bgColor: "bg-red-100", textColor: "text-red-700", dotColor: "bg-red-500" };
     default:
       return { bgColor: "bg-gray-100", textColor: "text-gray-700", dotColor: "bg-gray-500" };

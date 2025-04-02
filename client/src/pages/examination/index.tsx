@@ -96,11 +96,11 @@ const Examination: React.FC = () => {
         skin: skin || "",
         eyes: eyes || "",
         ears: ears || "",
-      }
+      },
     };
 
     console.log("objectiveData", JSON.stringify(objectiveData, null, 2));
-    
+
     try {
       await updateSoapMutation.mutateAsync({
         appointmentID: appointment.id,
@@ -140,7 +140,7 @@ const Examination: React.FC = () => {
 
   if (isAppointmentLoading || isPatientLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-full">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-12 h-12 border-4 border-t-indigo-600 border-b-indigo-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
           <p className="text-indigo-600 font-medium">
@@ -152,417 +152,471 @@ const Examination: React.FC = () => {
   }
 
   return (
-    <div className="flex justify-center min-h-screen bg-gray-50">
-      <div className="container max-w-screen-xl mx-auto my-4 px-4">
-        {/* Page Header */}
-        <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="mr-2 h-8 w-8 text-white hover:bg-white/20"
-                onClick={() => navigate(`/appointment/${id}`)}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-xl font-semibold text-white">
-                  Patient Examination
-                </h1>
-                <p className="text-indigo-100 text-sm">
-                  Record physical findings and system examination
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                onClick={saveExamination}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1.5 shadow-sm"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Save & Proceed to SOAP
-              </Button>
-            </div>
-          </div>
+    <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
+            onClick={() => navigate(`/appointment/${id}`)}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            <span className="text-sm font-medium">Back to Patient</span>
+          </Button>
+          <h1 className="text-white font-semibold text-lg">Clinical Examination</h1>
         </div>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={saveExamination}
+            size="sm"
+            className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1.5 text-xs"
+          >
+            <CheckCircle className="w-3.5 h-3.5" />
+            <span>Save & Proceed to SOAP</span>
+          </Button>
+        </div>
+      </div>
 
-        {/* Workflow Navigation */}
+      {/* Workflow Navigation */}
+      <div className="px-4 pt-3">
         <WorkflowNavigation
           appointmentId={id}
           petId={patient?.pet_id?.toString()}
           currentStep="examination"
         />
+      </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-6">
-          {/* Left Column - Patient Details & Examination Form */}
-          <div className="md:col-span-4 flex flex-col gap-6">
-            {/* Patient Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-              <div className="flex items-center px-5 py-4 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
-                <div className="h-14 w-14 rounded-lg shadow-sm overflow-hidden flex-shrink-0 border-2 border-white bg-indigo-100 mr-3">
-                  <img
-                    src={
-                      patient?.data_image
-                        ? `data:image/png;base64,${patient.data_image}`
-                        : "/fallback-image.png"
-                    }
-                    alt={patient?.name}
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "https://via.placeholder.com/100?text=Pet";
-                    }}
-                  />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">
-                    {patient?.name}
-                  </h2>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                    <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-2.5 py-0.5">
-                      {patient?.breed}
-                    </Badge>
-                    <div className="text-gray-600 text-sm flex items-center gap-3 ml-1">
-                      <span className="flex items-center">
-                        <span className="font-medium text-gray-700">ID:</span>
-                        <span className="ml-1">{patient?.petid}</span>
-                      </span>
-                    </div>
-                  </div>
+      {/* Patient header */}
+      <div className="bg-gradient-to-b from-indigo-50 to-white pt-4 pb-4 px-4 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          {/* Patient photo and basic info */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative mx-auto sm:mx-0">
+              <div className="h-24 w-24 rounded-lg shadow overflow-hidden flex-shrink-0 border-2 border-white">
+                <img
+                  src={
+                    patient?.data_image
+                      ? `data:image/png;base64,${patient.data_image}`
+                      : "/fallback-image.png"
+                  }
+                  alt={patient?.name}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "https://via.placeholder.com/100?text=Pet";
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="text-center sm:text-left">
+              <h2 className="text-xl font-bold text-gray-900">
+                {patient?.name}
+              </h2>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
+                <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-2 py-0.5 text-xs">
+                  {patient?.breed}
+                </Badge>
+                <div className="text-gray-600 text-xs flex items-center gap-2 ml-1">
+                  <span className="flex items-center">
+                    <span className="font-medium text-gray-700">ID:</span>
+                    <span className="ml-1">{patient?.petid}</span>
+                  </span>
                 </div>
               </div>
-
-              <Tabs
-                defaultValue="physical"
-                className="px-6 py-5"
-                onValueChange={setActiveTab}
-                value={activeTab}
-              >
-                <TabsList className="inline-flex p-1 bg-gray-100 rounded-md">
-                  <TabsTrigger
-                    value="physical"
-                    className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
-                  >
-                    <Thermometer className="w-4 h-4 mr-2" />
-                    Physical Examination
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="systems"
-                    className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
-                  >
-                    <ScanLine className="w-4 h-4 mr-2" />
-                    Systems Examination
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="physical" className="pt-5 space-y-6">
-                  {/* Vital Signs */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="px-5 py-3 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
-                      <h3 className="text-sm font-medium text-gray-800 flex items-center">
-                        <Activity className="mr-2 h-4 w-4 text-indigo-500" />
-                        Vital Signs
-                      </h3>
-                    </div>
-                    <div className="p-5 space-y-5">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                          <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                            Weight (kg)
-                          </label>
-                          <Input
-                            type="number"
-                            value={weight}
-                            onChange={(e) => setWeight(e.target.value)}
-                            placeholder="Enter weight in kg"
-                            className="bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                          <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                            Temperature (°C)
-                          </label>
-                          <Input
-                            type="number"
-                            value={temperature}
-                            onChange={(e) => setTemperature(e.target.value)}
-                            placeholder="Enter temperature in °C"
-                            className="bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                          <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                            Heart Rate (bpm)
-                          </label>
-                          <Input
-                            type="number"
-                            value={heartRate}
-                            onChange={(e) => setHeartRate(e.target.value)}
-                            placeholder="Enter heart rate in bpm"
-                            className="bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                          <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                            Respiratory Rate (rpm)
-                          </label>
-                          <Input
-                            type="number"
-                            value={respiratoryRate}
-                            onChange={(e) => setRespiratoryRate(e.target.value)}
-                            placeholder="Enter respiratory rate in rpm"
-                            className="bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-5">
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                          <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                            General Notes
-                          </label>
-                          <Textarea
-                            value={generalNotes}
-                            onChange={(e) => setGeneralNotes(e.target.value)}
-                            placeholder="Additional observations and notes"
-                            rows={3}
-                            className="bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="systems" className="pt-5 space-y-6">
-                  {/* Cardiovascular and Respiratory */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="px-5 py-3 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
-                      <h3 className="text-sm font-medium text-gray-800 flex items-center">
-                        <Heart className="mr-2 h-4 w-4 text-indigo-500" />
-                        Cardiovascular & Respiratory
-                      </h3>
-                    </div>
-                    <div className="p-5 space-y-5">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                          <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                            Cardiovascular
-                          </label>
-                          <Textarea
-                            value={cardiovascular}
-                            onChange={(e) => setCardiovascular(e.target.value)}
-                            placeholder="Heart sounds, pulses, etc."
-                            rows={3}
-                            className="bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                          <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                            Respiratory
-                          </label>
-                          <Textarea
-                            value={respiratory}
-                            onChange={(e) => setRespiratory(e.target.value)}
-                            placeholder="Lung sounds, breathing pattern, etc."
-                            rows={3}
-                            className="bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Digestive and Musculoskeletal */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="px-5 py-3 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
-                      <h3 className="text-sm font-medium text-gray-800 flex items-center">
-                        <Activity className="mr-2 h-4 w-4 text-indigo-500" />
-                        Gastrointestinal & Musculoskeletal
-                      </h3>
-                    </div>
-                    <div className="p-5 space-y-5">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                          <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                            Gastrointestinal
-                          </label>
-                          <Textarea
-                            value={gastrointestinal}
-                            onChange={(e) =>
-                              setGastrointestinal(e.target.value)
-                            }
-                            placeholder="Abdomen, oral cavity, etc."
-                            rows={3}
-                            className="bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                          <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                            Musculoskeletal
-                          </label>
-                          <Textarea
-                            value={musculoskeletal}
-                            onChange={(e) => setMusculoskeletal(e.target.value)}
-                            placeholder="Gait, joints, muscles, etc."
-                            rows={3}
-                            className="bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Neurological and Integumentary */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="px-5 py-3 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
-                      <h3 className="text-sm font-medium text-gray-800 flex items-center">
-                        <ScanLine className="mr-2 h-4 w-4 text-indigo-500" />
-                        Neurological & Skin
-                      </h3>
-                    </div>
-                    <div className="p-5 space-y-5">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                          <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                            Neurological
-                          </label>
-                          <Textarea
-                            value={neurological}
-                            onChange={(e) => setNeurological(e.target.value)}
-                            placeholder="Reflexes, responses, etc."
-                            rows={3}
-                            className="bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                          <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                            Skin/Coat
-                          </label>
-                          <Textarea
-                            value={skin}
-                            onChange={(e) => setSkin(e.target.value)}
-                            placeholder="Lesions, parasites, etc."
-                            rows={3}
-                            className="bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Eyes and Ears */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="px-5 py-3 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
-                      <h3 className="text-sm font-medium text-gray-800 flex items-center">
-                        <Eye className="mr-2 h-4 w-4 text-indigo-500" />
-                        Special Senses
-                      </h3>
-                    </div>
-                    <div className="p-5 space-y-5">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                          <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                            Eyes
-                          </label>
-                          <Textarea
-                            value={eyes}
-                            onChange={(e) => setEyes(e.target.value)}
-                            placeholder="Pupils, discharge, etc."
-                            rows={3}
-                            className="bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                          <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                            Ears
-                          </label>
-                          <Textarea
-                            value={ears}
-                            onChange={(e) => setEars(e.target.value)}
-                            placeholder="Discharge, inflammation, etc."
-                            rows={3}
-                            className="bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
             </div>
           </div>
 
-          {/* Right Column - Room assignment and quick actions */}
-          <div className="md:col-span-3 flex flex-col gap-6">
-            {/* Room Assignment */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
-              <div className="px-5 py-3 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
-                <h3 className="text-sm font-medium text-gray-800 flex items-center">
-                  <Stethoscope className="mr-2 h-4 w-4 text-indigo-500" />
-                  Examination Room
-                </h3>
-              </div>
-              <div className="p-5">
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-4">
-                  <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                    Current Room
-                  </label>
-                  <div className="text-gray-700 font-medium bg-white p-2 rounded border border-gray-200">
-                    {appointment?.room_name}
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">
-                    Quick Actions
-                  </h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      variant="outline"
-                      className="justify-start"
-                      onClick={() =>
-                        navigate(`/appointment/${id}/lab-management`)
-                      }
-                    >
-                      <FlaskConical className="mr-2 h-4 w-4 text-indigo-500" />
-                      Order Lab Tests
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="justify-start"
-                      onClick={() => navigate(`/appointment/${id}/soap`)}
-                    >
-                      <FileText className="mr-2 h-4 w-4 text-indigo-500" />
-                      SOAP Notes
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="justify-start col-span-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200"
-                      onClick={() => transferToSOAP()}
-                    >
-                      <Activity className="mr-2 h-4 w-4 text-indigo-600" />
-                      Transfer to SOAP Objective
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-gray-100">
-                  <Button
-                    onClick={saveExamination}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Complete Examination
-                  </Button>
-                </div>
-              </div>
-            </div>
+          {/* Action buttons - right side */}
+          <div className="flex flex-wrap gap-2 justify-center md:justify-end mt-3 md:mt-0">
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white/10 text-indigo-600 border-indigo-200 hover:bg-indigo-50 flex items-center gap-1.5 text-xs"
+              onClick={() => transferToSOAP()}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              <span>Transfer to SOAP</span>
+            </Button>
           </div>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="px-4 py-3">
+        <Tabs
+          defaultValue="physical"
+          onValueChange={setActiveTab}
+          value={activeTab}
+        >
+          <div className="border-b pb-2 mb-3 overflow-x-auto">
+            <TabsList className="grid grid-cols-2 bg-gray-100 p-1 rounded-md w-full shadow-sm">
+              <TabsTrigger
+                value="physical"
+                className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-2.5 text-xs font-medium transition-all"
+              >
+                <Thermometer className="h-3.5 w-3.5" />
+                <span>Physical Examination</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="systems"
+                className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-2.5 text-xs font-medium transition-all"
+              >
+                <ScanLine className="h-3.5 w-3.5" />
+                <span>Systems Examination</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="physical" className="mt-3">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              {/* Main Column */}
+              <div className="lg:col-span-2 space-y-3">
+                {/* Vital Signs */}
+                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                  <div className="flex justify-between items-center px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
+                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
+                      <Activity className="h-4 w-4 mr-1.5 text-indigo-600" />
+                      Vital Signs
+                    </h3>
+                  </div>
+                  <div className="p-3 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                          Weight (kg)
+                        </label>
+                        <Input
+                          type="number"
+                          value={weight}
+                          onChange={(e) => setWeight(e.target.value)}
+                          placeholder="Enter weight in kg"
+                          className="bg-white border-gray-200 text-sm h-8 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                          Temperature (°C)
+                        </label>
+                        <Input
+                          type="number"
+                          value={temperature}
+                          onChange={(e) => setTemperature(e.target.value)}
+                          placeholder="Enter temperature in °C"
+                          className="bg-white border-gray-200 text-sm h-8 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                          Heart Rate (bpm)
+                        </label>
+                        <Input
+                          type="number"
+                          value={heartRate}
+                          onChange={(e) => setHeartRate(e.target.value)}
+                          placeholder="Enter heart rate in bpm"
+                          className="bg-white border-gray-200 text-sm h-8 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                          Respiratory Rate (rpm)
+                        </label>
+                        <Input
+                          type="number"
+                          value={respiratoryRate}
+                          onChange={(e) => setRespiratoryRate(e.target.value)}
+                          placeholder="Enter respiratory rate in rpm"
+                          className="bg-white border-gray-200 text-sm h-8 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                          General Notes
+                        </label>
+                        <Textarea
+                          value={generalNotes}
+                          onChange={(e) => setGeneralNotes(e.target.value)}
+                          placeholder="Additional observations and notes"
+                          rows={2}
+                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-3">
+                {/* Room Assignment */}
+                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                  <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
+                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
+                      <Stethoscope className="h-4 w-4 mr-1.5 text-indigo-600" />
+                      Next Workflow
+                    </h3>
+                  </div>
+                  <div className="p-3">
+                    <div className="mt-3">
+                      <h4 className="text-xs font-medium text-gray-700 mb-2">
+                        Quick Actions
+                      </h4>
+                      <div className="grid grid-cols-1 gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="justify-start text-xs h-8"
+                          onClick={() =>
+                            navigate(`/appointment/${id}/lab-management`)
+                          }
+                        >
+                          <FlaskConical className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />
+                          Order Lab Tests
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="justify-start text-xs h-8"
+                          onClick={() => navigate(`/appointment/${id}/soap`)}
+                        >
+                          <FileText className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />
+                          SOAP Notes
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <Button
+                        onClick={saveExamination}
+                        size="sm"
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs"
+                      >
+                        <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+                        Complete Examination
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="systems" className="mt-3">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              {/* Main column */}
+              <div className="lg:col-span-2 space-y-3">
+                {/* Cardiovascular and Respiratory */}
+                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                  <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
+                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
+                      <Heart className="h-4 w-4 mr-1.5 text-indigo-600" />
+                      Cardiovascular & Respiratory
+                    </h3>
+                  </div>
+                  <div className="p-3 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                          Cardiovascular
+                        </label>
+                        <Textarea
+                          value={cardiovascular}
+                          onChange={(e) => setCardiovascular(e.target.value)}
+                          placeholder="Heart sounds, pulses, etc."
+                          rows={2}
+                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                          Respiratory
+                        </label>
+                        <Textarea
+                          value={respiratory}
+                          onChange={(e) => setRespiratory(e.target.value)}
+                          placeholder="Lung sounds, breathing pattern, etc."
+                          rows={2}
+                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Digestive and Musculoskeletal */}
+                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                  <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
+                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
+                      <Activity className="h-4 w-4 mr-1.5 text-indigo-600" />
+                      Gastrointestinal & Musculoskeletal
+                    </h3>
+                  </div>
+                  <div className="p-3 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                          Gastrointestinal
+                        </label>
+                        <Textarea
+                          value={gastrointestinal}
+                          onChange={(e) => setGastrointestinal(e.target.value)}
+                          placeholder="Abdomen, oral cavity, etc."
+                          rows={2}
+                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                          Musculoskeletal
+                        </label>
+                        <Textarea
+                          value={musculoskeletal}
+                          onChange={(e) => setMusculoskeletal(e.target.value)}
+                          placeholder="Gait, joints, muscles, etc."
+                          rows={2}
+                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Remaining sections - Neurological, Skin, Eyes, Ears */}
+                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                  <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
+                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
+                      <ScanLine className="h-4 w-4 mr-1.5 text-indigo-600" />
+                      Neurological & Skin
+                    </h3>
+                  </div>
+                  <div className="p-3 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                          Neurological
+                        </label>
+                        <Textarea
+                          value={neurological}
+                          onChange={(e) => setNeurological(e.target.value)}
+                          placeholder="Reflexes, responses, etc."
+                          rows={2}
+                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                          Skin/Coat
+                        </label>
+                        <Textarea
+                          value={skin}
+                          onChange={(e) => setSkin(e.target.value)}
+                          placeholder="Lesions, parasites, etc."
+                          rows={2}
+                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                  <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
+                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
+                      <Eye className="h-4 w-4 mr-1.5 text-indigo-600" />
+                      Special Senses
+                    </h3>
+                  </div>
+                  <div className="p-3 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                          Eyes
+                        </label>
+                        <Textarea
+                          value={eyes}
+                          onChange={(e) => setEyes(e.target.value)}
+                          placeholder="Pupils, discharge, etc."
+                          rows={2}
+                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                          Ears
+                        </label>
+                        <Textarea
+                          value={ears}
+                          onChange={(e) => setEars(e.target.value)}
+                          placeholder="Discharge, inflammation, etc."
+                          rows={2}
+                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sidebar - same as in physical tab */}
+              <div className="space-y-3">
+                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                  <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
+                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
+                      <Stethoscope className="h-4 w-4 mr-1.5 text-indigo-600" />
+                      Next Workflow
+                    </h3>
+                  </div>
+                  <div className="p-3">
+                    <div className="mt-3">
+                      <h4 className="text-xs font-medium text-gray-700 mb-2">
+                        Quick Actions
+                      </h4>
+                      <div className="grid grid-cols-1 gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="justify-start text-xs h-8"
+                          onClick={() =>
+                            navigate(`/appointment/${id}/lab-management`)
+                          }
+                        >
+                          <FlaskConical className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />
+                          Order Lab Tests
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="justify-start text-xs h-8"
+                          onClick={() => navigate(`/appointment/${id}/soap`)}
+                        >
+                          <FileText className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />
+                          SOAP Notes
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <Button
+                        onClick={saveExamination}
+                        size="sm"
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs"
+                      >
+                        <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+                        Complete Examination
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

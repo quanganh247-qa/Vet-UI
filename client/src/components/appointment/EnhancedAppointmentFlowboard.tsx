@@ -437,21 +437,21 @@ const EnhancedAppointmentFlowboard: React.FC<
   const getWorkflowStepLabel = (step: string) => {
     switch (step) {
       case "patient-details":
-        return "Thông tin bệnh nhân";
+        return "Patient Details";
       case "examination":
-        return "Khám lâm sàng";
+        return "Clinical Examination";
       case "soap":
-        return "Ghi chú SOAP";
+        return "SOAP Note";
       case "diagnostic":
-        return "Xét nghiệm & Chẩn đoán";
+        return "Diagnostic";
       case "treatment":
-        return "Điều trị";
+        return "Treatment";
       case "prescription":
-        return "Kê đơn thuốc";
+        return "Prescription";
       case "follow-up":
-        return "Hẹn tái khám";
+        return "Follow-up";
       default:
-        return "Thông tin bệnh nhân";
+        return "Patient Details";
     }
   };
 
@@ -1646,50 +1646,12 @@ const EnhancedAppointmentFlowboard: React.FC<
                           }}
                         >
                           {getWorkflowStepIcon(getCurrentWorkflowStep(selectedAppointment))}
-                          <span>Tiếp tục khám bệnh: {getWorkflowStepLabel(getCurrentWorkflowStep(selectedAppointment))}</span>
+                          <span>{getWorkflowStepLabel(getCurrentWorkflowStep(selectedAppointment))}</span>
                           <ArrowRightCircle className="ml-2 h-4 w-4" />
                         </button>
                       )}
                       
-                      {/* Các nút hành động khác */}
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        <button
-                          className="px-3 py-1.5 border text-sm rounded hover:bg-gray-50 flex items-center justify-center"
-                          onClick={() => setLocation(`/appointment/${selectedAppointment.id}`)}
-                        >
-                          <Edit size={14} className="mr-1" />
-                          View Details
-                        </button>
-
-                        <button
-                          className="px-3 py-1.5 border text-sm rounded hover:bg-gray-50 flex items-center justify-center"
-                        >
-                          <MessageSquare size={14} className="mr-1" />
-                          Message
-                        </button>
-
-                        <button
-                          className="px-3 py-1.5 border text-sm rounded hover:bg-gray-50 flex items-center justify-center"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleStartAppointment(selectedAppointment.id);
-                          }}
-                        >
-                          <Play size={14} className="mr-1" />
-                          Start Appt
-                        </button>
-
-                        <button
-                          className="px-3 py-1.5 border text-sm rounded hover:bg-gray-50 flex items-center justify-center"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCompleteAppointment(selectedAppointment.id);
-                          }}
-                        >
-                          <CheckCircle size={14} className="mr-1" />
-                          Complete
-                        </button>
-                      </div>
+                
                     </div>
                   </div>
                 </div>

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { parse, format } from "date-fns";
 import { Calendar, Filter, Inbox, PawPrint, Plus, Search, Download, Printer, Clock, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,40 +12,53 @@ import {
 } from "@/components/ui/select";
 import { getFormattedStatus, getStatusColor } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Appointment } from "@/types";
-import { getAllAppointments } from "@/services/appointment-services";
+import { Appointment, Patient } from "@/types";
 import { useLocation } from "wouter";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { usePatientList } from "@/hooks/use-pet";
+import { useListAppointments } from "@/hooks/use-appointment";
 
 const Appointments = () => {
   const [, setLocation] = useLocation();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const { data: patientsData, isLoading: patientsLoading } = usePatientList();
+  
+  // Sử dụng useListAppointments hook thay vì gọi API trực tiếp
+  const { data: appointmentsData, isLoading: appointmentsLoading } = useListAppointments(
+    selectedDate, 
+    statusFilter !== "all" ? statusFilter : "all",
+    currentPage,
+    pageSize
+  );
 
-  const { data: appointmentsData, isLoading: appointmentsLoading } = useQuery({
-    queryKey: ["appointments", format(selectedDate, "yyyy-MM-dd")],
-    queryFn: () => getAllAppointments(selectedDate,"true"),
-  });
+  // Sửa dòng log để hiển thị rõ ràng hơn
+  console.log("appointmentsData", appointmentsData);
 
-  const isLoading = appointmentsLoading;
+  const isLoading = appointmentsLoading || patientsLoading;
 
-  const filteredAppointments =
-    appointmentsData?.data && Array.isArray(appointmentsData.data)
-      ? appointmentsData.data.filter((appointment: Appointment) => {
+  // Cập nhật cách lấy danh sách cuộc hẹn đã lọc
+  const filteredAppointments = 
+    appointmentsData
+      ? (Array.isArray(appointmentsData.data) 
+          ? appointmentsData.data 
+          : [])
+        .filter((appointment: Appointment) => {
+          // Nếu đã lọc theo trạng thái ở API, không cần lọc lại ở đây
           if (statusFilter !== "all") {
-            return (
-              appointment.state.toLowerCase() === statusFilter.toLowerCase()
-            );
+            return true; // Đã lọc ở API
           }
 
           if (searchTerm) {
             const searchFields = [
-              appointment.pet.pet_name,
-              appointment.owner.owner_name,
-              appointment.doctor.doctor_name,
-              appointment.service.service_name,
+              appointment.pet?.pet_name,
+              appointment.owner?.owner_name,
+              appointment.doctor?.doctor_name,
+              appointment.service?.service_name,
             ].map((field) => field?.toLowerCase() || "");
 
             return searchFields.some((field) =>
@@ -57,6 +69,18 @@ const Appointments = () => {
           return true;
         })
       : [];
+
+  // Thêm hàm xử lý thay đổi kích thước trang
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1); // Reset về trang đầu tiên khi thay đổi kích thước trang
+  };
+
+  // Thêm hàm xử lý thay đổi trang
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const date = new Date(e.target.value);
@@ -71,8 +95,8 @@ const Appointments = () => {
       <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 -mx-6 -mt-6 md:-mx-8 md:-mt-8 px-6 py-4 md:px-8 md:py-5 mb-6 rounded-br-xl rounded-bl-xl shadow-md">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="icon"
               className="mr-2 h-8 w-8 text-white hover:bg-white/20"
               onClick={() => window.history.back()}
@@ -132,7 +156,7 @@ const Appointments = () => {
                   <Filter className="h-4 w-4 text-indigo-500" />
                 </div>
                 <Select defaultValue="all" onValueChange={setStatusFilter}>
-                  <SelectTrigger className="border border-gray-200 rounded-md text-sm h-10 w-44 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                  <SelectTrigger className="border border-gray-200 rounded-md text-sm h-10 w-44 focus:ring-2 focus:ring-indigo-500 focus:border-gray-200">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -169,7 +193,7 @@ const Appointments = () => {
             <Clock className="mr-2 h-4 w-4 text-indigo-500" />
             Appointments List
           </h2>
-          
+
           <div className="text-xs text-gray-500">
             {!isLoading && filteredAppointments && (
               <span>{filteredAppointments.length} appointments found</span>
@@ -221,12 +245,15 @@ const Appointments = () => {
               ) : filteredAppointments?.length > 0 ? (
                 filteredAppointments.map((appointment: Appointment) => {
                   const {
-                    pet: patient,
+                    pet,
                     doctor,
                     owner,
                     service,
                     state,
                   } = appointment;
+
+                  // Thay vì truy cập trực tiếp vào patientsData, cần truy cập vào mảng data bên trong
+                  const patient = patientsData?.data?.find((p: Patient) => p.petid === pet.pet_id);
                   const statusColors = getStatusColor(state);
 
                   return (
@@ -237,7 +264,16 @@ const Appointments = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-3">
                           <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                            <PawPrint className="w-5 h-5 text-indigo-500" />
+                        
+                            <img
+                              src={
+                                patient?.data_image
+                                  ? `data:image/png;base64,${patient.data_image}`
+                                  : "/fallback-image.png"
+                              }
+                              alt={patient?.name}
+                               className="w-10 h-10 rounded-lg"
+                            />
                           </div>
                           <div>
                             <div className="font-medium text-gray-900">
@@ -272,12 +308,6 @@ const Appointments = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
                           <Avatar className="w-8 h-8 border-2 border-white shadow-sm">
-                            <AvatarImage
-                              // src={
-                              //   doctor?.image_url ||
-                              //   "https://via.placeholder.com/40"
-                              // }
-                            />
                             <AvatarFallback className="bg-indigo-100 text-indigo-600">
                               {doctor?.doctor_name[0]}
                             </AvatarFallback>
@@ -332,6 +362,50 @@ const Appointments = () => {
             </tbody>
           </table>
         </div>
+        {/* Pagination Controls */}
+        {!isLoading && appointmentsData && (
+          <div className="px-6 py-4 flex items-center justify-between border-t border-gray-100">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, 
+                  appointmentsData?.total || filteredAppointments.length
+                )} of{' '}
+                {appointmentsData?.total || filteredAppointments.length} entries
+              </span>
+              <Select value={pageSize.toString()} onValueChange={(value) => handlePageSizeChange(parseInt(value))}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="bg-white shadow-sm border-gray-200 hover:bg-gray-50"
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= Math.ceil((appointmentsData?.total || filteredAppointments.length) / pageSize)}
+                className="bg-white shadow-sm border-gray-200 hover:bg-gray-50"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -32,6 +32,7 @@ const MedicalRecords = lazy(() => import("@/pages/medical-records"));
 const WorkflowNavigation = lazy(() => import("@/components/WorkflowNavigation"));
 const FollowUp = lazy(() => import("@/pages/follow-up"));
 const Examination = lazy(() => import("@/pages/examination"));
+const TestOrdersManagement = lazy(() => import("@/pages/test-orders-management"));
 
 // Create LoginPage component that uses LoginForm
 const LoginPage = () => {
@@ -131,6 +132,7 @@ function Router() {
         <Route path="/patients/:id" component={PatientDetailPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/billing" component={Billing as React.ComponentType<RouteComponentProps>} />
         <Route path="/catalog" component={CatalogManagement as React.ComponentType<RouteComponentProps>} />
+        <Route path="/test-orders" component={TestOrdersManagement as React.ComponentType<RouteComponentProps>} />
         <Route component={NotFound as React.ComponentType<RouteComponentProps>} />
       </Switch>
     </Suspense>

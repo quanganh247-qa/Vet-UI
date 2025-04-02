@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getAllAppointments,
+  getAppointmentAnalytics,
   getAppointmentById,
   getAppointmentsQueue,
   getHistoryAppointments,
@@ -16,10 +17,10 @@ export const useAppointmentData = (id: string | undefined) => {
   });
 };
 
-export const useListAppointments = (date: Date, option: string) => {
+export const useListAppointments = (date: Date, option: string, page: number = 1, pageSize: number = 10) => {
   return useQuery({
-    queryKey: ["appointments"],
-    queryFn: () => getAllAppointments(date, option),
+    queryKey: ["appointments", date.toISOString().split("T")[0], option, page, pageSize],
+    queryFn: () => getAllAppointments(date, option, page, pageSize),
   });
 };
 
@@ -68,5 +69,15 @@ export const useUpdateAppointmentStatus = (id: number, updateData: {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["appointmentsQueue"] });
     },
+  });
+};
+
+export const useAppointmentAnalytics = (payload: {
+  start_date: string;
+  end_date: string;
+}) => {
+  return useQuery({
+    queryKey: ["appointmentAnalytics"],
+    queryFn: () => getAppointmentAnalytics(payload),
   });
 };

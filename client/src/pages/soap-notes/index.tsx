@@ -3,13 +3,13 @@ import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  ChevronLeft, 
-  Save, 
-  Mic, 
-  MicOff, 
-  AlertTriangle, 
-  ArrowLeft, 
+import {
+  ChevronLeft,
+  Save,
+  Mic,
+  MicOff,
+  AlertTriangle,
+  ArrowLeft,
   ArrowUpRight,
   Calendar,
   FileText,
@@ -21,15 +21,12 @@ import {
   Printer,
   NotebookText,
   FileBarChart,
-  Info
+  Info,
 } from "lucide-react";
-
 import { Badge } from "@/components/ui/badge";
-import QuickNotes from "@/components/medical-records/QuickNotes";
 import { useGetSOAP, useUpdateSOAP } from "@/hooks/use-soap";
 import { useAppointmentData } from "@/hooks/use-appointment";
 import { usePatientData } from "@/hooks/use-pet";
-import { cn } from "@/lib/utils";
 import WorkflowNavigation from "@/components/WorkflowNavigation";
 import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -42,32 +39,52 @@ const SoapNotes = () => {
   const [, setLocation] = useLocation();
   const [isRecording, setIsRecording] = useState(false);
 
-  const { data: appointment, isLoading: isAppointmentLoading, error: appointmentError } = useAppointmentData(id);
-  const { data: soapData = { subjective: '', objective: {}, assessment: '', plan: '' }, isLoading: isSoapLoading, error: soapError } = useGetSOAP(appointment?.id);
-  const { data: patient, isLoading: isPatientLoading, error: patientError } = usePatientData(appointment?.pet?.pet_id);
+  const {
+    data: appointment,
+    isLoading: isAppointmentLoading,
+    error: appointmentError,
+  } = useAppointmentData(id);
+  const {
+    data: soapData = {
+      subjective: "",
+      objective: {},
+      assessment: "",
+      plan: "",
+    },
+    isLoading: isSoapLoading,
+    error: soapError,
+  } = useGetSOAP(appointment?.id);
+  const {
+    data: patient,
+    isLoading: isPatientLoading,
+    error: patientError,
+  } = usePatientData(appointment?.pet?.pet_id);
   const updateSoapMutation = useUpdateSOAP();
 
   const [localSoapData, setLocalSoapData] = useState({
-    subjective: '',
+    subjective: "",
     objective: {},
-    assessment: '',
-    plan: ''
+    assessment: "",
+    plan: "",
   });
 
   // Initialize local state when remote data loads
   useEffect(() => {
     if (soapData) {
       setLocalSoapData({
-        subjective: soapData.subjective || '',
+        subjective: soapData.subjective || "",
         objective: soapData.objective || {},
-        assessment: soapData.assessment || '',
-        plan: soapData.plan || '',
+        assessment: soapData.assessment || "",
+        plan: soapData.plan || "",
       });
     }
   }, [soapData]);
 
-  const handleInputChange = (field: keyof typeof localSoapData, value: string) => {
-    setLocalSoapData(prev => ({
+  const handleInputChange = (
+    field: keyof typeof localSoapData,
+    value: string
+  ) => {
+    setLocalSoapData((prev) => ({
       ...prev,
       [field]: value,
     }));
@@ -84,18 +101,23 @@ const SoapNotes = () => {
     // Format vital signs
     if (data.vital_signs) {
       formattedText += "### Vital Signs\n";
-      if (data.vital_signs.weight) formattedText += `- Weight: ${data.vital_signs.weight} kg\n`;
-      if (data.vital_signs.temperature) formattedText += `- Temperature: ${data.vital_signs.temperature} °C\n`;
-      if (data.vital_signs.heart_rate) formattedText += `- Heart Rate: ${data.vital_signs.heart_rate} bpm\n`;
-      if (data.vital_signs.respiratory_rate) formattedText += `- Respiratory Rate: ${data.vital_signs.respiratory_rate} rpm\n`;
-      if (data.vital_signs.general_notes) formattedText += `\n**General Notes:** ${data.vital_signs.general_notes}\n`;
+      if (data.vital_signs.weight)
+        formattedText += `- Weight: ${data.vital_signs.weight} kg\n`;
+      if (data.vital_signs.temperature)
+        formattedText += `- Temperature: ${data.vital_signs.temperature} °C\n`;
+      if (data.vital_signs.heart_rate)
+        formattedText += `- Heart Rate: ${data.vital_signs.heart_rate} bpm\n`;
+      if (data.vital_signs.respiratory_rate)
+        formattedText += `- Respiratory Rate: ${data.vital_signs.respiratory_rate} rpm\n`;
+      if (data.vital_signs.general_notes)
+        formattedText += `\n**General Notes:** ${data.vital_signs.general_notes}\n`;
       formattedText += "\n";
     }
 
     // Format systems examination
     if (data.systems) {
       formattedText += "### Systems Examination\n";
-      
+
       const systemPairs = [
         { name: "Cardiovascular", value: data.systems.cardiovascular },
         { name: "Respiratory", value: data.systems.respiratory },
@@ -104,10 +126,10 @@ const SoapNotes = () => {
         { name: "Neurological", value: data.systems.neurological },
         { name: "Skin/Coat", value: data.systems.skin },
         { name: "Eyes", value: data.systems.eyes },
-        { name: "Ears", value: data.systems.ears }
+        { name: "Ears", value: data.systems.ears },
       ];
 
-      systemPairs.forEach(system => {
+      systemPairs.forEach((system) => {
         if (system.value) {
           formattedText += `- **${system.name}:** ${system.value}\n`;
         }
@@ -127,28 +149,33 @@ const SoapNotes = () => {
 
     const defaultObjective: ObjectiveData = {
       vital_signs: {
-        weight: '',
-        temperature: '',
-        heart_rate: '',
-        respiratory_rate: '',
-        general_notes: ''
+        weight: "",
+        temperature: "",
+        heart_rate: "",
+        respiratory_rate: "",
+        general_notes: "",
       },
       systems: {
-        cardiovascular: '',
-        respiratory: '',
-        gastrointestinal: '',
-        musculoskeletal: '',
-        neurological: '',
-        skin: '',
-        eyes: '',
-        ears: ''
-      }
+        cardiovascular: "",
+        respiratory: "",
+        gastrointestinal: "",
+        musculoskeletal: "",
+        neurological: "",
+        skin: "",
+        eyes: "",
+        ears: "",
+      },
     };
-    
+
     try {
       // Ensure we don't overwrite the objective data
-      const currentData = soapData || { subjective: '', objective: defaultObjective, assessment: '', plan: '' };
-      
+      const currentData = soapData || {
+        subjective: "",
+        objective: defaultObjective,
+        assessment: "",
+        plan: "",
+      };
+
       await updateSoapMutation.mutateAsync({
         appointmentID: appointment.id,
         subjective: localSoapData.subjective,
@@ -156,12 +183,14 @@ const SoapNotes = () => {
         assessment: localSoapData.assessment,
         plan: localSoapData.plan,
       });
+      if (updateSoapMutation.isSuccess) {
+        toast({
+          title: "Save Success",
+          description: "SOAP notes saved successfully.",
+        });
+        setLocation(`/appointment/${appointment?.id}/lab-management`);
+      }
 
-      toast({
-        title: "SOAP Notes Saved",
-        description: "Assessment and treatment plan have been saved successfully.",
-        className: "bg-green-50 border-green-200 text-green-800",
-      });
     } catch (error) {
       console.error("Error saving SOAP notes:", error);
       toast({
@@ -210,8 +239,8 @@ const SoapNotes = () => {
       {/* Header with gradient background */}
       <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
             onClick={handleBackToPatient}
@@ -220,7 +249,6 @@ const SoapNotes = () => {
             <span className="text-sm font-medium">Back to Patient</span>
           </Button>
           <h1 className="text-white font-semibold text-lg">SOAP Notes</h1>
-          
         </div>
         <div className="flex items-center gap-3">
           <Button
@@ -261,7 +289,11 @@ const SoapNotes = () => {
             <div className="relative">
               <div className="h-28 w-28 rounded-xl shadow-md overflow-hidden flex-shrink-0 border-4 border-white">
                 <img
-                  src={patient?.data_image ? `data:image/png;base64,${patient.data_image}` : "/fallback-image.png"}
+                  src={
+                    patient?.data_image
+                      ? `data:image/png;base64,${patient.data_image}`
+                      : "/fallback-image.png"
+                  }
                   alt={patient.name}
                   className="h-full w-full object-cover"
                   onError={(e) => {
@@ -273,9 +305,7 @@ const SoapNotes = () => {
               {patient.gender && (
                 <div
                   className={`absolute bottom-0 right-0 h-7 w-7 rounded-full flex items-center justify-center text-white shadow-md ${
-                    patient.gender === "Male"
-                      ? "bg-blue-500"
-                      : "bg-pink-500"
+                    patient.gender === "Male" ? "bg-blue-500" : "bg-pink-500"
                   }`}
                 >
                   {patient.gender === "Male" ? "♂" : "♀"}
@@ -285,18 +315,25 @@ const SoapNotes = () => {
 
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
-                <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-2.5 py-0.5">{patient.breed}</Badge>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {patient.name}
+                </h1>
+                <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-2.5 py-0.5">
+                  {patient.breed}
+                </Badge>
               </div>
               <div className="mt-1 text-gray-500 text-sm flex flex-wrap items-center gap-x-4 gap-y-1">
                 <span className="flex items-center gap-1">
-                  <span className="font-medium text-gray-600">ID:</span> {patient.petid}
+                  <span className="font-medium text-gray-600">ID:</span>{" "}
+                  {patient.petid}
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="font-medium text-gray-600">Age:</span> {patient.age}
+                  <span className="font-medium text-gray-600">Age:</span>{" "}
+                  {patient.age}
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="font-medium text-gray-600">Weight:</span> {patient.weight}
+                  <span className="font-medium text-gray-600">Weight:</span>{" "}
+                  {patient.weight}
                 </span>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -316,7 +353,7 @@ const SoapNotes = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Visit reason */}
         {/* <div className="mt-6 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
           <h3 className="text-sm font-medium text-gray-700 flex items-center">
@@ -333,9 +370,11 @@ const SoapNotes = () => {
           <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-200 flex justify-between items-center">
             <div className="flex items-center">
               <NotebookText className="h-5 w-5 text-indigo-600 mr-2" />
-              <h2 className="text-lg font-semibold text-gray-800">Medical SOAP Notes</h2>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Medical SOAP Notes
+              </h2>
             </div>
-            <div className="flex items-center gap-2">
+            {/* <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -364,9 +403,9 @@ const SoapNotes = () => {
                 <Printer className="h-4 w-4 mr-1" />
                 Print
               </Button>
-            </div>
+            </div> */}
           </div>
-          
+
           {/* Guidance alert */}
           <div className="p-4 m-4 bg-blue-50 border border-blue-200 rounded-md">
             <div className="flex items-center gap-2">
@@ -374,44 +413,46 @@ const SoapNotes = () => {
               <h3 className="font-medium text-blue-700">Diagnostic Guidance</h3>
             </div>
             <p className="text-blue-600 text-sm mt-1">
-              The "Subjective" and "Objective" sections have been updated from previous information gathering. 
-              Please focus on the "Assessment" section to provide your professional diagnosis based on the symptoms and examination results.
+              The "Subjective" and "Objective" sections have been updated from
+              previous information gathering. Please focus on the "Assessment"
+              section to provide your professional diagnosis based on the
+              symptoms and examination results.
             </p>
           </div>
 
           <div className="p-6">
             <Tabs defaultValue="all" className="w-full">
               <TabsList className="inline-flex p-1 bg-gray-100 rounded-md">
-                <TabsTrigger 
-                  value="all" 
+                <TabsTrigger
+                  value="all"
                   className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
                 >
                   All Sections
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="subjective" 
+                <TabsTrigger
+                  value="subjective"
                   className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
                 >
                   Subjective
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="objective" 
+                <TabsTrigger
+                  value="objective"
                   className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
                 >
                   Objective
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="assessment" 
+                <TabsTrigger
+                  value="assessment"
                   className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
                 >
                   Assessment
                 </TabsTrigger>
-                <TabsTrigger 
+                {/* <TabsTrigger 
                   value="plan" 
                   className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
                 >
                   Plan
-                </TabsTrigger>
+                </TabsTrigger> */}
               </TabsList>
 
               <TabsContent value="all" className="space-y-6 py-4">
@@ -437,7 +478,9 @@ const SoapNotes = () => {
                     <Activity className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700 flex items-center">
                       O - Objective (Clinical Findings)
-                      <Badge className="ml-2 bg-yellow-100 text-yellow-800 border-yellow-200">Read-only</Badge>
+                      <Badge className="ml-2 bg-yellow-100 text-yellow-800 border-yellow-200">
+                        Read-only
+                      </Badge>
                     </label>
                   </div>
                   <Textarea
@@ -453,7 +496,9 @@ const SoapNotes = () => {
                     <ClipboardEdit className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700 flex items-center">
                       A - Assessment (Diagnosis)
-                      <Badge className="ml-2 bg-green-100 text-green-800 border-green-200">Update here</Badge>
+                      <Badge className="ml-2 bg-green-100 text-green-800 border-green-200">
+                        Update here
+                      </Badge>
                     </label>
                   </div>
                   <Textarea
@@ -465,7 +510,7 @@ const SoapNotes = () => {
                     }
                   />
                 </div>
-
+                {/* 
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <FileBarChart className="h-4 w-4 text-indigo-600" />
@@ -481,7 +526,7 @@ const SoapNotes = () => {
                       handleInputChange("plan", e.target.value)
                     }
                   />
-                </div>
+                </div> */}
               </TabsContent>
 
               {/* Tab Subjective */}
@@ -511,7 +556,9 @@ const SoapNotes = () => {
                     <AlertTriangle className="h-4 w-4 text-yellow-600" />
                     <AlertTitle className="text-yellow-800">Note</AlertTitle>
                     <AlertDescription className="text-yellow-700">
-                      Clinical examination information can only be updated in the Examination section. Here you can only view the results.
+                      Clinical examination information can only be updated in
+                      the Examination section. Here you can only view the
+                      results.
                     </AlertDescription>
                   </Alert>
                   <div className="flex items-center gap-2 mb-2">
@@ -534,10 +581,13 @@ const SoapNotes = () => {
                 <div>
                   <Alert className="mb-4 bg-green-50 border-green-200">
                     <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertTitle className="text-green-800">Make Your Diagnosis</AlertTitle>
+                    <AlertTitle className="text-green-800">
+                      Make Your Diagnosis
+                    </AlertTitle>
                     <AlertDescription className="text-green-700">
-                      Based on the information collected from the client and clinical examination results, 
-                      record your diagnosis here. This is critical for determining the treatment plan.
+                      Based on the information collected from the client and
+                      clinical examination results, record your diagnosis here.
+                      This is critical for determining the treatment plan.
                     </AlertDescription>
                   </Alert>
                   <div className="flex items-center gap-2 mb-2">

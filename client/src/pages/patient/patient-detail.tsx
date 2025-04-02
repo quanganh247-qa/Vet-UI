@@ -4,8 +4,6 @@ import { ArrowLeft, Activity, Syringe, FileText, Clock, User, Phone, MapPin } fr
 import { format } from 'date-fns';
 import { getPatientById } from '@/services/pet-services';
 import { getVaccinations } from '@/services/vaccine-services';
-import { getMedicalRecordsByPatientId } from '@/services/medical-record-services';
-import { getPatientTreatments } from '@/services/treament-services';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,7 +78,7 @@ export const PatientDetailPage: React.FC = () => {
           throw new Error('No pet ID provided');
         }
         const numericPetId = parseInt(petId);
-        
+
         // Fetch pet and vaccines data in parallel
         const [petData, vaccinesData] = await Promise.all([
           getPatientById(numericPetId),
@@ -88,9 +86,9 @@ export const PatientDetailPage: React.FC = () => {
         ]);
 
         setPet(petData);
-        
+
         setVaccines(vaccinesData);
-        
+
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch pet data');
       } finally {
@@ -148,9 +146,10 @@ export const PatientDetailPage: React.FC = () => {
           <Card className="overflow-hidden">
             <CardContent className="p-0">
               <div className="aspect-w-1 aspect-h-1 relative h-80">
+
                 <img
-                  src={'https://i.pinimg.com/736x/2a/25/b6/2a25b650a1d075d3f5cff5182cbca1f0.jpg'}
-                  alt={`${pet.name} - ${pet.breed}`}
+                  src={`data:image/png;base64,${pet.data_image}` || 'https://i.pinimg.com/736x/2a/25/b6/2a25b650a1d075d3f5cff5182cbca1f0.jpg'}
+                  alt={pet.name}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -231,8 +230,8 @@ export const PatientDetailPage: React.FC = () => {
       <Card className="mt-6 overflow-hidden">
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 rounded-none border-b dark:border-gray-700 bg-transparent p-0">
-            <TabsTrigger 
-              value="info" 
+            <TabsTrigger
+              value="info"
               className={cn(
                 "data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600",
                 "dark:data-[state=active]:border-indigo-400 dark:data-[state=active]:text-indigo-400",
@@ -242,8 +241,8 @@ export const PatientDetailPage: React.FC = () => {
             >
               Owner Info
             </TabsTrigger>
-            <TabsTrigger 
-              value="vaccines" 
+            <TabsTrigger
+              value="vaccines"
               className={cn(
                 "data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600",
                 "dark:data-[state=active]:border-indigo-400 dark:data-[state=active]:text-indigo-400",
@@ -253,8 +252,8 @@ export const PatientDetailPage: React.FC = () => {
             >
               Vaccines
             </TabsTrigger>
-            <TabsTrigger 
-              value="records" 
+            <TabsTrigger
+              value="records"
               className={cn(
                 "data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600",
                 "dark:data-[state=active]:border-indigo-400 dark:data-[state=active]:text-indigo-400",
@@ -264,8 +263,8 @@ export const PatientDetailPage: React.FC = () => {
             >
               Medical Records
             </TabsTrigger>
-            <TabsTrigger 
-              value="treatments" 
+            <TabsTrigger
+              value="treatments"
               className={cn(
                 "data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600",
                 "dark:data-[state=active]:border-indigo-400 dark:data-[state=active]:text-indigo-400",
@@ -344,8 +343,8 @@ export const PatientDetailPage: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Badge className={cn(
                             "px-2 text-xs font-semibold rounded-full",
-                            vaccine.notes === 'completed' 
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" 
+                            vaccine.notes === 'completed'
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                               : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
                           )}>
                             {vaccine.notes}

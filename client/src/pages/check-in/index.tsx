@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useParams, useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,7 +44,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import WorkflowNavigation from "@/components/WorkflowNavigation";
 import { useQR } from "@/hooks/use-payment";
-import { QRCodeInformation } from "@/types";
+import { QRCodeInformation, QuickLinkRequest } from "@/types";
 
 const CheckIn = () => {
   const { id } = useParams<{ id?: string }>();
@@ -55,6 +55,7 @@ const CheckIn = () => {
   const [subjective, setSubjective] = useState("");
   const [copied, setCopied] = useState(false);
   const [isQRLoading, setIsQRLoading] = useState(false);
+  const [qrImageUrl, setQrImageUrl] = useState("");
   const createSoapMutation = useCreateSOAP();
   const { toast } = useToast();
 
@@ -67,21 +68,26 @@ const CheckIn = () => {
   );
 
   // Define QR code information conditionally but call the hook unconditionally
-  const qrCodeInformation: QRCodeInformation = {
-    accountNo: "220220222419",
-    accountName: "PET CARE CLINIC",
-    acqId: "970422",
+  const qrCodeInformation: QuickLinkRequest = {
+    bank_id: "mbbank",
+    account_no: "220220222419",
+    template: "print",
     amount: appointment?.service?.service_amount || 0,
-    addInfo: patient?.name
-      ? `${patient.name} - ${appointment?.service?.service_name || ""}`
-      : "",
-    format: "text",
-    template: "E4jYBZ1",
+    description: `Payment for ${appointment?.invoice?.invoice_number}`,
+    account_name: "PET CARE CLINIC",
     order_id: 0,
+    test_order_id: appointment?.invoice?.id,
   };
 
   // Use the mutation hook with proper methods
-  const qrMutation = useQR(qrCodeInformation);
+  const qrMutation = useQR();
+
+  useEffect(() => {
+    if (qrMutation.data) {
+      setQrImageUrl(qrMutation.data.image_url);
+      console.log("qrImageUrl", qrImageUrl);
+    }
+  }, [qrMutation.data]);
 
   const availableRooms = rooms;
   if (!appointment || !patient) {
@@ -95,7 +101,6 @@ const CheckIn = () => {
   // const subtotal = billingItems.reduce((sum, item) => sum + item.total, 0);
   const tax = appointment.service.service_amount * 0.1; // 10% tax
   const total = appointment.service.service_amount + tax;
-  const qrImageUrl = `https://api.vietqr.io/image/970422-220220222419-E4jYBZ1.jpg?amount=${total}&addInfo=${patient.name}%20-%20${appointment.service.service_name}&accountName=PET%20CARE%20CLINIC`;
 
   // Format currency for VND
   const formatCurrency = (amount: number) => {
@@ -160,37 +165,6 @@ const CheckIn = () => {
       });
     }
   };
-
-  // const handlePrintInvoice = () => {
-  //   // Create a print-specific stylesheet to control what gets printed
-  //   const printStyle = document.createElement("style");
-  //   printStyle.innerHTML = `
-  //     @media print {
-  //       body * {
-  //         visibility: hidden;
-  //       }
-  //       #invoice, #invoice * {
-  //         visibility: visible;
-  //       }
-  //       #qrCode, #qrCode * {
-  //         visibility: visible;
-  //       }
-  //       #invoice {
-  //         position: absolute;
-  //         left: 0;
-  //         top: 0;
-  //         width: 100%;
-  //       }
-  //     }
-  //   `;
-  //   document.head.appendChild(printStyle);
-
-  //   window.print();
-
-  //   // Remove the style after printing
-  //   document.head.removeChild(printStyle);
-  // };
-
   const handleDownloadInvoice = () => {
     // In a real app, this would generate and download a PDF
     alert("Invoice download functionality would be implemented here");
@@ -216,7 +190,7 @@ const CheckIn = () => {
       setIsQRLoading(true);
 
       // Actually trigger the mutation
-      qrMutation.mutate(undefined, {
+      qrMutation.mutate(qrCodeInformation, {
         onSuccess: () => {
           toast({
             title: "QR Code Generated",

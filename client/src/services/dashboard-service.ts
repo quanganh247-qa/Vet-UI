@@ -1,3 +1,5 @@
+import { useAppointmentAnalytics } from '@/hooks/use-appointment';
+import { useRevenueAnalytics } from '@/hooks/use-payment';
 import { format, subDays, addDays } from 'date-fns';
 
 // Types for dashboard data
@@ -29,6 +31,8 @@ export interface ProcedureData {
   value: number;
 }
 
+export type TimeRange = 'week' | 'last-week' | 'month' | 'last-month' | 'custom';
+
 // Generate mock data for dashboard
 const generateMockDashboardData = () => {
   // Current date for reference
@@ -42,33 +46,15 @@ const generateMockDashboardData = () => {
     pendingBills: Math.floor(Math.random() * 10) + 2,
     completedAppointments: Math.floor(Math.random() * 12) + 3,
   };
-  
-  // Generate appointment distribution data
-  const appointmentDistribution: AppointmentDistribution[] = [
-    { category: 'Checkup', count: Math.floor(Math.random() * 40) + 20 },
-    { category: 'Vaccination', count: Math.floor(Math.random() * 30) + 15 },
-    { category: 'Surgery', count: Math.floor(Math.random() * 15) + 5 },
-    { category: 'Dental', count: Math.floor(Math.random() * 20) + 10 },
-    { category: 'Emergency', count: Math.floor(Math.random() * 10) + 5 },
-  ];
+
+  const { data: appointmentDistribution } = useAppointmentAnalytics({
+    start_date: format(subDays(today, 7), 'yyyy-MM-dd'),
+    end_date: format(today, 'yyyy-MM-dd'),
+  });
   
   // Generate mock revenue data for the last 7 days
-  const revenueData: RevenueData[] = Array.from({ length: 7 }, (_, i) => {
-    const date = subDays(today, 6 - i);
-    return {
-      date: format(date, 'MMM dd'),
-      amount: Math.floor(Math.random() * 1000) + 200,
-    };
-  });
+  const { data: revenueData } = useRevenueAnalytics();
   
-  // Generate patient trend data for the last 6 months
-  const patientTrend: PatientTrend[] = Array.from({ length: 6 }, (_, i) => {
-    const date = new Date(today.getFullYear(), today.getMonth() - 5 + i, 1);
-    return {
-      month: format(date, 'MMM'),
-      patients: Math.floor(Math.random() * 50) + 20,
-    };
-  });
   
   // Generate procedure data
   const procedureData: ProcedureData[] = [
@@ -83,7 +69,6 @@ const generateMockDashboardData = () => {
     metrics,
     appointmentDistribution,
     revenueData,
-    patientTrend,
     procedureData,
   };
 };
