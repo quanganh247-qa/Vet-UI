@@ -54,7 +54,11 @@ const Topbar = ({ openSidebar }: TopbarProps) => {
         </div>
         
         <div className="flex items-center">
-          <NotificationCenter className="mr-2 text-white" />
+          <NotificationCenter 
+            onReorderMedicine={(medicineId) => {
+              navigate(`/inventory/medicines/${medicineId}/reorder`);
+            }} 
+          />
           <button className="p-2 mr-3 text-white hover:text-white/80">
             <MessageSquare className="h-5 w-5" />
           </button>

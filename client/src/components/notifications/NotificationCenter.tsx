@@ -1,337 +1,121 @@
-import { useState } from "react";
-import { Bell, CheckCircle, Info, AlertTriangle, XCircle, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { useNotifications } from "@/context/notification-context";
-import { Notification } from "@/types";
+import React, { useState, useEffect } from 'react';
+import { LowStockNotification } from '../../types';
+import LowStockAlert from './LowStockAlert';
+import { websocketService, useLowStockNotifications } from '../../utils/websocket';
 
 interface NotificationCenterProps {
-className?: string;
+  onReorderMedicine: (medicineId: number) => void;
 }
 
-const NotificationCenter = ({ className }: NotificationCenterProps) => {
-  const { 
-    notifications, 
-    unreadCount, 
-    markAsRead, 
-    markAllAsRead, 
-    removeNotification 
-  } = useNotifications();
-  
-  const [settings, setSettings] = useState({
-    enableAppointmentNotifications: true,
-    enablePatientUpdates: true,
-    enableSystemNotifications: true,
-    enableSoundAlerts: true,
-    desktopNotifications: true,
-  });
+const NotificationCenter: React.FC<NotificationCenterProps> = ({ onReorderMedicine }) => {
+  const [notifications, setNotifications] = useState<LowStockNotification[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  const getNotificationIcon = (type: Notification['type']) => {
-    switch (type) {
-      case 'info':
-        return <Info className="h-4 w-4 text-blue-500" />;
-      case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
-      case 'error':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+  useEffect(() => {
+    // Connect to WebSocket when component mounts
+    const wsUrl = 'ws://localhost:8088/ws';
+    websocketService.connect(wsUrl);
+
+    // Cleanup WebSocket connection when component unmounts
+    return () => {
+      websocketService.disconnect();
+    };
+  }, []);
+
+  // Subscribe to low stock notifications
+  useEffect(() => {
+    const unsubscribe = useLowStockNotifications((newNotification) => {
+      setNotifications(prev => [newNotification, ...prev]);
+      setUnreadCount(prev => prev + 1);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const handleDismissNotification = (index: number) => {
+    setNotifications(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const toggleOpen = () => {
+    setIsOpen(!isOpen);
+    if (!isOpen) {
+      setUnreadCount(0);
     }
   };
 
-  const getTimeAgo = (date: Date) => {
-    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
-    
-    let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + " years ago";
-    
-    interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + " months ago";
-    
-    interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + " days ago";
-    
-    interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + " hours ago";
-    
-    interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + " minutes ago";
-    
-    return Math.floor(seconds) + " seconds ago";
-  };
-
-  // Save settings to localStorage when changed
-  const updateSettings = (key: string, value: boolean) => {
-    setSettings(prev => {
-      const newSettings = { ...prev, [key]: value };
-      localStorage.setItem('notificationSettings', JSON.stringify(newSettings));
-      
-      // Apply specific settings
-      if (key === 'enableSoundAlerts') {
-        localStorage.setItem('notificationSound', value.toString());
-      }
-      if (key === 'desktopNotifications') {
-        localStorage.setItem('desktopNotifications', value.toString());
-      }
-      
-      return newSettings;
-    });
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      toggleOpen();
+    }
   };
 
   return (
-    <div className={className}>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <Badge 
-                className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px]"
-              >
-                {unreadCount}
-              </Badge>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[380px] p-0">
-          <Tabs defaultValue="all">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="font-semibold">Notifications</h3>
-              {unreadCount > 0 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={markAllAsRead}
-                  className="text-xs h-8 px-2"
+    <div className="relative">
+      {/* Notification bell icon */}
+      <div 
+        className="relative cursor-pointer"
+        onClick={toggleOpen}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        aria-label="Open notifications"
+      >
+        <svg 
+          className="w-6 h-6 text-gray-700 hover:text-gray-900" 
+          xmlns="http://www.w3.org/2000/svg" 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
+            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" 
+          />
+        </svg>
+        
+        {/* Unread badge */}
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </div>
+
+      {/* Notification panel */}
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg overflow-hidden z-50 max-h-[80vh] overflow-y-auto">
+          <div className="px-4 py-3 border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+              {notifications.length > 0 && (
+                <button 
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                  onClick={() => setNotifications([])}
                 >
-                  Mark all as read
-                </Button>
+                  Clear all
+                </button>
               )}
             </div>
-            <TabsList className="grid grid-cols-3 p-2">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="unread">Unread {unreadCount > 0 && `(${unreadCount})`}</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="all" className="m-0">
-              <ScrollArea className="h-[300px]">
-                {notifications.length > 0 ? (
-                  <div className="divide-y">
-                    {notifications.map((notification) => (
-                      <div 
-                        key={notification.id}
-                        className={`p-4 ${notification.read ? 'bg-white' : 'bg-blue-50'}`}
-                      >
-                        <div className="flex items-start">
-                          <div className="mr-3 mt-0.5">
-                            {getNotificationIcon(notification.type)}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h4 className="text-sm font-medium">{notification.title}</h4>
-                                <p className="text-xs text-gray-500">{getTimeAgo(notification.timestamp)}</p>
-                              </div>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6"
-                                onClick={() => removeNotification(notification.id)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <p className="text-sm mt-1">{notification.message}</p>
-                            {notification.action && (
-                              <Button 
-                                variant="link" 
-                                className="text-xs h-6 p-0 mt-1"
-                                onClick={() => {
-                                  notification.action?.onClick();
-                                  markAsRead(notification.id);
-                                }}
-                              >
-                                {notification.action.label}
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                        {!notification.read && (
-                          <div className="mt-2 text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-xs h-7 px-2"
-                              onClick={() => markAsRead(notification.id)}
-                            >
-                              Mark as read
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                    <Bell className="h-12 w-12 text-gray-300 mb-3" />
-                    <h4 className="text-sm font-medium text-gray-500">No notifications</h4>
-                    <p className="text-xs text-gray-400 mt-1">New notifications will appear here</p>
-                  </div>
-                )}
-              </ScrollArea>
-            </TabsContent>
-            
-            <TabsContent value="unread" className="m-0">
-              <ScrollArea className="h-[300px]">
-                {notifications.filter(n => !n.read).length > 0 ? (
-                  <div className="divide-y">
-                    {notifications.filter(n => !n.read).map((notification) => (
-                      <div key={notification.id} className="p-4 bg-blue-50">
-                        <div className="flex items-start">
-                          <div className="mr-3 mt-0.5">
-                            {getNotificationIcon(notification.type)}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h4 className="text-sm font-medium">{notification.title}</h4>
-                                <p className="text-xs text-gray-500">{getTimeAgo(notification.timestamp)}</p>
-                              </div>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6"
-                                onClick={() => removeNotification(notification.id)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <p className="text-sm mt-1">{notification.message}</p>
-                            {notification.action && (
-                              <Button 
-                                variant="link" 
-                                className="text-xs h-6 p-0 mt-1"
-                                onClick={() => {
-                                  notification.action?.onClick();
-                                  markAsRead(notification.id);
-                                }}
-                              >
-                                {notification.action.label}
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="mt-2 text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-xs h-7 px-2"
-                            onClick={() => markAsRead(notification.id)}
-                          >
-                            Mark as read
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                    <CheckCircle className="h-12 w-12 text-gray-300 mb-3" />
-                    <h4 className="text-sm font-medium text-gray-500">No unread notifications</h4>
-                    <p className="text-xs text-gray-400 mt-1">You've read all notifications</p>
-                  </div>
-                )}
-              </ScrollArea>
-            </TabsContent>
-            
-            <TabsContent value="settings" className="m-0">
-              <div className="p-4">
-                <h4 className="text-sm font-semibold mb-3">Notification Settings</h4>
-                <Card className="p-4">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h5 className="text-sm font-medium">Appointment Notifications</h5>
-                        <p className="text-xs text-gray-500">Receive notifications about new appointments and schedule changes</p>
-                      </div>
-                      <Switch 
-                        checked={settings.enableAppointmentNotifications}
-                        onCheckedChange={(checked) => 
-                          updateSettings('enableAppointmentNotifications', checked)
-                        }
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h5 className="text-sm font-medium">Patient Updates</h5>
-                        <p className="text-xs text-gray-500">Receive notifications when patients update their information</p>
-                      </div>
-                      <Switch 
-                        checked={settings.enablePatientUpdates}
-                        onCheckedChange={(checked) => 
-                          updateSettings('enablePatientUpdates', checked)
-                        }
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h5 className="text-sm font-medium">System Notifications</h5>
-                        <p className="text-xs text-gray-500">Updates about maintenance and new features</p>
-                      </div>
-                      <Switch 
-                        checked={settings.enableSystemNotifications}
-                        onCheckedChange={(checked) => 
-                          updateSettings('enableSystemNotifications', checked)
-                        }
-                      />
-                    </div>
-                    
-                    <div className="pt-2 border-t">
-                      <h5 className="text-sm font-semibold mb-3">Additional Options</h5>
-                      
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h5 className="text-sm font-medium">Sound Alerts</h5>
-                            <p className="text-xs text-gray-500">Play a sound when new notifications arrive</p>
-                          </div>
-                          <Switch 
-                            checked={settings.enableSoundAlerts}
-                            onCheckedChange={(checked) => 
-                              updateSettings('enableSoundAlerts', checked)
-                            }
-                          />
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h5 className="text-sm font-medium">Desktop Notifications</h5>
-                            <p className="text-xs text-gray-500">Show notifications even when browser tab is not open</p>
-                          </div>
-                          <Switch 
-                            checked={settings.desktopNotifications}
-                            onCheckedChange={(checked) => 
-                              updateSettings('desktopNotifications', checked)
-                            }
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </PopoverContent>
-      </Popover>
+          </div>
+          
+          <div className="p-4">
+            {notifications.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-6">No notifications</p>
+            ) : (
+              notifications.map((notification, index) => (
+                <LowStockAlert
+                  key={`${notification.medicine_id}-${index}`}
+                  notification={notification}
+                  onClose={() => handleDismissNotification(index)}
+                  onReorder={onReorderMedicine}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

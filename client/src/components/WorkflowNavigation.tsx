@@ -43,8 +43,8 @@ const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, 
     { id: 'soap', label: 'SOAP', icon: FileText, path: `/appointment/${appointmentId}/soap` },
     { id: 'diagnostic', label: 'Lab/Imaging', icon: FlaskConical, path: `/appointment/${appointmentId}/lab-management` },
     { id: 'treatment', label: 'Treatment', icon: Tablets, path: `/appointment/${appointmentId}/patient/${petId}/treatment?appointmentId=${appointmentId}` },
-    { id: 'prescription', label: 'Prescription', icon: Receipt, path: `/appointment/${appointmentId}/prescription` },
-    { id: 'follow-up', label: 'Follow-up', icon: CalendarClock, path: `/appointment/${appointmentId}/follow-up` },
+    // { id: 'prescription', label: 'Prescription', icon: Receipt, path: `/appointment/${appointmentId}/prescription` },
+    // { id: 'follow-up', label: 'Follow-up', icon: CalendarClock, path: `/appointment/${appointmentId}/follow-up` },
   ];
 
   // Choose workflow based on role

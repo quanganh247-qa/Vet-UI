@@ -51,12 +51,12 @@ export const getMedicationByPhaseId = async (
 };
 
 export const addNewPhaseToTreatment = async (
-  payload: CreateTreatmentPhaseRequest,
+  payload: CreateTreatmentPhaseRequest[],
   treatment_id: string
 ) => {
   const token = localStorage.getItem("access_token");
   if (!token) {
-    throw new Error("No access token found");
+    throw new Error("No access token found - please log in again");
   }
 
   try {
@@ -66,37 +66,48 @@ export const addNewPhaseToTreatment = async (
       {
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json", // Explicit content type
         },
       }
     );
     return response.data;
   } catch (error) {
-    throw error;
+    if (axios.isAxiosError(error)) {
+      // Handle specific axios errors
+      throw new Error(error.response?.data?.message || error.message);
+    }
+    throw new Error("An unexpected error occurred");
   }
 };
-
 export const assignMedicineToPhase = async (
-  payload: AssignMedicineRequest,
+  payload: AssignMedicineRequest[],
   treatment_id: string,
   phase_id: string
 ) => {
   const token = localStorage.getItem("access_token");
   if (!token) {
-    throw new Error("No access token found");
+    throw new Error("No access token found - please log in again.");
   }
+
   try {
     const response = await axios.post(
-      `/api/v1/treatment/${treatment_id}/phases/${phase_id}/medicine`,
+      `/api/v1/treatment/${treatment_id}/phase/${phase_id}/medicines`,
       payload,
       {
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json", // Explicit content type
         },
       }
     );
     return response.data;
   } catch (error) {
-    throw error;
+    if (axios.isAxiosError(error)) {
+      // Extract server error message if available
+      const errorMessage = error.response?.data?.message || error.message;
+      throw new Error(`Failed to assign medicine: ${errorMessage}`);
+    }
+    throw new Error("An unexpected error occurred.");
   }
 };
 
@@ -124,11 +135,12 @@ export const getAllMedicines = async () => {
   if (!token) {
     throw new Error("No access token found");
   }
-  const response = await axios.get(`/api/v1/medicines/`, {
+  const response = await axios.get(`/api/v1/medicines`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
+  console.log("response", response);
   return response.data;
 };
 
@@ -137,6 +149,7 @@ export const addNewTreatment = async (payload: CreateTreatmentRequest) => {
   if (!token) {
     throw new Error("No access token found");
   }
+  console.log("payload", payload);
   try {
     const response = await axios.post(`/api/v1/treatment`, payload, {
       headers: {
@@ -148,5 +161,3 @@ export const addNewTreatment = async (payload: CreateTreatmentRequest) => {
     throw error;
   }
 };
-
-

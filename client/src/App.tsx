@@ -18,6 +18,7 @@ import Billing from "@/pages/billing";
 import CatalogManagement from "./pages/catalog-management";
 import Prescription from "./pages/prescription";
 import Chatbot from "./pages/chatbot";
+import ScheduleManagement from "./pages/schedule-management";
 
 // Lazy load the TestNotificationListener to avoid hook errors
 const TestNotificationListener = lazy(() => import("@/components/notifications/TestNotificationListener"));
@@ -33,6 +34,11 @@ const WorkflowNavigation = lazy(() => import("@/components/WorkflowNavigation"))
 const FollowUp = lazy(() => import("@/pages/follow-up"));
 const Examination = lazy(() => import("@/pages/examination"));
 const TestOrdersManagement = lazy(() => import("@/pages/test-orders-management"));
+const MedicineInventory = lazy(() => import("@/pages/inventory"));
+// Doctor management pages
+const DoctorProfilePage = lazy(() => import("@/pages/doctor-management/DoctorProfilePage"));
+const DoctorShiftsPage = lazy(() => import("@/pages/doctor-management/DoctorShiftsPage"));
+const AllDoctorsPage = lazy(() => import("@/pages/doctor-management/AllDoctorsPage"));
 
 // Create LoginPage component that uses LoginForm
 const LoginPage = () => {
@@ -133,6 +139,14 @@ function Router() {
         <Route path="/billing" component={Billing as React.ComponentType<RouteComponentProps>} />
         <Route path="/catalog" component={CatalogManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/test-orders" component={TestOrdersManagement as React.ComponentType<RouteComponentProps>} />
+        <Route path="/inventory" component={MedicineInventory as React.ComponentType<RouteComponentProps>} />
+        <Route path="/schedule" component={ScheduleManagement as React.ComponentType<RouteComponentProps>} />
+        {/* Doctor management routes */}
+        <Route path="/doctor-management/profile" component={DoctorProfilePage as React.ComponentType<RouteComponentProps>} />
+        <Route path="/doctor-management/shifts" component={DoctorShiftsPage as React.ComponentType<RouteComponentProps>} />
+        <Route path="/doctor-management/all" component={AllDoctorsPage as React.ComponentType<RouteComponentProps>} />
+        <Route path="/doctor-management/:id/shifts" component={DoctorShiftsPage as React.ComponentType<RouteComponentProps>} />
+        <Route path="/doctor-management/:id" component={lazy(() => import("@/pages/doctor-management/DoctorProfilePage")) as React.ComponentType<RouteComponentProps>} />
         <Route component={NotFound as React.ComponentType<RouteComponentProps>} />
       </Switch>
     </Suspense>
@@ -162,22 +176,22 @@ function App() {
   return (
     <AuthProvider>
       <NotificationProvider>
-          <div className="flex h-screen overflow-hidden bg-background text-darkText">
-            <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+        <div className="flex h-screen overflow-hidden bg-background text-darkText">
+          <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+          
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <Topbar openSidebar={() => setSidebarOpen(true)} />
             
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <Topbar openSidebar={() => setSidebarOpen(true)} />
-              
-              <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
-                <WebSocketInitializer />
-                <Suspense fallback={null}>
-                  <TestNotificationListener />
-                </Suspense>
-                <Router />
-              </main>
-            </div>
+            <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
+              <WebSocketInitializer />
+              <Suspense fallback={null}>
+                <TestNotificationListener />
+              </Suspense>
+              <Router />
+            </main>
           </div>
-          <Toaster />
+        </div>
+        <Toaster />
       </NotificationProvider>
     </AuthProvider>
   );

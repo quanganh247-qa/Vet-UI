@@ -1,3 +1,11 @@
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export interface AppointmentsResponse {
   code: string;
   data: Appointment[];
@@ -26,15 +34,44 @@ export interface MedicalRecord {
   doctor: Doctor;
   service: Service;
   date: string;
+  type: string;
+  diagnosis: string[];
+  treatments: string[];
+  notes: string;
+  vital_signs?: {
+    temperature: string;
+    heart_rate: string;
+    respiratory_rate: string;
+    weight: string;
+  };
+  lab_results?: {
+    [key: string]: {
+      value: string;
+      reference_range?: string;
+      status: "normal" | "low" | "high" | "critical";
+    };
+  };
+  attachments?: Array<{
+    id: number;
+    url: string;
+    type: string;
+    notes?: string;
+  }>;
 }
 
 export interface Doctor {
   doctor_id: number;
   doctor_name: string;
-  doctor_phone: string;
-  doctor_email: string;
-  doctor_specialty: string;
-  doctor_avatar: string;
+  doctor_phone?: string;
+  doctor_email?: string;
+  doctor_specialty?: string;
+  doctor_avatar?: string;
+  specialization?: string;
+  years_of_exp?: number;
+  education?: string;
+  role?: string;
+  certificate?: string;
+  bio?: string;
 }
 
 export interface Service {
@@ -156,7 +193,6 @@ export interface Vaccination {
   notes: string;
 }
 
-
 // Define types for the treatment management
 interface Task {
   id: number;
@@ -203,7 +239,6 @@ export interface PatientAlert {
   detail: string;
 }
 
-
 // Add interfaces for AI suggestion data
 export interface AIMedication {
   name: string;
@@ -240,7 +275,6 @@ export interface AISuggestions {
   treatmentProtocols: AITreatmentProtocol[];
   medicationDosages: AIMedicationDosage[];
 }
-
 
 /**
  * Response data interface for chat message response
@@ -285,16 +319,16 @@ export interface QRCodeInformation {
 }
 
 export interface GenerateQRCodeResponse {
-	Code: string; // Mã trạng thái trả về
-	Desc: string; // Mô tả trạng thái
-	Data: GenerateQRData; // Dữ liệu trả về
+  Code: string; // Mã trạng thái trả về
+  Desc: string; // Mô tả trạng thái
+  Data: GenerateQRData; // Dữ liệu trả về
 }
 
 export interface GenerateQRData {
-	AcpID: number; // Mã ngân hàng
-	AccountName: string; // Tên tài khoản
-	QRCode: string; // Dữ liệu QR code
-	QRDataURL: string; // Dữ liệu QR code dạng base64
+  AcpID: number; // Mã ngân hàng
+  AccountName: string; // Tên tài khoản
+  QRCode: string; // Dữ liệu QR code
+  QRDataURL: string; // Dữ liệu QR code dạng base64
 }
 export interface ObjectiveData {
   vital_signs: VitalSigns;
@@ -320,8 +354,6 @@ export interface Systems {
   ears: string;
 }
 
-
-
 export interface TestCategory {
   id: string;
   name: string;
@@ -334,7 +366,7 @@ export interface TestCategory {
 
 export interface Test {
   id: string;
-  
+
   name: string;
   description: string;
   price: string;
@@ -342,28 +374,20 @@ export interface Test {
 }
 
 export interface CreateInvoiceRequest {
-	invoice_number: string;
-	amount: number;
-	date: string;
-	due_date: string;
-	status: string;
-	description: string;
-	customer_name: string;
-	items: InvoiceItem[];
+  invoice_number: string;
+  amount: number;
+  date: string;
+  due_date: string;
+  status: string;
+  description: string;
+  customer_name: string;
+  items: InvoiceItem[];
 }
 
 export interface InvoiceItem {
-	name: string;
-	price: number;
-	quantity: number;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
+  name: string;
+  price: number;
+  quantity: number;
 }
 
 export interface CreateTreatmentPhaseRequest {
@@ -382,7 +406,6 @@ export interface TreatmentPhase {
   start_date: string;
   created_at: string;
 }
-
 
 export interface AssignMedicineRequest {
   medicine_id: number;
@@ -420,4 +443,150 @@ export interface CreateTreatmentPhaseRequest {
   description: string;
   start_date: string;
   status: string;
+}
+
+export interface Vaccine {
+  id: number;
+  name: string;
+  type: string;
+  manufacturer: string;
+  description: string;
+  recommended_age: string;
+  booster_frequency: string;
+  side_effects: string[];
+  contraindications: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Medication {
+  id: number;
+  medicine_name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  side_effects: string;
+  description: string;
+  usage: string;
+  expiration_date: string;
+  quantity: number;
+  reorder_level: number;
+  unit_price: number;
+  supplier_name: string;
+}
+
+export interface MedicineTransactionRequest {
+  medicine_id: number;
+  quantity: number;
+  transaction_type: string;
+  unit_price: number;
+  supplier_id: number;
+  expiration_date: string;
+  notes: string;
+  prescription_id: number;
+  appointment_id: number;
+}
+
+export interface MedicineTransactionResponse {
+  id: number;
+  medicine_id: number;
+  medicine_name: string;
+  quantity: number;
+  transaction_type: string;
+  unit_price: number;
+  total_amount: number;
+  transaction_date: string;
+  supplier_id: number;
+  supplier_name: string;
+  expiration_date: string;
+  notes: string;
+  prescription_id: number;
+  appointment_id: number;
+}
+
+export interface MedicineSupplierRequest {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  contact_name: string;
+  notes: string;
+}
+
+export interface MedicineSupplierResponse {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  contact_name: string;
+  notes: string;
+  created_at: string;
+}
+
+export interface ExpiredMedicineNotification {
+  medicine_id: number;
+  medicine_name: string;
+  expiration_date: string;
+  days_until_expiry: number;
+  quantity: number;
+}
+
+export interface LowStockNotification {
+  medicine_id: number;
+  medicine_name: string;
+  current_stock: number;
+  reorder_level: number;
+}
+
+export interface Shift {
+  id: number;
+  start_time: Date;
+  end_time: Date;
+  assigned_patients: number;
+  created_at: Date;
+  doctor_id: number;
+}
+
+export interface DoctorProfile {
+  doctor_id: number;
+  doctor_name: string;
+  specialization: string;
+  years_of_exp: number;
+  education: string;
+  role: string;
+  certificate: string;
+  bio: string;
+}
+
+// Work Schedule Management Types
+export interface WorkShift {
+  id: string;
+  title: string;
+  startTime: Date;
+  endTime: Date;
+  doctorId: string;
+  description?: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  location?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DoctorSchedule extends Doctor {
+  availability?: DoctorAvailability[];
+}
+
+export interface DoctorAvailability {
+  doctorId: string;
+  dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0 = Sunday, 6 = Saturday
+  startTime: string; // Format: HH:MM (24-hour)
+  endTime: string; // Format: HH:MM (24-hour)
+}
+
+export interface WorkScheduleFilters {
+  doctorId?: string;
+  startDate?: Date;
+  endDate?: Date;
+  status?: 'scheduled' | 'completed' | 'cancelled';
 }

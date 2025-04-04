@@ -19,7 +19,10 @@ import {
   Activity,
   PawPrint,
   BookOpen,
-  LogOut
+  LogOut,
+  UserCircle,
+  Clock,
+  User
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -75,10 +78,17 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
   // ];
 
   const practiceLinks = [
-    { name: "Catalog Management", path: "/catalog", icon: <BookOpen className="h-5 w-5" /> },
+    { name: "Catalog Management", path: "/inventory", icon: <BookOpen className="h-5 w-5" /> },
     { name: "Veterinary Staff", path: "/staff", icon: <Stethoscope className="h-5 w-5" /> },
+    { name: "Schedule", path: "/schedule", icon: <Calendar className="h-5 w-5" /> },
     { name: "Chatbot", path: "/chatbot", icon: <MessageCircle className="h-5 w-5" /> },
     { name: "Billing", path: "/billing", icon: <DollarSign className="h-5 w-5" /> }
+  ];
+
+  const doctorLinks = [
+    { name: "My Profile", path: "/doctor-management/profile", icon: <UserCircle className="h-5 w-5" /> },
+    { name: "My Shifts", path: "/doctor-management/shifts", icon: <Clock className="h-5 w-5" /> },
+    // { name: "All Doctors", path: "/doctor-management/all", icon: <User className="h-5 w-5" /> },
   ];
 
   const accountLinks = [
@@ -241,6 +251,47 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             
             <div className="space-y-1">
               {practiceLinks.map((link) => (
+                <Link 
+                  key={link.path} 
+                  href={link.path}
+                  onClick={() => setOpen(false)}
+                >
+                  <div
+                    className={cn(
+                      "flex items-center text-gray-700 rounded-lg",
+                      collapsed ? "justify-center px-2 py-3" : "px-3 py-2",
+                      isActive(link.path) 
+                        ? "bg-gradient-to-r from-indigo-50 to-white text-indigo-600 border-l-4 border-indigo-600 font-medium" 
+                        : "hover:bg-gray-100"
+                    )}
+                    title={collapsed ? link.name : undefined}
+                  >
+                    <span className={cn(
+                      "flex-shrink-0",
+                      isActive(link.path) ? "text-indigo-600" : "text-gray-500",
+                      collapsed ? "" : "mr-3"
+                    )}>
+                      {link.icon}
+                    </span>
+                    {!collapsed && <span>{link.name}</span>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Doctor Management Links */}
+          <div className="mb-4">
+            {!collapsed && (
+              <div className="px-3 mb-2 mt-6">
+                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Doctor</h2>
+              </div>
+            )}
+            
+            {collapsed && <div className="my-4 border-t border-gray-200"></div>}
+            
+            <div className="space-y-1">
+              {doctorLinks.map((link) => (
                 <Link 
                   key={link.path} 
                   href={link.path}

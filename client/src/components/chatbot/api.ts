@@ -49,7 +49,6 @@ export const sendChatMessage = async (message: string, botType: string = 'Health
 
     return await response.json();
   } catch (error) {
-    console.error('API Error:', error);
     throw error;
   }
 };
