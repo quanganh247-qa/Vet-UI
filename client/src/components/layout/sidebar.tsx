@@ -70,25 +70,14 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
     { name: "Patients", path: "/patients", icon: <PawPrint className="h-5 w-5" /> },
   ];
 
-  // const clinicalLinks = [
-  //   { name: "Patient Management", path: "/patient-management", icon: <FileText className="h-5 w-5" /> },
-  //   { name: "Medical Records", path: "/medical-records", icon: <BookOpen className="h-5 w-5" /> },
-  //   { name: "Prescriptions", path: "/prescriptions", icon: <Pill className="h-5 w-5" /> },
-  //   { name: "Lab Results", path: "/lab-results", icon: <TestTube className="h-5 w-5" /> },
-  // ];
 
   const practiceLinks = [
     { name: "Catalog Management", path: "/inventory", icon: <BookOpen className="h-5 w-5" /> },
     { name: "Veterinary Staff", path: "/staff", icon: <Stethoscope className="h-5 w-5" /> },
-    { name: "Schedule", path: "/schedule", icon: <Calendar className="h-5 w-5" /> },
+    { name: "Schedule", path: "/shift-management", icon: <Calendar className="h-5 w-5" /> },
+    // { name: "Shift Assignment", path: "/shift-assignment", icon: <Clock className="h-5 w-5" /> },
     { name: "Chatbot", path: "/chatbot", icon: <MessageCircle className="h-5 w-5" /> },
     { name: "Billing", path: "/billing", icon: <DollarSign className="h-5 w-5" /> }
-  ];
-
-  const doctorLinks = [
-    { name: "My Profile", path: "/doctor-management/profile", icon: <UserCircle className="h-5 w-5" /> },
-    { name: "My Shifts", path: "/doctor-management/shifts", icon: <Clock className="h-5 w-5" /> },
-    // { name: "All Doctors", path: "/doctor-management/all", icon: <User className="h-5 w-5" /> },
   ];
 
   const accountLinks = [
@@ -290,7 +279,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             
             {collapsed && <div className="my-4 border-t border-gray-200"></div>}
             
-            <div className="space-y-1">
+            {/* <div className="space-y-1">
               {doctorLinks.map((link) => (
                 <Link 
                   key={link.path} 
@@ -318,7 +307,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                   </div>
                 </Link>
               ))}
-            </div>
+            </div> */}
           </div>
           
           {/* Account Links */}

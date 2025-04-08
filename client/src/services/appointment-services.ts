@@ -21,7 +21,12 @@ export const getAppointments = async (doctor_id: string) => {
   }
 };
 
-export const getAllAppointments = async (date: Date, option: string, page: number, pageSize: number): Promise<PaginatedResponse<any>> => {
+export const getAllAppointments = async (
+  date: Date,
+  option: string,
+  page: number,
+  pageSize: number
+): Promise<PaginatedResponse<any>> => {
   const token = localStorage.getItem("access_token");
   if (!token) {
     throw new Error("No access token found");
@@ -33,7 +38,7 @@ export const getAllAppointments = async (date: Date, option: string, page: numbe
         date: date.toISOString().split("T")[0],
         option: option,
         page: page,
-        pageSize: pageSize
+        pageSize: pageSize,
       },
       headers: {
         Authorization: `Bearer ${token}`,
@@ -45,51 +50,55 @@ export const getAllAppointments = async (date: Date, option: string, page: numbe
       const total = response.data.data.count || 0;
       const data = response.data.data.rows;
       const totalPages = Math.ceil(total / pageSize);
-      
+
       return {
         data: data,
         total,
         page,
         pageSize,
-        totalPages
+        totalPages,
       };
     }
-    
+
     // Handle response with count and rows directly
-    if (response.data && response.data.count !== undefined && Array.isArray(response.data.rows)) {
+    if (
+      response.data &&
+      response.data.count !== undefined &&
+      Array.isArray(response.data.rows)
+    ) {
       const total = response.data.count;
       const data = response.data.rows;
       const totalPages = Math.ceil(total / pageSize);
-      
+
       return {
         data: data,
         total,
         page,
         pageSize,
-        totalPages
+        totalPages,
       };
     }
-    
+
     // Handle array response
     if (Array.isArray(response.data)) {
       const data = response.data;
       const total = data.length;
       const totalPages = Math.ceil(total / pageSize);
-      
+
       // Manual pagination if needed
       const startIndex = (page - 1) * pageSize;
       const endIndex = Math.min(startIndex + pageSize, total);
       const paginatedData = data.slice(startIndex, endIndex);
-      
+
       return {
         data: paginatedData,
         total,
         page,
         pageSize,
-        totalPages
+        totalPages,
       };
     }
-    
+
     // Default case - return a safe structure
     console.log("Response structure:", response.data);
     return {
@@ -97,7 +106,9 @@ export const getAllAppointments = async (date: Date, option: string, page: numbe
       total: response.data?.data?.count || response.data?.count || 0,
       page,
       pageSize,
-      totalPages: Math.ceil((response.data?.data?.count || response.data?.count || 0) / pageSize)
+      totalPages: Math.ceil(
+        (response.data?.data?.count || response.data?.count || 0) / pageSize
+      ),
     };
   } catch (error) {
     console.error("Error fetching appointments:", error);
@@ -106,7 +117,7 @@ export const getAllAppointments = async (date: Date, option: string, page: numbe
       total: 0,
       page,
       pageSize,
-      totalPages: 0
+      totalPages: 0,
     };
   }
 };
@@ -190,9 +201,9 @@ export const getAppointmentById = async (id: number) => {
 
 export const getAppointmentsQueue = async () => {
   try {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem("access_token");
     if (!token) {
-      throw new Error('No access token found');
+      throw new Error("No access token found");
     }
 
     const response = await axios.get(`/api/v1/appointments/queue`, {
@@ -217,47 +228,48 @@ export const getAppointmentsQueue = async () => {
 };
 
 export const getHistoryAppointments = async (pet_id: number) => {
-  const token = localStorage.getItem('access_token');
+  const token = localStorage.getItem("access_token");
   if (!token) {
-    throw new Error('No access token found');
+    throw new Error("No access token found");
   }
 
-  const response = await axios.get(`/api/v1/appointments/pet/${pet_id}/history`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await axios.get(
+    `/api/v1/appointments/pet/${pet_id}/history`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
   return response.data;
 };
 
-
-export const updateAppointmentById = async (id: number, updateData: {
-  payment_status?: string;
-  state_id?: number;
-  room_id?: number;
-  notes?: string;
-  appointment_reason?: string;
-  reminder_send?: boolean;
-  arrival_time?: string;
-  priority?: string;
-}) => {
+export const updateAppointmentById = async (
+  id: number,
+  updateData: {
+    payment_status?: string;
+    state_id?: number;
+    room_id?: number;
+    notes?: string;
+    appointment_reason?: string;
+    reminder_send?: boolean;
+    arrival_time?: string;
+    priority?: string;
+  }
+) => {
   try {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem("access_token");
     if (!token) {
-      throw new Error('No access token found');
+      throw new Error("No access token found");
     }
 
-    const response = await axios.put(
-      `/api/v1/appointment/${id}`,
-      updateData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-      }
-    );
+    const response = await axios.put(`/api/v1/appointment/${id}`, updateData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
 
     return response.data;
   } catch (error) {
@@ -266,11 +278,10 @@ export const updateAppointmentById = async (id: number, updateData: {
   }
 };
 
-
 export const addAppointmentToQueue = async (appointment: any) => {
-  const token = localStorage.getItem('access_token');
+  const token = localStorage.getItem("access_token");
   if (!token) {
-    throw new Error('No access token found');
+    throw new Error("No access token found");
   }
 
   const response = await axios.post(`/api/v1/appointments/queue`, appointment, {
@@ -280,33 +291,70 @@ export const addAppointmentToQueue = async (appointment: any) => {
   });
 
   return response.data;
-
-}
-
+};
 
 export const getAppointmentAnalytics = async (payload: {
   start_date: string;
   end_date: string;
 }) => {
   try {
-
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem("access_token");
     if (!token) {
-    throw new Error('No access token found');
-  }
+      throw new Error("No access token found");
+    }
 
-  const response = await axios.get(`/api/v1/appointments/statistic?start_date=${payload.start_date}&end_date=${payload.end_date}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  
-  });
+    const response = await axios.get(
+      `/api/v1/appointments/statistic?start_date=${payload.start_date}&end_date=${payload.end_date}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
-  return response.data;
-  
+    return response.data;
   } catch (error) {
     console.error("Error fetching appointment analytics:", error);
     throw error;
   }
-  
+};
+
+export interface AppointmentRequest {
+  pet_id: number;
+  doctor_id: number;
+  service_id: number;
+  reason: string;
+  priority: string;
+  owner: {
+    owner_name: string;
+    owner_email: string;
+    owner_number: string;
+    owner_address: string;
+  };
 }
+
+export const createWalkInAppointment = async (
+  appointmentData: AppointmentRequest
+): Promise<any> => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  try {
+    const response = await axios.post("/api/appointments", appointmentData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to create appointment";
+      throw new Error(errorMessage);
+    }
+    throw new Error("An unexpected error occurred");
+  }
+};

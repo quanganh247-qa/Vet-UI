@@ -19,6 +19,9 @@ import CatalogManagement from "./pages/catalog-management";
 import Prescription from "./pages/prescription";
 import Chatbot from "./pages/chatbot";
 import ScheduleManagement from "./pages/schedule-management";
+import ShiftManagement from "@/pages/shift-management";
+import StaffPageDetail from "@/pages/staff";
+import { WalkInDialog } from "./components/appointment/WalkInDialog";
 
 // Lazy load the TestNotificationListener to avoid hook errors
 const TestNotificationListener = lazy(() => import("@/components/notifications/TestNotificationListener"));
@@ -35,10 +38,8 @@ const FollowUp = lazy(() => import("@/pages/follow-up"));
 const Examination = lazy(() => import("@/pages/examination"));
 const TestOrdersManagement = lazy(() => import("@/pages/test-orders-management"));
 const MedicineInventory = lazy(() => import("@/pages/inventory"));
-// Doctor management pages
-const DoctorProfilePage = lazy(() => import("@/pages/doctor-management/DoctorProfilePage"));
-const DoctorShiftsPage = lazy(() => import("@/pages/doctor-management/DoctorShiftsPage"));
-const AllDoctorsPage = lazy(() => import("@/pages/doctor-management/AllDoctorsPage"));
+const ShiftAssignment = lazy(() => import("@/pages/shift-assignment"));
+const StaffPage = lazy(() => import("@/pages/staff"));
 
 // Create LoginPage component that uses LoginForm
 const LoginPage = () => {
@@ -114,6 +115,7 @@ const WebSocketInitializer = () => {
   return null;
 };
 
+// Add the route in the Router component's Switch block
 function Router() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center h-full"><p>Loading...</p></div>}>
@@ -123,6 +125,7 @@ function Router() {
         <Route path="/staff" component={Staff as React.ComponentType<RouteComponentProps>} />
         <Route path="/analytics" component={Analytics as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment-flow" component={AppointmentFlow as React.ComponentType<RouteComponentProps>} />
+        <Route path="/appointment/walk-in" component={WalkInDialog as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/check-in" component={CheckIn as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id" component={PatientManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/soap" component={SoapNotes as React.ComponentType<RouteComponentProps>} />
@@ -141,12 +144,11 @@ function Router() {
         <Route path="/test-orders" component={TestOrdersManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/inventory" component={MedicineInventory as React.ComponentType<RouteComponentProps>} />
         <Route path="/schedule" component={ScheduleManagement as React.ComponentType<RouteComponentProps>} />
-        {/* Doctor management routes */}
-        <Route path="/doctor-management/profile" component={DoctorProfilePage as React.ComponentType<RouteComponentProps>} />
-        <Route path="/doctor-management/shifts" component={DoctorShiftsPage as React.ComponentType<RouteComponentProps>} />
-        <Route path="/doctor-management/all" component={AllDoctorsPage as React.ComponentType<RouteComponentProps>} />
-        <Route path="/doctor-management/:id/shifts" component={DoctorShiftsPage as React.ComponentType<RouteComponentProps>} />
-        <Route path="/doctor-management/:id" component={lazy(() => import("@/pages/doctor-management/DoctorProfilePage")) as React.ComponentType<RouteComponentProps>} />
+        <Route path="/shift-management" component={ShiftManagement as React.ComponentType<RouteComponentProps>} />
+        <Route path="/shift-assignment" component={ShiftAssignment as React.ComponentType<RouteComponentProps>} />
+        <Route path="/staff" component={StaffPage as React.ComponentType<RouteComponentProps>} />
+        <Route path="/staff/:id" component={StaffPageDetail as React.ComponentType<RouteComponentProps>} />
+ 
         <Route component={NotFound as React.ComponentType<RouteComponentProps>} />
       </Switch>
     </Suspense>
@@ -180,7 +182,7 @@ function App() {
           <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
           
           <div className="flex-1 flex flex-col overflow-hidden">
-            <Topbar openSidebar={() => setSidebarOpen(true)} />
+            {/* <Topbar openSidebar={() => setSidebarOpen(true)} /> */}
             
             <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
               <WebSocketInitializer />

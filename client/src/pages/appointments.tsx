@@ -1,6 +1,17 @@
 import { useState } from "react";
 import { parse, format } from "date-fns";
-import { Calendar, Filter, Inbox, PawPrint, Plus, Search, Download, Printer, Clock, ArrowLeft } from "lucide-react";
+import {
+  Calendar,
+  Filter,
+  Inbox,
+  PawPrint,
+  Plus,
+  Search,
+  Download,
+  Printer,
+  Clock,
+  ArrowLeft,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,6 +29,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { usePatientList } from "@/hooks/use-pet";
 import { useListAppointments } from "@/hooks/use-appointment";
+import { WalkInDialog } from "@/components/appointment/WalkInDialog";
 
 const Appointments = () => {
   const [, setLocation] = useLocation();
@@ -27,48 +39,45 @@ const Appointments = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const { data: patientsData, isLoading: patientsLoading } = usePatientList();
-  
-  // Sử dụng useListAppointments hook thay vì gọi API trực tiếp
-  const { data: appointmentsData, isLoading: appointmentsLoading } = useListAppointments(
-    selectedDate, 
-    statusFilter !== "all" ? statusFilter : "all",
-    currentPage,
-    pageSize
-  );
 
-  // Sửa dòng log để hiển thị rõ ràng hơn
-  console.log("appointmentsData", appointmentsData);
+  // Sử dụng useListAppointments hook thay vì gọi API trực tiếp
+  const { data: appointmentsData, isLoading: appointmentsLoading } =
+    useListAppointments(
+      selectedDate,
+      statusFilter !== "all" ? statusFilter : "all",
+      currentPage,
+      pageSize
+    );
 
   const isLoading = appointmentsLoading || patientsLoading;
 
   // Cập nhật cách lấy danh sách cuộc hẹn đã lọc
-  const filteredAppointments = 
-    appointmentsData
-      ? (Array.isArray(appointmentsData.data) 
-          ? appointmentsData.data 
-          : [])
-        .filter((appointment: Appointment) => {
-          // Nếu đã lọc theo trạng thái ở API, không cần lọc lại ở đây
-          if (statusFilter !== "all") {
-            return true; // Đã lọc ở API
-          }
+  const filteredAppointments = appointmentsData
+    ? (Array.isArray(appointmentsData.data)
+        ? appointmentsData.data
+        : []
+      ).filter((appointment: Appointment) => {
+        // Nếu đã lọc theo trạng thái ở API, không cần lọc lại ở đây
+        if (statusFilter !== "all") {
+          return true; // Đã lọc ở API
+        }
 
-          if (searchTerm) {
-            const searchFields = [
-              appointment.pet?.pet_name,
-              appointment.owner?.owner_name,
-              appointment.doctor?.doctor_name,
-              appointment.service?.service_name,
-            ].map((field) => field?.toLowerCase() || "");
+        if (searchTerm) {
+          const searchFields = [
+            appointment.pet?.pet_name,
+            appointment.owner?.owner_name,
+            appointment.doctor?.doctor_name,
+            appointment.service?.service_name,
+          ].map((field) => field?.toLowerCase() || "");
 
-            return searchFields.some((field) =>
-              field.includes(searchTerm.toLowerCase())
-            );
-          }
+          return searchFields.some((field) =>
+            field.includes(searchTerm.toLowerCase())
+          );
+        }
 
-          return true;
-        })
-      : [];
+        return true;
+      })
+    : [];
 
   // Thêm hàm xử lý thay đổi kích thước trang
   const handlePageSizeChange = (newSize: number) => {
@@ -79,7 +88,7 @@ const Appointments = () => {
   // Thêm hàm xử lý thay đổi trang
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,15 +114,14 @@ const Appointments = () => {
             </Button>
             <div>
               <h1 className="text-xl font-semibold text-white">Appointments</h1>
-              <p className="text-indigo-100 text-sm">Manage and view all appointments</p>
+              <p className="text-indigo-100 text-sm">
+                Manage and view all appointments
+              </p>
             </div>
           </div>
 
           <div className="flex space-x-2 sm:mt-0">
-            <Button className="bg-white text-indigo-600 hover:bg-white/90 font-medium shadow-sm flex items-center gap-1.5">
-              <Plus className="h-4 w-4" />
-              New Appointment
-            </Button>
+            <WalkInDialog />
           </div>
         </div>
       </div>
@@ -121,7 +129,9 @@ const Appointments = () => {
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
         <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
-          <h2 className="text-sm font-medium text-gray-800">Filters & Search</h2>
+          <h2 className="text-sm font-medium text-gray-800">
+            Filters & Search
+          </h2>
         </div>
         <div className="p-4">
           <div className="flex flex-col md:flex-row md:items-center gap-4">
@@ -173,11 +183,19 @@ const Appointments = () => {
             </div>
 
             <div className="flex gap-2 ml-auto mt-4 md:mt-0">
-              <Button variant="outline" size="sm" className="bg-white shadow-sm flex items-center gap-1.5 border-gray-200 hover:bg-gray-50 transition-colors">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white shadow-sm flex items-center gap-1.5 border-gray-200 hover:bg-gray-50 transition-colors"
+              >
                 <Printer className="h-4 w-4 text-gray-600" />
                 <span>Print</span>
               </Button>
-              <Button variant="outline" size="sm" className="bg-white shadow-sm flex items-center gap-1.5 border-gray-200 hover:bg-gray-50 transition-colors">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white shadow-sm flex items-center gap-1.5 border-gray-200 hover:bg-gray-50 transition-colors"
+              >
                 <Download className="h-4 w-4 text-gray-600" />
                 <span>Export</span>
               </Button>
@@ -244,16 +262,12 @@ const Appointments = () => {
                   ))
               ) : filteredAppointments?.length > 0 ? (
                 filteredAppointments.map((appointment: Appointment) => {
-                  const {
-                    pet,
-                    doctor,
-                    owner,
-                    service,
-                    state,
-                  } = appointment;
+                  const { pet, doctor, owner, service, state } = appointment;
 
                   // Thay vì truy cập trực tiếp vào patientsData, cần truy cập vào mảng data bên trong
-                  const patient = patientsData?.data?.find((p: Patient) => p.petid === pet.pet_id);
+                  const patient = patientsData?.data?.find(
+                    (p: Patient) => p.petid === pet.pet_id
+                  );
                   const statusColors = getStatusColor(state);
 
                   return (
@@ -264,7 +278,6 @@ const Appointments = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-3">
                           <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                        
                             <img
                               src={
                                 patient?.data_image
@@ -272,7 +285,7 @@ const Appointments = () => {
                                   : "/fallback-image.png"
                               }
                               alt={patient?.name}
-                               className="w-10 h-10 rounded-lg"
+                              className="w-10 h-10 rounded-lg"
                             />
                           </div>
                           <div>
@@ -319,7 +332,21 @@ const Appointments = () => {
                       </td>
                       <td className="px-6 py-4">
                         <Badge
-                          className={`px-2.5 py-0.5 inline-flex items-center rounded-full text-xs font-medium ${statusColors.bgColor} ${statusColors.textColor} border ${state === 'completed' ? 'border-green-200' : state === 'in progress' ? 'border-blue-200' : state === 'checked in' ? 'border-indigo-200' : state === 'confirmed' ? 'border-purple-200' : state === 'canceled' ? 'border-red-200' : 'border-gray-200'}`}
+                          className={`px-2.5 py-0.5 inline-flex items-center rounded-full text-xs font-medium ${
+                            statusColors.bgColor
+                          } ${statusColors.textColor} border ${
+                            state === "completed"
+                              ? "border-green-200"
+                              : state === "in progress"
+                              ? "border-blue-200"
+                              : state === "checked in"
+                              ? "border-indigo-200"
+                              : state === "confirmed"
+                              ? "border-purple-200"
+                              : state === "canceled"
+                              ? "border-red-200"
+                              : "border-gray-200"
+                          }`}
                         >
                           <div
                             className={`w-2 h-2 rounded-full mr-1.5 ${statusColors.dotColor}`}
@@ -333,7 +360,9 @@ const Appointments = () => {
                           size="sm"
                           className="bg-white shadow-sm border-gray-200 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
                           onClick={() =>
-                            setLocation(`appointment/${appointment.id}/check-in`)
+                            setLocation(
+                              `appointment/${appointment.id}/check-in`
+                            )
                           }
                         >
                           View Details
@@ -367,12 +396,18 @@ const Appointments = () => {
           <div className="px-6 py-4 flex items-center justify-between border-t border-gray-100">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-700">
-                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, 
+                Showing {(currentPage - 1) * pageSize + 1} to{" "}
+                {Math.min(
+                  currentPage * pageSize,
                   appointmentsData?.total || filteredAppointments.length
-                )} of{' '}
-                {appointmentsData?.total || filteredAppointments.length} entries
+                )}{" "}
+                of {appointmentsData?.total || filteredAppointments.length}{" "}
+                entries
               </span>
-              <Select value={pageSize.toString()} onValueChange={(value) => handlePageSizeChange(parseInt(value))}>
+              <Select
+                value={pageSize.toString()}
+                onValueChange={(value) => handlePageSizeChange(parseInt(value))}
+              >
                 <SelectTrigger className="w-20">
                   <SelectValue />
                 </SelectTrigger>
@@ -398,7 +433,13 @@ const Appointments = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage >= Math.ceil((appointmentsData?.total || filteredAppointments.length) / pageSize)}
+                disabled={
+                  currentPage >=
+                  Math.ceil(
+                    (appointmentsData?.total || filteredAppointments.length) /
+                      pageSize
+                  )
+                }
                 className="bg-white shadow-sm border-gray-200 hover:bg-gray-50"
               >
                 Next

@@ -58,7 +58,7 @@ export const PatientsPage: React.FC = () => {
 
   // Sửa hàm handlePageChange để đảm bảo nó hoạt động đúng
   const handlePageChange = (newPage: number) => {
-  console.log('Changing to page:', newPage, 'Total pages:', patientsData?.totalPages);
+    
   // Đảm bảo rằng chúng ta có thể chuyển trang ngay cả khi totalPages chưa được xác định
   if (newPage >= 1 && (!patientsData?.totalPages || newPage <= patientsData.totalPages)) {
   setCurrentPage(newPage);

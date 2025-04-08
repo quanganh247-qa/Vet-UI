@@ -1,5 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, UseMutationResult, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AppointmentRequest,
+  createWalkInAppointment,
   getAllAppointments,
   getAppointmentAnalytics,
   getAppointmentById,
@@ -79,5 +81,15 @@ export const useAppointmentAnalytics = (payload: {
   return useQuery({
     queryKey: ["appointmentAnalytics"],
     queryFn: () => getAppointmentAnalytics(payload),
+  });
+};
+
+export const useCreateWalkInAppointment = (): UseMutationResult<
+  any, // response type
+  Error, // error type
+  AppointmentRequest // variables type
+> => {
+  return useMutation({
+    mutationFn: createWalkInAppointment,
   });
 };

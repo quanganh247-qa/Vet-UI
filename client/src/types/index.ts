@@ -74,6 +74,9 @@ export interface Doctor {
   bio?: string;
 }
 
+
+
+
 export interface Service {
   service_name: string;
   service_duration: number;
@@ -129,28 +132,28 @@ export interface QueueItem {
   doctor: string;
 }
 
-export interface Staff {
-  id: number;
-  name: string;
-  role: string;
-  specialty?: string;
-  status: string;
-  is_active: boolean;
-  email?: string;
-  phone?: string;
-  address?: string;
-  bio?: string;
-  education?: string;
-  experience?: string[];
-  certifications?: string[];
-  languages?: string[];
-  schedule?: {
-    day: string;
-    hours: string;
-  }[];
-  image_url?: string;
-  avatar?: string;
-}
+// export interface Staff {
+//   id: number;
+//   name: string;
+//   role: string;
+//   specialty?: string;
+//   status: string;
+//   is_active: boolean;
+//   email?: string;
+//   phone?: string;
+//   address?: string;
+//   bio?: string;
+//   education?: string;
+//   experience?: string[];
+//   certifications?: string[];
+//   languages?: string[];
+//   schedule?: {
+//     day: string;
+//     hours: string;
+//   }[];
+//   image_url?: string;
+//   avatar?: string;
+// }
 
 export interface Room {
   id: number;
@@ -167,7 +170,7 @@ export interface RoomResponse {
   status: number;
 }
 
-export type Resource = Staff | Room;
+export type Resource = DoctorDetail | Room;
 
 export interface Notification {
   id: string;
@@ -546,6 +549,10 @@ export interface Shift {
   assigned_patients: number;
   created_at: Date;
   doctor_id: number;
+  title?: string;
+  status?: 'scheduled' | 'completed' | 'cancelled';
+  location?: string;
+  description?: string;
 }
 
 export interface DoctorProfile {
@@ -563,14 +570,13 @@ export interface DoctorProfile {
 export interface WorkShift {
   id: string;
   title: string;
-  startTime: Date;
-  endTime: Date;
-  doctorId: string;
+  start_time: Date;
+  end_time: Date;
+  doctor_id: string;
   description?: string;
   status: 'scheduled' | 'completed' | 'cancelled';
   location?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
 }
 
 export interface DoctorSchedule extends Doctor {
@@ -589,4 +595,19 @@ export interface WorkScheduleFilters {
   startDate?: Date;
   endDate?: Date;
   status?: 'scheduled' | 'completed' | 'cancelled';
+}
+
+
+export interface DoctorDetail {
+	doctor_id: number;
+	username: string;
+	doctor_name: string;
+	email: string;
+	role: string;
+	specialization: string;
+	years_of_experience: number;
+	education: string;
+	certificate_number: string;
+	bio: string;
+	data_image: string;
 }
