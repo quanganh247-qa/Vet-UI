@@ -119,6 +119,11 @@ const PatientManagement = () => {
     navigate(`/appointment/${id}/examination`);
   };
 
+  // Add a function to navigate to the vaccination page
+  const navigateToVaccination = () => {
+    navigate(`/appointment/${id}/vaccination`);
+  };
+
   const handleBackToDashboard = () => {
     navigate("/dashboard");
   };
@@ -273,13 +278,52 @@ const PatientManagement = () => {
           </div>
 
           {/* Action buttons */}
-          <div className="flex flex-wrap gap-2 justify-center md:justify-end mt-3 md:mt-0">
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
             <Button
-              className="bg-purple-600 hover:bg-purple-700 text-white shadow flex items-center gap-1.5 text-xs px-3 py-1.5"
               onClick={navigateToExamination}
+              className="bg-blue-100 hover:bg-blue-200 text-blue-700 w-full flex items-center justify-center gap-2 py-6"
+              variant="outline"
             >
-              <Stethoscope className="h-3.5 w-3.5" />
-              <span>Start Examination</span>
+              <Stethoscope className="h-5 w-5" />
+              <span className="font-medium">
+                Start Examination
+              </span>
+            </Button>
+            
+            {appointment?.service?.service_name?.toLowerCase().includes('vaccine') || 
+             appointment?.reason?.toLowerCase().includes('vaccine') ? (
+              <Button
+                onClick={navigateToVaccination}
+                className="bg-green-100 hover:bg-green-200 text-green-700 w-full flex items-center justify-center gap-2 py-6"
+                variant="outline"
+              >
+                <Syringe className="h-5 w-5" />
+                <span className="font-medium">
+                  Administer Vaccine
+                </span>
+              </Button>
+            ) : (
+              <Button
+                onClick={navigateToSOAP}
+                className="bg-purple-100 hover:bg-purple-200 text-purple-700 w-full flex items-center justify-center gap-2 py-6"
+                variant="outline"
+              >
+                <FileText className="h-5 w-5" />
+                <span className="font-medium">
+                  SOAP Notes
+                </span>
+              </Button>
+            )}
+            
+            <Button
+              onClick={() => navigate(`/appointment/${id}/patient/${appointment?.pet?.pet_id}/treatment?appointmentId=${id}`)}
+              className="bg-amber-100 hover:bg-amber-200 text-amber-700 w-full flex items-center justify-center gap-2 py-6"
+              variant="outline"
+            >
+              <Pill className="h-5 w-5" />
+              <span className="font-medium">
+                Treatment Plan
+              </span>
             </Button>
           </div>
         </div>

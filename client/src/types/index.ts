@@ -21,7 +21,7 @@ export interface Appointment {
   reminder_send: boolean;
   time_slot: TimeSlot;
   state: string;
-  room_name: string;
+  room: string;
   reason: string;
   owner: Owner;
   created_at: string; // ISO string, ví dụ: "2023-03-18 12:00:00"

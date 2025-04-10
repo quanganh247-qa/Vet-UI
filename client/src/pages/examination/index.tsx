@@ -99,8 +99,6 @@ const Examination: React.FC = () => {
       },
     };
 
-    console.log("objectiveData", JSON.stringify(objectiveData, null, 2));
-
     try {
       await updateSoapMutation.mutateAsync({
         appointmentID: appointment.id,

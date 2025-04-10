@@ -36,6 +36,7 @@ const MedicalRecords = lazy(() => import("@/pages/medical-records"));
 const WorkflowNavigation = lazy(() => import("@/components/WorkflowNavigation"));
 const FollowUp = lazy(() => import("@/pages/follow-up"));
 const Examination = lazy(() => import("@/pages/examination"));
+const Vaccination = lazy(() => import("@/pages/vaccination"));
 const TestOrdersManagement = lazy(() => import("@/pages/test-orders-management"));
 const MedicineInventory = lazy(() => import("@/pages/inventory"));
 const ShiftAssignment = lazy(() => import("@/pages/shift-assignment"));
@@ -133,6 +134,7 @@ function Router() {
         <Route path="/appointment/:id/prescription" component={Prescription as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/follow-up" component={FollowUp as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/examination" component={Examination as React.ComponentType<RouteComponentProps>} />
+        <Route path="/appointment/:id/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/lab-management" component={lazy(() => import("@/pages/lab-management")) as React.ComponentType<RouteComponentProps>} />
         <Route path="/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} />
         <Route path="/notifications" component={NotificationsAdmin as React.ComponentType<RouteComponentProps>} />

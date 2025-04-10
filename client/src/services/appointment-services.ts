@@ -325,11 +325,18 @@ export interface AppointmentRequest {
   service_id: number;
   reason: string;
   priority: string;
-  owner: {
+  owner?: {
     owner_name: string;
     owner_email: string;
     owner_number: string;
     owner_address: string;
+  };
+  pet?: {
+    name: string;
+    species: string;
+    breed: string;
+    gender: string;
+    birth_date: string;
   };
 }
 
@@ -342,7 +349,7 @@ export const createWalkInAppointment = async (
   }
 
   try {
-    const response = await axios.post("/api/appointments", appointmentData, {
+    const response = await axios.post("/api/v1/appointments/walk-in", appointmentData, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",

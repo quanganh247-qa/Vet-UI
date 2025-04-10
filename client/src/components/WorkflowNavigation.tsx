@@ -13,13 +13,14 @@ import {
   Receipt,
   FlaskConical,
   CalendarClock,
-  ClipboardList
+  ClipboardList,
+  Syringe
 } from 'lucide-react';
 
 interface WorkflowNavigationProps {
   appointmentId?: string;
   petId?: string;
-  currentStep: 'check-in' | 'examination' | 'soap' | 'diagnostic' | 'treatment' | 'prescription' | 'follow-up' | 'patient-details' | 'pending-lab';
+  currentStep: 'check-in' | 'examination' | 'soap' | 'diagnostic' | 'treatment' | 'prescription' | 'follow-up' | 'patient-details' | 'pending-lab' | 'records' | 'vaccination';
   isNurseView?: boolean;
 }
 
@@ -40,9 +41,11 @@ const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, 
   const doctorWorkflowSteps = [
     { id: 'patient-details', label: 'Patient Info', icon: ClipboardList, path: `/appointment/${appointmentId}` },
     { id: 'examination', label: 'Examination', icon: Stethoscope, path: `/appointment/${appointmentId}/examination` },
+    { id: 'vaccination', label: 'Vaccination', icon: Syringe, path: `/appointment/${appointmentId}/vaccination` },
     { id: 'soap', label: 'SOAP', icon: FileText, path: `/appointment/${appointmentId}/soap` },
     { id: 'diagnostic', label: 'Lab/Imaging', icon: FlaskConical, path: `/appointment/${appointmentId}/lab-management` },
     { id: 'treatment', label: 'Treatment', icon: Tablets, path: `/appointment/${appointmentId}/patient/${petId}/treatment?appointmentId=${appointmentId}` },
+    { id: 'records', label: 'Medical Records', icon: FileText, path: `/appointment/${appointmentId}/patient/${petId}/medical-records?appointmentId=${appointmentId}` },
     // { id: 'prescription', label: 'Prescription', icon: Receipt, path: `/appointment/${appointmentId}/prescription` },
     // { id: 'follow-up', label: 'Follow-up', icon: CalendarClock, path: `/appointment/${appointmentId}/follow-up` },
   ];

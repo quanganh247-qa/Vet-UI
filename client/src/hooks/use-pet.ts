@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getPatientById, getAllPatients } from "@/services/pet-services";
 import { PaginatedResponse } from "@/types";
+import { getPetOwnerByPetId } from "@/services/user-services";
 
 export const usePatientData = (id: string | undefined) => {
   return useQuery({
@@ -25,3 +26,18 @@ return useQuery({
 
   });
 }
+
+export const usePetOwnerByPetId = (id: number | undefined) => {
+  return useQuery({
+    queryKey: ['petOwner', id],
+    queryFn: () => {
+      if (typeof id === 'undefined') {
+        throw new Error('Pet ID is required');
+      }
+      return getPetOwnerByPetId(id);
+    },
+    enabled: !!id, // Only run the query when id is available
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    retry: 1,
+  });
+};

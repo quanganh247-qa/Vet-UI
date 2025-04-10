@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useCreateWalkInAppointment } from "@/hooks/use-appointment";
 import { useServices } from "@/hooks/use-services";
 import { useDoctors } from "@/hooks/use-doctors";
@@ -31,6 +31,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { usePatientData, usePatientsData, usePetOwnerByPetId } from "@/hooks/use-pet";
+import { Patient } from "@/types";
 
 // Form validation schema
 const formSchema = z.object({
@@ -51,7 +53,7 @@ const formSchema = z.object({
     pet_breed: z.string().min(1, "Breed is required"),
     pet_gender: z.string().min(1, "Gender is required"),
     pet_dob: z.string().min(1, "Date of birth is required"),
-  }),
+  }).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -95,14 +97,23 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
 }) => {
   const [formMode, setFormMode] = useState<"new" | "existing">("new");
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<Pet[]>([]);
-  const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
+  const [searchResults, setSearchResults] = useState<Patient[]>([]);
+  const [selectedPet, setSelectedPet] = useState<Patient | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [selectedPetId, setSelectedPetId] = useState<number | undefined>(undefined);
 
   const { data: servicesData, isLoading: servicesLoading } = useServices();
   const { data: doctorsData, isLoading: doctorsLoading } = useDoctors();
   const createWalkInMutation = useCreateWalkInAppointment();
   const isSubmitting = createWalkInMutation.isPending;
+
+  const { data: patientsData, isLoading: isLoading, isError } = usePatientsData(currentPage, pageSize);
+
+  const { data: petOwnerData, isLoading: isPetOwnerLoading } = usePetOwnerByPetId(selectedPetId);
+
+  const { data: petData, isLoading: isPetLoading } = usePatientData(selectedPetId?.toString());
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -128,16 +139,62 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
     },
   });
 
+  // Add useEffect for real-time search
+  useEffect(() => {
+    const searchTimeout = setTimeout(() => {
+      if (searchTerm.trim()) {
+        handlePetSearch();
+      } else {
+        setSearchResults([]);
+      }
+    }, 300); // Debounce time of 300ms
+
+    return () => clearTimeout(searchTimeout);
+  }, [searchTerm, patientsData]);
+
+  // Update form when pet owner data is available
+  useEffect(() => {
+    if (petOwnerData && selectedPet) {
+      form.setValue("pet_id", selectedPet.petid.toString());
+      form.setValue("pet.pet_name", selectedPet.name || "");
+      form.setValue("pet.pet_species", petData?.data?.species || "");
+      form.setValue("pet.pet_breed", petData?.data?.breed || "");
+      form.setValue("pet.pet_gender", petData?.data?.gender || "");
+      form.setValue("pet.pet_dob", petData?.data?.birth_date || "");
+      form.setValue("owner.owner_name", petOwnerData.username || "");
+      form.setValue("owner.owner_number", petOwnerData.phone_number || "");
+      form.setValue("owner.owner_email", petOwnerData.email || "");
+      form.setValue("owner.owner_address", petOwnerData.address || "");
+    }
+  }, [petOwnerData, selectedPet, form, petData]);
+
   const handleSubmit = async (data: FormData) => {
     try {
+      if (formMode === "existing" && !selectedPet?.petid) {
+        toast({
+          title: "Error",
+          description: "Please select a pet first",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const appointmentData = formMode === "new"
         ? {
-            ...data,
             pet_id: 0,
             doctor_id: parseInt(data.doctor_id),
             service_id: parseInt(data.service_id),
+            reason: data.reason,
+            priority: data.priority,
             create_pet: true,
             create_owner: true,
+            pet: data.pet ? {
+              name: data.pet.pet_name,
+              species: data.pet.pet_species,
+              breed: data.pet.pet_breed,
+              gender: data.pet.pet_gender,
+              birth_date: data.pet.pet_dob,
+            }  : { name: "", species: "", breed: "", gender: "", birth_date: "" },
             owner: {
               owner_name: data.owner.owner_name,
               owner_number: data.owner.owner_number,
@@ -146,17 +203,19 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
             },
           }
         : {
-            pet_id: selectedPet?.pet_id || parseInt(data.pet_id || "0"),
+            pet_id: selectedPet!.petid,
             doctor_id: parseInt(data.doctor_id),
             service_id: parseInt(data.service_id),
             reason: data.reason,
             priority: data.priority,
-            owner: selectedPet
+            create_pet: false,
+            create_owner: false,
+            owner: petOwnerData
               ? {
-                  owner_name: selectedPet.owner_name,
-                  owner_number: selectedPet.owner_number,
-                  owner_email: selectedPet.owner_email,
-                  owner_address: selectedPet.owner_address,
+                  owner_name: petOwnerData.username,
+                  owner_number: petOwnerData.phone_number,
+                  owner_email: petOwnerData.email,
+                  owner_address: petOwnerData.address,
                 }
               : {
                   owner_name: data.owner.owner_name,
@@ -166,91 +225,70 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                 },
           };
 
+      console.log("Submitting appointment data:", appointmentData);
       await createWalkInMutation.mutateAsync(appointmentData);
+      
       toast({
         title: "Success",
         description: "Walk-in appointment created successfully",
+        className: "bg-green-50 border-green-200 text-green-800",
       });
       onSuccess?.();
     } catch (error) {
+      console.error("Error creating appointment:", error);
       toast({
         title: "Error",
-        description: "Error creating walk-in appointment",
+        description: error instanceof Error ? error.message : "Error creating walk-in appointment",
         variant: "destructive",
       });
     }
   };
 
   const handlePetSearch = async () => {
-    if (!searchTerm.trim()) return;
+    if (!searchTerm.trim()) {
+      setSearchResults([]);
+      return;
+    }
 
     setIsSearching(true);
     try {
-      // Mocked search functionality for demo - replace with actual API call
-      setTimeout(() => {
-        const mockResults: Pet[] = [
-          {
-            pet_id: 101,
-            pet_name: "Max",
-            pet_species: "Dog",
-            pet_breed: "Golden Retriever",
-            pet_gender: "Male",
-            pet_dob: "2019-05-15",
-            owner_id: 201,
-            owner_name: "John Smith",
-            owner_number: "555-123-4567",
-            owner_email: "john@example.com",
-            owner_address: "123 Main St, Anytown",
-          },
-          {
-            pet_id: 102,
-            pet_name: "Bella",
-            pet_species: "Cat",
-            pet_breed: "Siamese",
-            pet_gender: "Female",
-            pet_dob: "2020-08-22",
-            owner_id: 202,
-            owner_name: "Sarah Johnson",
-            owner_number: "555-987-6543",
-            owner_email: "sarah@example.com",
-            owner_address: "456 Oak Ave, Somewhere",
-          },
-        ];
-
-        const results = mockResults.filter(
+      if (patientsData?.data) {
+        const results = patientsData.data.filter(
           (pet) =>
-            pet.pet_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            pet.owner_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            pet.pet_id.toString().includes(searchTerm)
+            pet.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            pet.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            pet.breed?.toString().includes(searchTerm)
         );
-
         setSearchResults(results);
-        setIsSearching(false);
-      }, 800);
+      }
     } catch (error) {
       console.error("Error searching for pets:", error);
-      setIsSearching(false);
       toast({
         title: "Error",
         description: "Failed to search for pets",
         variant: "destructive",
       });
+    } finally {
+      setIsSearching(false);
     }
   };
 
-  const selectPet = (pet: Pet) => {
+  const selectPet = (pet: Patient) => {
     setSelectedPet(pet);
-    form.setValue("pet_id", pet.pet_id.toString());
-    form.setValue("owner.owner_name", pet.owner_name);
-    form.setValue("owner.owner_number", pet.owner_number);
-    form.setValue("owner.owner_email", pet.owner_email);
-    form.setValue("owner.owner_address", pet.owner_address);
+    setSelectedPetId(pet.petid);
+    
+    // Set pet information
+    form.setValue("pet_id", pet.petid.toString());
+    form.setValue("pet.pet_name", pet.name || "");
+    form.setValue("pet.pet_species", petData?.data?.species || "");
+    form.setValue("pet.pet_breed", petData?.data?.breed || "");
+    form.setValue("pet.pet_gender", petData?.data?.gender || "");
+    form.setValue("pet.pet_dob", petData?.data?.birth_date || "");
   };
 
   const clearPetSelection = () => {
     setSelectedPet(null);
-    setSearchResults([]);
-    setSearchTerm("");
+    setSelectedPetId(undefined);
     form.reset();
   };
 
@@ -307,33 +345,21 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="flex-1"
                     />
-                    <Button
-                      type="button"
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                      onClick={handlePetSearch}
-                      disabled={isSearching || !searchTerm.trim()}
-                    >
-                      {isSearching ? (
-                        <>
-                          <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
-                          Searching...
-                        </>
-                      ) : (
-                        "Search"
-                      )}
-                    </Button>
+                    {isSearching && (
+                      <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
+                    )}
                   </div>
 
                   {searchResults.length > 0 && (
-                    <div className="mt-4">
+                    <div className="mt-4 bg-white rounded-lg shadow-md p-4">
                       <h4 className="text-sm font-medium text-gray-900 mb-2">
-                        Search Results
+                        Search Results ({searchResults.length})
                       </h4>
-                      <div className="bg-white rounded-md border border-gray-200 overflow-hidden divide-y divide-gray-200 max-h-60 overflow-y-auto">
+                      <div className="space-y-2">
                         {searchResults.map((pet) => (
                           <div
-                            key={pet.pet_id}
-                            className="p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                            key={`pet-${pet.petid}`}
+                            className="p-3 hover:bg-gray-50 cursor-pointer transition-colors border rounded-md"
                             onClick={() => selectPet(pet)}
                           >
                             <div className="flex justify-between items-start">
@@ -341,27 +367,24 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                                 <div className="flex items-center">
                                   <PawPrint className="h-4 w-4 text-indigo-500 mr-1.5" />
                                   <span className="font-medium text-gray-900">
-                                    {pet.pet_name}
+                                    {pet.name}
                                   </span>
                                   <Badge
                                     className="ml-2 text-xs"
                                     variant="outline"
                                   >
-                                    {pet.pet_species}
+                                    {pet.breed}
                                   </Badge>
                                 </div>
                                 <div className="text-sm text-gray-500 mt-1">
-                                  ID: {pet.pet_id} • {pet.pet_breed} •{" "}
-                                  {pet.pet_gender}
+                                  ID: {pet.petid}
                                 </div>
                               </div>
                               <div className="text-right">
                                 <div className="text-sm font-medium text-gray-900">
-                                  {pet.owner_name}
+                                  {pet.username}
                                 </div>
-                                <div className="text-xs text-gray-500">
-                                  {pet.owner_number}
-                                </div>
+                              
                               </div>
                             </div>
                           </div>
@@ -370,19 +393,9 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                     </div>
                   )}
 
-                  {searchResults.length === 0 && searchTerm && !isSearching && (
-                    <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-md text-center">
-                      <p className="text-gray-600">
-                        No pets found matching "{searchTerm}"
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="mt-2"
-                        onClick={() => setFormMode("new")}
-                      >
-                        Create New Pet & Owner
-                      </Button>
+                  {searchTerm && !isSearching && searchResults.length === 0 && (
+                    <div className="mt-4 text-center text-gray-500">
+                      No pets found matching "{searchTerm}"
                     </div>
                   )}
                 </div>
@@ -411,28 +424,31 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                       <div>
                         <div className="flex items-center">
                           <span className="font-medium text-gray-900 text-lg">
-                            {selectedPet.pet_name}
+                            {selectedPet.name}
                           </span>
                           <Badge className="ml-2" variant="outline">
-                            {selectedPet.pet_species}
+                            {selectedPet.breed}
                           </Badge>
                         </div>
                         <div className="text-sm text-gray-500 mt-1">
-                          ID: {selectedPet.pet_id} • {selectedPet.pet_breed} •{" "}
-                          {selectedPet.pet_gender}
+                          ID: {selectedPet.petid}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm font-medium text-gray-900">
-                          {selectedPet.owner_name}
+                      {isPetOwnerLoading ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></div>
+                      ) : petOwnerData ? (
+                        <div className="text-right">
+                          <div className="text-sm font-medium text-gray-900">
+                            {petOwnerData.username}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {petOwnerData.phone_number}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {petOwnerData.email}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500">
-                          {selectedPet.owner_number}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {selectedPet.owner_email}
-                        </div>
-                      </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -853,10 +869,10 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                           >
                             High
                           </Badge>
-                          <span>Emergency/Urgent</span>
+                          {/* <span>Emergency/Urgent</span> */}
                         </div>
                       </SelectItem>
-                      <SelectItem value="medium" className="focus:bg-orange-50">
+                      {/* <SelectItem value="medium" className="focus:bg-orange-50">
                         <div className="flex items-center">
                           <Badge
                             variant="outline"
@@ -866,16 +882,16 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                           </Badge>
                           <span>Moderate concern</span>
                         </div>
-                      </SelectItem>
+                      </SelectItem> */}
                       <SelectItem value="low" className="focus:bg-green-50">
                         <div className="flex items-center">
                           <Badge
                             variant="outline"
                             className={`mr-2 ${getPriorityColor("low")}`}
                           >
-                            Low
+                            Normal
                           </Badge>
-                          <span>Routine visit</span>
+                          {/* <span>Routine visit</span> */}
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -931,8 +947,16 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                   type="submit"
                   className="bg-indigo-600 hover:bg-indigo-700 text-white transition-all"
                   disabled={
-                    isSubmitting || (formMode === "existing" && !selectedPet)
+                    isSubmitting || 
+                    !form.formState.isValid || 
+                    (formMode === "new" && !form.getValues("pet.pet_name")) ||
+                    (formMode === "existing" && !selectedPet) ||
+                    !form.getValues("doctor_id") ||
+                    !form.getValues("service_id") ||
+                    !form.getValues("reason") ||
+                    !form.getValues("priority")
                   }
+                  onClick={form.handleSubmit(handleSubmit)}
                 >
                   {isSubmitting ? (
                     <>

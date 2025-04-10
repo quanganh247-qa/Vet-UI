@@ -54,8 +54,6 @@ export const PatientsPage: React.FC = () => {
     isError: boolean 
   };
 
-  console.log('patientsData', patientsData);
-
   // Sửa hàm handlePageChange để đảm bảo nó hoạt động đúng
   const handlePageChange = (newPage: number) => {
     
@@ -105,9 +103,9 @@ export const PatientsPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold">Patients</h1>
-            <p className="text-indigo-100 text-sm">
+            {/* <p className="text-indigo-100 text-sm">
               Manage and view all patient records
-            </p>
+            </p> */}
           </div>
 
           <div className="flex gap-2">
