@@ -41,7 +41,7 @@ const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, 
   const doctorWorkflowSteps = [
     { id: 'patient-details', label: 'Patient Info', icon: ClipboardList, path: `/appointment/${appointmentId}` },
     { id: 'examination', label: 'Examination', icon: Stethoscope, path: `/appointment/${appointmentId}/examination` },
-    { id: 'vaccination', label: 'Vaccination', icon: Syringe, path: `/appointment/${appointmentId}/vaccination` },
+    // { id: 'vaccination', label: 'Vaccination', icon: Syringe, path: `/appointment/${appointmentId}/vaccination` },
     { id: 'soap', label: 'SOAP', icon: FileText, path: `/appointment/${appointmentId}/soap` },
     { id: 'diagnostic', label: 'Lab/Imaging', icon: FlaskConical, path: `/appointment/${appointmentId}/lab-management` },
     { id: 'treatment', label: 'Treatment', icon: Tablets, path: `/appointment/${appointmentId}/patient/${petId}/treatment?appointmentId=${appointmentId}` },

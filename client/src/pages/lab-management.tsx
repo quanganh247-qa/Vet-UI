@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { 
   Card, 
@@ -39,7 +39,9 @@ import {
   ArrowUpRight,
   Save,
   ShoppingCart,
-  AlertTriangle
+  AlertTriangle,
+  Syringe,
+  Receipt
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
@@ -48,6 +50,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { usePatientData } from '@/hooks/use-pet';
 import { useAppointmentData } from '@/hooks/use-appointment';
 import { useCreateTest, useListTests, useCreateTestOrder } from '@/hooks/use-test';
+import { createInvoice } from '@/services/invoice-services';
+import { CreateInvoiceRequest, InvoiceItem } from '@/types';
+import { format } from 'date-fns';
 import WorkflowNavigation from "@/components/WorkflowNavigation";
 import { cn } from "@/lib/utils";
 
@@ -80,23 +85,59 @@ const LabManagement: React.FC = () => {
   const { data: appointment, isLoading: isAppointmentLoading } = useAppointmentData(appointmentId);
   const { data: patient, isLoading: isPatientLoading } = usePatientData(appointment?.pet?.pet_id);
   
-  // Fetch test categories from API
-  const { data: apiTestCategories, isLoading: isTestCategoriesLoading } = useListTests();
+  // Fetch all items (tests and vaccines) from API
+  const { data: apiCategories, isLoading: isItemsLoading } = useListTests('');
   
   // Create test mutations
   const createTest = useCreateTest();
   const createTestOrders = useCreateTestOrder();
   
+  // Add useEffect to restore session if available
+  React.useEffect(() => {
+    if (appointmentId) {
+      // Try to restore previous session data if it exists
+      const savedSessionData = localStorage.getItem(`appointment_session_${appointmentId}`);
+      
+      if (savedSessionData) {
+        try {
+          const sessionData = JSON.parse(savedSessionData);
+          
+          // If we have notes from previous session and current notes are empty, restore them
+          if (sessionData.notes && !notes) {
+            setNotes(sessionData.notes);
+          }
+          
+          // Log session resumption
+          console.log("Resuming previous session for appointment:", appointmentId);
+          
+          // Show toast notification that session was restored
+          toast({
+            title: "Session restored",
+            description: `Continuing work on ${sessionData.patientName}'s appointment`,
+            className: "bg-blue-50 border-blue-200 text-blue-800",
+          });
+        } catch (e) {
+          console.error("Error restoring session:", e);
+        }
+      }
+    }
+  }, [appointmentId, notes, toast]);
+  
   // Map API test categories to UI format with icons
   const testCategories = React.useMemo(() => {
-    if (!apiTestCategories) return [];
+    if (!apiCategories) return [];
 
-    console.log("apiTestCategories", apiTestCategories);
+    console.log("API Categories:", apiCategories);
     
-    return apiTestCategories.map((category: any) => {
+    // Check if apiCategories is an array
+    const categories = Array.isArray(apiCategories) 
+      ? apiCategories 
+      : [apiCategories];
+      
+    return categories.map((category: any) => {
       // Map icon_name to react component
       let icon;
-      switch (category.icon_name) {
+      switch (category.icon) {
         case 'blood':
           icon = <Beaker className="h-5 w-5 text-red-500" />;
           break;
@@ -113,12 +154,16 @@ const LabManagement: React.FC = () => {
           icon = <FlaskConical className="h-5 w-5 text-indigo-500" />;
       }
       
+      // Get the items array and filter for type === 'test'
+      const items = category.items || [];
+      const testItems = items.filter((item: any) => item.type === 'test');
+      
       // Map test fields to match UI component expectations
-      const mappedTests = category.tests.map((test: any) => ({
-        id: test.id,
+      const mappedTests = testItems.map((test: any) => ({
+        id: test.id.toString(),
         name: test.name,
         description: test.description,
-        price: test.price,
+        price: test.price ? `${test.price.toLocaleString('vi-VN')} đ` : undefined,
         turnaroundTime: test.turnaround_time
       }));
       
@@ -130,7 +175,49 @@ const LabManagement: React.FC = () => {
         tests: mappedTests
       };
     });
-  }, [apiTestCategories]);
+  }, [apiCategories]);
+  
+  // Map API vaccines to UI format
+  const vaccineCategory = React.useMemo(() => {
+    if (!apiCategories) return null;
+    
+    console.log("Processing vaccines from categories:", apiCategories);
+    
+    // Check if apiCategories is an array
+    const categories = Array.isArray(apiCategories) 
+      ? apiCategories 
+      : [apiCategories];
+    
+    // Collect all vaccine items from all categories
+    const allVaccineItems: any[] = [];
+    
+    categories.forEach((category: any) => {
+      const items = category.items || [];
+      const vaccineItems = items.filter((item: any) => item.type === 'vaccine');
+      allVaccineItems.push(...vaccineItems);
+    });
+    
+    console.log("All vaccine items:", allVaccineItems);
+    
+    if (allVaccineItems.length === 0) return null;
+    
+    // Map vaccines to match UI component expectations
+    const mappedVaccines = allVaccineItems.map((vaccine: any) => ({
+      id: vaccine.id.toString(),
+      name: vaccine.name,
+      description: vaccine.description || 'Vaccine for preventative care',
+      price: vaccine.price ? `${vaccine.price.toLocaleString('vi-VN')} đ` : undefined,
+      turnaroundTime: vaccine.turnaround_time || 'Immediate'
+    }));
+    
+    return {
+      id: 'vaccines',
+      name: 'Vaccines',
+      icon: <Syringe className="h-5 w-5 text-green-600" />,
+      description: 'Preventative vaccines for your pet',
+      tests: mappedVaccines
+    };
+  }, [apiCategories]);
   
   // Count selected tests
   const selectedTestsCount = Object.values(selectedTests).filter(Boolean).length;
@@ -139,13 +226,23 @@ const LabManagement: React.FC = () => {
   const getSelectedTestObjects = () => {
     const result: Test[] = [];
     
+    // Add selected tests from test categories
     testCategories.forEach((category: any) => {
-      category.tests.forEach((test: any) => {
+      category.tests?.forEach((test: any) => {
         if (selectedTests[test.id]) {
           result.push(test);
         }
       });
     });
+    
+    // Add selected vaccines
+    if (vaccineCategory) {
+      vaccineCategory.tests.forEach((vaccine: any) => {
+        if (selectedTests[vaccine.id]) {
+          result.push(vaccine);
+        }
+      });
+    }
     
     return result;
   };
@@ -217,26 +314,106 @@ const LabManagement: React.FC = () => {
       // Get all selected test IDs
       const testIDs = selectedTestObjects.map(test => test.id);
 
+      // Determine if we're ordering tests or vaccines
+      // The vaccineCategory has id 'vaccines', so we can check if any selected tests are from this category
+      const isVaccineOrder = vaccineCategory && selectedTestObjects.some(test => 
+        vaccineCategory.tests.some(vaccine => vaccine.id === test.id)
+      );
+
       const payload = {
         appointmentID: parseInt(appointmentId),
-        testIDs: testIDs.map(Number),
-        notes: notes
+        itemIDs: testIDs.map(Number),
+        notes: notes,
+        test_type: isVaccineOrder ? "vaccine" : "test"
       }
-
-      // console.log("payload", payload);
+      
+      console.log("Sending order payload:", payload);
       
       // Create all test orders in a single batch request
-      await createTestOrders.mutateAsync(payload);
+      const orderResult = await createTestOrders.mutateAsync(payload);
       
-      toast({
-        title: "Tests ordered successfully",
-        description: `${selectedTestObjects.length} test(s) have been ordered for ${patient?.name}`,
-        className: "bg-green-50 border-green-200 text-green-800",
-      });
+      // Save current session state to localStorage for resuming later
+      const sessionData = {
+        appointmentId,
+        petId: patient?.petid,
+        doctorId: appointment.doctor_id,
+        lastScreen: 'lab-management',
+        timestamp: new Date().toISOString(),
+        patientName: patient?.name,
+        lastAction: isVaccineOrder ? 'vaccine-order' : 'lab-order',
+        notes: notes
+      };
+      
+      // Save session data to localStorage
+      localStorage.setItem(`appointment_session_${appointmentId}`, JSON.stringify(sessionData));
+      
+      // Create invoice for the ordered tests/vaccines
+      try {
+        console.log("Creating invoice for ordered items...");
+        
+        // Create invoice items from selected tests with proper details
+        const invoiceItems: InvoiceItem[] = selectedTestObjects.map(test => {
+          // Extract numeric price from formatted price string
+          const priceString = test.price || "0 đ";
+          const numericPrice = parseInt(priceString.replace(/[^\d]/g, '') || '0');
+          
+          return {
+            name: test.name,
+            price: numericPrice,
+            quantity: 1,
+            description: test.description || `${isVaccineOrder ? 'Vaccine' : 'Test'} - ${test.name}`
+          };
+        });
+        
+        // Calculate total amount
+        const totalAmount = invoiceItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
+        // Generate invoice number with timestamp and type for uniqueness
+        const timestamp = Date.now().toString().slice(-6);
+        const invoiceNumber = isVaccineOrder 
+          ? `INV-VAC-${timestamp}` 
+          : `INV-LAB-${timestamp}`;
+        
+        // Prepare invoice request with complete information
+        const invoiceRequest: CreateInvoiceRequest = {
+          invoice_number: invoiceNumber,
+          amount: totalAmount,
+          date: new Date().toISOString(), // Use ISO format (RFC3339)
+          due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days from now in ISO format
+          status: 'unpaid',
+          description: `${isVaccineOrder ? 'Vaccines' : 'Lab tests'} for ${patient?.name} - Appointment #${appointmentId}`,
+          customer_name: patient?.name || 'Unknown Patient',
+          items: invoiceItems
+        };
+        
+        console.log("Invoice request:", invoiceRequest);
+        
+        // Create invoice in the system
+        const invoiceResult = await createInvoice(invoiceRequest);
+        console.log("Invoice created successfully:", invoiceResult);
+        
+        toast({
+          title: `${isVaccineOrder ? 'Vaccines' : 'Tests'} ordered and invoice created`,
+          description: `${selectedTestObjects.length} ${isVaccineOrder ? 'vaccine(s)' : 'test(s)'} have been ordered for ${patient?.name} and an invoice has been generated.`,
+          className: "bg-green-50 border-green-200 text-green-800",
+        });
+      } catch (invoiceError) {
+        console.error('Error creating invoice:', invoiceError);
+        
+        // Still show success for test order even if invoice creation fails
+        toast({
+          title: `${isVaccineOrder ? 'Vaccines' : 'Tests'} ordered successfully`,
+          description: `${selectedTestObjects.length} ${isVaccineOrder ? 'vaccine(s)' : 'test(s)'} have been ordered for ${patient?.name}, but there was an issue creating the invoice.`,
+          className: "bg-yellow-50 border-yellow-200 text-yellow-800",
+        });
+      }
       
       // Close dialog and navigate back
       setShowConfirmDialog(false);
-      navigate(`/appointment-flow`);
+      
+      // Navigate to appointment-flow instead of just appointment-flow
+      // This preserves the appointment context in the URL
+      navigate(`/appointment/${appointmentId}/diagnostic`);
     } catch (error) {
       console.error('Error ordering tests:', error);
       toast({
@@ -251,7 +428,7 @@ const LabManagement: React.FC = () => {
     navigate(`/appointment/${appointmentId}`);
   };
   
-  if (isAppointmentLoading || isPatientLoading || isTestCategoriesLoading || !appointment || !patient) {
+  if (isAppointmentLoading || isPatientLoading || isItemsLoading || !appointment || !patient) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="flex flex-col items-center space-y-4">
@@ -264,7 +441,19 @@ const LabManagement: React.FC = () => {
     );
   }
   
-  if (testCategories.length === 0) {
+  // Combine test categories with vaccine category
+  console.log("Test Categories:", testCategories);
+  console.log("Vaccine Category:", vaccineCategory);
+  
+  const validTestCategories = testCategories.filter(category => 
+    category && category.tests && category.tests.length > 0
+  );
+  
+  const allCategories = (vaccineCategory && vaccineCategory.tests && vaccineCategory.tests.length > 0)
+    ? [...validTestCategories, vaccineCategory]
+    : validTestCategories;
+    
+  if (allCategories.length === 0) {
     return (
       <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
         {/* Header with gradient background */}
@@ -361,7 +550,7 @@ const LabManagement: React.FC = () => {
                   className="h-full w-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = "https://via.placeholder.com/100?text=Pet";
+                    // target.src = "https://via.placeholder.com/100?text=Pet";
                   }}
                 />
               </div>
@@ -446,10 +635,10 @@ const LabManagement: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <Tabs defaultValue={testCategories[0].id} className="w-full">
+              <Tabs defaultValue={allCategories[0].id} className="w-full">
                 <div className="px-6 py-3 border-b border-gray-200 bg-gray-50">
                   <TabsList className="inline-flex p-1 bg-gray-100 rounded-md">
-                    {testCategories.map((category: any) => (
+                    {allCategories.map((category: any) => (
                       <TabsTrigger 
                         key={category.id} 
                         value={category.id}
@@ -463,7 +652,7 @@ const LabManagement: React.FC = () => {
                 </div>
                 
                 <div className="p-6">
-                  {testCategories.map((category: any) => (
+                  {allCategories.map((category: any) => (
                     <TabsContent key={category.id} value={category.id} className="mt-0 pt-3">
                       <div className="mb-4">
                         <h3 className="text-lg font-semibold text-gray-800 mb-1 flex items-center gap-2">
@@ -474,7 +663,7 @@ const LabManagement: React.FC = () => {
                       </div>
                       
                       <div className="space-y-4">
-                        {category.tests.map((test: any) => (
+                        {category.tests?.map((test: any) => (
                           <div 
                             key={test.id} 
                             className={cn(
@@ -501,11 +690,11 @@ const LabManagement: React.FC = () => {
                                 </Label>
                                 <p className="text-sm text-gray-500 mt-1">{test.description}</p>
                                 <div className="flex mt-3 items-center gap-4">
-                                  {/* {test.price && (
+                                  {test.price && (
                                     <span className="text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-md font-medium">
                                       {test.price}
                                     </span>
-                                  )} */}
+                                  )}
                                   {test.turnaroundTime && (
                                     <span className="text-sm text-gray-600 flex items-center">
                                       <Clock className="h-3 w-3 mr-1 text-indigo-500" />
@@ -672,6 +861,19 @@ const LabManagement: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <div className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-md">
+              <div className="flex items-start">
+                <Receipt className="h-5 w-5 text-indigo-600 mt-0.5 flex-shrink-0" />
+                <div className="ml-3">
+                  <h3 className="font-medium text-indigo-800">Invoice will be created</h3>
+                  <p className="text-sm text-indigo-700 mt-1">
+                    An invoice will be automatically generated for these tests. 
+                    You can view and manage this invoice in the Billing section.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="flex border-t border-gray-100 mt-2">
@@ -695,5 +897,4 @@ const LabManagement: React.FC = () => {
     </div>
   );
 };
-
-export default LabManagement; 
+export default LabManagement;

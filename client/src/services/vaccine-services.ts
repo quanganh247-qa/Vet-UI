@@ -11,9 +11,27 @@ export const getVaccinations = async (pet_id: number) => {
             Authorization: `Bearer ${token}`,
         },
     });
-
-    console.log("response", response.data);
     return response.data;
+};
+
+// Get all available vaccines from the system
+export const getAllVaccines = async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        throw new Error('No access token found');
+    }
+    
+    try {
+        const response = await axios.get('/api/v1/vaccines', {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching vaccines:", error);
+        throw error;
+    }
 };
 
 export interface SaveVaccinationRequest {
@@ -24,14 +42,13 @@ export interface SaveVaccinationRequest {
     vaccine_provider: string;
     batch_number: string;
     notes: string;
-    administration_site: string;
     appointment_id?: string;
 }
 
 export const saveVaccinationRecord = async (vaccinationData: SaveVaccinationRequest) => {
     try {
         const response = await axios.post(
-            `/api/v1/vaccinations`, 
+            `/api/v1/vaccination/create`, 
             vaccinationData,
             {
                 headers: {

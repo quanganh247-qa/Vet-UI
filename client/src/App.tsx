@@ -134,7 +134,7 @@ function Router() {
         <Route path="/appointment/:id/prescription" component={Prescription as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/follow-up" component={FollowUp as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/examination" component={Examination as React.ComponentType<RouteComponentProps>} />
-        <Route path="/appointment/:id/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
+        <Route path="/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/lab-management" component={lazy(() => import("@/pages/lab-management")) as React.ComponentType<RouteComponentProps>} />
         <Route path="/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} />
         <Route path="/notifications" component={NotificationsAdmin as React.ComponentType<RouteComponentProps>} />

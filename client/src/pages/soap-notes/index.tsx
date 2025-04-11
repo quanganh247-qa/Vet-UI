@@ -187,6 +187,7 @@ const SoapNotes = () => {
         toast({
           title: "Save Success",
           description: "SOAP notes saved successfully.",
+          className: "bg-green-50 border-green-200 text-green-800",
         });
         setLocation(`/appointment/${appointment?.id}/lab-management`);
       }
@@ -298,7 +299,7 @@ const SoapNotes = () => {
                   className="h-full w-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = "https://via.placeholder.com/100?text=Pet";
+                    // target.src = "https://via.placeholder.com/100?text=Pet";
                   }}
                 />
               </div>

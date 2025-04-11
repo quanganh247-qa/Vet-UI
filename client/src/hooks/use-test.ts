@@ -10,8 +10,9 @@ import {
   createTestOrder,
   listTestOrders,
   getAllTestOrders,
+  getTestByAppointmentID,
 } from "@/services/test-services";
-
+import { TestByAppointment } from "@/types";
 // Hook lấy danh sách xét nghiệm theo petID
 export const useTestsByPetID = (petID?: number | string) => {
   const numericPetID = typeof petID === "string" ? parseInt(petID) : petID;
@@ -109,10 +110,10 @@ export const useCompletedTests = () => {
   });
 };
 
-export const useListTests = () => {
+export const useListTests = (type: string) => {
   return useQuery({
-    queryKey: ["tests"],
-    queryFn: listTests,
+    queryKey: ["tests", type],
+    queryFn: () => listTests(type),
     select: (response) => {
       // Kiểm tra response và trả về mảng rỗng nếu không có data
       if (!response) return [];
@@ -127,8 +128,8 @@ export const useCreateTestOrder = (
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ appointmentID, testIDs, notes }: { appointmentID: number, testIDs: number[], notes: string }) => {
-      return createTestOrder(appointmentID, testIDs, notes);
+    mutationFn: ({ appointmentID, itemIDs, notes }: { appointmentID: number, itemIDs: number[], notes: string }) => {
+      return createTestOrder(appointmentID, itemIDs, notes);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tests"] });
@@ -162,5 +163,46 @@ export const useAllTestOrders = () => {
       if (!response) return [];
       return Array.isArray(response) ? response : response.data || [];
     },
+  });
+};
+
+
+export const useGetTestByAppointmentID = (appointmentID: number | undefined) => {
+  return useQuery<TestByAppointment[], Error>({
+    queryKey: ['tests', appointmentID],
+    queryFn: async () => {
+      if (!appointmentID) {
+        console.warn('No appointment ID provided, returning empty array');
+        return [];
+      }
+      try {
+        return await getTestByAppointmentID(appointmentID);
+      } catch (error) {
+        console.error('Error in useGetTestByAppointmentID hook:', error);
+        throw error;
+      }
+    },
+    enabled: true, // Always enable the hook, handle empty appointmentID inside
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2, // Retry failed requests twicxe
+    select: (data) => {      
+      // Handle empty data
+      if (!data || data.length === 0) {
+        return [];
+      }
+      
+      // Transform data for consistent property names
+      return data.map(test => {
+        // Safe access to properties with type casting to avoid linter errors
+        const item = test as TestByAppointment;
+        
+        return {
+          test_id: item.test_id || `test-${Math.random().toString(36).substring(2, 9)}`,
+          test_name: item.test_name || 'Unnamed Vaccine',
+          batch_number: item.batch_number || 'N/A',
+          expiration_date: item.expiration_date || 'N/A',
+        } as TestByAppointment;
+      });
+    }
   });
 };

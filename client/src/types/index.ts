@@ -26,6 +26,7 @@ export interface Appointment {
   owner: Owner;
   created_at: string; // ISO string, ví dụ: "2023-03-18 12:00:00"
   priority: string;
+  arrival_time: string;
 }
 
 export interface MedicalRecord {
@@ -610,4 +611,11 @@ export interface DoctorDetail {
 	certificate_number: string;
 	bio: string;
 	data_image: string;
+}
+
+export interface TestByAppointment {
+	test_id: string;
+	test_name: string;
+	expiration_date: string;
+	batch_number: string;
 }

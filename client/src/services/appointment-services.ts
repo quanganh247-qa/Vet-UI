@@ -13,7 +13,6 @@ export const getAppointments = async (doctor_id: string) => {
       }
     );
 
-    console.log("Appointments:", response.data);
     return response.data;
   } catch (error) {
     console.error("Login error:", error);

@@ -1,4 +1,6 @@
-export const listTests = async () => {
+import { TestByAppointment } from "@/types";
+
+export const listTests = async (type: string) => {
   const token = localStorage.getItem("access_token");
 
   if (!token) {
@@ -6,7 +8,7 @@ export const listTests = async () => {
   }
 
   try {
-    const response = await fetch(`/api/v1/tests`, {
+    const response = await fetch(`/api/v1/items?type=${type}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -33,7 +35,7 @@ export const listTests = async () => {
 
 export const createTestOrder = async (
   appointmentID: number,
-  testIDs: number[],
+  itemIDs: number[],
   notes: string
 ) => {
   try {
@@ -45,7 +47,7 @@ export const createTestOrder = async (
       },
       body: JSON.stringify({
         appointment_id: appointmentID,
-        test_ids: testIDs,
+        item_ids: itemIDs,
         notes: notes,
       }),
     });
@@ -254,3 +256,45 @@ export const getAllTestOrders = async () => {
   }
 };
 
+export const getTestByAppointmentID = async (appointmentID: number): Promise<TestByAppointment[]> => {
+  const token = localStorage.getItem("access_token");
+
+  if (!token) {
+    throw new Error("No access token available");
+  }
+
+  try {
+    const response = await fetch(`/api/v1/tests?appointment_id=${appointmentID}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    // Check if data exists and has the expected structure
+    if (!data || !data.data || !Array.isArray(data.data) || data.data.length === 0) {
+        throw new Error("No data found");
+    }
+    
+    // Transform dates if needed
+    const formattedData = data.data.map((test: any) => ({
+      ...test,
+      // If backend doesn't format dates, format here
+      expiration_date: test.expiration_date?.split(' ')[0] || '',
+      test_name: test.test_name || 'Unnamed Vaccine',
+      test_id: test.test_id || `test-${Math.random().toString(36).substring(2, 9)}`,
+      batch_number: test.batch_number || 'N/A',
+    }));
+
+    return formattedData;
+  } catch (error) {
+    console.error("Error fetching test by appointment ID:", error);
+    throw error;
+  }
+};

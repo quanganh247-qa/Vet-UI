@@ -274,7 +274,7 @@ const CheckIn = () => {
                     className="h-full w-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = "https://via.placeholder.com/100?text=Pet";
+                      // target.src = "https://via.placeholder.com/100?text=Pet";
                     }}
                   />
                 </div>
