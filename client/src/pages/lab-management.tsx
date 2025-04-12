@@ -73,7 +73,7 @@ interface Test {
 }
 
 const LabManagement: React.FC = () => {
-  const { id: appointmentId } = useParams<{ id: string }>();
+  const { id: routeId } = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [selectedTests, setSelectedTests] = useState<Record<string, boolean>>({});
@@ -81,8 +81,55 @@ const LabManagement: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   
+  // Quản lý tham số workflow
+  const [workflowParams, setWorkflowParams] = useState<{
+    appointmentId: string | null;
+    petId: string | null;
+  }>({
+    appointmentId: null,
+    petId: null
+  });
+  
+  // Xử lý các tham số từ URL một cách nhất quán
+  useEffect(() => {
+    // Lấy tất cả các query params từ URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlAppointmentId = searchParams.get("appointmentId");
+    const urlPetId = searchParams.get("petId");
+    
+    console.log("Lab Management URL Params:", { urlAppointmentId, urlPetId, routeId });
+    
+    // Thiết lập appointmentId và petId theo thứ tự ưu tiên
+    let appointmentIdValue = urlAppointmentId || routeId || null;
+    let petIdValue = urlPetId || null;
+    
+    setWorkflowParams({
+      appointmentId: appointmentIdValue,
+      petId: petIdValue
+    });
+    
+    console.log("Lab Management Workflow Params Set:", { appointmentIdValue, petIdValue });
+  }, [routeId]);
+  
+  // Sử dụng appointmentId từ workflowParams
+  const effectiveAppointmentId = workflowParams.appointmentId || "";
+  
+  // Utility function to build query parameters
+  const buildUrlParams = (params: Record<string, string | number | null | undefined>) => {
+    const urlParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        urlParams.append(key, String(value));
+      }
+    });
+    
+    const queryString = urlParams.toString();
+    return queryString ? `?${queryString}` : '';
+  };
+  
   // Get appointment and patient data
-  const { data: appointment, isLoading: isAppointmentLoading } = useAppointmentData(appointmentId);
+  const { data: appointment, isLoading: isAppointmentLoading } = useAppointmentData(effectiveAppointmentId);
   const { data: patient, isLoading: isPatientLoading } = usePatientData(appointment?.pet?.pet_id);
   
   // Fetch all items (tests and vaccines) from API
@@ -94,9 +141,9 @@ const LabManagement: React.FC = () => {
   
   // Add useEffect to restore session if available
   React.useEffect(() => {
-    if (appointmentId) {
+    if (effectiveAppointmentId) {
       // Try to restore previous session data if it exists
-      const savedSessionData = localStorage.getItem(`appointment_session_${appointmentId}`);
+      const savedSessionData = localStorage.getItem(`appointment_session_${effectiveAppointmentId}`);
       
       if (savedSessionData) {
         try {
@@ -108,7 +155,7 @@ const LabManagement: React.FC = () => {
           }
           
           // Log session resumption
-          console.log("Resuming previous session for appointment:", appointmentId);
+          console.log("Resuming previous session for appointment:", effectiveAppointmentId);
           
           // Show toast notification that session was restored
           toast({
@@ -121,7 +168,7 @@ const LabManagement: React.FC = () => {
         }
       }
     }
-  }, [appointmentId, notes, toast]);
+  }, [effectiveAppointmentId, notes, toast]);
   
   // Map API test categories to UI format with icons
   const testCategories = React.useMemo(() => {
@@ -288,7 +335,7 @@ const LabManagement: React.FC = () => {
   
   // Order the selected tests
   const orderTests = async () => {
-    if (!appointmentId) {
+    if (!effectiveAppointmentId) {
       toast({
         title: "Error",
         description: "Missing required information to order tests",
@@ -308,8 +355,8 @@ const LabManagement: React.FC = () => {
     }
     
     try {
-      const petId = parseInt(appointment.patient_id);
-      const doctorId = parseInt(appointment.doctor_id);
+      const petId = patient?.petid || 0;
+      const doctorId = appointment?.doctor?.doctor_id || 0;
       
       // Get all selected test IDs
       const testIDs = selectedTestObjects.map(test => test.id);
@@ -321,7 +368,7 @@ const LabManagement: React.FC = () => {
       );
 
       const payload = {
-        appointmentID: parseInt(appointmentId),
+        appointmentID: parseInt(effectiveAppointmentId),
         itemIDs: testIDs.map(Number),
         notes: notes,
         test_type: isVaccineOrder ? "vaccine" : "test"
@@ -334,9 +381,9 @@ const LabManagement: React.FC = () => {
       
       // Save current session state to localStorage for resuming later
       const sessionData = {
-        appointmentId,
+        appointmentId: effectiveAppointmentId,
         petId: patient?.petid,
-        doctorId: appointment.doctor_id,
+        doctorId: doctorId,
         lastScreen: 'lab-management',
         timestamp: new Date().toISOString(),
         patientName: patient?.name,
@@ -345,7 +392,7 @@ const LabManagement: React.FC = () => {
       };
       
       // Save session data to localStorage
-      localStorage.setItem(`appointment_session_${appointmentId}`, JSON.stringify(sessionData));
+      localStorage.setItem(`appointment_session_${effectiveAppointmentId}`, JSON.stringify(sessionData));
       
       // Create invoice for the ordered tests/vaccines
       try {
@@ -381,7 +428,7 @@ const LabManagement: React.FC = () => {
           date: new Date().toISOString(), // Use ISO format (RFC3339)
           due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days from now in ISO format
           status: 'unpaid',
-          description: `${isVaccineOrder ? 'Vaccines' : 'Lab tests'} for ${patient?.name} - Appointment #${appointmentId}`,
+          description: `${isVaccineOrder ? 'Vaccines' : 'Lab tests'} for ${patient?.name} - Appointment #${effectiveAppointmentId}`,
           customer_name: patient?.name || 'Unknown Patient',
           items: invoiceItems
         };
@@ -410,10 +457,13 @@ const LabManagement: React.FC = () => {
       
       // Close dialog and navigate back
       setShowConfirmDialog(false);
-      
-      // Navigate to appointment-flow instead of just appointment-flow
-      // This preserves the appointment context in the URL
-      navigate(`/appointment/${appointmentId}/diagnostic`);
+
+      // Navigate using the workflow parameters
+      const params = {
+        appointmentId: effectiveAppointmentId,
+        petId: patient?.petid
+      };
+      navigate(`/soap${buildUrlParams(params)}`);
     } catch (error) {
       console.error('Error ordering tests:', error);
       toast({
@@ -423,9 +473,32 @@ const LabManagement: React.FC = () => {
       });
     }
   };
-  
-  const handleBackToAppointment = () => {
-    navigate(`/appointment/${appointmentId}`);
+
+  const handleBackToPatient = () => {
+    // Navigate to patient page with query params
+    const params = {
+      appointmentId: effectiveAppointmentId,
+      petId: patient?.petid
+    };
+    navigate(`/patient${buildUrlParams(params)}`);
+  };
+
+  const navigateToTreatment = () => {
+    // Navigate to treatment page with query params
+    const params = {
+      appointmentId: effectiveAppointmentId,
+      petId: patient?.petid
+    };
+    navigate(`/treatment${buildUrlParams(params)}`);
+  };
+
+  const navigateToSOAP = () => {
+    // Navigate to SOAP page with query params
+    const params = {
+      appointmentId: effectiveAppointmentId,
+      petId: patient?.petid
+    };
+    navigate(`/soap${buildUrlParams(params)}`);
   };
   
   if (isAppointmentLoading || isPatientLoading || isItemsLoading || !appointment || !patient) {
@@ -463,10 +536,10 @@ const LabManagement: React.FC = () => {
               variant="ghost" 
               size="sm"
               className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
-              onClick={handleBackToAppointment}
+              onClick={handleBackToPatient}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              <span className="text-sm font-medium">Back to Appointment</span>
+              <span className="text-sm font-medium">Back to Patient</span>
             </Button>
             <h1 className="text-white font-semibold text-lg">Laboratory Tests</h1>
           </div>
@@ -480,9 +553,9 @@ const LabManagement: React.FC = () => {
           </p>
           <Button 
             className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white"
-            onClick={handleBackToAppointment}
+            onClick={handleBackToPatient}
           >
-            Return to Appointment
+            Return to Patient
           </Button>
         </div>
       </div>
@@ -492,38 +565,41 @@ const LabManagement: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 md:px-8 md:py-5 flex items-center justify-between">
         <div className="flex items-center">
           <Button 
             variant="ghost" 
             size="sm"
             className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
-            onClick={handleBackToAppointment}
+            onClick={handleBackToPatient}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            <span className="text-sm font-medium">Back to Appointment</span>
+            <span className="text-sm font-medium">Back to Patient</span>
           </Button>
-          <h1 className="text-white font-semibold text-lg">Laboratory Tests</h1>
+          <div>
+            <h1 className="text-white font-semibold text-lg">Laboratory Tests</h1>
+            <p className="text-indigo-100 text-xs hidden sm:block">Order and manage diagnostic tests</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="sm"
             disabled={selectedTestsCount === 0}
-            className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1"
+            className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
             onClick={() => setShowConfirmDialog(true)}
           >
-            <ShoppingCart className="h-4 w-4" />
+            <ShoppingCart className="h-4 w-4 mr-1" />
             <span>Place Order {selectedTestsCount > 0 ? `(${selectedTestsCount})` : ''}</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1"
-            onClick={handleBackToAppointment}
+            className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
+            onClick={navigateToSOAP}
           >
-            <Save className="h-4 w-4" />
-            <span>Save & Exit</span>
+            <ArrowUpRight className="h-4 w-4 mr-1" />
+            <span>Proceed to SOAP</span>
           </Button>
         </div>
       </div>
@@ -531,19 +607,19 @@ const LabManagement: React.FC = () => {
       {/* Workflow Navigation */}
       <div className="px-4 pt-3">
         <WorkflowNavigation
-          appointmentId={appointment?.id}
+          appointmentId={effectiveAppointmentId}
           petId={patient?.petid?.toString()}
           currentStep="diagnostic"
         />
       </div>
 
       {/* Patient header */}
-      <div className="bg-gradient-to-b from-indigo-50 to-white pt-8 pb-6 px-8 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <div className="bg-gradient-to-b from-indigo-50 to-white pt-6 pb-4 px-6 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           {/* Patient photo and basic info */}
-          <div className="flex gap-6">
+          <div className="flex gap-4">
             <div className="relative">
-              <div className="h-28 w-28 rounded-xl shadow-md overflow-hidden flex-shrink-0 border-4 border-white">
+              <div className="h-24 w-24 rounded-lg shadow-md overflow-hidden flex-shrink-0 border-2 border-white">
                 <img
                   src={patient?.data_image ? `data:image/png;base64,${patient.data_image}` : "/fallback-image.png"}
                   alt={patient.name}
@@ -556,7 +632,7 @@ const LabManagement: React.FC = () => {
               </div>
               {patient.gender && (
                 <div
-                  className={`absolute bottom-0 right-0 h-7 w-7 rounded-full flex items-center justify-center text-white shadow-md ${
+                  className={`absolute bottom-0 right-0 h-6 w-6 rounded-full flex items-center justify-center text-white shadow-md ${
                     patient.gender === "Male"
                       ? "bg-blue-500"
                       : "bg-pink-500"
@@ -568,19 +644,24 @@ const LabManagement: React.FC = () => {
             </div>
 
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
-                <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-2.5 py-0.5">{patient.breed}</Badge>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold text-gray-900">{patient.name}</h1>
+                <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-2.5 py-0.5">
+                  {patient.breed}
+                </Badge>
               </div>
-              <div className="mt-1 text-gray-500 text-sm flex flex-wrap items-center gap-x-4 gap-y-1">
+              <div className="mt-1 text-gray-600 text-sm flex flex-wrap items-center gap-x-4 gap-y-1">
                 <span className="flex items-center gap-1">
-                  <span className="font-medium text-gray-600">ID:</span> {patient.petid}
+                  <span className="font-medium text-gray-700">ID:</span>{" "}
+                  {patient.petid}
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="font-medium text-gray-600">Age:</span> {patient.age}
+                  <span className="font-medium text-gray-700">Age:</span>{" "}
+                  {patient.age}
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="font-medium text-gray-600">Weight:</span> {patient.weight}
+                  <span className="font-medium text-gray-700">Weight:</span>{" "}
+                  {patient.weight}
                 </span>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -603,8 +684,8 @@ const LabManagement: React.FC = () => {
       </div>
 
       {/* Main content */}
-      <div className="p-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+      <div className="p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6">
           <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-200 flex justify-between items-center">
             <div className="flex items-center">
               <FlaskConical className="h-5 w-5 text-indigo-600 mr-2" />

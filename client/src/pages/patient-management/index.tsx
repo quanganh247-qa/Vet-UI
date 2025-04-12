@@ -217,7 +217,7 @@ const PatientManagement = () => {
   return (
     <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
       {/* Header with back button and title */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 md:px-8 md:py-5 flex items-center justify-between">
         <div className="flex items-center">
           <Button
             className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
@@ -228,7 +228,10 @@ const PatientManagement = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             <span className="text-sm font-medium">Back to Dashboard</span>
           </Button>
-          <h1 className="text-white font-semibold text-lg">Patient Management</h1>
+          <div>
+            <h1 className="text-white font-semibold text-lg">Patient Management</h1>
+            <p className="text-indigo-100 text-xs hidden sm:block">View and manage patient information</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -262,13 +265,13 @@ const PatientManagement = () => {
         </div>
       )}
 
-      {/* Patient header - reduced padding and sizing */}
-      <div className="bg-gradient-to-b from-indigo-50 to-white pt-4 pb-4 px-4 shadow-sm">
+      {/* Patient header - improved styling */}
+      <div className="bg-gradient-to-b from-indigo-50 to-white pt-6 pb-4 px-6 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           {/* Patient photo and basic info */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative mx-auto sm:mx-0">
-              <div className="h-24 w-24 rounded-lg shadow overflow-hidden flex-shrink-0 border-2 border-white">
+              <div className="h-24 w-24 rounded-lg shadow-md overflow-hidden flex-shrink-0 border-2 border-white">
                 <img
                   src={
                     patientData?.data_image
@@ -281,7 +284,7 @@ const PatientManagement = () => {
               </div>
               {patientData?.gender && (
                 <div
-                  className={`absolute bottom-0 right-0 h-6 w-6 rounded-full flex items-center justify-center text-white text-sm font-bold shadow ${
+                  className={`absolute bottom-0 right-0 h-6 w-6 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md ${
                     patientData?.gender === "Male"
                       ? "bg-blue-500"
                       : "bg-pink-500"
@@ -347,87 +350,79 @@ const PatientManagement = () => {
           <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
             <Button
               onClick={navigateToExamination}
-              className="bg-blue-100 hover:bg-blue-200 text-blue-700 w-full flex items-center justify-center gap-2 py-6"
+              className="bg-blue-100 hover:bg-blue-200 text-blue-700 w-full flex items-center justify-center gap-2 py-5 font-medium transition-all shadow-sm hover:shadow border border-blue-200"
               variant="outline"
             >
               <Stethoscope className="h-5 w-5" />
-              <span className="font-medium">
-                Start Examination
-              </span>
+              <span>Start Examination</span>
             </Button>
             
             {appointment?.service?.service_name?.toLowerCase().includes('vaccine') || 
              appointment?.reason?.toLowerCase().includes('vaccine') ? (
               <Button
                 onClick={navigateToVaccination}
-                className="bg-green-100 hover:bg-green-200 text-green-700 w-full flex items-center justify-center gap-2 py-6"
+                className="bg-green-100 hover:bg-green-200 text-green-700 w-full flex items-center justify-center gap-2 py-5 font-medium transition-all shadow-sm hover:shadow border border-green-200"
                 variant="outline"
               >
                 <Syringe className="h-5 w-5" />
-                <span className="font-medium">
-                  Administer Vaccine
-                </span>
+                <span>Administer Vaccine</span>
               </Button>
             ) : (
               <Button
                 onClick={navigateToSOAP}
-                className="bg-purple-100 hover:bg-purple-200 text-purple-700 w-full flex items-center justify-center gap-2 py-6"
+                className="bg-purple-100 hover:bg-purple-200 text-purple-700 w-full flex items-center justify-center gap-2 py-5 font-medium transition-all shadow-sm hover:shadow border border-purple-200"
                 variant="outline"
               >
                 <FileText className="h-5 w-5" />
-                <span className="font-medium">
-                  SOAP Notes
-                </span>
+                <span>SOAP Notes</span>
               </Button>
             )}
             
             <Button
               onClick={navigateToTreatment}
-              className="bg-amber-100 hover:bg-amber-200 text-amber-700 w-full flex items-center justify-center gap-2 py-6"
+              className="bg-amber-100 hover:bg-amber-200 text-amber-700 w-full flex items-center justify-center gap-2 py-5 font-medium transition-all shadow-sm hover:shadow border border-amber-200"
               variant="outline"
             >
               <Pill className="h-5 w-5" />
-              <span className="font-medium">
-                Treatment Plan
-              </span>
+              <span>Treatment Plan</span>
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Tabs section - reduced text size and spacing */}
+      {/* Tabs section - standardized styling */}
       <Tabs
         defaultValue="overview"
-        className="w-full px-4 py-3"
+        className="w-full px-4 py-4"
         value={activeTab}
         onValueChange={setActiveTab}
       >
-        <div className="border-b pb-2 mb-3 overflow-x-auto">
-          <TabsList className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 bg-gray-100 p-1 rounded-md w-full max-w-4xl shadow-sm">
+        <div className="border-b pb-2 mb-4 overflow-x-auto">
+          <TabsList className="inline-flex bg-gray-100 p-1 rounded-md shadow-sm">
             <TabsTrigger
               value="overview"
-              className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-2.5 text-xs font-medium transition-all"
+              className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-3 text-xs font-medium transition-all"
             >
               <BarChart className="h-3.5 w-3.5" />
               <span>Overview</span>
             </TabsTrigger>
             <TabsTrigger
               value="appointments"
-              className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-2.5 text-xs font-medium transition-all"
+              className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-3 text-xs font-medium transition-all"
             >
               <Calendar className="h-3.5 w-3.5" />
               <span>Appointments</span>
             </TabsTrigger>
             <TabsTrigger
               value="medical-records"
-              className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-2.5 text-xs font-medium transition-all"
+              className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-3 text-xs font-medium transition-all"
             >
               <FileText className="h-3.5 w-3.5" />
               <span>Records</span>
             </TabsTrigger>
             <TabsTrigger
               value="vaccines"
-              className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-2.5 text-xs font-medium transition-all"
+              className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-3 text-xs font-medium transition-all"
             >
               <Syringe className="h-3.5 w-3.5" />
               <span>Vaccines</span>
@@ -436,20 +431,20 @@ const PatientManagement = () => {
         </div>
 
         <TabsContent value="overview" className="mt-3">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Main column - History and Records */}
-            <div className="lg:col-span-2 space-y-3">
+            <div className="lg:col-span-2 space-y-4">
               {/* Recent appointments card */}
-              <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b gap-2 sm:gap-0">
-                  <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                    <Calendar className="h-4 w-4 mr-1.5 text-indigo-600" />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b gap-2 sm:gap-0">
+                  <h3 className="font-medium text-gray-800 flex items-center text-sm">
+                    <Calendar className="h-4 w-4 mr-2 text-indigo-600" />
                     Recent Appointments
                   </h3>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="bg-white shadow-sm flex items-center gap-1.5 hover:bg-gray-50 transition-all text-xs px-2 py-1 hover:shadow"
+                    className="bg-white shadow-sm flex items-center gap-1.5 hover:bg-gray-50 transition-all text-xs px-2.5 py-1 hover:shadow"
                   >
                     <CalendarPlus className="h-3.5 w-3.5 text-indigo-600" />
                     <span>New Appointment</span>
@@ -561,17 +556,17 @@ const PatientManagement = () => {
               </div>
 
               {/* Recent medical records card */}
-              <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b gap-2 sm:gap-0">
-                  <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                    <FileText className="h-4 w-4 mr-1.5 text-indigo-600" />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b gap-2 sm:gap-0">
+                  <h3 className="font-medium text-gray-800 flex items-center text-sm">
+                    <FileText className="h-4 w-4 mr-2 text-indigo-600" />
                     Medical Records
                   </h3>
                   <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="bg-white shadow-sm hover:bg-gray-50 transition-all text-xs px-2 py-1 hover:shadow"
+                      className="bg-white shadow-sm hover:bg-gray-50 transition-all text-xs px-2.5 py-1 hover:shadow"
                       onClick={() => {
                         // Handle sort
                       }}
@@ -582,7 +577,7 @@ const PatientManagement = () => {
                     <Button
                       variant="default"
                       size="sm"
-                      className="bg-indigo-600 hover:bg-indigo-700 text-xs px-2 py-1 transition-all hover:shadow"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-xs px-2.5 py-1 transition-all hover:shadow text-white"
                     >
                       <FilePlus2 className="mr-1.5 h-3.5 w-3.5" />
                       New Record
@@ -593,17 +588,17 @@ const PatientManagement = () => {
             </div>
 
             {/* Sidebar column */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               {/* Upcoming vaccinations */}
-              <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
-                  <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                    <Syringe className="h-4 w-4 mr-1.5 text-indigo-600" />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b">
+                  <h3 className="font-medium text-gray-800 flex items-center text-sm">
+                    <Syringe className="h-4 w-4 mr-2 text-indigo-600" />
                     Vaccination Status
                   </h3>
                 </div>
 
-                <div className="p-3">
+                <div className="p-4">
                   {vaccines.length > 0 ? (
                     <div className="space-y-2">
                       {vaccines.slice(0, 3).map((vaccine: Vaccination) => {

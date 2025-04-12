@@ -61,6 +61,20 @@ const PrescriptionInvoice: React.FC = () => {
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
+  // Build URL params utility function
+  const buildUrlParams = (params: Record<string, string | number | null | undefined>) => {
+    const urlParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        urlParams.append(key, String(value));
+      }
+    });
+    
+    const queryString = urlParams.toString();
+    return queryString ? `?${queryString}` : '';
+  };
+  
   // Mock function to load invoice data
   // In a real implementation, you would fetch this from your API
   useEffect(() => {
@@ -152,23 +166,12 @@ const PrescriptionInvoice: React.FC = () => {
         setIsLoading(false);
       }
     }, 1000);
-  }, [patientData]);
-
-  useEffect(() => {
-    console.log("Current URL:", window.location.href);
-    console.log("Route ID:", routeAppointmentId);
-    console.log("Pet ID:", appointmentData?.pet_id);
-    
-    const searchParams = new URLSearchParams(window.location.search);
-    console.log("URL appointmentId:", searchParams.get("appointmentId"));
-  }, [routeAppointmentId, appointmentData?.pet_id]);
+  }, [patientData, appointmentData]);
 
   // Handle printing the invoice
   const handlePrint = () => {
     window.print();
   };
-
-  console.log(invoiceData);
 
   // Handle downloading the invoice as PDF
   const handleDownload = () => {
@@ -192,7 +195,11 @@ const PrescriptionInvoice: React.FC = () => {
 
   // Navigate back to the previous page
   const handleBack = () => {
-    window.history.back();
+    const params = {
+      appointmentId: effectiveAppointmentId,
+      petId: effectivePetId
+    };
+    navigate(`/treatment${buildUrlParams(params)}`);
   };
 
   // Complete the appointment workflow
@@ -207,12 +214,35 @@ const PrescriptionInvoice: React.FC = () => {
     navigate('/appointments');
   };
 
-  if (isLoading || isPatientLoading) {
+  const navigateToDashboard = () => {
+    navigate('/dashboard');
+  };
+
+  if (isLoading || isPatientLoading || isAppointmentLoading) {
     return (
-      <div className="container max-w-screen-xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 md:p-8">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
-          <span className="ml-3 text-indigo-600 text-lg font-medium">Loading invoice...</span>
+      <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 md:px-8 md:py-5 flex items-center justify-between">
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
+              onClick={navigateToDashboard}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              <span className="text-sm font-medium">Back to Dashboard</span>
+            </Button>
+            <div>
+              <h1 className="text-white font-semibold text-lg">Invoice</h1>
+              <p className="text-indigo-100 text-xs hidden sm:block">View and manage invoice details</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-center items-center p-20">
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 border-4 border-t-indigo-600 border-b-indigo-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
+            <p className="mt-4 text-indigo-600 font-medium">Loading invoice...</p>
+          </div>
         </div>
       </div>
     );
@@ -220,60 +250,83 @@ const PrescriptionInvoice: React.FC = () => {
 
   if (!invoiceData) {
     return (
-      <div className="container max-w-screen-xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 md:p-8">
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            Failed to load invoice data. Please try again.
-          </AlertDescription>
-        </Alert>
-        <Button onClick={handleBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
+      <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 md:px-8 md:py-5 flex items-center justify-between">
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
+              onClick={navigateToDashboard}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              <span className="text-sm font-medium">Back to Dashboard</span>
+            </Button>
+            <div>
+              <h1 className="text-white font-semibold text-lg">Invoice</h1>
+              <p className="text-indigo-100 text-xs hidden sm:block">View and manage invoice details</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-6">
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              Failed to load invoice data. Please try again.
+            </AlertDescription>
+          </Alert>
+          <Button onClick={handleBack}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container max-w-screen-xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 md:p-8">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 -mx-6 -mt-6 md:-mx-8 md:-mt-8 px-6 py-4 md:px-8 md:py-5 mb-4 rounded-br-xl rounded-bl-xl shadow-md">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="mr-2 h-8 w-8 text-white hover:bg-white/20"
-              onClick={handleBack}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-xl font-semibold text-white">
-                Prescription Invoice
-              </h1>
-              <p className="text-indigo-200 text-sm">
-                View and manage the invoice for this appointment
-              </p>
-            </div>
+    <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 md:px-8 md:py-5 flex items-center justify-between">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
+            onClick={handleBack}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            <span className="text-sm font-medium">Back to Treatment</span>
+          </Button>
+          <div>
+            <h1 className="text-white font-semibold text-lg">Invoice</h1>
+            <p className="text-indigo-100 text-xs hidden sm:block">View and manage invoice details</p>
           </div>
+        </div>
 
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              className="border-white/20 text-white hover:bg-white/20"
-              onClick={handleCompleteAppointment}
-            >
-              Complete Appointment
-            </Button>
-          </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
+            onClick={handleCompleteAppointment}
+          >
+            <PrinterIcon className="h-4 w-4 mr-1" />
+            <span>Print Invoice</span>
+          </Button>
+          <Button 
+            variant="default"
+            className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1.5"
+            onClick={handleCompleteAppointment}
+          >
+            <Share2 className="h-4 w-4 mr-1" />
+            <span>Complete Appointment</span>
+          </Button>
         </div>
       </div>
 
       {/* Workflow Navigation */}
-      <div className="mb-4">
+      <div className="px-4 pt-3">
         <WorkflowNavigation
           appointmentId={effectiveAppointmentId}
           petId={effectivePetId}
@@ -282,10 +335,10 @@ const PrescriptionInvoice: React.FC = () => {
       </div>
 
       {/* Patient Info */}
-      <div className="bg-gradient-to-b from-indigo-50 to-white pt-6 pb-4 px-6 shadow-sm mb-6">
+      <div className="bg-gradient-to-b from-indigo-50 to-white pt-6 pb-4 px-6 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex gap-4">
-            <div className="h-16 w-16 rounded-xl shadow-md overflow-hidden flex-shrink-0 border-2 border-white bg-indigo-100 flex items-center justify-center">
+            <div className="h-20 w-20 rounded-lg shadow-md overflow-hidden flex-shrink-0 border-2 border-white bg-indigo-100 flex items-center justify-center">
               <img
                 src={
                   patientData?.data_image
@@ -293,38 +346,35 @@ const PrescriptionInvoice: React.FC = () => {
                     : "/fallback-image.png"
                 }
                 alt={patientData?.name}
-                className="w-full h-full object-cover rounded-xl"
+                className="w-full h-full object-cover"
               />
             </div>
 
             <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {patientData?.name || 'Patient Name'}
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-gray-900">
+                  {patientData?.name || invoiceData.patient.name}
                 </h2>
-                <Badge className="bg-green-100 text-green-700 border-green-200 flex items-center gap-1 px-2 py-1">
+                <Badge className="bg-green-100 text-green-700 border-green-200 flex items-center gap-1 px-2 py-0.5">
                   Invoice Ready
                 </Badge>
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-2.5 py-0.5">
-                  {patientData?.type || 'Type'}
-                </Badge>
-                <Badge className="bg-blue-100 text-blue-700 border-blue-200 px-2.5 py-0.5">
-                  {patientData?.breed || 'Breed'}
-                </Badge>
-                <div className="text-gray-600 text-sm flex items-center gap-3 ml-1">
-                  <span className="flex items-center">
-                    <span className="font-medium text-gray-700">Invoice:</span>{" "}
-                    <span className="ml-1">{invoiceData.invoiceId}</span>
-                  </span>
-                  <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                  <span className="flex items-center">
-                    <Calendar size={14} className="mr-1 text-gray-500" />
-                    <span>{invoiceData.date}</span>
-                  </span>
-                </div>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm">
+                <span className="flex items-center gap-1">
+                  <span className="font-medium text-gray-700">Invoice:</span>{" "}
+                  <span>{invoiceData.invoiceId}</span>
+                </span>
+                <span className="hidden sm:block w-1 h-1 bg-gray-300 rounded-full"></span>
+                <span className="flex items-center">
+                  <Calendar size={14} className="mr-1 text-gray-500" />
+                  <span>{invoiceData.date}</span>
+                </span>
+                <span className="hidden sm:block w-1 h-1 bg-gray-300 rounded-full"></span>
+                <span className="flex items-center gap-1">
+                  <span className="font-medium text-gray-700">Total:</span>{" "}
+                  <span className="font-medium text-green-600">${invoiceData.total.toFixed(2)}</span>
+                </span>
               </div>
             </div>
           </div>
@@ -332,38 +382,38 @@ const PrescriptionInvoice: React.FC = () => {
       </div>
 
       {/* Invoice Component */}
-      <div className="mb-8">
+      <div className="p-6">
         <InvoiceComponent 
           invoice={invoiceData}
           onPrint={handlePrint}
           onDownload={handleDownload}
           onShare={handleShare}
         />
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 print:hidden">
-        <Button variant="outline" className="w-full md:w-auto" onClick={handleBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Prescription
-        </Button>
         
-        <div className="flex gap-2 w-full md:w-auto">
-          <Button variant="outline" className="flex-1" onClick={handlePrint}>
-            <PrinterIcon className="mr-2 h-4 w-4" />
-            Print
+        {/* Action Buttons */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-6 print:hidden">
+          <Button variant="outline" className="w-full md:w-auto" onClick={handleBack}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Treatment
           </Button>
-          <Button variant="outline" className="flex-1" onClick={handleDownload}>
-            <DownloadIcon className="mr-2 h-4 w-4" />
-            Download
-          </Button>
-          <Button variant="outline" className="flex-1" onClick={handleShare}>
-            <Share2 className="mr-2 h-4 w-4" />
-            Share
-          </Button>
-          <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700" onClick={handleCompleteAppointment}>
-            Complete
-          </Button>
+          
+          <div className="flex gap-2 w-full md:w-auto">
+            <Button variant="outline" className="flex-1" onClick={handlePrint}>
+              <PrinterIcon className="mr-2 h-4 w-4" />
+              Print
+            </Button>
+            <Button variant="outline" className="flex-1" onClick={handleDownload}>
+              <DownloadIcon className="mr-2 h-4 w-4" />
+              Download
+            </Button>
+            <Button variant="outline" className="flex-1" onClick={handleShare}>
+              <Share2 className="mr-2 h-4 w-4" />
+              Share
+            </Button>
+            <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={handleCompleteAppointment}>
+              Complete
+            </Button>
+          </div>
         </div>
       </div>
     </div>

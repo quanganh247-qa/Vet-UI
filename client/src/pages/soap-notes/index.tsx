@@ -22,6 +22,7 @@ import {
   NotebookText,
   FileBarChart,
   Info,
+  FlaskConical,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useGetSOAP, useUpdateSOAP } from "@/hooks/use-soap";
@@ -289,6 +290,17 @@ const SoapNotes = () => {
     }
   };
 
+  const navigateToLabManagement = () => {
+    if (patient) {
+      // Navigate to lab management page with query params
+      const params = {
+        appointmentId: effectiveAppointmentId,
+        petId: patient.petid
+      };
+      navigate(`/lab-management${buildUrlParams(params)}`);
+    }
+  };
+
   if (isAppointmentLoading || isPatientLoading || !appointment || !patient) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -308,7 +320,7 @@ const SoapNotes = () => {
   return (
     <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 md:px-8 md:py-5 flex items-center justify-between">
         <div className="flex items-center">
           <Button
             variant="ghost"
@@ -319,25 +331,28 @@ const SoapNotes = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             <span className="text-sm font-medium">Back to Patient</span>
           </Button>
-          <h1 className="text-white font-semibold text-lg">SOAP Notes</h1>
+          <div>
+            <h1 className="text-white font-semibold text-lg">SOAP Notes</h1>
+            <p className="text-indigo-100 text-xs hidden sm:block">Subjective, Objective, Assessment, Plan</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="sm"
-            className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1"
+            className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
             onClick={handleProceedToTreatment}
           >
-            <ArrowUpRight className="h-4 w-4" />
+            <ArrowUpRight className="h-4 w-4 mr-1" />
             <span>Proceed to Treatment</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1"
+            className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
             onClick={handleSave}
           >
-            <Save className="h-4 w-4" />
+            <Save className="h-4 w-4 mr-1" />
             <span>Save Notes</span>
           </Button>
         </div>
@@ -352,13 +367,13 @@ const SoapNotes = () => {
         />
       </div>
 
-      {/* Patient header */}
-      <div className="bg-gradient-to-b from-indigo-50 to-white pt-8 pb-6 px-8 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      {/* Patient header - improved styling */}
+      <div className="bg-gradient-to-b from-indigo-50 to-white pt-6 pb-4 px-6 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           {/* Patient photo and basic info */}
-          <div className="flex gap-6">
+          <div className="flex gap-4">
             <div className="relative">
-              <div className="h-28 w-28 rounded-xl shadow-md overflow-hidden flex-shrink-0 border-4 border-white">
+              <div className="h-24 w-24 rounded-lg shadow-md overflow-hidden flex-shrink-0 border-2 border-white">
                 <img
                   src={
                     patient?.data_image
@@ -375,7 +390,7 @@ const SoapNotes = () => {
               </div>
               {patient.gender && (
                 <div
-                  className={`absolute bottom-0 right-0 h-7 w-7 rounded-full flex items-center justify-center text-white shadow-md ${
+                  className={`absolute bottom-0 right-0 h-6 w-6 rounded-full flex items-center justify-center text-white shadow-md ${
                     patient.gender === "Male" ? "bg-blue-500" : "bg-pink-500"
                   }`}
                 >
@@ -385,25 +400,25 @@ const SoapNotes = () => {
             </div>
 
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-900">
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold text-gray-900">
                   {patient.name}
                 </h1>
                 <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-2.5 py-0.5">
                   {patient.breed}
                 </Badge>
               </div>
-              <div className="mt-1 text-gray-500 text-sm flex flex-wrap items-center gap-x-4 gap-y-1">
+              <div className="mt-1 text-gray-600 text-sm flex flex-wrap items-center gap-x-4 gap-y-1">
                 <span className="flex items-center gap-1">
-                  <span className="font-medium text-gray-600">ID:</span>{" "}
+                  <span className="font-medium text-gray-700">ID:</span>{" "}
                   {patient.petid}
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="font-medium text-gray-600">Age:</span>{" "}
+                  <span className="font-medium text-gray-700">Age:</span>{" "}
                   {patient.age}
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="font-medium text-gray-600">Weight:</span>{" "}
+                  <span className="font-medium text-gray-700">Weight:</span>{" "}
                   {patient.weight}
                 </span>
               </div>
@@ -424,20 +439,11 @@ const SoapNotes = () => {
             </div>
           </div>
         </div>
-
-        {/* Visit reason */}
-        {/* <div className="mt-6 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-700 flex items-center">
-            <FileText className="mr-2 h-4 w-4 text-indigo-500" />
-            Reason for Visit
-          </h3>
-          <p className="mt-2 text-gray-600">{appointment.reason}</p>
-        </div> */}
       </div>
 
       {/* Main content */}
-      <div className="p-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-200 flex justify-between items-center">
             <div className="flex items-center">
               <NotebookText className="h-5 w-5 text-indigo-600 mr-2" />
@@ -445,40 +451,10 @@ const SoapNotes = () => {
                 Medical SOAP Notes
               </h2>
             </div>
-            {/* <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleRecording}
-                className={cn(
-                  "border-gray-200",
-                  isRecording ? "text-red-600 border-red-200 bg-red-50" : ""
-                )}
-              >
-                {isRecording ? (
-                  <>
-                    <MicOff className="h-4 w-4 mr-1" /> Stop Dictation
-                  </>
-                ) : (
-                  <>
-                    <Mic className="h-4 w-4 mr-1" /> Start Dictation
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-gray-200"
-                onClick={() => window.print()}
-              >
-                <Printer className="h-4 w-4 mr-1" />
-                Print
-              </Button>
-            </div> */}
           </div>
 
           {/* Guidance alert */}
-          <div className="p-4 m-4 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="p-4 mx-6 my-4 bg-blue-50 border border-blue-200 rounded-md">
             <div className="flex items-center gap-2">
               <Info className="h-5 w-5 text-blue-500" />
               <h3 className="font-medium text-blue-700">Diagnostic Guidance</h3>
@@ -493,7 +469,7 @@ const SoapNotes = () => {
 
           <div className="p-6">
             <Tabs defaultValue="all" className="w-full">
-              <TabsList className="inline-flex p-1 bg-gray-100 rounded-md">
+              <TabsList className="inline-flex p-1 bg-gray-100 rounded-md mb-4">
                 <TabsTrigger
                   value="all"
                   className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
@@ -518,12 +494,6 @@ const SoapNotes = () => {
                 >
                   Assessment
                 </TabsTrigger>
-                {/* <TabsTrigger 
-                  value="plan" 
-                  className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
-                >
-                  Plan
-                </TabsTrigger> */}
               </TabsList>
 
               <TabsContent value="all" className="space-y-6 py-4">
@@ -581,23 +551,6 @@ const SoapNotes = () => {
                     }
                   />
                 </div>
-                {/* 
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileBarChart className="h-4 w-4 text-indigo-600" />
-                    <label className="text-sm font-medium text-gray-700">
-                      P - Plan (Treatment & Next Steps)
-                    </label>
-                  </div>
-                  <Textarea
-                    placeholder="Enter treatment plan, medications, follow-up instructions..."
-                    className="min-h-[200px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
-                    value={localSoapData.plan}
-                    onChange={(e: InputChangeEvent) =>
-                      handleInputChange("plan", e.target.value)
-                    }
-                  />
-                </div> */}
               </TabsContent>
 
               {/* Tab Subjective */}
@@ -677,26 +630,6 @@ const SoapNotes = () => {
                   />
                 </div>
               </TabsContent>
-
-              {/* Tab Plan */}
-              {/* <TabsContent value="plan" className="py-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileBarChart className="h-4 w-4 text-indigo-600" />
-                    <label className="text-sm font-medium text-gray-700">
-                      P - Plan (Treatment & Next Steps)
-                    </label>
-                  </div>
-                  <Textarea
-                    placeholder="Enter treatment plan, medications, follow-up instructions..."
-                    className="min-h-[400px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
-                    value={localSoapData.plan}
-                    onChange={(e: InputChangeEvent) =>
-                      handleInputChange("plan", e.target.value)
-                    }
-                  />
-                </div>
-              </TabsContent> */}
             </Tabs>
 
             <div className="mt-6 flex justify-end space-x-3">
@@ -711,10 +644,10 @@ const SoapNotes = () => {
 
               <Button
                 variant="outline"
-                onClick={handleSave}
-                className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                onClick={navigateToLabManagement}
+                className="border-blue-200 text-blue-700 hover:bg-blue-50"
               >
-                <Save className="h-4 w-4 mr-2" />
+                <FlaskConical className="h-4 w-4 mr-2" />
                 Labs
               </Button>
 
