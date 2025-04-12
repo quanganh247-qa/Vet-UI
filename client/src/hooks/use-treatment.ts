@@ -93,9 +93,10 @@ export const useAssignMedicine = (treatment_id: string, phase_id: string) => {
     mutationFn: (payload: AssignMedicineRequest[]) =>
       assignMedicineToPhase(payload, treatment_id, phase_id),
     onSuccess: () => {
-      // Invalidate both the treatments list and the specific treatment phase
+      // Invalidate queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["treatments"] });
-      queryClient.invalidateQueries({ queryKey: ["treatmentPhase", treatment_id, phase_id] });
+      queryClient.invalidateQueries({ queryKey: ["treatmentPhases", treatment_id] });
+      queryClient.invalidateQueries({ queryKey: ["phaseMedicines", treatment_id, phase_id] });
     },
     onError: (error) => {
       // Use toast notifications or UI feedback instead of console.error
@@ -103,40 +104,44 @@ export const useAssignMedicine = (treatment_id: string, phase_id: string) => {
       // Example: toast.error(error.message);
     },
     // Optional: Optimistic Update for better UX
-    onMutate: async (newMedicine) => {
-      await queryClient.cancelQueries({ queryKey: ["treatmentPhase", treatment_id, phase_id] });
+    onMutate: async (newMedicines) => {
+      await queryClient.cancelQueries({ queryKey: ["phaseMedicines", treatment_id, phase_id] });
       
-      const previousPhase = queryClient.getQueryData(["treatmentPhase", treatment_id, phase_id]);
+      const previousMedicines = queryClient.getQueryData(["phaseMedicines", treatment_id, phase_id]);
       
       // Optimistically update the cache
       queryClient.setQueryData(
-        ["treatmentPhase", treatment_id, phase_id],
+        ["phaseMedicines", treatment_id, phase_id],
         (old: any) => ({
           ...old,
-          medicines: [...(old?.medicines || []), newMedicine],
+          data: [...(old?.data || []), ...newMedicines.map((med: any) => ({
+            medicine_id: med.medicine_id,
+            medicine_name: med.medicine_name || "",
+            dosage: med.dosage,
+            frequency: med.frequency,
+            duration: med.duration,
+            notes: med.notes
+          }))],
         })
       );
       
-      return { previousPhase };
+      return { previousMedicines };
     },
     onSettled: () => {
       // Ensure data is fresh after mutation
-      queryClient.invalidateQueries({ queryKey: ["treatmentPhase", treatment_id, phase_id] });
+      queryClient.invalidateQueries({ queryKey: ["phaseMedicines", treatment_id, phase_id] });
     },
   });
 };
 
 export const useGetMedicinesByPhase = (treatment_id: string, phase_id: string) => {
-  return useMutation({
-    mutationFn: (payload: AssignMedicineRequest[]) => assignMedicineToPhase(payload, treatment_id, phase_id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["treatments"] });
-    },
-    onError: (error) => {
-      console.error(error);
-    },
+  return useQuery({
+    queryKey: ["phaseMedicines", treatment_id, phase_id],
+    queryFn: () => getMedicationByPhaseId(treatment_id, phase_id),
+    enabled: !!treatment_id && !!phase_id,
+    select: (data) => data.data || [],
   });
-}
+};
 
 export const useSearchMedicine = () => {
   return useQuery({

@@ -323,7 +323,6 @@ export interface AppointmentRequest {
   doctor_id: number;
   service_id: number;
   reason: string;
-  priority: string;
   owner?: {
     owner_name: string;
     owner_email: string;

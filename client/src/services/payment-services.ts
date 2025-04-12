@@ -15,7 +15,6 @@ export const getQRCode = async (qrCodeInformation: QuickLinkRequest) => {
       },
     }
   );
-  console.log("response", response);
   return response.data;
 };
 

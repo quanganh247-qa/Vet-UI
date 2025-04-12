@@ -32,6 +32,7 @@ import {
   QrCode,
   Copy,
   CheckCheck,
+  PawPrint,
 } from "lucide-react";
 
 import { checkInAppointment } from "@/services/appointment-services";
@@ -73,10 +74,10 @@ const CheckIn = () => {
     account_no: "220220222419",
     template: "print",
     amount: appointment?.service?.service_amount || 0,
-    description: `Payment for ${appointment?.invoice?.invoice_number}`,
+    description: `Payment for ${appointment?.service?.service_name || "appointment"}`,
     account_name: "PET CARE CLINIC",
-    order_id: 0,
-    test_order_id: appointment?.invoice?.id,
+    order_id:  0,
+    test_order_id: 0,
   };
 
   // Use the mutation hook with proper methods
@@ -84,8 +85,7 @@ const CheckIn = () => {
 
   useEffect(() => {
     if (qrMutation.data) {
-      setQrImageUrl(qrMutation.data.image_url);
-      console.log("qrImageUrl", qrImageUrl);
+      setQrImageUrl(qrMutation.data.url || qrMutation.data.image_url || "");
     }
   }, [qrMutation.data]);
 
@@ -165,11 +165,7 @@ const CheckIn = () => {
       });
     }
   };
-  const handleDownloadInvoice = () => {
-    // In a real app, this would generate and download a PDF
-    alert("Invoice download functionality would be implemented here");
-  };
-
+  
   const handleCancel = () => {
     setLocation("/appointment-flow");
   };
@@ -186,31 +182,28 @@ const CheckIn = () => {
   };
 
   const handleGetQRCode = () => {
-    if (!qrMutation.data) {
-      setIsQRLoading(true);
-
-      // Actually trigger the mutation
-      qrMutation.mutate(qrCodeInformation, {
-        onSuccess: () => {
-          toast({
-            title: "QR Code Generated",
-            description: "Payment QR code has been generated successfully.",
-            className: "bg-green-50 border-green-200 text-green-800",
-          });
-          setIsQRLoading(false);
-        },
-        onError: (error) => {
-          toast({
-            title: "QR Code Generation Failed",
-            description:
-              "There was a problem generating the QR code. Please try again.",
-            variant: "destructive",
-          });
-          setIsQRLoading(false);
-          console.error("Error generating QR code:", error);
-        },
+    setIsQRLoading(true);
+    
+    // Actually trigger the mutation
+    qrMutation.mutateAsync(qrCodeInformation)
+      .then(data => {
+        toast({
+          title: "QR Code Generated",
+          description: "Payment QR code has been generated successfully.",
+          className: "bg-green-50 border-green-200 text-green-800",
+        });
+      })
+      .catch(error => {
+        console.error("Error generating QR code:", error);
+        toast({
+          title: "QR Code Generation Failed",
+          description: "There was a problem generating the QR code. Please try again.",
+          variant: "destructive",
+        });
+      })
+      .finally(() => {
+        setIsQRLoading(false);
       });
-    }
   };
 
   return (
@@ -265,18 +258,24 @@ const CheckIn = () => {
             {/* Patient Card */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 lg:mb-6">
               <div className="flex items-center px-5 py-4 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
-                <div className="h-14 w-14 rounded-lg shadow-sm overflow-hidden flex-shrink-0 border-2 border-white bg-indigo-100 mr-3">
-                  <img
-                    src={
-                      "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=256&q=80"
-                    }
-                    alt={patient.name}
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      // target.src = "https://via.placeholder.com/100?text=Pet";
-                    }}
-                  />
+                <div className="relative h-24 w-24 rounded-lg shadow-sm overflow-hidden flex-shrink-0 border-2 border-white bg-indigo-100 mr-3">
+                  <div className="absolute inset-0 flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/20">
+                    {patient.data_image ? (
+                      <img
+                        src={`data:image/png;base64,${patient.data_image}`}
+                        alt={patient.name}
+                        className="object-cover w-full h-full"
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full w-full text-indigo-300 dark:text-indigo-700">
+                        <PawPrint className="h-16 w-16" />
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">
@@ -660,11 +659,21 @@ const CheckIn = () => {
                         </label>
                         <div className="flex items-center justify-center">
                           <div className="bg-white p-2 rounded-lg shadow-sm">
-                            <img
-                              src={qrImageUrl}
-                              alt="QR Code"
-                              className="w-80 h-80"
-                            />
+                            {qrImageUrl ? (
+                              <img
+                                src={qrImageUrl}
+                                alt="QR Code"
+                                className="w-80 h-80"
+                                onError={(e) => {
+                                  console.error("Error loading QR image");
+                                  e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmaWxsPSIjOTA5MDkwIj5RUiBJbWFnZSBMb2FkIEVycm9yPC90ZXh0Pjwvc3ZnPg==";
+                                }}
+                              />
+                            ) : (
+                              <div className="w-80 h-80 flex items-center justify-center text-indigo-300">
+                                <QrCode className="w-32 h-32" />
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="text-center text-sm text-indigo-700 font-medium mt-3 mb-1">

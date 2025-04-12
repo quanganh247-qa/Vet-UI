@@ -310,9 +310,7 @@ const EnhancedAppointmentFlowboard: React.FC<
             onAppointmentUpdate(updatedAppointment);
 
             // Navigate to patient management page if requested
-            if (navigateToDetail) {
-              setLocation(`/appointment/${appointment.id}`);
-            }
+            setLocation(`/appointment/${appointment.id}`);
           },
         }
       );
@@ -330,8 +328,11 @@ const EnhancedAppointmentFlowboard: React.FC<
   const renderAppointmentCard = (appointment: Appointment) => {
     // Check if this is a walk-in appointment by checking for a special flag or missing time slots
     console.log(appointment.room);
-    const isWalkIn = !appointment.time_slot || !appointment.time_slot.start_time || appointment.time_slot.start_time === "00:00:00";
-    
+    const isWalkIn =
+      !appointment.time_slot ||
+      !appointment.time_slot.start_time ||
+      appointment.time_slot.start_time === "00:00:00";
+
     return (
       <div
         key={appointment.id}
@@ -348,10 +349,17 @@ const EnhancedAppointmentFlowboard: React.FC<
               {isWalkIn ? (
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-1" />
-                  <span>Arrived: {appointment.created_at ? format(new Date(appointment.created_at), "h:mm a") : "Today"}</span>
+                  <span>
+                    Arrived:{" "}
+                    {appointment.created_at
+                      ? format(new Date(appointment.created_at), "h:mm a")
+                      : "Today"}
+                  </span>
                 </div>
               ) : (
-                `${formatTime(appointment.time_slot.start_time)} - ${formatTime(appointment.time_slot.end_time)}`
+                `${formatTime(appointment.time_slot.start_time)} - ${formatTime(
+                  appointment.time_slot.end_time
+                )}`
               )}
             </div>
             <span className="text-xs px-2 py-0.5 rounded-full bg-white bg-opacity-20">
@@ -370,7 +378,9 @@ const EnhancedAppointmentFlowboard: React.FC<
               className="h-12 w-12 rounded-full mr-3 border-2 border-blue-100"
             />
             <div>
-              <div className="font-medium text-base">{appointment.pet.pet_name}</div>
+              <div className="font-medium text-base">
+                {appointment.pet.pet_name}
+              </div>
               <div className="text-xs text-gray-500 mt-0.5">
                 {appointment.pet.pet_breed}
               </div>
@@ -440,24 +450,30 @@ const EnhancedAppointmentFlowboard: React.FC<
   const getCurrentWorkflowStep = (appointment: Appointment) => {
     // Mặc định bắt đầu với patient-details
     let currentStep = "patient-details";
-    
+
     // Type casting appointment
     const appointmentWithWorkflow = appointment as AppointmentWithWorkflowData;
-    
+
     // Logic đơn giản để xác định bước hiện tại dựa trên trạng thái
     if (appointment.state === "In Progress") {
       // Kiểm tra workflow progress (field mới, giả định tạm)
       if (appointmentWithWorkflow.workflow_progress) {
         currentStep = appointmentWithWorkflow.workflow_progress;
-      } else if (appointmentWithWorkflow.lab_results && appointmentWithWorkflow.lab_results.length > 0) {
+      } else if (
+        appointmentWithWorkflow.lab_results &&
+        appointmentWithWorkflow.lab_results.length > 0
+      ) {
         currentStep = "diagnostic";
-      } else if (appointmentWithWorkflow.soap_note && appointmentWithWorkflow.soap_note.length > 0) {
+      } else if (
+        appointmentWithWorkflow.soap_note &&
+        appointmentWithWorkflow.soap_note.length > 0
+      ) {
         currentStep = "soap";
       } else {
         currentStep = "examination";
       }
     }
-    
+
     return currentStep;
   };
 
@@ -1160,18 +1176,36 @@ const EnhancedAppointmentFlowboard: React.FC<
                           >
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-medium text-gray-900">
-                                {!appointment.time_slot || !appointment.time_slot.start_time || appointment.time_slot.start_time === "00:00" ? (
+                                {!appointment.time_slot ||
+                                !appointment.time_slot.start_time ||
+                                appointment.time_slot.start_time === "00:00" ? (
                                   <div className="flex items-center">
                                     <Clock className="h-4 w-4 mr-1 text-orange-500" />
-                                    <span>Arrived: {appointment.created_at ? format(new Date(appointment.created_at), "h:mm a") : "Today"}</span>
+                                    <span>
+                                      Arrived:{" "}
+                                      {appointment.created_at
+                                        ? format(
+                                            new Date(appointment.created_at),
+                                            "h:mm a"
+                                          )
+                                        : "Today"}
+                                    </span>
                                   </div>
                                 ) : (
-                                  `${formatTime(appointment.time_slot.start_time)} - ${formatTime(appointment.time_slot.end_time)}`
+                                  `${formatTime(
+                                    appointment.time_slot.start_time
+                                  )} - ${formatTime(
+                                    appointment.time_slot.end_time
+                                  )}`
                                 )}
                               </div>
                               <div className="text-xs text-gray-500">
-                                {!appointment.time_slot || !appointment.time_slot.start_time || appointment.time_slot.start_time === "00:00" ? (
-                                  <span className="text-orange-600 font-medium">Walk-in</span>
+                                {!appointment.time_slot ||
+                                !appointment.time_slot.start_time ||
+                                appointment.time_slot.start_time === "00:00" ? (
+                                  <span className="text-orange-600 font-medium">
+                                    Walk-in
+                                  </span>
                                 ) : (
                                   `${appointment.service.service_duration} minutes`
                                 )}
@@ -1362,7 +1396,7 @@ const EnhancedAppointmentFlowboard: React.FC<
                   <div className="mb-4 flex justify-between items-center">
                     <h4 className="font-medium text-lg flex items-center">
                       <Users className="h-5 w-5 text-indigo-500 mr-2" />
-                      Patients waiting 
+                      Patients waiting
                       <span className="ml-2 bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full">
                         {queueData?.length || 0}
                       </span>
@@ -1407,7 +1441,9 @@ const EnhancedAppointmentFlowboard: React.FC<
                                 <div className="flex items-center">
                                   <div className="bg-white p-1.5 rounded-full mr-3 shadow-sm">
                                     <img
-                                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(appointment.pet.pet_name)}&background=f0f9ff&color=3b82f6`}
+                                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                        appointment.pet.pet_name
+                                      )}&background=f0f9ff&color=3b82f6`}
                                       alt={appointment.pet.pet_name}
                                       className="h-8 w-8 rounded-full"
                                     />
@@ -1439,24 +1475,38 @@ const EnhancedAppointmentFlowboard: React.FC<
                               <div className="p-3">
                                 <div className="grid grid-cols-2 gap-2 bg-white rounded-lg p-2 mb-3 shadow-sm">
                                   <div>
-                                    <div className="text-gray-500 text-xs">Doctor</div>
-                                    <div className="text-sm font-medium">{appointment.doctor.doctor_name}</div>
+                                    <div className="text-gray-500 text-xs">
+                                      Doctor
+                                    </div>
+                                    <div className="text-sm font-medium">
+                                      {appointment.doctor.doctor_name}
+                                    </div>
                                   </div>
                                   <div>
-                                    <div className="text-gray-500 text-xs">Service</div>
-                                    <div className="text-sm font-medium">{appointment.service.service_name}</div>
+                                    <div className="text-gray-500 text-xs">
+                                      Service
+                                    </div>
+                                    <div className="text-sm font-medium">
+                                      {appointment.service.service_name}
+                                    </div>
                                   </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-2 bg-white rounded-lg p-2 shadow-sm">
                                   <div>
-                                    <div className="text-gray-500 text-xs">Appointment</div>
+                                    <div className="text-gray-500 text-xs">
+                                      Appointment
+                                    </div>
                                     <div className="text-sm font-medium">
-                                      {formatTime(appointment.time_slot.start_time)}
+                                      {formatTime(
+                                        appointment.time_slot.start_time
+                                      )}
                                     </div>
                                   </div>
                                   <div>
-                                    <div className="text-gray-500 text-xs">Waiting</div>
+                                    <div className="text-gray-500 text-xs">
+                                      Waiting
+                                    </div>
                                     <div
                                       className={
                                         queueItem.actualWaitTime > "15 min"
@@ -1499,8 +1549,12 @@ const EnhancedAppointmentFlowboard: React.FC<
                   ) : (
                     <div className="text-center py-10 bg-gray-50 rounded-lg border border-gray-200">
                       <Clock className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                      <div className="text-gray-500 font-medium">No patients waiting</div>
-                      <div className="text-gray-400 text-sm mt-1">Waiting queue is empty</div>
+                      <div className="text-gray-500 font-medium">
+                        No patients waiting
+                      </div>
+                      <div className="text-gray-400 text-sm mt-1">
+                        Waiting queue is empty
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1526,7 +1580,9 @@ const EnhancedAppointmentFlowboard: React.FC<
                         )}
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg">{selectedAppointment.pet.pet_name}</h3>
+                        <h3 className="font-bold text-lg">
+                          {selectedAppointment.pet.pet_name}
+                        </h3>
                         <div className="text-sm text-gray-600 flex items-center">
                           <PawPrint className="h-3.5 w-3.5 text-gray-400 mr-1" />
                           {selectedAppointment.pet.pet_breed}
@@ -1548,7 +1604,10 @@ const EnhancedAppointmentFlowboard: React.FC<
                         <Calendar className="h-4 w-4 text-indigo-500 mr-1.5" />
                         Appointment Details
                       </span>
-                      {(!selectedAppointment.time_slot || !selectedAppointment.time_slot.start_time || selectedAppointment.time_slot.start_time === "00:00:00") && (
+                      {(!selectedAppointment.time_slot ||
+                        !selectedAppointment.time_slot.start_time ||
+                        selectedAppointment.time_slot.start_time ===
+                          "00:00:00") && (
                         <span className="text-xs flex items-center bg-orange-100 text-orange-800 px-2 py-1 rounded">
                           <UserPlus className="h-3 w-3 mr-1" />
                           Walk-in
@@ -1560,15 +1619,23 @@ const EnhancedAppointmentFlowboard: React.FC<
                       <div className="bg-indigo-50 p-3 rounded-md">
                         <div className="grid grid-cols-2 gap-4 mb-1">
                           <div>
-                            <div className="text-xs text-indigo-700">Service</div>
+                            <div className="text-xs text-indigo-700">
+                              Service
+                            </div>
                             <div className="font-medium text-indigo-900">
                               {selectedAppointment.service.service_name}
                             </div>
                           </div>
                           <div>
-                            <div className="text-xs text-indigo-700">Status</div>
+                            <div className="text-xs text-indigo-700">
+                              Status
+                            </div>
                             <div>
-                              <span className={`inline-block px-2 py-1 text-xs rounded-full mt-0.5 ${getStatusColorClass(selectedAppointment.state)}`}>
+                              <span
+                                className={`inline-block px-2 py-1 text-xs rounded-full mt-0.5 ${getStatusColorClass(
+                                  selectedAppointment.state
+                                )}`}
+                              >
                                 {selectedAppointment.state}
                               </span>
                             </div>
@@ -1580,22 +1647,45 @@ const EnhancedAppointmentFlowboard: React.FC<
                         <div>
                           <div className="text-sm text-gray-500">Time</div>
                           <div className="font-medium">
-                            {!selectedAppointment.time_slot || !selectedAppointment.time_slot.start_time || selectedAppointment.time_slot.start_time === "00:00:00" ? (
+                            {!selectedAppointment.time_slot ||
+                            !selectedAppointment.time_slot.start_time ||
+                            selectedAppointment.time_slot.start_time ===
+                              "00:00:00" ? (
                               <div className="flex items-center">
                                 <Clock className="h-4 w-4 mr-1 text-orange-500" />
-                                <span>Arrived: {selectedAppointment.created_at ? format(new Date(selectedAppointment.created_at), "h:mm a") : "Today"}</span>
+                                <span>
+                                  Arrived:{" "}
+                                  {selectedAppointment.created_at
+                                    ? format(
+                                        new Date(
+                                          selectedAppointment.created_at
+                                        ),
+                                        "h:mm a"
+                                      )
+                                    : "Today"}
+                                </span>
                               </div>
                             ) : (
-                              `${formatTime(selectedAppointment.time_slot.start_time)} - ${formatTime(selectedAppointment.time_slot.end_time)}`
+                              `${formatTime(
+                                selectedAppointment.time_slot.start_time
+                              )} - ${formatTime(
+                                selectedAppointment.time_slot.end_time
+                              )}`
                             )}
                           </div>
                         </div>
                         <div>
                           <div className="text-sm text-gray-500">Duration</div>
                           <div className="font-medium">
-                            {selectedAppointment.service.service_duration} minutes
-                            {(!selectedAppointment.time_slot || !selectedAppointment.time_slot.start_time || selectedAppointment.time_slot.start_time === "00:00:00") && (
-                              <span className="ml-2 text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded">Unscheduled</span>
+                            {selectedAppointment.service.service_duration}{" "}
+                            minutes
+                            {(!selectedAppointment.time_slot ||
+                              !selectedAppointment.time_slot.start_time ||
+                              selectedAppointment.time_slot.start_time ===
+                                "00:00:00") && (
+                              <span className="ml-2 text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
+                                Unscheduled
+                              </span>
                             )}
                           </div>
                         </div>
@@ -1611,7 +1701,9 @@ const EnhancedAppointmentFlowboard: React.FC<
                         </div>
                         <div>
                           <div className="text-sm text-gray-500">Room</div>
-                          <div className="font-medium">{selectedAppointment.room}</div>
+                          <div className="font-medium">
+                            {selectedAppointment.room}
+                          </div>
                         </div>
                       </div>
 
@@ -1653,11 +1745,15 @@ const EnhancedAppointmentFlowboard: React.FC<
                     <div className="grid grid-cols-2 gap-4 mb-2">
                       <div>
                         <div className="text-sm text-gray-500">Name</div>
-                        <div className="font-medium">{selectedAppointment.owner.owner_name}</div>
+                        <div className="font-medium">
+                          {selectedAppointment.owner.owner_name}
+                        </div>
                       </div>
                       <div>
                         <div className="text-sm text-gray-500">Phone</div>
-                        <div className="font-medium">{selectedAppointment.owner.owner_phone}</div>
+                        <div className="font-medium">
+                          {selectedAppointment.owner.owner_phone}
+                        </div>
                       </div>
                     </div>
 
@@ -1745,63 +1841,98 @@ const EnhancedAppointmentFlowboard: React.FC<
                         <button
                           className="w-full px-3 py-2.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 flex items-center justify-center shadow-sm"
                           onClick={() => {
-                            const currentStep = getCurrentWorkflowStep(selectedAppointment);
+                            const currentStep =
+                              getCurrentWorkflowStep(selectedAppointment);
                             // Điều hướng đến trang workflow thích hợp
                             if (currentStep === "patient-details") {
-                              setLocation(`/appointment/${selectedAppointment.id}`);
+                              setLocation(
+                                `/appointment/${selectedAppointment.id}`
+                              );
                             } else if (currentStep === "examination") {
-                              setLocation(`/appointment/${selectedAppointment.id}/examination`);
+                              setLocation(
+                                `/appointment/${selectedAppointment.id}/lab-management`
+                              );
                             } else if (currentStep === "soap") {
-                              setLocation(`/appointment/${selectedAppointment.id}/soap`);
+                              setLocation(
+                                `/appointment/${selectedAppointment.id}/soap`
+                              );
                             } else if (currentStep === "diagnostic") {
-                              setLocation(`/appointment/${selectedAppointment.id}/lab-management`);
+                              setLocation(
+                                `/appointment/${selectedAppointment.id}/lab-management`
+                              );
                             } else if (currentStep === "treatment") {
-                              setLocation(`/appointment/${selectedAppointment.id}/patient/${selectedAppointment.pet?.pet_id}/treatment`);
+                              setLocation(
+                                `/appointment/${selectedAppointment.id}/patient/${selectedAppointment.pet?.pet_id}/treatment`
+                              );
                             } else if (currentStep === "prescription") {
-                              setLocation(`/appointment/${selectedAppointment.id}/prescription`);
+                              setLocation(
+                                `/appointment/${selectedAppointment.id}/prescription`
+                              );
                             } else if (currentStep === "follow-up") {
-                              setLocation(`/appointment/${selectedAppointment.id}/follow-up`);
+                              setLocation(
+                                `/appointment/${selectedAppointment.id}/follow-up`
+                              );
                             } else {
-                              setLocation(`/appointment/${selectedAppointment.id}`);
+                              setLocation(
+                                `/appointment/${selectedAppointment.id}`
+                              );
                             }
                           }}
                         >
-                          {getWorkflowStepIcon(getCurrentWorkflowStep(selectedAppointment))}
-                          <span className="mx-1">{getWorkflowStepLabel(getCurrentWorkflowStep(selectedAppointment))}</span>
+                          {getWorkflowStepIcon(
+                            getCurrentWorkflowStep(selectedAppointment)
+                          )}
+                          <span className="mx-1">
+                            {getWorkflowStepLabel(
+                              getCurrentWorkflowStep(selectedAppointment)
+                            )}
+                          </span>
                           <ArrowRightCircle className="ml-1 h-4 w-4" />
                         </button>
                       )}
-                      
+
                       <div className="grid grid-cols-2 gap-2 mt-2">
                         {selectedAppointment.state === "Scheduled" && (
-                          <button className="px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 flex items-center justify-center shadow-sm"
-                            onClick={() => handleStatusChange(selectedAppointment.id, 3)}>
+                          <button
+                            className="px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 flex items-center justify-center shadow-sm"
+                            onClick={() =>
+                              handleStatusChange(selectedAppointment.id, 3)
+                            }
+                          >
                             <CheckCircle size={14} className="mr-1.5" />
                             Check-in
                           </button>
                         )}
-                        
+
                         {selectedAppointment.state === "Checked In" && (
-                          <button className="px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 flex items-center justify-center shadow-sm"
-                            onClick={() => handleStatusChange(selectedAppointment.id, 5)}>
+                          <button
+                            className="px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 flex items-center justify-center shadow-sm"
+                            onClick={() =>
+                              handleStatusChange(selectedAppointment.id, 5)
+                            }
+                          >
                             <Play size={14} className="mr-1.5" />
                             Start Exam
                           </button>
                         )}
-                        
+
                         {selectedAppointment.state === "In Progress" && (
-                          <button className="px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 flex items-center justify-center shadow-sm"
-                            onClick={() => handleStatusChange(selectedAppointment.id, 6)}>
+                          <button
+                            className="px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 flex items-center justify-center shadow-sm"
+                            onClick={() =>
+                              handleStatusChange(selectedAppointment.id, 6)
+                            }
+                          >
                             <CheckCircle size={14} className="mr-1.5" />
                             Complete
                           </button>
                         )}
-                        
+
                         {/* <button className="px-3 py-2 border border-gray-200 text-sm rounded-md hover:bg-gray-50 flex items-center justify-center shadow-sm">
                           <Edit size={14} className="mr-1.5" />
                           Edit
                         </button> */}
-                        
+
                         <button className="px-3 py-2 border border-gray-200 text-red-600 text-sm rounded-md hover:bg-red-50 hover:border-red-200 flex items-center justify-center shadow-sm">
                           <XCircle size={14} className="mr-1.5" />
                           Cancel

@@ -154,7 +154,7 @@ const TreatmentManagement: React.FC = () => {
     }
   }, [id]);
 
-  const { data: treatments, isLoading: isTreatmentsLoading } =
+  const { data: treatments, isLoading: isTreatmentsLoading, refetch: refetchTreatments } =
     useTreatmentsData(petId || "");
 
   const { data: patientData, isLoading: isPatientLoading } = usePatientData(
@@ -169,7 +169,7 @@ const TreatmentManagement: React.FC = () => {
     treatments &&
     treatments.find((t: Treatment) => t.id === selectedTreatmentId);
 
-  const { data: phases, isLoading: isPhasesLoading } = useTreatmentPhasesData(
+  const { data: phases, isLoading: isPhasesLoading, refetch: refetchPhases } = useTreatmentPhasesData(
     selectedTreatment?.id?.toString() || ""
   );
 
@@ -178,8 +178,6 @@ const TreatmentManagement: React.FC = () => {
     selectedTreatment?.id?.toString() || ""
   );
   const isPhaseSubmitting = addTreatmentPhaseMutation.isPending;
-
-  console.log("phases", phases);
 
   // Toggle phase expansion
   const togglePhaseExpansion = (phaseId: number) => {
@@ -210,13 +208,14 @@ const TreatmentManagement: React.FC = () => {
 
   // Calculate treatment progress
   const calculateProgress = (treatment: Treatment) => {
-    if (!phases || phases.length === 0) return 0;
-
-    const completedPhases = phases.filter(
-      (phase: TreatmentPhase) => phase.status === "Completed"
+    // Don't try to calculate if the treatment doesn't have phases
+    if (!treatment.phases || treatment.phases.length === 0) return 0;
+    
+    const completedPhases = treatment.phases.filter(
+      (phase: any) => phase.status === "Completed"
     ).length;
 
-    return Math.round((completedPhases / phases.length) * 100);
+    return Math.round((completedPhases / treatment.phases.length) * 100);
   };
 
   // State for new treatment
@@ -232,8 +231,6 @@ const TreatmentManagement: React.FC = () => {
     notes: "",
     doctor_id: 0,
   });
-
-  console.log("newTreatment", newTreatment);
 
   // State for form steps
   const [formStep, setFormStep] = useState(0);
@@ -416,6 +413,9 @@ const TreatmentManagement: React.FC = () => {
       // Call the mutation
       await addTreatmentMutation.mutateAsync(fullTreatmentData);
 
+      // Explicitly refetch treatments to update UI
+      await refetchTreatments();
+
       toast({
         title: "Success",
         description: "Treatment plan created successfully",
@@ -531,6 +531,9 @@ const TreatmentManagement: React.FC = () => {
 
     try {
       await addTreatmentPhaseMutation.mutateAsync(phaseList);
+      
+      // Explicitly refetch phases to update UI
+      await refetchPhases();
 
       toast({
         title: "Success",
@@ -565,7 +568,7 @@ const TreatmentManagement: React.FC = () => {
   }>({});
 
   // Get medicines by phase
-  const { data: phaseMedicines } = useGetMedicinesByPhase(
+  const { data: phaseMedicines, refetch: refetchPhaseMedicines } = useGetMedicinesByPhase(
     selectedTreatment?.id || "",
     selectedPhaseId?.toString() || ""
   );
@@ -717,6 +720,13 @@ const TreatmentManagement: React.FC = () => {
       // Submit the array of assignments at once
       await assignMedicineMutation.mutateAsync(assignmentData);
 
+      // Explicitly refetch phase medicines data
+      if (selectedPhaseId) {
+        await refetchPhaseMedicines();
+        // Also refetch phases to update medication counts
+        await refetchPhases();
+      }
+
       // Prepare and export each medicine transaction
       const exportPromises = selectedMedicines.map((medicine) => {
         // Map selected medicine to MedicineTransactionRequest
@@ -746,6 +756,15 @@ const TreatmentManagement: React.FC = () => {
       // Reset state and close modal
       setSelectedMedicines([]);
       setIsMedicineModalOpen(false);
+      
+      // Toggle phase view to refresh display
+      if (selectedPhaseId) {
+        // Force a phase UI refresh by toggling expansion
+        setExpandedPhases(prev => ({
+          ...prev,
+          [selectedPhaseId]: true
+        }));
+      }
     } catch (err) {
       console.error("Error assigning medicines:", err);
       toast({
@@ -864,7 +883,7 @@ const TreatmentManagement: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          {/* <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -881,7 +900,7 @@ const TreatmentManagement: React.FC = () => {
               <Printer size={14} className="text-gray-500" />
               <span>Print Summary</span>
             </Button>
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -977,35 +996,22 @@ const TreatmentManagement: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="mb-4">
-                        <div className="text-xs text-gray-500 uppercase font-medium flex justify-between items-center">
-                          <span>Progress</span>
-                          <span className="font-medium text-indigo-600">
-                            {calculateProgress(treatment)}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
-                          <div
-                            className="bg-indigo-600 h-2 rounded-full"
-                            style={{
-                              width: `${calculateProgress(treatment)}%`,
-                            }}
-                          ></div>
-                        </div>
-                      </div>
-
                       <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
                         <div className="text-sm text-gray-500">
-                          <span>{phases?.length} phases</span>
-                          {" • "}
-                          <span>
-                            {
-                              phases?.filter(
-                                (p: TreatmentPhase) => p.status === "Completed"
-                              ).length
-                            }{" "}
-                            completed
-                          </span>
+                          <Badge 
+                            className={`mr-2 ${
+                              treatment.status === "Completed"
+                                ? "bg-green-100 text-green-800 border-green-200"
+                                : treatment.status === "In Progress"
+                                ? "bg-blue-100 text-blue-800 border-blue-200"
+                                : treatment.status === "Not Started"
+                                ? "bg-gray-100 text-gray-800 border-gray-200"
+                                : "bg-indigo-100 text-indigo-800 border-indigo-200"
+                            }`}
+                          >
+                            {treatment.status}
+                          </Badge>
+                          <span>{treatment.name}</span>
                         </div>
 
                         <Button
@@ -1140,23 +1146,6 @@ const TreatmentManagement: React.FC = () => {
                     {selectedTreatment.description}
                   </div>
                 </div>
-
-                {/* <div className="mb-5">
-                  <div className="text-xs text-gray-500 uppercase font-medium flex justify-between items-center">
-                    <span>Overall Progress</span>
-                    <span className="font-medium text-indigo-600">
-                      {calculateProgress(selectedTreatment)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
-                    <div
-                      className="bg-indigo-600 h-2 rounded-full"
-                      style={{
-                        width: `${calculateProgress(selectedTreatment)}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div> */}
               </div>
             </div>
 

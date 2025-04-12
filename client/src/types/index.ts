@@ -114,6 +114,7 @@ export interface Patient {
   type: string;
   breed: string;
   age: string;
+  gender: string;
   birth_date: string;
   data_image: string;
   original_name: string;
@@ -305,7 +306,7 @@ export interface QuickLinkRequest {
   account_no: string | "220220222419";
   template: string | "print";
   description: string | "Thank you for your payment";
-  amount: number | 0;
+  amount: number;         
   account_name: string | "DINH HUU QUANG ANH";
   order_id: number | 0;
   test_order_id: number | 0;
