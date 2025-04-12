@@ -35,15 +35,67 @@ import { ObjectiveData } from "@/types";
 type InputChangeEvent = React.ChangeEvent<HTMLTextAreaElement>;
 
 const SoapNotes = () => {
-  const { id } = useParams<{ id?: string }>();
-  const [, setLocation] = useLocation();
+  // Lấy params từ cả route params và query params
+  const { id: routeId } = useParams<{ id?: string }>();
+  const [, navigate] = useLocation();
   const [isRecording, setIsRecording] = useState(false);
+  
+  // Quản lý tham số workflow
+  const [workflowParams, setWorkflowParams] = useState<{
+    appointmentId: string | null;
+    petId: string | null;
+  }>({
+    appointmentId: null,
+    petId: null
+  });
+  
+  // Xử lý các tham số từ URL một cách nhất quán
+  useEffect(() => {
+    // Lấy tất cả các query params từ URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlAppointmentId = searchParams.get("appointmentId");
+    const urlPetId = searchParams.get("petId");
+    
+    // Thiết lập appointmentId và petId theo thứ tự ưu tiên
+    const appointmentIdValue = urlAppointmentId || routeId || null;
+    const petIdValue = urlPetId || null;
+    
+    // IMPORTANT: Kiểm tra xem giá trị mới có khác giá trị cũ không
+    // để tránh vòng lặp vô hạn của setState
+    if (appointmentIdValue !== workflowParams.appointmentId || 
+        petIdValue !== workflowParams.petId) {
+      setWorkflowParams({
+        appointmentId: appointmentIdValue,
+        petId: petIdValue
+      });
+      
+      console.log("SOAP Notes Workflow Params Set:", { appointmentIdValue, petIdValue });
+    }
+  }, [routeId, workflowParams]);
+  
+  // Sử dụng appointmentId từ workflowParams
+  const effectiveAppointmentId = workflowParams.appointmentId || "";
+  
+  // Utility function to build query parameters
+  const buildUrlParams = (params: Record<string, string | number | null | undefined>) => {
+    const urlParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        urlParams.append(key, String(value));
+      }
+    });
+    
+    const queryString = urlParams.toString();
+    return queryString ? `?${queryString}` : '';
+  };
 
   const {
     data: appointment,
     isLoading: isAppointmentLoading,
     error: appointmentError,
-  } = useAppointmentData(id);
+  } = useAppointmentData(effectiveAppointmentId);
+  
   const {
     data: soapData = {
       subjective: "",
@@ -54,11 +106,13 @@ const SoapNotes = () => {
     isLoading: isSoapLoading,
     error: soapError,
   } = useGetSOAP(appointment?.id);
+  
   const {
     data: patient,
     isLoading: isPatientLoading,
     error: patientError,
   } = usePatientData(appointment?.pet?.pet_id);
+  
   const updateSoapMutation = useUpdateSOAP();
 
   const [localSoapData, setLocalSoapData] = useState({
@@ -70,7 +124,7 @@ const SoapNotes = () => {
 
   // Initialize local state when remote data loads
   useEffect(() => {
-    if (soapData) {
+    if (soapData && JSON.stringify(soapData) !== JSON.stringify(localSoapData)) {
       setLocalSoapData({
         subjective: soapData.subjective || "",
         objective: soapData.objective || {},
@@ -78,7 +132,7 @@ const SoapNotes = () => {
         plan: soapData.plan || "",
       });
     }
-  }, [soapData]);
+  }, [soapData, localSoapData]);
 
   const handleInputChange = (
     field: keyof typeof localSoapData,
@@ -189,7 +243,13 @@ const SoapNotes = () => {
           description: "SOAP notes saved successfully.",
           className: "bg-green-50 border-green-200 text-green-800",
         });
-        setLocation(`/appointment/${appointment?.id}/lab-management`);
+        
+        // Điều hướng đến lab-management với query params
+        const params = {
+          appointmentId: effectiveAppointmentId,
+          petId: appointment?.pet?.pet_id
+        };
+        navigate(`/lab-management${buildUrlParams(params)}`);
       }
 
     } catch (error) {
@@ -206,16 +266,26 @@ const SoapNotes = () => {
     if (patient) {
       // Save notes first
       handleSave();
-      // Then navigate to treatment page
-      setLocation(`/appointment/${id}/patient/${patient.petid}/treatment`);
+      
+      // Then navigate to treatment page with query params
+      const params = {
+        appointmentId: effectiveAppointmentId,
+        petId: patient.petid
+      };
+      navigate(`/treatment${buildUrlParams(params)}`);
     }
   };
 
   const handleBackToPatient = () => {
     if (appointment) {
-      setLocation(`/appointment/${appointment?.id}`);
+      // Navigate to patient page with query params
+      const params = {
+        appointmentId: effectiveAppointmentId,
+        petId: appointment?.pet?.pet_id
+      };
+      navigate(`/patient${buildUrlParams(params)}`);
     } else {
-      setLocation("/appointment-flow");
+      navigate("/appointment-flow");
     }
   };
 
@@ -276,7 +346,7 @@ const SoapNotes = () => {
       {/* Workflow Navigation */}
       <div className="px-4 pt-3">
         <WorkflowNavigation
-          appointmentId={appointment?.id}
+          appointmentId={effectiveAppointmentId}
           petId={patient?.petid?.toString()}
           currentStep="soap"
         />

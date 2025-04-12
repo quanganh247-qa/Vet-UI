@@ -47,6 +47,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { usePatientData } from "@/hooks/use-pet";
 import { useAllergiesData } from "@/hooks/use-allergy";
+import { useMedicalRecord, useCreateMedicalRecord } from "@/hooks/use-medical-record";
 import WorkflowNavigation from "@/components/WorkflowNavigation";
 import { toast } from "@/components/ui/use-toast";
 import { Label } from "@/components/ui/label";
@@ -105,57 +106,57 @@ const MedicalRecordManagement: React.FC = () => {
   const [, setLocation] = useLocation();
 
   const { petId } = useParams<{ petId?: string }>();
+  const [workflowParams, setWorkflowParams] = useState<{
+    appointmentId: string | null;
+    petId: string | null;
+  }>({
+    appointmentId: null,
+    petId: null
+  });
 
-  // Get appointment id from query params
-  const [appointmentId, setAppointmentId] = useState<string | null>(null);
-
+  // Xử lý các tham số từ URL một cách nhất quán
   useEffect(() => {
-    // Extract appointmentId from URL search params
+    // Lấy tất cả các query params từ URL
     const searchParams = new URLSearchParams(window.location.search);
     const urlAppointmentId = searchParams.get("appointmentId");
-    if (urlAppointmentId) {
-      setAppointmentId(urlAppointmentId);
-    } else if (id) {
-      // If no appointmentId in URL but we have an ID from route params, use it as fallback
-      setAppointmentId(id);
-    }
-  }, [id]);
+    const urlPetId = searchParams.get("petId");
+    
+    console.log("URL Params:", { urlAppointmentId, urlPetId, id, petId });
+    
+    // Thiết lập appointmentId và petId theo thứ tự ưu tiên
+    let appointmentIdValue = urlAppointmentId || id || null;
+    let petIdValue = urlPetId || petId || null;
+    
+    setWorkflowParams({
+      appointmentId: appointmentIdValue,
+      petId: petIdValue
+    });
+    
+    console.log("Workflow Params Set:", { appointmentIdValue, petIdValue });
+  }, [id, petId]);
 
+  // Sử dụng petId từ workflowParams hoặc từ route params
+  const effectivePetId = workflowParams.petId || petId || "";
+  const petIdNumber = effectivePetId ? parseInt(effectivePetId, 10) : 0;
+
+  // Get patient data
   const { data: patientData, isLoading: isPatientLoading } = usePatientData(
-    petId || ""
+    effectivePetId
   );
 
   const { data: alergies, isLoading: isAlertsLoading } = useAllergiesData(
-    petId || ""
+    effectivePetId
   );
 
-  // Mock medical history data
-  const [medicalHistory, setMedicalHistory] = useState<MedicalHistory[]>([
-    {
-      id: 1,
-      condition: "Canine Parvovirus",
-      diagnosis_date: "2023-05-15 10:30:00",
-      notes: "Severe dehydration, vomiting, and diarrhea. Treated with IV fluids and antibiotics.",
-      status: "Recovered",
-    },
-    {
-      id: 2,
-      condition: "Ear Infection",
-      diagnosis_date: "2023-08-22 14:45:00",
-      notes: "Bacterial infection in left ear. Prescribed ear drops and oral antibiotics.",
-      status: "Active",
-    },
-    {
-      id: 3,
-      condition: "Hip Dysplasia",
-      diagnosis_date: "2023-10-10 09:15:00",
-      notes: "Moderate hip dysplasia observed in x-rays. Recommended weight management and joint supplements.",
-      status: "Chronic",
-    },
-  ]);
+  // Use the medical record hooks
+  const { data: medicalRecords, isLoading: isLoadingMedicalRecords } = useMedicalRecord(petIdNumber);
+  const createMedicalRecord = useCreateMedicalRecord(petIdNumber);
+
+  // Medical history data from API
+  const medicalHistory = medicalRecords || [];
 
   const selectedHistory = medicalHistory.find(
-    (h) => h.id === selectedHistoryId
+    (h: MedicalHistory) => h.id === selectedHistoryId
   );
 
   // Handle selecting history for detailed view
@@ -240,7 +241,7 @@ const MedicalRecordManagement: React.FC = () => {
 
   // Handle creating a new medical history record
   const handleCreateHistory = () => {
-    if (!petId) {
+    if (!effectivePetId) {
       toast({
         title: "Error",
         description: "Pet ID is required to create a medical history record",
@@ -265,32 +266,20 @@ const MedicalRecordManagement: React.FC = () => {
       return;
     }
 
-    // Mock creating a new record
-    const newRecord: MedicalHistory = {
-      id: Math.max(0, ...medicalHistory.map(h => h.id)) + 1,
-      condition: newHistory.condition,
-      diagnosis_date: newHistory.diagnosis_date,
-      notes: newHistory.notes,
-      status: "Active",
-    };
+    // Use the mutation hook to create a new record
+    createMedicalRecord.mutate(newHistory, {
+      onSuccess: () => {
+        // Reset form
+        setNewHistory({
+          condition: "",
+          diagnosis_date: new Date().toISOString().slice(0, 16).replace("T", " "),
+          notes: "",
+        });
 
-    setMedicalHistory([...medicalHistory, newRecord]);
-
-    toast({
-      title: "Success",
-      description: "Medical history record created successfully",
-      className: "bg-green-50 border-green-200 text-green-800",
+        // Back to list view
+        setActiveView("list");
+      }
     });
-
-    // Reset form
-    setNewHistory({
-      condition: "",
-      diagnosis_date: new Date().toISOString().slice(0, 16).replace("T", " "),
-      notes: "",
-    });
-
-    // Back to list view
-    setActiveView("list");
   };
 
   // Helper function to format date
@@ -353,8 +342,8 @@ const MedicalRecordManagement: React.FC = () => {
       {/* Workflow Navigation */}
       <div className="mb-4">
         <WorkflowNavigation
-          appointmentId={appointmentId || id || undefined}
-          petId={petId}
+          appointmentId={workflowParams.appointmentId || undefined}
+          petId={effectivePetId}
           currentStep="records"
         />
       </div>
@@ -409,25 +398,6 @@ const MedicalRecordManagement: React.FC = () => {
               </div>
             </div>
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white shadow-sm flex items-center gap-1.5 border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors"
-            >
-              <MessageSquare size={14} className="text-blue-500" />
-              <span>Message Owner</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white shadow-sm flex items-center gap-1.5 border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors"
-            >
-              <Printer size={14} className="text-gray-500" />
-              <span>Print Summary</span>
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -441,86 +411,88 @@ const MedicalRecordManagement: React.FC = () => {
                 <History className="mr-2 h-5 w-5 text-indigo-600" />
                 Medical History Records
               </h2>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-white shadow-sm flex items-center gap-1.5 border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  <Download size={14} className="text-gray-600" />
-                  <span>Export</span>
-                </Button>
-              </div>
             </div>
+
+            {/* Loading state */}
+            {isLoadingMedicalRecords && (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading medical records...</p>
+                </div>
+              </div>
+            )}
 
             {/* Medical History Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {medicalHistory.length === 0 ? (
-                <div className="col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-                  <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <h3 className="text-lg font-medium text-gray-700 mb-1">No Medical History Records</h3>
-                  <p className="text-gray-500 mb-4">There are no medical history records for this patient.</p>
-                  <Button onClick={() => setActiveView("new")}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add First Record
-                  </Button>
-                </div>
-              ) : (
-                medicalHistory.map((history) => (
-                  <div
-                    key={history.id}
-                    className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all"
-                    onClick={() => handleSelectHistory(history.id)}
-                  >
-                    <div className="px-5 py-4 bg-gradient-to-r from-indigo-50 to-white border-b flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold text-gray-800">
-                          {history.condition}
-                        </h3>
-                        <div className="text-sm text-gray-600 mt-1 flex items-center">
-                          <Calendar
-                            size={14}
-                            className="mr-1.5 text-gray-400"
-                          />
-                          Diagnosed: {formatDate(history.diagnosis_date)}
-                        </div>
-                      </div>
-                      <Badge
-                        className={
-                          history.status === "Recovered"
-                            ? "bg-green-100 text-green-800 border-green-200"
-                            : history.status === "Active"
-                            ? "bg-blue-100 text-blue-800 border-blue-200"
-                            : "bg-yellow-100 text-yellow-800 border-yellow-200" // For Chronic
-                        }
-                      >
-                        {history.status}
-                      </Badge>
-                    </div>
-
-                    <div className="p-5">
-                      <div className="mb-4">
-                        <div className="text-xs text-gray-500 uppercase font-medium">
-                          Notes
-                        </div>
-                        <div className="text-sm text-gray-700 mt-1 line-clamp-3">
-                          {history.notes}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-end mt-4 pt-3 border-t border-gray-100">
-                        <Button
-                          className="bg-indigo-600 hover:bg-indigo-700"
-                          size="sm"
-                        >
-                          View Details
-                        </Button>
-                      </div>
-                    </div>
+            {!isLoadingMedicalRecords && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {medicalHistory.length === 0 ? (
+                  <div className="col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                    <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-1">No Medical History Records</h3>
+                    <p className="text-gray-500 mb-4">There are no medical history records for this patient.</p>
+                    <Button onClick={() => setActiveView("new")}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add First Record
+                    </Button>
                   </div>
-                ))
-              )}
-            </div>
+                ) : (
+                  medicalHistory.map((history: MedicalHistory) => (
+                    <div
+                      key={history.id}
+                      className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                      onClick={() => handleSelectHistory(history.id)}
+                    >
+                      <div className="px-5 py-4 bg-gradient-to-r from-indigo-50 to-white border-b flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold text-gray-800">
+                            {history.condition}
+                          </h3>
+                          <div className="text-sm text-gray-600 mt-1 flex items-center">
+                            <Calendar
+                              size={14}
+                              className="mr-1.5 text-gray-400"
+                            />
+                            Diagnosed: {formatDate(history.diagnosis_date)}
+                          </div>
+                        </div>
+                        <Badge
+                          className={
+                            history.status === "Recovered"
+                              ? "bg-green-100 text-green-800 border-green-200"
+                              : history.status === "Active"
+                              ? "bg-blue-100 text-blue-800 border-blue-200"
+                              : "bg-yellow-100 text-yellow-800 border-yellow-200" // For Chronic
+                          }
+                        >
+                          {history.status}
+                        </Badge>
+                      </div>
+
+                      <div className="p-5">
+                        <div className="mb-4">
+                          <div className="text-xs text-gray-500 uppercase font-medium">
+                            Notes
+                          </div>
+                          <div className="text-sm text-gray-700 mt-1 line-clamp-3">
+                            {history.notes}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-end mt-4 pt-3 border-t border-gray-100">
+                          <Button
+                            className="bg-indigo-600 hover:bg-indigo-700"
+                            size="sm"
+                          >
+                            View Details
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -772,12 +744,24 @@ const MedicalRecordManagement: React.FC = () => {
                       <Button
                         type="submit"
                         className="bg-indigo-600 hover:bg-indigo-700 h-11 px-6 shadow-md hover:shadow-lg transition-all"
+                        disabled={createMedicalRecord.isPending}
                       >
                         <div className="flex items-center">
-                          <PlusCircle size={16} className="mr-1.5" />
-                          <span className="font-medium text-white">
-                            Create Medical Record
-                          </span>
+                          {createMedicalRecord.isPending ? (
+                            <>
+                              <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                              <span className="font-medium text-white">
+                                Creating...
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <PlusCircle size={16} className="mr-1.5" />
+                              <span className="font-medium text-white">
+                                Create Medical Record
+                              </span>
+                            </>
+                          )}
                         </div>
                       </Button>
                     </div>

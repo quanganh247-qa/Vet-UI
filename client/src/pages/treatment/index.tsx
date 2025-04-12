@@ -136,11 +136,18 @@ const TreatmentManagement: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
   const [, setLocation] = useLocation();
 
-  // const {appointmentID} = useParams<{appointmentID?: string}>();
-  const { petId } = useParams<{ petId?: string }>();
-
-  // Get appointment id from query params
+    // Get appointment id from query params
   const [appointmentId, setAppointmentId] = useState<string | null>(null);
+
+
+  const { data: appointmentData, isLoading: isAppointmentLoading } =
+    useAppointmentData(appointmentId || "");
+
+  const petId = appointmentData?.pet.pet_id;
+
+  
+
+
 
   useEffect(() => {
     // Extract appointmentId from URL search params
@@ -154,8 +161,10 @@ const TreatmentManagement: React.FC = () => {
     }
   }, [id]);
 
+
   const { data: treatments, isLoading: isTreatmentsLoading, refetch: refetchTreatments } =
     useTreatmentsData(petId || "");
+
 
   const { data: patientData, isLoading: isPatientLoading } = usePatientData(
     petId || ""
@@ -164,6 +173,7 @@ const TreatmentManagement: React.FC = () => {
   const { data: alergies, isLoading: isAlertsLoading } = useAllergiesData(
     petId || ""
   );
+
 
   const selectedTreatment =
     treatments &&
@@ -203,8 +213,7 @@ const TreatmentManagement: React.FC = () => {
     }
   };
 
-  const { data: appointmentData, isLoading: isAppointmentLoading } =
-    useAppointmentData(appointmentId || "");
+
 
   // Calculate treatment progress
   const calculateProgress = (treatment: Treatment) => {

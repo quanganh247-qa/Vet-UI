@@ -1,10 +1,10 @@
 import { getPatientAllergies } from "@/services/allergy-services";
 import { useQuery } from "@tanstack/react-query";
 
-export const useAllergiesData = (patient_id: string, enabled = true) => {
+export const useAllergiesData = (petId: string, enabled = true) => {
   return useQuery({
     queryKey: ["allergies"],
-    queryFn: () => getPatientAllergies(patient_id),
+    queryFn: () => getPatientAllergies(petId),
     enabled,
     select: (data) => data.data || [],
   });

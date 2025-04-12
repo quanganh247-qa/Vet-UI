@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, MinusCircle, Save, ArrowLeft, Printer, AlertCircle, CheckCircle, Info } from "lucide-react";
+import { PlusCircle, MinusCircle, Save, ArrowLeft, Printer, AlertCircle, CheckCircle, Info, Receipt } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import WorkflowNavigation from "@/components/WorkflowNavigation";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 // Define types for prescription items
 interface MedicationItem {
@@ -46,6 +47,7 @@ const PrescriptionPage: React.FC = () => {
   const [prescriptionNotes, setPrescriptionNotes] = useState("");
   const [refills, setRefills] = useState(0);
   const [warningChecked, setWarningChecked] = useState(false);
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
   
   // Common medications for quick selection
   const commonMedications = [
@@ -112,8 +114,8 @@ const PrescriptionPage: React.FC = () => {
         className: "bg-green-50 border-green-200 text-green-800",
       });
       
-      // Navigate back to the appointment page
-      navigate(`/appointment/${id}`);
+      // Show the invoice dialog after saving
+      setShowInvoiceDialog(true);
     } catch (error) {
       toast({
         title: "Error saving prescription",
@@ -121,6 +123,11 @@ const PrescriptionPage: React.FC = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const navigateToInvoice = () => {
+    // Navigate to the invoice page
+    navigate(`/appointment/${id}/patient/${appointment?.pet?.pet_id}/prescription/invoice`);
   };
 
   const printPrescription = () => {
@@ -159,6 +166,15 @@ const PrescriptionPage: React.FC = () => {
             Print
           </Button>
           <Button 
+            variant="outline"
+            className="flex items-center"
+            onClick={navigateToInvoice}
+            disabled={medications.length === 0}
+          >
+            <Receipt className="h-4 w-4 mr-2" />
+            Generate Invoice
+          </Button>
+          <Button 
             className="flex items-center"
             onClick={savePrescription}
           >
@@ -173,6 +189,27 @@ const PrescriptionPage: React.FC = () => {
         petId={appointment?.pet?.pet_id?.toString()}
         currentStep="prescription"
       />
+
+      {/* Invoice Dialog */}
+      <Dialog open={showInvoiceDialog} onOpenChange={setShowInvoiceDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Prescription Saved Successfully</DialogTitle>
+            <DialogDescription>
+              Your prescription has been saved. Would you like to generate an invoice now?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowInvoiceDialog(false)}>
+              Later
+            </Button>
+            <Button onClick={navigateToInvoice} className="bg-indigo-600 hover:bg-indigo-700">
+              <Receipt className="h-4 w-4 mr-2" />
+              Generate Invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
         <div className="lg:col-span-2 space-y-6">

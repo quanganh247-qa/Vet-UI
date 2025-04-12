@@ -41,6 +41,8 @@ const TestOrdersManagement = lazy(() => import("@/pages/test-orders-management")
 const MedicineInventory = lazy(() => import("@/pages/inventory"));
 const ShiftAssignment = lazy(() => import("@/pages/shift-assignment"));
 const StaffPage = lazy(() => import("@/pages/staff"));
+const PrescriptionInvoice = lazy(() => import("@/pages/prescription/invoice"));
+const LabManagement = lazy(() => import("@/pages/lab-management"));
 
 // Create LoginPage component that uses LoginForm
 const LoginPage = () => {
@@ -127,16 +129,32 @@ function Router() {
         <Route path="/analytics" component={Analytics as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment-flow" component={AppointmentFlow as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/walk-in" component={WalkInDialog as React.ComponentType<RouteComponentProps>} />
+        
+        {/* Workflow routes - updated to use query params instead of route params */}
+        <Route path="/check-in" component={CheckIn as React.ComponentType<RouteComponentProps>} />
+        <Route path="/patient" component={PatientManagement as React.ComponentType<RouteComponentProps>} />
+        <Route path="/soap" component={SoapNotes as React.ComponentType<RouteComponentProps>} />
+        <Route path="/treatment" component={TreatmentManagement as React.ComponentType<RouteComponentProps>} />
+        <Route path="/prescription" component={Prescription as React.ComponentType<RouteComponentProps>} />
+        <Route path="/invoice" component={PrescriptionInvoice as React.ComponentType<RouteComponentProps>} />
+        <Route path="/follow-up" component={FollowUp as React.ComponentType<RouteComponentProps>} />
+        <Route path="/examination" component={Examination as React.ComponentType<RouteComponentProps>} />
+        <Route path="/lab-management" component={LabManagement as React.ComponentType<RouteComponentProps>} />
+        <Route path="/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} />
+        
+        {/* Maintain legacy routes for backward compatibility */}
         <Route path="/appointment/:id/check-in" component={CheckIn as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id" component={PatientManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/soap" component={SoapNotes as React.ComponentType<RouteComponentProps>} />
-        <Route path="/appointment/:id/patient/:petId/treatment" component={TreatmentManagement as React.ComponentType<RouteComponentProps>} />
+        <Route path="/appointment/:id/treatment" component={TreatmentManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/prescription" component={Prescription as React.ComponentType<RouteComponentProps>} />
+        <Route path="/appointment/:id/prescription/invoice" component={PrescriptionInvoice as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/follow-up" component={FollowUp as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/examination" component={Examination as React.ComponentType<RouteComponentProps>} />
+        <Route path="/appointment/:id/lab-management" component={LabManagement as React.ComponentType<RouteComponentProps>} />
+        <Route path="/appointment/:id/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} />
+        
         <Route path="/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
-        <Route path="/appointment/:id/lab-management" component={lazy(() => import("@/pages/lab-management")) as React.ComponentType<RouteComponentProps>} />
-        <Route path="/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} />
         <Route path="/notifications" component={NotificationsAdmin as React.ComponentType<RouteComponentProps>} />
         <Route path="/chatbot" component={Chatbot as React.ComponentType<RouteComponentProps>} />
         <Route path="/patients" component={PatientsPage as React.ComponentType<RouteComponentProps>} />

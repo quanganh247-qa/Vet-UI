@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,12 +33,63 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { useUpdateSOAP } from "@/hooks/use-soap";
 import { ObjectiveData } from "@/types";
+
 const Examination: React.FC = () => {
-  const { id } = useParams<{ id?: string }>();
+  // Lấy params từ cả route params và query params
+  const { id: routeId } = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+
+  // Quản lý tham số workflow
+  const [workflowParams, setWorkflowParams] = useState<{
+    appointmentId: string | null;
+    petId: string | null;
+  }>({
+    appointmentId: null,
+    petId: null
+  });
+  
+  // Xử lý các tham số từ URL một cách nhất quán
+  useEffect(() => {
+    // Lấy tất cả các query params từ URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlAppointmentId = searchParams.get("appointmentId");
+    const urlPetId = searchParams.get("petId");
+    
+    console.log("Examination URL Params:", { urlAppointmentId, urlPetId, routeId });
+    
+    // Thiết lập appointmentId và petId theo thứ tự ưu tiên
+    let appointmentIdValue = urlAppointmentId || routeId || null;
+    let petIdValue = urlPetId || null;
+    
+    setWorkflowParams({
+      appointmentId: appointmentIdValue,
+      petId: petIdValue
+    });
+    
+    console.log("Examination Workflow Params Set:", { appointmentIdValue, petIdValue });
+  }, [routeId]);
+  
+  // Sử dụng appointmentId từ workflowParams
+  const effectiveAppointmentId = workflowParams.appointmentId || "";
+  
+  // Utility function to build query parameters
+  const buildUrlParams = (params: Record<string, string | number | null | undefined>) => {
+    const urlParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        urlParams.append(key, String(value));
+      }
+    });
+    
+    const queryString = urlParams.toString();
+    return queryString ? `?${queryString}` : '';
+  };
+
   const { data: appointment, isLoading: isAppointmentLoading } =
-    useAppointmentData(id);
+    useAppointmentData(effectiveAppointmentId);
+    
   const { data: patient, isLoading: isPatientLoading } = usePatientData(
     appointment?.pet?.pet_id
   );
@@ -114,7 +165,12 @@ const Examination: React.FC = () => {
         className: "bg-green-50 border-green-200 text-green-800",
       });
 
-      navigate(`/appointment/${id}/soap`);
+      // Điều hướng đến trang SOAP với query params
+      const params = {
+        appointmentId: effectiveAppointmentId,
+        petId: appointment?.pet?.pet_id
+      };
+      navigate(`/soap${buildUrlParams(params)}`);
     } catch (error) {
       console.error("Error saving examination:", error);
       toast({
@@ -133,7 +189,40 @@ const Examination: React.FC = () => {
       description: "Examination findings have been saved successfully.",
       className: "bg-green-50 border-green-200 text-green-800",
     });
-    // navigate(`/appointment/${id}/soap`);
+
+    // Proceed to SOAP notes
+    const params = {
+      appointmentId: effectiveAppointmentId,
+      petId: appointment?.pet?.pet_id
+    };
+    navigate(`/soap${buildUrlParams(params)}`);
+  };
+
+  // Navigate to patient page
+  const navigateToPatient = () => {
+    const params = {
+      appointmentId: effectiveAppointmentId,
+      petId: appointment?.pet?.pet_id
+    };
+    navigate(`/patient${buildUrlParams(params)}`);
+  };
+
+  // Navigate to lab management
+  const navigateToLabManagement = () => {
+    const params = {
+      appointmentId: effectiveAppointmentId,
+      petId: appointment?.pet?.pet_id
+    };
+    navigate(`/lab-management${buildUrlParams(params)}`);
+  };
+
+  // Navigate to SOAP notes
+  const navigateToSOAP = () => {
+    const params = {
+      appointmentId: effectiveAppointmentId,
+      petId: appointment?.pet?.pet_id
+    };
+    navigate(`/soap${buildUrlParams(params)}`);
   };
 
   if (isAppointmentLoading || isPatientLoading) {
@@ -158,7 +247,7 @@ const Examination: React.FC = () => {
             variant="ghost"
             size="sm"
             className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
-            onClick={() => navigate(`/appointment/${id}`)}
+            onClick={navigateToPatient}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             <span className="text-sm font-medium">Back to Patient</span>
@@ -180,7 +269,7 @@ const Examination: React.FC = () => {
       {/* Workflow Navigation */}
       <div className="px-4 pt-3">
         <WorkflowNavigation
-          appointmentId={id}
+          appointmentId={effectiveAppointmentId}
           petId={patient?.pet_id?.toString()}
           currentStep="examination"
         />
@@ -370,9 +459,7 @@ const Examination: React.FC = () => {
                           variant="outline"
                           size="sm"
                           className="justify-start text-xs h-8"
-                          onClick={() =>
-                            navigate(`/appointment/${id}/lab-management`)
-                          }
+                          onClick={navigateToLabManagement}
                         >
                           <FlaskConical className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />
                           Order Lab Tests
@@ -381,7 +468,7 @@ const Examination: React.FC = () => {
                           variant="outline"
                           size="sm"
                           className="justify-start text-xs h-8"
-                          onClick={() => navigate(`/appointment/${id}/soap`)}
+                          onClick={navigateToSOAP}
                         >
                           <FileText className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />
                           SOAP Notes
@@ -580,9 +667,7 @@ const Examination: React.FC = () => {
                           variant="outline"
                           size="sm"
                           className="justify-start text-xs h-8"
-                          onClick={() =>
-                            navigate(`/appointment/${id}/lab-management`)
-                          }
+                          onClick={navigateToLabManagement}
                         >
                           <FlaskConical className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />
                           Order Lab Tests
@@ -591,7 +676,7 @@ const Examination: React.FC = () => {
                           variant="outline"
                           size="sm"
                           className="justify-start text-xs h-8"
-                          onClick={() => navigate(`/appointment/${id}/soap`)}
+                          onClick={navigateToSOAP}
                         >
                           <FileText className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />
                           SOAP Notes

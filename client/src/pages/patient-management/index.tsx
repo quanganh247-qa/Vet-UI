@@ -81,47 +81,113 @@ import { Vaccination } from "@/types";
 import WorkflowNavigation from "@/components/WorkflowNavigation";
 
 const PatientManagement = () => {
-  const { id } = useParams<{ id?: string }>();
+  // Lấy params từ cả route params (để tương thích ngược) và query params (phương án mới)
+  const { id: routeId } = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const { data: appointment, error: appointmentError } = useAppointmentData(id);
+  
+  // Lấy tham số từ query params
+  const [workflowParams, setWorkflowParams] = useState<{
+    appointmentId: string | null;
+    petId: string | null;
+  }>({
+    appointmentId: null,
+    petId: null
+  });
+  
+  // Xử lý các tham số từ URL một cách nhất quán
+  useEffect(() => {
+    // Lấy tất cả các query params từ URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlAppointmentId = searchParams.get("appointmentId");
+    const urlPetId = searchParams.get("petId");
+    
+    console.log("Patient Management URL Params:", { urlAppointmentId, urlPetId, routeId });
+    
+    // Thiết lập appointmentId và petId theo thứ tự ưu tiên
+    let appointmentIdValue = urlAppointmentId || routeId || null;
+    let petIdValue = urlPetId || null;
+    
+    setWorkflowParams({
+      appointmentId: appointmentIdValue,
+      petId: petIdValue
+    });
+    
+    console.log("Patient Management Workflow Params Set:", { appointmentIdValue, petIdValue });
+  }, [routeId]);
+  
+  // Sử dụng appointmentId từ workflowParams
+  const effectiveAppointmentId = workflowParams.appointmentId || "";
+  
+  // Utility function to build query parameters
+  const buildUrlParams = (params: Record<string, string | number | null | undefined>) => {
+    const urlParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        urlParams.append(key, String(value));
+      }
+    });
+    
+    const queryString = urlParams.toString();
+    return queryString ? `?${queryString}` : '';
+  };
+  
+  const { data: appointment, error: appointmentError } = useAppointmentData(effectiveAppointmentId);
+
   const { data: historyAppointments, error: historyAppointmentsError } =
     useHistoryAppointments(appointment?.pet?.pet_id);
   const { data: patientData, isLoading: isPatientLoading } = usePatientData(
     appointment?.pet?.pet_id
   );
 
-  console.log("Pet", patientData);
   const { data: vaccines = [], isLoading: isVaccinesLoading } = useVaccineData(
     appointment?.pet?.pet_id
   );
 
   useEffect(() => {
-    if (id) {
-      setMedicalRecords(getMedicalRecordsByPatientId(parseInt(id)));
+    if (effectiveAppointmentId) {
+      setMedicalRecords(getMedicalRecordsByPatientId(parseInt(effectiveAppointmentId)));
       setInvoices(mockInvoices);
     }
-  }, [id]);
+  }, [effectiveAppointmentId]);
 
-  // Function to navigate to treatment page
+  // Function to navigate to treatment page with query params
   const navigateToTreatment = () => {
-    navigate(`/treatment/${appointment?.pet?.pet_id}`);
+    const params = {
+      appointmentId: effectiveAppointmentId,
+      petId: appointment?.pet?.pet_id
+    };
+    navigate(`/treatment${buildUrlParams(params)}`);
   };
 
+  // Navigate to SOAP with query params
   const navigateToSOAP = () => {
-    navigate(`/soap-notes/${id}`);
+    const params = {
+      appointmentId: effectiveAppointmentId,
+      petId: appointment?.pet?.pet_id
+    };
+    navigate(`/soap${buildUrlParams(params)}`);
   };
 
-  // Add a function to navigate to the examination page
+  // Navigate to examination with query params
   const navigateToExamination = () => {
-    navigate(`/appointment/${id}/examination`);
+    const params = {
+      appointmentId: effectiveAppointmentId,
+      petId: appointment?.pet?.pet_id
+    };
+    navigate(`/examination${buildUrlParams(params)}`);
   };
 
-  // Add a function to navigate to the vaccination page
+  // Navigate to vaccination with query params
   const navigateToVaccination = () => {
-    navigate(`/appointment/${id}/vaccination`);
+    const params = {
+      appointmentId: effectiveAppointmentId,
+      petId: appointment?.pet?.pet_id
+    };
+    navigate(`/vaccination${buildUrlParams(params)}`);
   };
 
   const handleBackToDashboard = () => {
@@ -189,7 +255,7 @@ const PatientManagement = () => {
       {appointment?.pet?.pet_id && (
         <div className="px-4 pt-3">
           <WorkflowNavigation
-            appointmentId={id}
+            appointmentId={effectiveAppointmentId}
             petId={appointment?.pet?.pet_id?.toString()}
             currentStep="patient-details"
           />
@@ -316,7 +382,7 @@ const PatientManagement = () => {
             )}
             
             <Button
-              onClick={() => navigate(`/appointment/${id}/patient/${appointment?.pet?.pet_id}/treatment?appointmentId=${id}`)}
+              onClick={navigateToTreatment}
               className="bg-amber-100 hover:bg-amber-200 text-amber-700 w-full flex items-center justify-center gap-2 py-6"
               variant="outline"
             >

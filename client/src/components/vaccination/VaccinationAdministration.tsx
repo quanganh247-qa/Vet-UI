@@ -697,7 +697,6 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
 };
 
 export default VaccinationAdministration;
-
 // Helper component for Badge
 const Badge = ({
   children,
@@ -716,3 +715,4 @@ const Badge = ({
     </span>
   );
 };
+

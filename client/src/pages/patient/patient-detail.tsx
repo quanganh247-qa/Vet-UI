@@ -263,7 +263,7 @@ export const PatientDetailPage: React.FC = () => {
             >
               Medical Records
             </TabsTrigger>
-            <TabsTrigger
+            {/* <TabsTrigger
               value="treatments"
               className={cn(
                 "data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600",
@@ -273,7 +273,7 @@ export const PatientDetailPage: React.FC = () => {
               )}
             >
               Treatments
-            </TabsTrigger>
+            </TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="info" className="p-6">
