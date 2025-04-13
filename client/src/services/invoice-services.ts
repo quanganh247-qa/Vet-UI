@@ -21,18 +21,34 @@ export const createInvoice = async (data: CreateInvoiceRequest) => {
 
 export const getInvoiceById = async (id: string) => {
   try {
+    if (!id || id === '') {
+      throw new Error("Invoice ID is required");
+    }
+
     const token = localStorage.getItem("access_token");
     if (!token) {
       throw new Error("No access token found");
     }
+    
     const response = await axios.get(`/api/v1/invoice/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
+    
+    // Add some logging to help with debugging
+    if (response.data) {
+      console.log(`Successfully fetched invoice with ID: ${id}`);
+    } else {
+      console.warn(`No data found for invoice ID: ${id}`);
+    }
+    
     return response.data;
   } catch (error) {
-    console.error("Error getting invoice by id:", error);
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Unknown error occurred';
+    console.error(`Error getting invoice by id ${id}: ${errorMessage}`, error);
     throw error;
   }
 };

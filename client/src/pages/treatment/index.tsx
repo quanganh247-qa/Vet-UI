@@ -102,10 +102,14 @@ import { format } from "date-fns";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { getMedicineById } from "@/services/medicine-services";
+import { useInvoiceData } from "@/hooks/use-invoice";
+import InvoiceDialog from "@/components/InvoiceDialog";
 
 const TreatmentManagement: React.FC = () => {
   const [, navigate] = useLocation();
   const createInvoiceMutation = useCreateInvoice();
+  const [isInvoiceDialogOpen, setIsInvoiceDialogOpen] = useState(false);
+  const [currentInvoiceId, setCurrentInvoiceId] = useState<string | null>(null);
 
   // State for active view
   const [activeView, setActiveView] = useState<"list" | "detail" | "new">(
@@ -237,13 +241,118 @@ const TreatmentManagement: React.FC = () => {
     return queryString ? `?${queryString}` : "";
   };
 
-  const navigateToInvoice = () => {
-    // Navigate to treatment page with query params
-    const params = {
-      appointmentId: appointmentId,
-      petId: petId,
-    };
-    navigate(`/invoice${buildUrlParams(params)}`);
+  // Replace navigateToInvoice with openInvoiceDialog
+  const openInvoiceDialog = (invoiceId: string) => {
+    setCurrentInvoiceId(invoiceId);
+    setIsInvoiceDialogOpen(true);
+  };
+
+  // Common PDF generation function to reduce code duplication
+  const generatePDF = async (elementId: string, action: 'print' | 'download', fileName?: string) => {
+    const element = document.getElementById(elementId);
+    
+    if (!element) {
+      toast({
+        title: "Error",
+        description: `Could not find content to ${action === 'print' ? 'print' : 'export'}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Hide the buttons during capturing
+    const actionButtons = element.querySelector(".print\\:hidden");
+    if (actionButtons) {
+      actionButtons.classList.add("hidden");
+    }
+    
+    toast({
+      title: action === 'print' ? "Preparing Print" : "Generating PDF",
+      description: action === 'print' 
+        ? "Preparing your invoice for printing..." 
+        : "Please wait while we generate your invoice PDF...",
+    });
+    
+    try {
+      // Use html2canvas to capture the invoice element
+      const canvas = await html2canvas(element, {
+        scale: 2, // Higher scale for better quality
+        useCORS: true,
+        logging: false,
+        allowTaint: true,
+        backgroundColor: "#ffffff" // Ensure white background
+      });
+      
+      // Create PDF
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      
+      if (action === 'print') {
+        // Print the PDF
+        pdf.autoPrint();
+        window.open(pdf.output('bloburl'), '_blank');
+        
+        toast({
+          title: "Print Ready",
+          description: "Your invoice has been prepared for printing.",
+          className: "bg-green-50 border-green-200 text-green-800",
+        });
+      } else {
+        // Generate filename with invoice ID
+        const outputFileName = fileName || (invoiceData ? `Invoice_${invoiceData.invoiceId}.pdf` : "Invoice.pdf");
+        
+        // Save the PDF
+        pdf.save(outputFileName);
+        
+        toast({
+          title: "Download Complete",
+          description: "Your invoice has been saved as PDF.",
+          className: "bg-green-50 border-green-200 text-green-800",
+        });
+      }
+    } catch (error) {
+      console.error(`Error generating PDF for ${action}:`, error);
+      
+      toast({
+        title: "Error",
+        description: `There was a problem ${action === 'print' ? 'preparing the print' : 'generating the PDF'}. Please try again.`,
+        variant: "destructive",
+      });
+    } finally {
+      // Always show buttons again in case of success or error
+      if (actionButtons) {
+        actionButtons.classList.remove("hidden");
+      }
+    }
+  };
+
+  // Handle printing the invoice
+  const handlePrintInvoice = () => {
+    generatePDF("invoice-pdf-content", 'print');
+  };
+
+  // Handle downloading the invoice as PDF
+  const handleDownloadInvoice = () => {
+    generatePDF("invoice-pdf-content", 'download');
+  };
+
+  // Handle sharing the invoice
+  const handleShareInvoice = () => {
+    // In a real implementation, you would open a share dialog
+    toast({
+      title: "Share Options",
+      description: "Invoice sharing options are being prepared.",
+      className: "bg-blue-50 border-blue-200 text-blue-800",
+    });
   };
 
   // State for new treatment
@@ -807,124 +916,6 @@ const TreatmentManagement: React.FC = () => {
     }
   };
 
-  // Function to create an invoice for the assigned medicines
-  const createMedicineInvoice = async () => {
-    try {
-      if (!appointmentData || selectedMedicines.length === 0) {
-        return;
-      }
-      
-      // Calculate total amount
-      const subtotal = selectedMedicines.reduce((sum, medicine) => {
-        const quantity = medicine.quantity || 1;
-        const price = medicine.unit_price || 0;
-        return sum + (quantity * price);
-      }, 0);
-      
-      // Apply tax (0% in this example, adjust as needed)
-      const taxRate = 0;
-      const taxAmount = subtotal * (taxRate / 100);
-      const total = subtotal + taxAmount;
-      
-      // Generate invoice number
-      const invoiceNumber = `INV-MED-${new Date().getFullYear()}${(new Date().getMonth() + 1).toString().padStart(2, '0')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-      
-      // Create invoice items from medicines
-      const invoiceItems = selectedMedicines.map(medicine => ({
-        name: medicine.name || `Medicine #${medicine.id}`,
-        price: medicine.unit_price || 0,
-        quantity: medicine.quantity || 1
-      }));
-      
-      // Create the invoice request
-      const invoiceRequest = {
-        invoice_number: invoiceNumber,
-        amount: total,
-        date: format(new Date(), 'yyyy-MM-dd'),
-        due_date: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'), // 30 days from now
-        status: 'Pending',
-        description: `Prescription medications for appointment #${appointmentData.id}`,
-        customer_name: appointmentData.owner?.owner_name || 'Patient',
-        items: invoiceItems
-      };
-      
-      // Submit invoice creation request
-      const response = await createInvoiceMutation.mutateAsync(invoiceRequest);
-      
-      // Store the invoice ID for later use
-      if (response && response.id) {
-        // Now you can navigate to invoice page or show a success message
-        toast({
-          title: "Invoice Created",
-          description: `Invoice #${invoiceNumber} created successfully`,
-          className: "bg-green-50 border-green-200 text-green-800",
-        });
-        
-        // Prepare navigation parameters
-        const params = new URLSearchParams();
-        params.append('appointmentId', appointmentData.id.toString());
-        if (appointmentData.pet && appointmentData.pet.pet_id) {
-          params.append('petId', appointmentData.pet.pet_id.toString());
-        }
-        
-        // Ask user what they want to do with the invoice
-        const userAction = window.confirm("Invoice created. Would you like to download it as PDF?");
-        
-        if (userAction) {
-          // Generate a PDF of the invoice immediately
-          generateInvoicePDF(invoiceNumber, response.id);
-        }
-      }
-    } catch (error) {
-      console.error("Error creating invoice:", error);
-      toast({
-        title: "Invoice Error",
-        description: "Failed to create invoice for medicines",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  // Function to generate a PDF of the invoice
-  const generateInvoicePDF = async (invoiceNumber: string, invoiceId: number) => {
-    try {
-      toast({
-        title: "Generating PDF",
-        description: "Please wait while we generate your invoice PDF...",
-      });
-      
-      // Navigate to the invoice page in a new tab
-      const params = new URLSearchParams();
-      params.append('appointmentId', appointmentData?.id.toString() || "");
-      if (appointmentData?.pet && appointmentData.pet.pet_id) {
-        params.append('petId', appointmentData.pet.pet_id.toString());
-      }
-      
-      // Option 1: Open in a new tab and let user save PDF from there
-      window.open(`/prescription/invoice?${params.toString()}`, '_blank');
-      
-      toast({
-        title: "Invoice Ready",
-        description: "Your invoice has been opened in a new tab. Use the download button there to save as PDF.",
-        className: "bg-green-50 border-green-200 text-green-800",
-      });
-      
-      /* 
-      Note: Direct PDF generation would require access to the invoice DOM element
-      which is not available until the invoice page is rendered. 
-      Alternative approach would be to create an API endpoint that generates
-      the PDF server-side based on the invoice ID.
-      */
-    } catch (error) {
-      console.error("Error generating invoice PDF:", error);
-      toast({
-        title: "PDF Generation Error",
-        description: "Failed to generate PDF. You can still view the invoice online.",
-        variant: "destructive",
-      });
-    }
-  };
-
   // Handle exporting treatment as invoice
   const handleExportTreatment = async () => {
     try {
@@ -1038,7 +1029,7 @@ const TreatmentManagement: React.FC = () => {
       // Submit invoice creation request
       const response = await createInvoiceMutation.mutateAsync(invoiceRequest);
       
-      // If successful, navigate to the invoice page
+      // If successful, open the invoice dialog
       if (response && response.id) {
         toast({
           title: "Success",
@@ -1046,15 +1037,16 @@ const TreatmentManagement: React.FC = () => {
           className: "bg-green-50 border-green-200 text-green-800",
         });
         
-        // Prepare navigation parameters and navigate to invoice
-        const params = new URLSearchParams();
-        params.append('appointmentId', appointmentData.id.toString());
-        if (appointmentData.pet && appointmentData.pet.pet_id) {
-          params.append('petId', appointmentData.pet.pet_id.toString());
-        }
+        // Open the invoice dialog with the newly created invoice ID
+        setCurrentInvoiceId(response.id.toString());
+        setIsInvoiceDialogOpen(true);
         
-        navigate(`/invoice?${params.toString()}`);
+        return {
+          invoiceId: response.id,
+          invoiceNumber: invoiceNumber
+        };
       }
+      return null;
     } catch (error) {
       console.error("Error exporting treatment as invoice:", error);
       toast({
@@ -1062,6 +1054,7 @@ const TreatmentManagement: React.FC = () => {
         description: "Failed to create invoice from treatment plan",
         variant: "destructive",
       });
+      return null;
     }
   };
 
@@ -1105,6 +1098,9 @@ const TreatmentManagement: React.FC = () => {
       });
     }
   };
+
+  // Get the invoice data for the dialog
+  const { data: invoiceData, isLoading: isInvoiceLoading } = useInvoiceData(currentInvoiceId || "");
 
   return (
     <div className="container max-w-screen-xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 md:p-8">
@@ -1158,10 +1154,10 @@ const TreatmentManagement: React.FC = () => {
               variant="outline"
               size="sm"
               className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
-              onClick={navigateToInvoice}
+              onClick={() => openInvoiceDialog(selectedTreatment?.id?.toString() || "")}
             >
-              <Receipt className="h-4 w-4 mr-1" />
-              <span>Invoice</span>
+              <FileText className="h-4 w-4 mr-1" />
+              <span>Medical Records</span>
             </Button>
           </div>
         </div>
@@ -2577,6 +2573,17 @@ const TreatmentManagement: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add the InvoiceDialog component */}
+      <InvoiceDialog
+        invoice={invoiceData}
+        isLoading={isInvoiceLoading}
+        open={isInvoiceDialogOpen}
+        onOpenChange={setIsInvoiceDialogOpen}
+        onPrint={handlePrintInvoice}
+        onDownload={handleDownloadInvoice}
+        onShare={handleShareInvoice}
+      />
     </div>
   );
 };

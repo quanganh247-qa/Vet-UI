@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Check, Download, Printer, Share2 } from 'lucide-react';
@@ -51,21 +51,23 @@ interface InvoiceComponentProps {
   onShare?: () => void;
 }
 
-const InvoiceComponent: React.FC<InvoiceComponentProps> = ({
+const InvoiceComponent: React.FC<InvoiceComponentProps> = memo(({
   invoice,
   isLoading = false,
   onPrint,
   onDownload,
   onShare
 }) => {
-  const handlePrint = () => {
+  // Memoize the handlePrint function to prevent unnecessary re-renders
+  const handlePrint = useCallback(() => {
     if (onPrint) {
       onPrint();
     } else {
       window.print();
     }
-  };
+  }, [onPrint]);
 
+  // Loading state component
   if (isLoading) {
     return (
       <Card className="overflow-hidden border-2 border-indigo-100 rounded-xl shadow-lg p-8">
@@ -83,6 +85,7 @@ const InvoiceComponent: React.FC<InvoiceComponentProps> = ({
     );
   }
 
+  // Empty state component
   if (!invoice) {
     return (
       <Card className="overflow-hidden border-2 border-indigo-100 rounded-xl shadow-lg p-8">
@@ -93,16 +96,21 @@ const InvoiceComponent: React.FC<InvoiceComponentProps> = ({
     );
   }
 
+  // Helper function to format currency
+  const formatCurrency = (value?: number) => {
+    return value ? value.toFixed(2) : '0.00';
+  };
+
   return (
     <div className="invoice-container print:p-0 relative max-w-4xl mx-auto" id="invoice-container">
       <div className="mb-4 flex justify-end gap-2 print:hidden">
-        <Button variant="outline" size="sm" onClick={handlePrint}>
+        <Button variant="outline" size="sm" onClick={handlePrint} className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100">
           <Printer className="h-4 w-4 mr-1" />
-          Print
+          Print PDF
         </Button>
-        <Button variant="outline" size="sm" onClick={onDownload}>
+        <Button variant="outline" size="sm" onClick={onDownload} className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100">
           <Download className="h-4 w-4 mr-1" />
-          Download
+          Download PDF
         </Button>
         <Button variant="outline" size="sm" onClick={onShare}>
           <Share2 className="h-4 w-4 mr-1" />
@@ -119,7 +127,7 @@ const InvoiceComponent: React.FC<InvoiceComponentProps> = ({
               <p className="text-gray-600">{invoice.date}</p>
               <div className="mt-2">
                 <p className="text-gray-700 font-medium">Total</p>
-                <p className="text-2xl font-bold text-gray-900">${invoice.total.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-gray-900">${formatCurrency(invoice.total)}</p>
               </div>
             </div>
 
@@ -152,13 +160,13 @@ const InvoiceComponent: React.FC<InvoiceComponentProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">{invoice.hospital.name}</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{invoice?.hospital?.name}</h2>
                 <div className="mt-2 space-y-1 text-sm text-gray-600">
-                  <p>Email: {invoice.hospital.email}</p>
-                  <p>Phone: {invoice.hospital.phone}</p>
+                  <p>Email: {invoice?.hospital?.email}</p>
+                  <p>Phone: {invoice?.hospital?.phone}</p>
                   <p className="text-sm text-gray-600">
-                    {invoice.hospital.address.street}, {invoice.hospital.address.city},
-                    <br />{invoice.hospital.address.zipCode}, {invoice.hospital.address.country}
+                    {invoice?.hospital?.address?.street}, {invoice?.hospital?.address?.city},
+                    <br />{invoice?.hospital?.address?.zipCode}, {invoice?.hospital?.address?.country}
                   </p>
                 </div>
               </div>
@@ -168,15 +176,15 @@ const InvoiceComponent: React.FC<InvoiceComponentProps> = ({
               <div className="space-y-4">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Client:</p>
-                  <p className="text-base font-semibold text-gray-900">{invoice.client.name}</p>
+                  <p className="text-base font-semibold text-gray-900">{invoice?.client?.name}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Phone:</p>
-                  <p className="text-base text-gray-900">{invoice.client.phone}</p>
+                  <p className="text-base text-gray-900">{invoice?.client?.phone}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Patient:</p>
-                  <p className="text-base text-gray-900">{invoice.patient.name}</p>
+                  <p className="text-base text-gray-900">{invoice?.patient?.name}</p>
                 </div>
               </div>
             </div>
@@ -202,10 +210,10 @@ const InvoiceComponent: React.FC<InvoiceComponentProps> = ({
                   <tr key={item.id} className="border-b border-gray-100">
                     <td className="py-4 pl-4 text-sm text-gray-900">{item.name}</td>
                     <td className="py-4 text-center text-sm text-gray-900">{item.quantity}</td>
-                    <td className="py-4 text-right text-sm text-gray-900">${item.unitPrice.toFixed(2)}</td>
-                    <td className="py-4 text-right text-sm text-gray-900">${(item.quantity * item.unitPrice).toFixed(2)}</td>
-                    <td className="py-4 text-right text-sm text-gray-900">{item.tax}%</td>
-                    <td className="py-4 pr-4 text-right text-sm font-medium text-gray-900">${item.total.toFixed(2)}</td>
+                    <td className="py-4 text-right text-sm text-gray-900">${formatCurrency(item.unitPrice)}</td>
+                    <td className="py-4 text-right text-sm text-gray-900">${formatCurrency(item.quantity * (item.unitPrice || 0))}</td>
+                    <td className="py-4 text-right text-sm text-gray-900">{item.tax || 0}%</td>
+                    <td className="py-4 pr-4 text-right text-sm font-medium text-gray-900">${formatCurrency(item.total)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -218,23 +226,23 @@ const InvoiceComponent: React.FC<InvoiceComponentProps> = ({
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <p className="text-gray-600">Subtotal:</p>
-                  <p className="font-medium text-gray-900">${invoice.subtotal.toFixed(2)}</p>
+                  <p className="font-medium text-gray-900">${formatCurrency(invoice.subtotal)}</p>
                 </div>
                 <div className="flex justify-between text-sm">
                   <p className="text-gray-600">Tax:</p>
-                  <p className="font-medium text-gray-900">${invoice.tax.toFixed(2)}</p>
+                  <p className="font-medium text-gray-900">${formatCurrency(invoice.tax)}</p>
                 </div>
                 <div className="border-t border-gray-200 pt-3 flex justify-between font-medium">
                   <p className="text-gray-900">Total:</p>
-                  <p className="text-gray-900">${invoice.total.toFixed(2)}</p>
+                  <p className="text-gray-900">${formatCurrency(invoice.total)}</p>
                 </div>
                 <div className="flex justify-between text-sm bg-green-50 p-2 rounded-md">
                   <p className="text-green-700">Amount Paid:</p>
-                  <p className="font-medium text-green-700">${invoice.amountPaid.toFixed(2)}</p>
+                  <p className="font-medium text-green-700">${formatCurrency(invoice.amountPaid)}</p>
                 </div>
                 <div className="flex justify-between text-sm bg-red-50 p-2 rounded-md">
                   <p className="text-red-700">Amount Due:</p>
-                  <p className="font-medium text-red-700">${invoice.amountDue.toFixed(2)}</p>
+                  <p className="font-medium text-red-700">${formatCurrency(invoice.amountDue)}</p>
                 </div>
               </div>
             </div>
@@ -243,6 +251,8 @@ const InvoiceComponent: React.FC<InvoiceComponentProps> = ({
       </Card>
     </div>
   );
-};
+});
+
+InvoiceComponent.displayName = 'InvoiceComponent';
 
 export default InvoiceComponent; 

@@ -26,6 +26,7 @@ import { usePatientData } from "@/hooks/use-pet";
 import { useAppointmentData } from "@/hooks/use-appointment";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { useInvoiceData } from "@/hooks/use-invoice";
 
 const PrescriptionInvoice: React.FC = () => {
   // Get the appointment ID and pet ID from the URL
@@ -39,9 +40,11 @@ const PrescriptionInvoice: React.FC = () => {
   const [workflowParams, setWorkflowParams] = useState<{
     appointmentId: string | null;
     petId: string | null;
+    invoiceId: string | null;
   }>({
     appointmentId: null,
     petId: null,
+    invoiceId: null,
   });
 
   // Xử lý các tham số từ URL một cách nhất quán
@@ -50,24 +53,29 @@ const PrescriptionInvoice: React.FC = () => {
     const searchParams = new URLSearchParams(window.location.search);
     const urlAppointmentId = searchParams.get("appointmentId");
     const urlPetId = searchParams.get("petId");
+    const urlInvoiceId = searchParams.get("invoiceId");
 
     // Thiết lập appointmentId và petId theo thứ tự ưu tiên
     let appointmentIdValue = urlAppointmentId || routeAppointmentId || null;
     let petIdValue = urlPetId || null;
+    let invoiceIdValue = urlInvoiceId || null;
 
     setWorkflowParams({
       appointmentId: appointmentIdValue,
       petId: petIdValue,
+      invoiceId: invoiceIdValue,
     });
 
     console.log("Invoice Workflow Params Set:", {
       appointmentIdValue,
       petIdValue,
+      invoiceIdValue,
     });
   }, [routeAppointmentId]);
 
-  // Sử dụng appointmentId từ workflowParams
+  // Sử dụng appointmentId và invoiceId từ workflowParams
   const effectiveAppointmentId = workflowParams.appointmentId || "";
+  const effectiveInvoiceId = workflowParams.invoiceId || "";
 
   // Get patient data
   const { data: appointmentData, isLoading: isAppointmentLoading } =
@@ -80,8 +88,6 @@ const PrescriptionInvoice: React.FC = () => {
   const { data: patientData, isLoading: isPatientLoading } =
     usePatientData(effectivePetId);
 
-  // State for invoice data
-  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Build URL params utility function
@@ -100,104 +106,18 @@ const PrescriptionInvoice: React.FC = () => {
     return queryString ? `?${queryString}` : "";
   };
 
-  // Mock function to load invoice data
-  // In a real implementation, you would fetch this from your API
-  useEffect(() => {
-    // Simulate API call to get invoice data
-    setTimeout(() => {
-      if (patientData) {
-        // Generate invoice ID based on date and random number
-        const invoiceId = `INV-${new Date().getFullYear()}${(
-          new Date().getMonth() + 1
-        )
-          .toString()
-          .padStart(2, "0")}${Math.floor(Math.random() * 1000)
-          .toString()
-          .padStart(3, "0")}`;
+  console.log("Effective Appointment ID:", effectiveAppointmentId);
+  console.log("Effective Invoice ID:", effectiveInvoiceId);
 
-        setInvoiceData({
-          invoiceId,
-          date: format(new Date(), "MM-dd-yyyy"),
-          total: 416.0,
-          paymentStatus: "Paid",
-          paymentMethod: "Card",
-          client: {
-            name: appointmentData?.owner?.owner_name || "Samuel Smith Junior",
-            phone: appointmentData?.owner?.owner_phone || " ",
-          },
-          patient: {
-            name: patientData.name || "Mika",
-          },
-          hospital: {
-            name: "All Animal Hospital",
-            email: "office@all-hospital.com",
-            phone: "+1 158-156-1588",
-            address: {
-              street: "3251 20th Ave",
-              city: "San Francisco",
-              zipCode: "CA 94132",
-              country: "United States",
-            },
-          },
-          items: [
-            {
-              id: "1",
-              name: "Comprehensive Physical Exam",
-              quantity: 1,
-              unitPrice: 68.0,
-              tax: 0,
-              total: 68.0,
-            },
-            {
-              id: "2",
-              name: "TOTAL HEALTH PROFILE",
-              quantity: 1,
-              unitPrice: 163.0,
-              tax: 0,
-              total: 163.0,
-            },
-            {
-              id: "3",
-              name: "Biohazard Fee",
-              quantity: 1,
-              unitPrice: 5.0,
-              tax: 0,
-              total: 5.0,
-            },
-            {
-              id: "4",
-              name: "Blood Collection - Technician",
-              quantity: 1,
-              unitPrice: 19.0,
-              tax: 0,
-              total: 19.0,
-            },
-            {
-              id: "5",
-              name: "Cystocentesis",
-              quantity: 1,
-              unitPrice: 19.0,
-              tax: 0,
-              total: 19.0,
-            },
-            {
-              id: "6",
-              name: "URINALYSIS w/ CULTURE IF",
-              quantity: 1,
-              unitPrice: 142.0,
-              tax: 0,
-              total: 142.0,
-            },
-          ],
-          subtotal: 416.0,
-          tax: 0.0,
-          amountPaid: 416.0,
-          amountDue: 0.0,
-        });
-        setIsLoading(false);
-      }
-    }, 1000);
-  }, [patientData, appointmentData]);
+  // Get invoice data - Prioritize using invoiceId if available, otherwise fall back to appointmentId
+  const { data: invoiceData, isLoading: isInvoiceLoading } = useInvoiceData(
+    effectiveInvoiceId || effectiveAppointmentId
+  );
+
+  useEffect(() => {
+    // Update loading state
+    setIsLoading(isAppointmentLoading || isPatientLoading || isInvoiceLoading);
+  }, [isAppointmentLoading, isPatientLoading, isInvoiceLoading]);
 
   // Handle printing the invoice
   const handlePrint = () => {
