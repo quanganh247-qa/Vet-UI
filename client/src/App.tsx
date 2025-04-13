@@ -16,7 +16,6 @@ import { PatientsPage } from "@/pages/patient/patients";
 import { PatientDetailPage } from "@/pages/patient/patient-detail";
 import Billing from "@/pages/billing";
 import CatalogManagement from "./pages/catalog-management";
-import Prescription from "./pages/prescription";
 import Chatbot from "./pages/chatbot";
 import ScheduleManagement from "./pages/schedule-management";
 import ShiftManagement from "@/pages/shift-management";
@@ -135,7 +134,6 @@ function Router() {
         <Route path="/patient" component={PatientManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/soap" component={SoapNotes as React.ComponentType<RouteComponentProps>} />
         <Route path="/treatment" component={TreatmentManagement as React.ComponentType<RouteComponentProps>} />
-        <Route path="/prescription" component={Prescription as React.ComponentType<RouteComponentProps>} />
         <Route path="/invoice" component={PrescriptionInvoice as React.ComponentType<RouteComponentProps>} />
         <Route path="/follow-up" component={FollowUp as React.ComponentType<RouteComponentProps>} />
         <Route path="/examination" component={Examination as React.ComponentType<RouteComponentProps>} />
@@ -147,7 +145,6 @@ function Router() {
         <Route path="/appointment/:id" component={PatientManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/soap" component={SoapNotes as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/treatment" component={TreatmentManagement as React.ComponentType<RouteComponentProps>} />
-        <Route path="/appointment/:id/prescription" component={Prescription as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/prescription/invoice" component={PrescriptionInvoice as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/follow-up" component={FollowUp as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/examination" component={Examination as React.ComponentType<RouteComponentProps>} />

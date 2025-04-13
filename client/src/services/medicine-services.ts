@@ -1,7 +1,7 @@
 import { MedicineSupplierRequest, MedicineTransactionRequest } from "@/types";
 
 export const exportMedicine = async (data: MedicineTransactionRequest) => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("access_token");
   try {
     const response = await fetch(`/api/v1/medicine/transaction`, {
       method: "POST",
@@ -18,7 +18,7 @@ export const exportMedicine = async (data: MedicineTransactionRequest) => {
 };
 
 export const getAllMedicineSuppliers = async () => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("access_token");
   try {
     const response = await fetch(`/api/v1/medicine/suppliers`, {
       headers: {
@@ -32,8 +32,10 @@ export const getAllMedicineSuppliers = async () => {
   }
 };
 
-export const createMedicineSupplier = async (supplier: MedicineSupplierRequest) => {
-  const token = localStorage.getItem("token");
+export const createMedicineSupplier = async (
+  supplier: MedicineSupplierRequest
+) => {
+  const token = localStorage.getItem("access_token");
   try {
     const response = await fetch(`/api/v1/medicine/supplier`, {
       method: "POST",
@@ -49,9 +51,8 @@ export const createMedicineSupplier = async (supplier: MedicineSupplierRequest) 
   }
 };
 
-
 export const getMedicineSupplierById = async (supplierId: number) => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("access_token");
   try {
     const response = await fetch(`/api/v1/medicine/supplier/${supplierId}`, {
       headers: {
@@ -65,3 +66,17 @@ export const getMedicineSupplierById = async (supplierId: number) => {
   }
 };
 
+export const getMedicineById = async (medicineId: number) => {
+  const token = localStorage.getItem("access_token");
+  try {
+    const response = await fetch(`/api/v1/medicine/${medicineId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.json();
+  } catch (error) {
+    console.error("Error getting medicine by id:", error);
+    throw error;
+  }
+};

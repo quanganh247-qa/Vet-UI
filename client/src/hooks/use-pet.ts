@@ -1,7 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
-import { getPatientById, getAllPatients } from "@/services/pet-services";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { getPatientById, getAllPatients, updatePet, updatePetRequest } from "@/services/pet-services";
+import { useQueryClient } from "@tanstack/react-query";
 import { PaginatedResponse } from "@/types";
 import { getPetOwnerByPetId } from "@/services/user-services";
+import { toast } from "@/components/ui/use-toast";
 
 export const usePatientData = (id: string | undefined) => {
   return useQuery({
@@ -39,5 +41,27 @@ export const usePetOwnerByPetId = (id: number | undefined) => {
     enabled: !!id, // Only run the query when id is available
     staleTime: 1000 * 60 * 5, // 5 minutes cache
     retry: 1,
+  });
+};
+
+export const useUpdatePet = (pet_id: number, updatePetRequest: updatePetRequest) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => updatePet(pet_id, updatePetRequest),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pet", pet_id] });
+      toast({
+        title: "Success",
+        description: "Pet updated successfully!",
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update pet!",
+        variant: "destructive",
+      });
+    },
   });
 };

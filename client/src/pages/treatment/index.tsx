@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   User,
   Bell,
@@ -36,6 +36,8 @@ import {
   MessageSquare,
   Circle,
   Play,
+  ArrowUpRight,
+  Receipt,
 } from "lucide-react";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -93,9 +95,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useExportMedicine } from "@/hooks/use-medicine";
+import { useExportMedicine, useGetMedicineById } from "@/hooks/use-medicine";
+import Invoice from "../prescription/invoice";
+import { useCreateInvoice } from "@/hooks/use-invoice";
+import { format } from "date-fns";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { getMedicineById } from "@/services/medicine-services";
 
 const TreatmentManagement: React.FC = () => {
+  const [, navigate] = useLocation();
+  const createInvoiceMutation = useCreateInvoice();
+
   // State for active view
   const [activeView, setActiveView] = useState<"list" | "detail" | "new">(
     "list"
@@ -136,18 +147,13 @@ const TreatmentManagement: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
   const [, setLocation] = useLocation();
 
-    // Get appointment id from query params
+  // Get appointment id from query params
   const [appointmentId, setAppointmentId] = useState<string | null>(null);
-
 
   const { data: appointmentData, isLoading: isAppointmentLoading } =
     useAppointmentData(appointmentId || "");
 
   const petId = appointmentData?.pet.pet_id;
-
-  
-
-
 
   useEffect(() => {
     // Extract appointmentId from URL search params
@@ -161,10 +167,11 @@ const TreatmentManagement: React.FC = () => {
     }
   }, [id]);
 
-
-  const { data: treatments, isLoading: isTreatmentsLoading, refetch: refetchTreatments } =
-    useTreatmentsData(petId || "");
-
+  const {
+    data: treatments,
+    isLoading: isTreatmentsLoading,
+    refetch: refetchTreatments,
+  } = useTreatmentsData(petId || "");
 
   const { data: patientData, isLoading: isPatientLoading } = usePatientData(
     petId || ""
@@ -174,14 +181,15 @@ const TreatmentManagement: React.FC = () => {
     petId || ""
   );
 
-
   const selectedTreatment =
     treatments &&
     treatments.find((t: Treatment) => t.id === selectedTreatmentId);
 
-  const { data: phases, isLoading: isPhasesLoading, refetch: refetchPhases } = useTreatmentPhasesData(
-    selectedTreatment?.id?.toString() || ""
-  );
+  const {
+    data: phases,
+    isLoading: isPhasesLoading,
+    refetch: refetchPhases,
+  } = useTreatmentPhasesData(selectedTreatment?.id?.toString() || "");
 
   // Add the useAddTreatmentPhase hook after phases is loaded
   const addTreatmentPhaseMutation = useAddTreatmentPhase(
@@ -213,18 +221,29 @@ const TreatmentManagement: React.FC = () => {
     }
   };
 
+  // Utility function to build query parameters
+  const buildUrlParams = (
+    params: Record<string, string | number | null | undefined>
+  ) => {
+    const urlParams = new URLSearchParams();
 
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== "") {
+        urlParams.append(key, String(value));
+      }
+    });
 
-  // Calculate treatment progress
-  const calculateProgress = (treatment: Treatment) => {
-    // Don't try to calculate if the treatment doesn't have phases
-    if (!treatment.phases || treatment.phases.length === 0) return 0;
-    
-    const completedPhases = treatment.phases.filter(
-      (phase: any) => phase.status === "Completed"
-    ).length;
+    const queryString = urlParams.toString();
+    return queryString ? `?${queryString}` : "";
+  };
 
-    return Math.round((completedPhases / treatment.phases.length) * 100);
+  const navigateToInvoice = () => {
+    // Navigate to treatment page with query params
+    const params = {
+      appointmentId: appointmentId,
+      petId: petId,
+    };
+    navigate(`/invoice${buildUrlParams(params)}`);
   };
 
   // State for new treatment
@@ -540,7 +559,7 @@ const TreatmentManagement: React.FC = () => {
 
     try {
       await addTreatmentPhaseMutation.mutateAsync(phaseList);
-      
+
       // Explicitly refetch phases to update UI
       await refetchPhases();
 
@@ -577,10 +596,11 @@ const TreatmentManagement: React.FC = () => {
   }>({});
 
   // Get medicines by phase
-  const { data: phaseMedicines, refetch: refetchPhaseMedicines } = useGetMedicinesByPhase(
-    selectedTreatment?.id || "",
-    selectedPhaseId?.toString() || ""
-  );
+  const { data: phaseMedicines, refetch: refetchPhaseMedicines } =
+    useGetMedicinesByPhase(
+      selectedTreatment?.id || "",
+      selectedPhaseId?.toString() || ""
+    );
 
   // Search for medicines - use the hook correctly
   const {
@@ -729,6 +749,9 @@ const TreatmentManagement: React.FC = () => {
       // Submit the array of assignments at once
       await assignMedicineMutation.mutateAsync(assignmentData);
 
+      // Create invoice for the assigned medicines
+      // await createMedicineInvoice();
+
       // Explicitly refetch phase medicines data
       if (selectedPhaseId) {
         await refetchPhaseMedicines();
@@ -742,7 +765,7 @@ const TreatmentManagement: React.FC = () => {
         // Ensure all required fields are available in selectedMedicines
         const transactionData: MedicineTransactionRequest = {
           medicine_id: medicine.id,
-          quantity: medicine.quantity, // Make sure this field exists
+          quantity: medicine.quantity || 1, // Make sure this field exists
           transaction_type: "out", // Or get from medicine/state
           unit_price: medicine.unit_price, // Make sure this field exists
           supplier_id: medicine.supplier_id, // Make sure this field exists
@@ -765,13 +788,13 @@ const TreatmentManagement: React.FC = () => {
       // Reset state and close modal
       setSelectedMedicines([]);
       setIsMedicineModalOpen(false);
-      
+
       // Toggle phase view to refresh display
       if (selectedPhaseId) {
         // Force a phase UI refresh by toggling expansion
-        setExpandedPhases(prev => ({
+        setExpandedPhases((prev) => ({
           ...prev,
-          [selectedPhaseId]: true
+          [selectedPhaseId]: true,
         }));
       }
     } catch (err) {
@@ -779,6 +802,305 @@ const TreatmentManagement: React.FC = () => {
       toast({
         title: "Error",
         description: "Failed to assign medicines. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Function to create an invoice for the assigned medicines
+  const createMedicineInvoice = async () => {
+    try {
+      if (!appointmentData || selectedMedicines.length === 0) {
+        return;
+      }
+      
+      // Calculate total amount
+      const subtotal = selectedMedicines.reduce((sum, medicine) => {
+        const quantity = medicine.quantity || 1;
+        const price = medicine.unit_price || 0;
+        return sum + (quantity * price);
+      }, 0);
+      
+      // Apply tax (0% in this example, adjust as needed)
+      const taxRate = 0;
+      const taxAmount = subtotal * (taxRate / 100);
+      const total = subtotal + taxAmount;
+      
+      // Generate invoice number
+      const invoiceNumber = `INV-MED-${new Date().getFullYear()}${(new Date().getMonth() + 1).toString().padStart(2, '0')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+      
+      // Create invoice items from medicines
+      const invoiceItems = selectedMedicines.map(medicine => ({
+        name: medicine.name || `Medicine #${medicine.id}`,
+        price: medicine.unit_price || 0,
+        quantity: medicine.quantity || 1
+      }));
+      
+      // Create the invoice request
+      const invoiceRequest = {
+        invoice_number: invoiceNumber,
+        amount: total,
+        date: format(new Date(), 'yyyy-MM-dd'),
+        due_date: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'), // 30 days from now
+        status: 'Pending',
+        description: `Prescription medications for appointment #${appointmentData.id}`,
+        customer_name: appointmentData.owner?.owner_name || 'Patient',
+        items: invoiceItems
+      };
+      
+      // Submit invoice creation request
+      const response = await createInvoiceMutation.mutateAsync(invoiceRequest);
+      
+      // Store the invoice ID for later use
+      if (response && response.id) {
+        // Now you can navigate to invoice page or show a success message
+        toast({
+          title: "Invoice Created",
+          description: `Invoice #${invoiceNumber} created successfully`,
+          className: "bg-green-50 border-green-200 text-green-800",
+        });
+        
+        // Prepare navigation parameters
+        const params = new URLSearchParams();
+        params.append('appointmentId', appointmentData.id.toString());
+        if (appointmentData.pet && appointmentData.pet.pet_id) {
+          params.append('petId', appointmentData.pet.pet_id.toString());
+        }
+        
+        // Ask user what they want to do with the invoice
+        const userAction = window.confirm("Invoice created. Would you like to download it as PDF?");
+        
+        if (userAction) {
+          // Generate a PDF of the invoice immediately
+          generateInvoicePDF(invoiceNumber, response.id);
+        }
+      }
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      toast({
+        title: "Invoice Error",
+        description: "Failed to create invoice for medicines",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Function to generate a PDF of the invoice
+  const generateInvoicePDF = async (invoiceNumber: string, invoiceId: number) => {
+    try {
+      toast({
+        title: "Generating PDF",
+        description: "Please wait while we generate your invoice PDF...",
+      });
+      
+      // Navigate to the invoice page in a new tab
+      const params = new URLSearchParams();
+      params.append('appointmentId', appointmentData?.id.toString() || "");
+      if (appointmentData?.pet && appointmentData.pet.pet_id) {
+        params.append('petId', appointmentData.pet.pet_id.toString());
+      }
+      
+      // Option 1: Open in a new tab and let user save PDF from there
+      window.open(`/prescription/invoice?${params.toString()}`, '_blank');
+      
+      toast({
+        title: "Invoice Ready",
+        description: "Your invoice has been opened in a new tab. Use the download button there to save as PDF.",
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
+      
+      /* 
+      Note: Direct PDF generation would require access to the invoice DOM element
+      which is not available until the invoice page is rendered. 
+      Alternative approach would be to create an API endpoint that generates
+      the PDF server-side based on the invoice ID.
+      */
+    } catch (error) {
+      console.error("Error generating invoice PDF:", error);
+      toast({
+        title: "PDF Generation Error",
+        description: "Failed to generate PDF. You can still view the invoice online.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle exporting treatment as invoice
+  const handleExportTreatment = async () => {
+    try {
+      if (!appointmentData || !treatments || treatments.length === 0) {
+        toast({
+          title: "Export Failed",
+          description: "No treatment data available to export",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      toast({
+        title: "Processing",
+        description: "Creating invoice from treatment plan...",
+      });
+      
+      // Collect all medicine IDs that need to be fetched
+      const medicineCache = new Map();
+      const medicineIds = [];
+      const medicineItems = [];
+      
+      // Calculate treatment base costs and collect medicine data
+      let totalAmount = 0;
+      const invoiceItems = [];
+      
+      // First pass - add treatments and collect medicine IDs
+      for (const treatment of treatments) {
+        // Add base treatment cost
+        const treatmentCost = 50; // Example base cost for a treatment
+        totalAmount += treatmentCost;
+        
+        // Add treatment as an invoice item
+        invoiceItems.push({
+          name: `${treatment.type}: ${treatment.name}`,
+          price: treatmentCost,
+          quantity: 1
+        });
+        
+        // Collect medicine IDs from phases
+        if (treatment.phases) {
+          for (const phase of treatment.phases) {
+            if (phase.medications && phase.medications.length > 0) {
+              for (const med of phase.medications) {
+                if (!medicineCache.has(med.medicine_id)) {
+                  medicineIds.push(med.medicine_id);
+                  medicineCache.set(med.medicine_id, null); // Placeholder until we fetch the data
+                }
+                medicineItems.push({
+                  id: med.medicine_id,
+                  name: med.medicine_name,
+                  phaseName: phase.phase_name,
+                  quantity: med.quantity || 1
+                });
+              }
+            }
+          }
+        }
+      }
+      
+      // Fetch all medicine data in parallel
+      if (medicineIds.length > 0) {
+        try {
+          // Fetch all medicines in parallel
+          const medicinePromises = medicineIds.map(id => getMedicineById(id));
+          const medicineResults = await Promise.all(medicinePromises);
+          
+          // Store results in cache
+          medicineIds.forEach((id, index) => {
+            if (medicineResults[index]) {
+              medicineCache.set(id, medicineResults[index]);
+            }
+          });
+        } catch (error) {
+          console.error("Error fetching medicines:", error);
+          // Continue with default values if fetching fails
+        }
+      }
+      
+      // Second pass - add medicine items with data from cache
+      for (const item of medicineItems) {
+        const medicineData = medicineCache.get(item.id);
+        const medPrice = medicineData?.unit_price || 10; // Default price if data not available
+        const medQuantity = item.quantity;
+        
+        totalAmount += (medPrice * medQuantity);
+        
+        invoiceItems.push({
+          name: `${item.name} (${item.phaseName})`,
+          price: medPrice,
+          quantity: medQuantity
+        });
+      }
+      
+      // Generate invoice number
+      const invoiceNumber = `INV-TRT-${new Date().getFullYear()}${(new Date().getMonth() + 1).toString().padStart(2, '0')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+      
+      // Create the invoice request
+      const invoiceRequest = {
+        invoice_number: invoiceNumber,
+        amount: totalAmount,
+        date: format(new Date(), 'yyyy-MM-dd'),
+        due_date: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'), // 30 days from now
+        status: 'pending',
+        description: `Complete treatment plan for ${patientData?.name || 'pet'}`,
+        customer_name: appointmentData.owner?.owner_name || 'Patient',
+        items: invoiceItems
+      };
+
+      
+      // Submit invoice creation request
+      const response = await createInvoiceMutation.mutateAsync(invoiceRequest);
+      
+      // If successful, navigate to the invoice page
+      if (response && response.id) {
+        toast({
+          title: "Success",
+          description: `Invoice #${invoiceNumber} created successfully`,
+          className: "bg-green-50 border-green-200 text-green-800",
+        });
+        
+        // Prepare navigation parameters and navigate to invoice
+        const params = new URLSearchParams();
+        params.append('appointmentId', appointmentData.id.toString());
+        if (appointmentData.pet && appointmentData.pet.pet_id) {
+          params.append('petId', appointmentData.pet.pet_id.toString());
+        }
+        
+        navigate(`/invoice?${params.toString()}`);
+      }
+    } catch (error) {
+      console.error("Error exporting treatment as invoice:", error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to create invoice from treatment plan",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle completing a treatment and exporting as invoice
+  const handleCompleteTreatment = async () => {
+    if (!selectedTreatment) {
+      toast({
+        title: "Error",
+        description: "No treatment selected",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      toast({
+        title: "Processing",
+        description: "Completing treatment and generating invoice...",
+      });
+      
+      // Here you would normally update the treatment status to "Completed" in your API
+      // For example:
+      // await updateTreatmentStatus(selectedTreatment.id, "Completed");
+      
+      // Then export the treatment as invoice
+      await handleExportTreatment();
+      
+      // Refetch treatments to update UI
+      await refetchTreatments();
+      
+      // Optionally, navigate back to list view
+      setActiveView("list");
+      setSelectedTreatmentId(null);
+      
+    } catch (error) {
+      console.error("Error completing treatment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to complete treatment",
         variant: "destructive",
       });
     }
@@ -821,13 +1143,26 @@ const TreatmentManagement: React.FC = () => {
             )}
             {activeView === "list" && (
               <Button
-                className="bg-green-600 hover:bg-green-700 text-white"
+                variant="outline"
+                size="sm"
+                className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
                 onClick={() => setActiveView("new")}
               >
-                <PlusCircle size={16} className="mr-1" />
-                New Treatment
+                <PlusCircle className="h-4 w-4 mr-1" />
+                <span>New Treatment</span>
               </Button>
             )}
+
+            {/* invoice button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
+              onClick={navigateToInvoice}
+            >
+              <Receipt className="h-4 w-4 mr-1" />
+              <span>Invoice</span>
+            </Button>
           </div>
         </div>
       </div>
@@ -839,78 +1174,6 @@ const TreatmentManagement: React.FC = () => {
           petId={petId}
           currentStep="treatment"
         />
-      </div>
-
-      {/* Patient Info */}
-      <div className="bg-gradient-to-b from-indigo-50 to-white pt-6 pb-4 px-6 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex gap-4">
-            <div className="h-16 w-16 rounded-xl shadow-md overflow-hidden flex-shrink-0 border-2 border-white bg-indigo-100 flex items-center justify-center">
-              <img
-                src={
-                  patientData?.data_image
-                    ? `data:image/png;base64,${patientData.data_image}`
-                    : "/fallback-image.png"
-                }
-                alt={patientData?.name}
-                className="w-full h-full object-cover rounded-xl"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {patientData?.name}
-                </h2>
-                {alergies?.length > 0 && (
-                  <Badge className="bg-red-100 text-red-700 border-red-200 flex items-center gap-1 px-2 py-1">
-                    <AlertCircle size={14} className="mr-1" />
-                    Medical Alerts
-                  </Badge>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-2.5 py-0.5">
-                  {patientData?.type}
-                </Badge>
-                <Badge className="bg-blue-100 text-blue-700 border-blue-200 px-2.5 py-0.5">
-                  {patientData?.breed}
-                </Badge>
-                <div className="text-gray-600 text-sm flex items-center gap-3 ml-1">
-                  <span className="flex items-center">
-                    <span className="font-medium text-gray-700">Age:</span>{" "}
-                    <span className="ml-1">{patientData?.age}</span>
-                  </span>
-                  <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                  <span className="flex items-center">
-                    <span className="font-medium text-gray-700">Weight:</span>{" "}
-                    <span className="ml-1">{patientData?.weight}</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white shadow-sm flex items-center gap-1.5 border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors"
-            >
-              <MessageSquare size={14} className="text-blue-500" />
-              <span>Message Owner</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white shadow-sm flex items-center gap-1.5 border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors"
-            >
-              <Printer size={14} className="text-gray-500" />
-              <span>Print Summary</span>
-            </Button>
-          </div> */}
-        </div>
       </div>
 
       {/* Main Content */}
@@ -928,6 +1191,7 @@ const TreatmentManagement: React.FC = () => {
                   variant="outline"
                   size="sm"
                   className="bg-white shadow-sm flex items-center gap-1.5 border-gray-200 hover:bg-gray-50 transition-colors"
+                  onClick={handleExportTreatment}
                 >
                   <Download size={14} className="text-gray-600" />
                   <span>Export</span>
@@ -1007,7 +1271,7 @@ const TreatmentManagement: React.FC = () => {
 
                       <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
                         <div className="text-sm text-gray-500">
-                          <Badge 
+                          <Badge
                             className={`mr-2 ${
                               treatment.status === "Completed"
                                 ? "bg-green-100 text-green-800 border-green-200"
@@ -1055,15 +1319,6 @@ const TreatmentManagement: React.FC = () => {
                         selectedTreatment.start_date
                       ).toLocaleDateString()}
                     </span>
-                    {/* {selectedTreatment.end_date && (
-                      <span className="flex items-center">
-                        <Calendar size={14} className="mr-1.5 text-gray-400" />
-                        End:{" "}
-                        {new Date(
-                          selectedTreatment.end_date
-                        ).toLocaleDateString()}
-                      </span>
-                    )} */}
                   </div>
                 </div>
 
@@ -1154,6 +1409,18 @@ const TreatmentManagement: React.FC = () => {
                   <div className="text-sm text-gray-700 mt-1">
                     {selectedTreatment.description}
                   </div>
+                </div>
+                
+                {/* Add Complete & Export button */}
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    onClick={handleCompleteTreatment}
+                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1.5"
+                    disabled={selectedTreatment.status === "Completed"}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    <span>Complete & Export</span>
+                  </Button>
                 </div>
               </div>
             </div>

@@ -87,6 +87,7 @@ const PatientManagement = () => {
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [alertsExpanded, setAlertsExpanded] = useState(false);
   
   // Lấy tham số từ query params
   const [workflowParams, setWorkflowParams] = useState<{
@@ -213,6 +214,28 @@ const PatientManagement = () => {
       new Date(v.next_due_date) <=
       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
   );
+  
+  // Create alert items for the patient
+  const patientAlerts = [
+    ...(hasUpcomingVaccinations ? [{
+      type: "warning",
+      icon: <Syringe className="h-4 w-4 text-amber-600" />,
+      title: "Vaccination Due",
+      message: "Patient has vaccinations due within 30 days"
+    }] : []),
+    ...(patientData?.allergies ? [{
+      type: "critical",
+      icon: <XCircle className="h-4 w-4 text-red-600" />,
+      title: "Allergies",
+      message: patientData?.allergies
+    }] : []),
+    ...(patientData?.chronic_conditions ? [{
+      type: "info", 
+      icon: <Activity className="h-4 w-4 text-blue-600" />,
+      title: "Chronic Conditions",
+      message: patientData?.chronic_conditions
+    }] : [])
+  ];
 
   return (
     <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
@@ -230,19 +253,10 @@ const PatientManagement = () => {
           </Button>
           <div>
             <h1 className="text-white font-semibold text-lg">Patient Management</h1>
-            <p className="text-indigo-100 text-xs hidden sm:block">View and manage patient information</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-white/10 text-white border-white/20 hover:bg-white/30 flex items-center gap-2 text-xs font-medium"
-          >
-            <Printer className="h-3.5 w-3.5" />
-            <span>Print Report</span>
-          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -311,25 +325,6 @@ const PatientManagement = () => {
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-2 gap-y-1 mt-1.5">
-                <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-2 py-0.5 text-xs">
-                  {patientData?.breed}
-                </Badge>
-                <Badge className="bg-blue-100 text-blue-700 border-blue-200 px-2 py-0.5 text-xs">
-                  {patientData?.type}
-                </Badge>
-                <div className="text-gray-600 text-xs flex items-center gap-3 ml-0 sm:ml-2 mt-1.5 flex-wrap justify-center sm:justify-start">
-                  <span className="flex items-center">
-                    <span className="font-medium text-gray-700">Age:</span>{" "}
-                    <span className="ml-1">{patientData?.age}</span>
-                  </span>
-                  <span className="hidden sm:block w-1 h-1 bg-gray-300 rounded-full"></span>
-                  <span className="flex items-center">
-                    <span className="font-medium text-gray-700">Weight:</span>{" "}
-                    <span className="ml-1">{patientData?.weight}</span>
-                  </span>
-                </div>
-              </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-2 mt-2 text-gray-700 justify-center sm:justify-start">
                 <div className="flex items-center px-3 py-1.5 bg-white rounded-md shadow-sm border border-gray-100 w-full sm:w-auto">
@@ -390,149 +385,249 @@ const PatientManagement = () => {
         </div>
       </div>
 
-      {/* Tabs section - standardized styling */}
+      {/* New Patient Clinical Summary Banner */}
+      {patientData && (
+        <div className="bg-white px-6 py-4 border-y border-gray-200 mt-2">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+            <div className="w-full md:w-auto">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <Activity className="h-4 w-4 mr-2 text-indigo-600" />
+                Patient Information
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+                  <div className="text-xs text-indigo-700 font-medium">Weight</div>
+                  <div className="text-lg font-bold text-indigo-900 mt-1 flex items-end">
+                    {patientData?.weight || "N/A"}
+                    <span className="text-xs ml-1 text-indigo-700 font-normal">kg</span>
+                  </div>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                  <div className="text-xs text-blue-700 font-medium">Breed</div>
+                  <div className="text-lg font-bold text-blue-900 mt-1 flex items-end">
+                    {patientData?.breed || "N/A"}
+                    {/* <span className="text-xs ml-1 text-blue-700 font-normal">Breed</span> */}
+                  </div>
+                </div>
+                <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                  <div className="text-xs text-green-700 font-medium">Type</div>
+                  <div className="text-lg font-bold text-green-900 mt-1 flex items-end">
+                    {patientData?.type || "N/A"}
+                    {/* <span className="text-xs ml-1 text-green-700 font-normal">Type</span> */}
+                  </div>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">
+                  <div className="text-xs text-purple-700 font-medium">Age</div>
+                  <div className="text-lg font-bold text-purple-900 mt-1">
+                    {patientData?.age || "N/A"}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Clinical Alerts */}
+            <div className="w-full md:w-1/2 lg:w-1/3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center">
+                  <Bell className="h-4 w-4 mr-2 text-amber-600" />
+                  <span>Clinical Alerts</span>
+                  {patientAlerts.length > 0 && (
+                    <Badge className="ml-2 bg-amber-100 text-amber-800 border-amber-200">
+                      {patientAlerts.length}
+                    </Badge>
+                  )}
+                </h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6 p-0"
+                  onClick={() => setAlertsExpanded(!alertsExpanded)}
+                >
+                  {alertsExpanded ? 
+                    <ChevronLeft className="h-4 w-4" /> : 
+                    <ChevronRight className="h-4 w-4" />
+                  }
+                </Button>
+              </div>
+              
+              {patientAlerts.length > 0 ? (
+                <div className="space-y-2 mt-1 overflow-y-auto max-h-48">
+                  {patientAlerts.slice(0, alertsExpanded ? patientAlerts.length : 2).map((alert, index) => (
+                    <div 
+                      key={index}
+                      className={`p-2 rounded-md flex items-start gap-2 ${
+                        alert.type === 'critical' 
+                          ? 'bg-red-50 border border-red-200' 
+                          : alert.type === 'warning'
+                          ? 'bg-amber-50 border border-amber-200'
+                          : 'bg-blue-50 border border-blue-200'
+                      }`}
+                    >
+                      <div className="mt-0.5">{alert.icon}</div>
+                      <div>
+                        <div className="font-medium text-gray-900 text-xs">{alert.title}</div>
+                        <div className="text-xs text-gray-600 mt-0.5">{alert.message}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs text-gray-500 bg-gray-50 rounded-md p-3 text-center border border-gray-200">
+                  No alerts for this patient
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Action buttons with improved visibility */}
+      {/* <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <Button
+            onClick={navigateToExamination}
+            className="bg-blue-600 hover:bg-blue-700 text-white w-full flex items-center justify-center gap-2 py-6 font-medium transition-all shadow-md hover:shadow-lg"
+          >
+            <Stethoscope className="h-5 w-5" />
+            <span>Start Examination</span>
+          </Button>
+          
+          {appointment?.service?.service_name?.toLowerCase().includes('vaccine') || 
+           appointment?.reason?.toLowerCase().includes('vaccine') ? (
+            <Button
+              onClick={navigateToVaccination}
+              className="bg-green-600 hover:bg-green-700 text-white w-full flex items-center justify-center gap-2 py-6 font-medium transition-all shadow-md hover:shadow-lg"
+            >
+              <Syringe className="h-5 w-5" />
+              <span>Administer Vaccine</span>
+            </Button>
+          ) : (
+            <Button
+              onClick={navigateToSOAP}
+              className="bg-purple-600 hover:bg-purple-700 text-white w-full flex items-center justify-center gap-2 py-6 font-medium transition-all shadow-md hover:shadow-lg"
+            >
+              <ClipboardEdit className="h-5 w-5" />
+              <span>SOAP Notes</span>
+            </Button>
+          )}
+          
+          <Button
+            onClick={navigateToTreatment}
+            className="bg-amber-600 hover:bg-amber-700 text-white w-full flex items-center justify-center gap-2 py-6 font-medium transition-all shadow-md hover:shadow-lg"
+          >
+            <Pill className="h-5 w-5" />
+            <span>Treatment Plan</span>
+          </Button>
+        </div>
+      </div> */}
+
+      {/* Tabs section with improved styling */}
       <Tabs
         defaultValue="overview"
-        className="w-full px-4 py-4"
+        className="w-full px-6 py-4"
         value={activeTab}
         onValueChange={setActiveTab}
       >
-        <div className="border-b pb-2 mb-4 overflow-x-auto">
-          <TabsList className="inline-flex bg-gray-100 p-1 rounded-md shadow-sm">
-            <TabsTrigger
-              value="overview"
-              className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-3 text-xs font-medium transition-all"
-            >
-              <BarChart className="h-3.5 w-3.5" />
-              <span>Overview</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="appointments"
-              className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-3 text-xs font-medium transition-all"
-            >
-              <Calendar className="h-3.5 w-3.5" />
-              <span>Appointments</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="medical-records"
-              className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-3 text-xs font-medium transition-all"
-            >
-              <FileText className="h-3.5 w-3.5" />
-              <span>Records</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="vaccines"
-              className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-3 text-xs font-medium transition-all"
-            >
-              <Syringe className="h-3.5 w-3.5" />
-              <span>Vaccines</span>
-            </TabsTrigger>
-          </TabsList>
-        </div>
 
-        <TabsContent value="overview" className="mt-3">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Main column - History and Records */}
-            <div className="lg:col-span-2 space-y-4">
-              {/* Recent appointments card */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b gap-2 sm:gap-0">
-                  <h3 className="font-medium text-gray-800 flex items-center text-sm">
+        <TabsContent value="overview" className="mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {/* REDESIGNED: Recent Appointments */}
+              <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                <div className="flex justify-between items-center px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b">
+                  <h3 className="font-semibold text-gray-800 flex items-center text-sm">
                     <Calendar className="h-4 w-4 mr-2 text-indigo-600" />
                     Recent Appointments
                   </h3>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="bg-white shadow-sm flex items-center gap-1.5 hover:bg-gray-50 transition-all text-xs px-2.5 py-1 hover:shadow"
+                    className="bg-white shadow-sm hover:bg-gray-50 text-xs px-2.5 py-1"
                   >
-                    <CalendarPlus className="h-3.5 w-3.5 text-indigo-600" />
-                    <span>New Appointment</span>
+                    <CalendarPlus className="h-3.5 w-3.5 mr-1.5 text-indigo-600" />
+                    <span>New</span>
                   </Button>
                 </div>
 
-                <div className="divide-y divide-gray-100">
+                <div className="overflow-hidden">
                   {historyAppointments?.length > 0 ? (
-                    historyAppointments
-                      .slice(0, 3)
-                      .map((appointment: Appointment) => (
+                    <div className="divide-y divide-gray-100">
+                      {historyAppointments.slice(0, 3).map((appointment: Appointment) => (
                         <div
                           key={appointment.id}
                           className="p-3 hover:bg-gray-50 transition-colors"
                         >
-                          <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
-                            <div className="flex items-start gap-2 w-full sm:w-auto">
-                              <div
-                                className={`p-1.5 rounded-md ${
-                                  appointment.status === "completed"
-                                    ? "bg-green-100"
-                                    : appointment.status === "in-progress"
-                                    ? "bg-blue-100"
-                                    : appointment.status === "scheduled"
-                                    ? "bg-indigo-100"
-                                    : "bg-gray-100"
-                                }`}
-                              >
-                                {appointment.status === "completed" ? (
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                ) : appointment.status === "in-progress" ? (
-                                  <Activity className="h-4 w-4 text-blue-600" />
-                                ) : (
-                                  <Calendar className="h-4 w-4 text-indigo-600" />
-                                )}
-                              </div>
-                              <div>
-                                <div className="font-medium text-gray-900 text-xs">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`p-2 rounded-full ${
+                                appointment.status === "completed"
+                                  ? "bg-green-100"
+                                  : appointment.status === "in-progress"
+                                  ? "bg-blue-100"
+                                  : appointment.status === "scheduled"
+                                  ? "bg-indigo-100"
+                                  : "bg-gray-100"
+                              }`}
+                            >
+                              {appointment.status === "completed" ? (
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              ) : appointment.status === "in-progress" ? (
+                                <Activity className="h-4 w-4 text-blue-600" />
+                              ) : (
+                                <Calendar className="h-4 w-4 text-indigo-600" />
+                              )}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <div className="font-medium text-gray-900 text-sm truncate">
                                   {appointment.type}
                                 </div>
-                                <div className="text-xs text-gray-600 mt-1 flex items-center">
+                                <Badge
+                                  className={`text-xs px-2 py-0.5 ml-2 ${
+                                    appointment.status === "completed"
+                                      ? "bg-green-100 text-green-800 border-green-200"
+                                      : appointment.status === "in-progress"
+                                      ? "bg-blue-100 text-blue-800 border-blue-200"
+                                      : appointment.status === "scheduled"
+                                      ? "bg-indigo-100 text-indigo-800 border-indigo-200"
+                                      : "bg-gray-100 text-gray-800 border-gray-200"
+                                  }`}
+                                >
+                                  {appointment.status === "completed"
+                                    ? "Completed"
+                                    : appointment.status === "in-progress"
+                                    ? "In Progress"
+                                    : "Scheduled"}
+                                </Badge>
+                              </div>
+                              <div className="flex flex-wrap items-center text-xs text-gray-600 mt-1 gap-3">
+                                <span className="flex items-center">
                                   <CalendarClock className="h-3.5 w-3.5 mr-1 text-gray-400" />
                                   {appointment.date}
-                                </div>
-                                <div className="text-xs text-gray-600 mt-1 flex items-center">
+                                </span>
+                                <span className="flex items-center">
                                   <UserCog className="h-3.5 w-3.5 mr-1 text-gray-400" />
-                                  Dr.{" "}
-                                  {appointment.doctor_id === 1
+                                  Dr. {appointment.doctor_id === 1
                                     ? "Roberts"
                                     : appointment.doctor_id === 2
                                     ? "Carter"
                                     : "Chen"}
-                                </div>
+                                </span>
                               </div>
                             </div>
-
-                            <div className="flex flex-col items-start sm:items-end mt-2 sm:mt-0 w-full sm:w-auto">
-                              <Badge
-                                className={`text-xs px-2 py-0.5 ${
-                                  appointment.status === "completed"
-                                    ? "bg-green-100 text-green-800 border-green-200"
-                                    : appointment.status === "in-progress"
-                                    ? "bg-blue-100 text-blue-800 border-blue-200"
-                                    : appointment.status === "scheduled"
-                                    ? "bg-indigo-100 text-indigo-800 border-indigo-200"
-                                    : "bg-gray-100 text-gray-800 border-gray-200"
-                                }`}
-                              >
-                                {appointment.status === "completed"
-                                  ? "Completed"
-                                  : appointment.status === "in-progress"
-                                  ? "In Progress"
-                                  : "Scheduled"}
-                              </Badge>
-
-                              <div className="mt-2 w-full sm:w-auto">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="bg-white border-gray-200 hover:bg-gray-50 transition-all text-xs px-2 py-1 hover:shadow w-full sm:w-auto"
-                                >
-                                  View Details
-                                </Button>
-                              </div>
-                            </div>
+                            
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-gray-400 hover:text-gray-600 h-8 w-8 p-0"
+                            >
+                              <ChevronRight className="h-5 w-5" />
+                            </Button>
                           </div>
                         </div>
-                      ))
+                      ))}
+                    </div>
                   ) : (
                     <div className="p-4 text-center">
                       <div className="w-12 h-12 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-3">
@@ -546,118 +641,292 @@ const PatientManagement = () => {
                       </p>
                       <Button
                         size="sm"
-                        className="bg-indigo-600 hover:bg-indigo-700 text-xs px-3 py-1.5 transition-all hover:shadow"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5"
                       >
                         Schedule First Appointment
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {historyAppointments?.length > 3 && (
+                    <div className="p-2 bg-gray-50 border-t border-gray-100 text-center">
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="text-indigo-600 text-xs"
+                        onClick={() => setActiveTab("appointments")}
+                      >
+                        View all appointments
                       </Button>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Recent medical records card */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b gap-2 sm:gap-0">
-                  <h3 className="font-medium text-gray-800 flex items-center text-sm">
+              {/* REDESIGNED: Medical Records */}
+              <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                <div className="flex justify-between items-center px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b">
+                  <h3 className="font-semibold text-gray-800 flex items-center text-sm">
                     <FileText className="h-4 w-4 mr-2 text-indigo-600" />
                     Medical Records
                   </h3>
-                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="bg-white shadow-sm hover:bg-gray-50 transition-all text-xs px-2.5 py-1 hover:shadow"
-                      onClick={() => {
-                        // Handle sort
-                      }}
-                    >
-                      <ArrowDownUp className="mr-1.5 h-3.5 w-3.5 text-indigo-600" />
-                      Sort
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="bg-indigo-600 hover:bg-indigo-700 text-xs px-2.5 py-1 transition-all hover:shadow text-white"
-                    >
-                      <FilePlus2 className="mr-1.5 h-3.5 w-3.5" />
-                      New Record
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-white shadow-sm hover:bg-gray-50 text-xs px-2.5 py-1"
+                  >
+                    <FilePlus2 className="h-3.5 w-3.5 mr-1.5 text-indigo-600" />
+                    <span>New</span>
+                  </Button>
+                </div>
+                
+                <div className="overflow-hidden">
+                  {medicalRecords.length > 0 ? (
+                    <div className="divide-y divide-gray-100">
+                      {medicalRecords.slice(0, 3).map((record) => (
+                        <div
+                          key={record.id}
+                          className="p-3 hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 rounded-full bg-indigo-100">
+                              <FileBarChart className="h-4 w-4 text-indigo-600" />
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-center">
+                                <div className="font-medium text-gray-900 text-sm truncate">
+                                  {record.type || "Medical Visit"}
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-gray-400 hover:text-gray-600 h-8 w-8 p-0 -mr-1"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              
+                              <div className="flex flex-wrap items-center text-xs text-gray-600 mt-1 gap-3">
+                                <span className="flex items-center">
+                                  <Calendar className="h-3.5 w-3.5 mr-1 text-gray-400" />
+                                  {record.date}
+                                </span>
+                                <span className="flex items-center">
+                                  <UserCog className="h-3.5 w-3.5 mr-1 text-gray-400" />
+                                  Dr. {record.doctor_id === 1
+                                    ? "Roberts"
+                                    : record.doctor_id === 2
+                                    ? "Carter"
+                                    : "Chen"}
+                                </span>
+                              </div>
+                              
+                              {record.diagnosis && (
+                                <div className="mt-2">
+                                  <Badge 
+                                    className="bg-blue-100 text-blue-800 border-blue-200 text-xs"
+                                  >
+                                    {record.diagnosis}
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center">
+                      <div className="w-12 h-12 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                        <FileText className="h-6 w-6 text-gray-300" />
+                      </div>
+                      <h3 className="text-gray-500 font-medium mb-2 text-sm">
+                        No medical records
+                      </h3>
+                      <p className="text-gray-400 text-xs mb-3">
+                        This patient doesn't have any medical records yet
+                      </p>
+                      <Button
+                        size="sm"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5"
+                      >
+                        <FilePlus2 className="h-3.5 w-3.5 mr-1.5" />
+                        Create First Record
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {medicalRecords.length > 3 && (
+                    <div className="p-2 bg-gray-50 border-t border-gray-100 text-center">
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="text-indigo-600 text-xs"
+                        onClick={() => setActiveTab("medical-records")}
+                      >
+                        View all medical records
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Sidebar column */}
-            <div className="space-y-4">
-              {/* Upcoming vaccinations */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="space-y-6">
+              {/* REDESIGNED: Owner Information */}
+              <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
                 <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b">
-                  <h3 className="font-medium text-gray-800 flex items-center text-sm">
+                  <h3 className="font-semibold text-gray-800 flex items-center text-sm">
+                    <UserCog className="h-4 w-4 mr-2 text-indigo-600" />
+                    Owner Information
+                  </h3>
+                </div>
+
+                <div className="p-3">
+                  {appointment?.owner ? (
+                    <div>
+                      <div className="flex items-center mb-3">
+                        <div className="h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 mr-3">
+                          {appointment.owner.owner_name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {appointment.owner.owner_name}
+                          </div>
+                          <Badge className="bg-indigo-100 text-indigo-800 mt-1 text-xs">Primary Owner</Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 mt-3">
+                        <a 
+                          href={`tel:${appointment.owner.owner_phone}`}
+                          className="flex items-center gap-2 p-2 bg-gray-50 rounded-md border border-gray-100 hover:bg-gray-100 transition-colors"
+                        >
+                          <Phone className="h-4 w-4 text-indigo-500" />
+                          <span className="text-sm text-gray-700">{appointment.owner.owner_phone}</span>
+                        </a>
+                        
+                        {appointment.owner.owner_email && (
+                          <a 
+                            href={`mailto:${appointment.owner.owner_email}`}
+                            className="flex items-center gap-2 p-2 bg-gray-50 rounded-md border border-gray-100 hover:bg-gray-100 transition-colors"
+                          >
+                            <Mail className="h-4 w-4 text-indigo-500" />
+                            <span className="text-sm text-gray-700 truncate">{appointment.owner.owner_email}</span>
+                          </a>
+                        )}
+                        
+                        {appointment.owner.owner_address && (
+                          <div className="flex items-start gap-2 p-2 bg-gray-50 rounded-md border border-gray-100">
+                            <Info className="h-4 w-4 text-indigo-500 mt-0.5" />
+                            <div>
+                              <span className="text-sm text-gray-700">{appointment.owner.owner_address}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="mt-3 flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs"
+                        >
+                          <UserCog className="h-3.5 w-3.5 mr-1.5" />
+                          View Owner Profile
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-3">
+                      <p className="text-gray-500 text-sm">Owner information not available</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* REDESIGNED: Vaccination Status */}
+              <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b">
+                  <h3 className="font-semibold text-gray-800 flex items-center text-sm">
                     <Syringe className="h-4 w-4 mr-2 text-indigo-600" />
                     Vaccination Status
                   </h3>
                 </div>
 
-                <div className="p-4">
+                <div className="p-3">
                   {vaccines.length > 0 ? (
-                    <div className="space-y-2">
-                      {vaccines.slice(0, 3).map((vaccine: Vaccination) => {
-                        const isDue =
-                          new Date(vaccine.next_due_date) <=
-                          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                    <div>
+                      {hasUpcomingVaccinations && (
+                        <div className="p-2 bg-amber-50 border border-amber-200 rounded-md mb-3 flex items-center">
+                          <Bell className="h-4 w-4 text-amber-600 mr-2" />
+                          <span className="text-xs text-amber-800">Vaccinations due soon</span>
+                        </div>
+                      )}
+                    
+                      <div className="space-y-2">
+                        {vaccines.slice(0, 3).map((vaccine: Vaccination) => {
+                          const isDue =
+                            new Date(vaccine.next_due_date) <=
+                            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                          const isPastDue = 
+                            new Date(vaccine.next_due_date) < new Date();
 
-                        return (
-                          <div
-                            key={vaccine.vaccination_id}
-                            className={`p-2 rounded-md border transition-all hover:shadow ${
-                              isDue
-                                ? "bg-amber-50 border-amber-200"
-                                : "bg-white border-gray-200"
-                            }`}
-                          >
-                            <div className="flex flex-col sm:flex-row justify-between items-start gap-1">
-                              <div>
-                                <div className="font-medium text-gray-900 text-xs">
+                          return (
+                            <div
+                              key={vaccine.vaccination_id}
+                              className={`p-2 rounded-md border flex justify-between items-center ${
+                                isPastDue
+                                  ? "bg-red-50 border-red-200"
+                                  : isDue
+                                  ? "bg-amber-50 border-amber-200"
+                                  : "bg-white border-gray-200"
+                              }`}
+                            >
+                              <div className="min-w-0">
+                                <div className="font-medium text-gray-900 text-sm truncate">
                                   {vaccine.vaccine_name}
                                 </div>
-                                <div className="text-xs text-gray-600 mt-0.5">
-                                  Last:{" "}
+                                <div className="flex items-center text-xs text-gray-600 mt-1">
+                                  <Calendar className="h-3.5 w-3.5 mr-1 text-gray-400" />
                                   {vaccine.date_administered
-                                    ? new Date(
-                                        vaccine.date_administered
-                                      ).toLocaleDateString()
-                                    : "Never"}
+                                    ? `Last: ${new Date(vaccine.date_administered).toLocaleDateString()}`
+                                    : "Never administered"}
                                 </div>
                               </div>
 
-                              <div className="flex flex-col items-start sm:items-end mt-1 sm:mt-0">
-                                <div
-                                  className={`text-xs font-medium ${
-                                    isDue ? "text-amber-600" : "text-green-600"
+                              <div className="flex flex-col items-end ml-2">
+                                <Badge
+                                  className={`text-xs ${
+                                    isPastDue
+                                      ? "bg-red-100 text-red-800 border-red-200"
+                                      : isDue
+                                      ? "bg-amber-100 text-amber-800 border-amber-200"
+                                      : "bg-green-100 text-green-800 border-green-200"
                                   }`}
                                 >
-                                  {isDue ? "Due" : "Up to date"}
-                                </div>
-                                <div className="text-xs text-gray-600 mt-0.5">
-                                  Next:{" "}
-                                  {new Date(
-                                    vaccine.next_due_date
-                                  ).toLocaleDateString()}
+                                  {isPastDue ? "Overdue" : isDue ? "Due Soon" : "Up to date"}
+                                </Badge>
+                                <div className="text-xs text-gray-600 mt-1 whitespace-nowrap">
+                                  Next: {new Date(vaccine.next_due_date).toLocaleDateString()}
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
 
                       {vaccines.length > 3 && (
-                        <Button
-                          variant="link"
-                          className="text-indigo-600 hover:text-indigo-800 w-full mt-1 text-xs transition-all hover:underline"
-                          onClick={() => setActiveTab("vaccines")}
-                        >
-                          View all vaccinations
-                        </Button>
+                        <div className="mt-3 text-center">
+                          <Button
+                            variant="link"
+                            className="text-indigo-600 text-xs"
+                            onClick={() => setActiveTab("vaccines")}
+                          >
+                            View all vaccinations
+                          </Button>
+                        </div>
                       )}
                     </div>
                   ) : (
@@ -671,7 +940,7 @@ const PatientManagement = () => {
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="mt-1 text-xs px-2 py-1 transition-all hover:shadow">
+                        className="text-xs px-3 py-1.5">
                         Add Vaccination Record
                       </Button>
                     </div>

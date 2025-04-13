@@ -11,7 +11,7 @@ export const getPatientById = async (pet_id: number) => {
             Authorization: `Bearer ${token}`,
         },
     });
-    console.log('Patient data response:', response);
+    console.log("response: ", response.data);
     return response.data;
 };
 
@@ -95,3 +95,29 @@ export const ListPatients = async (page: number = 1, pageSize: number = 5): Prom
         return { data: [], total: 0, page: 1, pageSize: 10, totalPages: 1 };
     }
 };
+
+
+export type updatePetRequest = {
+    name: string;
+    type: string;
+    breed: string;
+    age: number;
+    weight: number;
+    gender: string;
+    healthnotes: string;
+    bod: string;
+    microchip_number: string;
+}
+
+export const updatePet = async (pet_id: number, updatePetRequest: updatePetRequest) => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        throw new Error('No access token found');
+    }
+    const response = await axios.put(`/api/v1/pet/${pet_id}`, updatePetRequest, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+    return response.data;
+}

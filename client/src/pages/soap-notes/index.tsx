@@ -70,9 +70,8 @@ const SoapNotes = () => {
         petId: petIdValue
       });
       
-      console.log("SOAP Notes Workflow Params Set:", { appointmentIdValue, petIdValue });
     }
-  }, [routeId, workflowParams]);
+  }, [routeId]);
   
   // Sử dụng appointmentId từ workflowParams
   const effectiveAppointmentId = workflowParams.appointmentId || "";
@@ -105,7 +104,7 @@ const SoapNotes = () => {
       plan: "",
     },
     isLoading: isSoapLoading,
-    error: soapError,
+  error: soapError,
   } = useGetSOAP(appointment?.id);
   
   const {
@@ -125,15 +124,25 @@ const SoapNotes = () => {
 
   // Initialize local state when remote data loads
   useEffect(() => {
-    if (soapData && JSON.stringify(soapData) !== JSON.stringify(localSoapData)) {
-      setLocalSoapData({
-        subjective: soapData.subjective || "",
-        objective: soapData.objective || {},
-        assessment: soapData.assessment || "",
-        plan: soapData.plan || "",
-      });
+    if (soapData) {
+      // Use explicit checks for individual fields instead of comparing entire objects
+      const shouldUpdate = 
+        soapData.subjective !== localSoapData.subjective || 
+        soapData.assessment !== localSoapData.assessment ||
+        soapData.plan !== localSoapData.plan ||
+        // For objective, just check if it exists and is different than current
+        (JSON.stringify(soapData.objective || {}) !== JSON.stringify(localSoapData.objective || {}));
+      
+      if (shouldUpdate) {
+        setLocalSoapData({
+          subjective: soapData.subjective || "",
+          objective: soapData.objective || {},
+          assessment: soapData.assessment || "",
+          plan: soapData.plan || "",
+        });
+      }
     }
-  }, [soapData, localSoapData]);
+  }, [soapData]); // Only depend on soapData, not localSoapData
 
   const handleInputChange = (
     field: keyof typeof localSoapData,
@@ -151,44 +160,66 @@ const SoapNotes = () => {
       return "No examination data available.";
     }
 
-    let formattedText = "## CLINICAL EXAMINATION RESULTS\n\n";
+    // Start with a clear title and date
+    let formattedText = `📋 CLINICAL EXAMINATION RESULTS\n`;
+    formattedText += `📅 ${new Date().toLocaleDateString()}\n\n`;
 
-    // Format vital signs
+    // Format vital signs with better visual structure
     if (data.vital_signs) {
-      formattedText += "### Vital Signs\n";
-      if (data.vital_signs.weight)
-        formattedText += `- Weight: ${data.vital_signs.weight} kg\n`;
-      if (data.vital_signs.temperature)
-        formattedText += `- Temperature: ${data.vital_signs.temperature} °C\n`;
-      if (data.vital_signs.heart_rate)
-        formattedText += `- Heart Rate: ${data.vital_signs.heart_rate} bpm\n`;
-      if (data.vital_signs.respiratory_rate)
-        formattedText += `- Respiratory Rate: ${data.vital_signs.respiratory_rate} rpm\n`;
-      if (data.vital_signs.general_notes)
-        formattedText += `\n**General Notes:** ${data.vital_signs.general_notes}\n`;
+      formattedText += `🔍 VITAL SIGNS\n${"─".repeat(30)}\n`;
+      
+      const vitalSigns = [
+        { name: "Weight", value: data.vital_signs.weight, unit: "kg", icon: "⚖️" },
+        { name: "Temperature", value: data.vital_signs.temperature, unit: "°C", icon: "🌡️" },
+        { name: "Heart Rate", value: data.vital_signs.heart_rate, unit: "bpm", icon: "❤️" },
+        { name: "Respiratory Rate", value: data.vital_signs.respiratory_rate, unit: "rpm", icon: "🫁" }
+      ];
+      
+      vitalSigns.forEach(sign => {
+        if (sign.value) {
+          formattedText += `${sign.icon} ${sign.name}: ${sign.value} ${sign.unit}\n`;
+        }
+      });
+      
+      if (data.vital_signs.general_notes) {
+        formattedText += `\n📝 General Notes:\n${data.vital_signs.general_notes}\n`;
+      }
       formattedText += "\n";
     }
 
-    // Format systems examination
+    // Format systems examination with better visual organization
     if (data.systems) {
-      formattedText += "### Systems Examination\n";
+      formattedText += `🩺 SYSTEMS EXAMINATION\n${"─".repeat(30)}\n`;
 
       const systemPairs = [
-        { name: "Cardiovascular", value: data.systems.cardiovascular },
-        { name: "Respiratory", value: data.systems.respiratory },
-        { name: "Gastrointestinal", value: data.systems.gastrointestinal },
-        { name: "Musculoskeletal", value: data.systems.musculoskeletal },
-        { name: "Neurological", value: data.systems.neurological },
-        { name: "Skin/Coat", value: data.systems.skin },
-        { name: "Eyes", value: data.systems.eyes },
-        { name: "Ears", value: data.systems.ears },
+        { name: "Cardiovascular", value: data.systems.cardiovascular, icon: "❤️" },
+        { name: "Respiratory", value: data.systems.respiratory, icon: "🫁" },
+        { name: "Gastrointestinal", value: data.systems.gastrointestinal, icon: "🧠" },
+        { name: "Musculoskeletal", value: data.systems.musculoskeletal, icon: "🦴" },
+        { name: "Neurological", value: data.systems.neurological, icon: "🧠" },
+        { name: "Skin/Coat", value: data.systems.skin, icon: "🧥" },
+        { name: "Eyes", value: data.systems.eyes, icon: "👁️" },
+        { name: "Ears", value: data.systems.ears, icon: "👂" },
       ];
 
-      systemPairs.forEach((system) => {
-        if (system.value) {
-          formattedText += `- **${system.name}:** ${system.value}\n`;
-        }
-      });
+      // First count how many systems have data
+      const filledSystems = systemPairs.filter(system => system.value).length;
+      
+      if (filledSystems === 0) {
+        formattedText += "No systems examination data recorded.\n";
+      } else {
+        systemPairs.forEach((system) => {
+          if (system.value) {
+            formattedText += `${system.icon} ${system.name}:\n   ${system.value}\n\n`;
+          }
+        });
+      }
+    }
+
+    // Add summary section if available
+    if (data.vital_signs?.general_notes) {
+      formattedText += `\n📋 SUMMARY\n${"─".repeat(30)}\n`;
+      formattedText += `${data.vital_signs.general_notes}\n`;
     }
 
     return formattedText;
@@ -333,10 +364,10 @@ const SoapNotes = () => {
           </Button>
           <div>
             <h1 className="text-white font-semibold text-lg">SOAP Notes</h1>
-            <p className="text-indigo-100 text-xs hidden sm:block">Subjective, Objective, Assessment, Plan</p>
+            {/* <p className="text-indigo-100 text-xs hidden sm:block">Subjective, Objective, Assessment, Plan</p> */}
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        {/* <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="sm"
@@ -355,7 +386,7 @@ const SoapNotes = () => {
             <Save className="h-4 w-4 mr-1" />
             <span>Save Notes</span>
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {/* Workflow Navigation */}
@@ -365,80 +396,6 @@ const SoapNotes = () => {
           petId={patient?.petid?.toString()}
           currentStep="soap"
         />
-      </div>
-
-      {/* Patient header - improved styling */}
-      <div className="bg-gradient-to-b from-indigo-50 to-white pt-6 pb-4 px-6 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          {/* Patient photo and basic info */}
-          <div className="flex gap-4">
-            <div className="relative">
-              <div className="h-24 w-24 rounded-lg shadow-md overflow-hidden flex-shrink-0 border-2 border-white">
-                <img
-                  src={
-                    patient?.data_image
-                      ? `data:image/png;base64,${patient.data_image}`
-                      : "/fallback-image.png"
-                  }
-                  alt={patient.name}
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    // target.src = "https://via.placeholder.com/100?text=Pet";
-                  }}
-                />
-              </div>
-              {patient.gender && (
-                <div
-                  className={`absolute bottom-0 right-0 h-6 w-6 rounded-full flex items-center justify-center text-white shadow-md ${
-                    patient.gender === "Male" ? "bg-blue-500" : "bg-pink-500"
-                  }`}
-                >
-                  {patient.gender === "Male" ? "♂" : "♀"}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-gray-900">
-                  {patient.name}
-                </h1>
-                <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-2.5 py-0.5">
-                  {patient.breed}
-                </Badge>
-              </div>
-              <div className="mt-1 text-gray-600 text-sm flex flex-wrap items-center gap-x-4 gap-y-1">
-                <span className="flex items-center gap-1">
-                  <span className="font-medium text-gray-700">ID:</span>{" "}
-                  {patient.petid}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="font-medium text-gray-700">Age:</span>{" "}
-                  {patient.age}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="font-medium text-gray-700">Weight:</span>{" "}
-                  {patient.weight}
-                </span>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Badge className="bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1.5 px-2 py-0.5">
-                  <Calendar className="h-3 w-3" />
-                  <span>{appointment.date}</span>
-                </Badge>
-                <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 flex items-center gap-1.5 px-2 py-0.5">
-                  <Clock className="h-3 w-3" />
-                  {/* <span>{formatTimeRange(appointment.time_slot.start_time, appointment.time_slot.end_time)}</span> */}
-                </Badge>
-                <Badge className="bg-violet-100 text-violet-700 border-violet-200 flex items-center gap-1.5 px-2 py-0.5">
-                  <Stethoscope className="h-3 w-3" />
-                  <span>{appointment.doctor.doctor_name}</span>
-                </Badge>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Main content */}
