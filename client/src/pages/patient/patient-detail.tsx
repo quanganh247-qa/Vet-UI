@@ -1,6 +1,9 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, Activity, Syringe, FileText, Clock, User, Phone, MapPin } from 'lucide-react';
+import { 
+  ArrowLeft, Activity, Syringe, FileText, Clock, User, Phone, MapPin,
+  Calendar, UserCog, LogOut, Settings
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { getPatientById } from '@/services/pet-services';
 import { getVaccinations } from '@/services/vaccine-services';
@@ -9,6 +12,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/context/auth-context";
 
 const MedicalRecords = React.lazy(() => import("@/pages/medical-records"));
 const Treatment = React.lazy(() => import("@/pages/treatment"));
@@ -69,6 +81,8 @@ export const PatientDetailPage: React.FC = () => {
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const { doctor, logout } = useAuth();
 
   useEffect(() => {
     const fetchPetData = async () => {
@@ -86,7 +100,6 @@ export const PatientDetailPage: React.FC = () => {
         ]);
 
         setPet(petData);
-
         setVaccines(vaccinesData);
 
       } catch (err) {
@@ -99,10 +112,23 @@ export const PatientDetailPage: React.FC = () => {
     fetchPetData();
   }, []);
 
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const date = new Date(e.target.value);
+    if (!isNaN(date.getTime())) {
+      setSelectedDate(date);
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    setLocation('/login');
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 dark:border-indigo-400"></div>
+      <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+        <p className="text-indigo-600 font-medium">Loading patient details...</p>
       </div>
     );
   }
@@ -110,31 +136,77 @@ export const PatientDetailPage: React.FC = () => {
   if (error || !pet) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-red-600 dark:text-red-400">{error || 'Pet not found'}</div>
+        <div className="text-red-600">{error || 'Pet not found'}</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="space-y-6 px-2 sm:px-4 md:px-6 max-w-[100vw]">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md mb-6">
+        <div className="flex justify-between items-center">
           <div className="flex items-center">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setLocation('/patients')}
-              className="mr-4 h-8 w-8 text-white hover:bg-white/20"
+              className="mr-2 h-8 w-8 text-white hover:bg-white/20"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-xl font-semibold">{pet.name}</h1>
+              <h1 className="text-2xl font-bold text-white">{pet.name}</h1>
               <p className="text-indigo-100 text-sm">
                 Patient Profile
               </p>
             </div>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center bg-white/10 text-white border-white/20 rounded-md px-3 py-1">
+              <Calendar className="h-4 w-4 text-white/70 mr-2" />
+              <input
+                type="date"
+                value={format(selectedDate, 'yyyy-MM-dd')}
+                onChange={handleDateChange}
+                className="text-sm bg-transparent border-none focus:outline-none text-white"
+              />
+            </div>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+                  <UserCog className="h-4 w-4 mr-2" />
+                  My Profile
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <User className="h-4 w-4 mr-2" />
+                  Profile Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Preferences
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white text-indigo-700 hover:bg-white/90"
+            >
+              Edit Patient
+            </Button>
           </div>
         </div>
       </div>
@@ -143,23 +215,22 @@ export const PatientDetailPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         {/* Photo Section */}
         <div className="md:col-span-1">
-          <Card className="overflow-hidden">
+          <Card className="border-none shadow-md overflow-hidden">
             <CardContent className="p-0">
               <div className="aspect-w-1 aspect-h-1 relative h-80">
-
                 <img
                   src={`data:image/png;base64,${pet.data_image}` || 'https://i.pinimg.com/736x/2a/25/b6/2a25b650a1d075d3f5cff5182cbca1f0.jpg'}
                   alt={pet.name}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="p-4 bg-gradient-to-b from-indigo-50 to-white dark:from-indigo-900/30 dark:to-gray-800">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">{pet.name}</h2>
+              <div className="p-4 bg-gradient-to-b from-indigo-50 to-white">
+                <h2 className="text-lg font-bold text-gray-900">{pet.name}</h2>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900 dark:text-indigo-300 dark:border-indigo-800">
+                  <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200">
                     {pet.breed}
                   </Badge>
-                  <Badge variant="outline" className="border-gray-200 dark:border-gray-700">
+                  <Badge variant="outline" className="border-gray-200">
                     {pet.type}
                   </Badge>
                 </div>
@@ -170,54 +241,54 @@ export const PatientDetailPage: React.FC = () => {
 
         {/* Pet Info Card */}
         <div className="md:col-span-2">
-          <Card>
-            <CardHeader className="pb-3 border-b dark:border-gray-700">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Activity className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+          <Card className="border-none shadow-md overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-3 border-b">
+              <CardTitle className="text-lg font-semibold text-indigo-900 flex items-center">
+                <Activity className="h-5 w-5 mr-2 text-indigo-600" />
                 Patient Information
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 <div className="space-y-1">
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Species</h3>
-                  <p className="text-base text-gray-900 dark:text-gray-200">{pet.type}</p>
+                  <h3 className="text-sm font-medium text-gray-500">Species</h3>
+                  <p className="text-base text-gray-900">{pet.type}</p>
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Breed</h3>
-                  <p className="text-base text-gray-900 dark:text-gray-200">{pet.breed}</p>
+                  <h3 className="text-sm font-medium text-gray-500">Breed</h3>
+                  <p className="text-base text-gray-900">{pet.breed}</p>
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Age</h3>
-                  <p className="text-base text-gray-900 dark:text-gray-200">{pet.age} years</p>
+                  <h3 className="text-sm font-medium text-gray-500">Age</h3>
+                  <p className="text-base text-gray-900">{pet.age} years</p>
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Gender</h3>
-                  <p className="text-base text-gray-900 dark:text-gray-200">{pet.type === 'Dog' ? 'Male' : 'Female'}</p>
+                  <h3 className="text-sm font-medium text-gray-500">Gender</h3>
+                  <p className="text-base text-gray-900">{pet.type === 'Dog' ? 'Male' : 'Female'}</p>
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Weight</h3>
-                  <p className="text-base text-gray-900 dark:text-gray-200">{pet.weight} kg</p>
+                  <h3 className="text-sm font-medium text-gray-500">Weight</h3>
+                  <p className="text-base text-gray-900">{pet.weight} kg</p>
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Microchip ID</h3>
-                  <p className="text-base text-gray-900 dark:text-gray-200">{pet.microchip_number || 'Not registered'}</p>
+                  <h3 className="text-sm font-medium text-gray-500">Microchip ID</h3>
+                  <p className="text-base text-gray-900">{pet.microchip_number || 'Not registered'}</p>
                 </div>
               </div>
 
-              <div className="mt-6 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-4 border border-indigo-100 dark:border-indigo-800/50">
+              <div className="mt-6 bg-indigo-50 rounded-lg p-4 border border-indigo-100">
                 <div className="flex items-center gap-2 mb-2">
-                  <User className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                  <h3 className="font-medium text-gray-900 dark:text-gray-200">Owner Information</h3>
+                  <User className="h-4 w-4 text-indigo-600" />
+                  <h3 className="font-medium text-gray-900">Owner Information</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <h4 className="text-sm text-gray-500 dark:text-gray-400">Name</h4>
-                    <p className="text-base text-gray-900 dark:text-gray-200">{pet.username}</p>
+                    <h4 className="text-sm text-gray-500">Name</h4>
+                    <p className="text-base text-gray-900">{pet.username}</p>
                   </div>
                   <div className="space-y-1">
-                    <h4 className="text-sm text-gray-500 dark:text-gray-400">Phone</h4>
-                    <p className="text-base text-gray-900 dark:text-gray-200">0978710192</p>
+                    <h4 className="text-sm text-gray-500">Phone</h4>
+                    <p className="text-base text-gray-900">0978710192</p>
                   </div>
                 </div>
               </div>
@@ -227,16 +298,15 @@ export const PatientDetailPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <Card className="mt-6 overflow-hidden">
+      <Card className="border-none shadow-md overflow-hidden">
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 rounded-none border-b dark:border-gray-700 bg-transparent p-0">
+          <TabsList className="grid w-full grid-cols-4 rounded-none border-b bg-transparent p-0">
             <TabsTrigger
               value="info"
               className={cn(
                 "data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600",
-                "dark:data-[state=active]:border-indigo-400 dark:data-[state=active]:text-indigo-400",
-                "rounded-none border-b-2 border-transparent py-3 font-medium text-gray-500 dark:text-gray-400",
-                "hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                "rounded-none border-b-2 border-transparent py-3 font-medium text-gray-500",
+                "hover:text-gray-700 transition-colors"
               )}
             >
               Owner Info
@@ -245,9 +315,8 @@ export const PatientDetailPage: React.FC = () => {
               value="vaccines"
               className={cn(
                 "data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600",
-                "dark:data-[state=active]:border-indigo-400 dark:data-[state=active]:text-indigo-400",
-                "rounded-none border-b-2 border-transparent py-3 font-medium text-gray-500 dark:text-gray-400",
-                "hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                "rounded-none border-b-2 border-transparent py-3 font-medium text-gray-500",
+                "hover:text-gray-700 transition-colors"
               )}
             >
               Vaccines
@@ -256,9 +325,8 @@ export const PatientDetailPage: React.FC = () => {
               value="records"
               className={cn(
                 "data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600",
-                "dark:data-[state=active]:border-indigo-400 dark:data-[state=active]:text-indigo-400",
-                "rounded-none border-b-2 border-transparent py-3 font-medium text-gray-500 dark:text-gray-400",
-                "hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                "rounded-none border-b-2 border-transparent py-3 font-medium text-gray-500",
+                "hover:text-gray-700 transition-colors"
               )}
             >
               Medical Records
@@ -267,9 +335,8 @@ export const PatientDetailPage: React.FC = () => {
               value="treatments"
               className={cn(
                 "data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600",
-                "dark:data-[state=active]:border-indigo-400 dark:data-[state=active]:text-indigo-400",
-                "rounded-none border-b-2 border-transparent py-3 font-medium text-gray-500 dark:text-gray-400",
-                "hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                "rounded-none border-b-2 border-transparent py-3 font-medium text-gray-500",
+                "hover:text-gray-700 transition-colors"
               )}
             >
               Treatments
@@ -280,18 +347,18 @@ export const PatientDetailPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-                    <User className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center gap-2">
+                    <User className="h-5 w-5 text-indigo-600" />
                     Owner Details
                   </h3>
                   <div className="space-y-4">
-                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Owner Name</h4>
-                      <p className="text-base text-gray-900 dark:text-gray-200">{pet.username}</p>
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <h4 className="text-sm font-medium text-gray-500 mb-1">Owner Name</h4>
+                      <p className="text-base text-gray-900">{pet.username}</p>
                     </div>
-                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Phone</h4>
-                      <p className="text-base text-gray-900 dark:text-gray-200">0978710192</p>
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <h4 className="text-sm font-medium text-gray-500 mb-1">Phone</h4>
+                      <p className="text-base text-gray-900">0978710192</p>
                     </div>
                   </div>
                 </div>
@@ -299,13 +366,13 @@ export const PatientDetailPage: React.FC = () => {
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-indigo-600" />
                     Address Information
                   </h3>
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Primary Address</h4>
-                    <p className="text-base text-gray-900 dark:text-gray-200">123 Main Street, Cityville</p>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">Primary Address</h4>
+                    <p className="text-base text-gray-900">123 Main Street, Cityville</p>
                   </div>
                 </div>
               </div>
@@ -314,38 +381,38 @@ export const PatientDetailPage: React.FC = () => {
 
           <TabsContent value="vaccines" className="p-6">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <Syringe className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+              <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                <Syringe className="h-5 w-5 text-indigo-600" />
                 Vaccination History
               </h3>
-              <Button className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800">
+              <Button className="bg-indigo-600 hover:bg-indigo-700">
                 Add Vaccine
               </Button>
             </div>
 
             <div className="overflow-x-auto">
-              <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-900/50">
+              <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Next Due</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Due</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-white divide-y divide-gray-200">
                     {vaccines?.map((vaccine) => (
-                      <tr key={vaccine.vaccination_id} className="hover:bg-gray-50 dark:hover:bg-gray-900/20 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">{vaccine.vaccine_name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{format(new Date(vaccine.date_administered), 'MMM d, yyyy')}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{format(new Date(vaccine.next_due_date), 'MMM d, yyyy')}</td>
+                      <tr key={vaccine.vaccination_id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vaccine.vaccine_name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{format(new Date(vaccine.date_administered), 'MMM d, yyyy')}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{format(new Date(vaccine.next_due_date), 'MMM d, yyyy')}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Badge className={cn(
                             "px-2 text-xs font-semibold rounded-full",
                             vaccine.notes === 'completed'
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                              : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
                           )}>
                             {vaccine.notes}
                           </Badge>
@@ -361,7 +428,7 @@ export const PatientDetailPage: React.FC = () => {
           <TabsContent value="records">
             <Suspense fallback={
               <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
               </div>
             }>
               <MedicalRecords />
@@ -371,7 +438,7 @@ export const PatientDetailPage: React.FC = () => {
           <TabsContent value="treatments">
             <Suspense fallback={
               <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
               </div>
             }>
               <Treatment />

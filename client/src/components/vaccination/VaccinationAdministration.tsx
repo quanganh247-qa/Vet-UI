@@ -25,6 +25,7 @@ import {
   Check,
   Calendar,
   User,
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Appointment, TestByAppointment, Vaccination, Vaccine } from "@/types";
@@ -63,16 +64,6 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
 }) => {
   const { toast } = useToast();
 
-  const [administrationSite, setAdministrationSite] =
-    useState<string>("subcutaneous");
-  const [administrationSites, setAdministrationSites] = useState<string[]>([
-    "subcutaneous",
-    "intramuscular",
-    "intradermal",
-    "intranasal",
-  ]);
-
-  // New states for appointment selection
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     new Date()
   );
@@ -94,73 +85,6 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
     notes: "",
   });
   const { mutate: saveVaccination, isPending: isSavingVaccination } = useSaveVaccinationRecord();
-  
-  const handleSaveVaccination = async () => {
-    // Validate required fields
-    if (!vaccinationData.pet_id) {
-      toast({
-        title: "Error",
-        description: "Pet ID is required",
-        variant: "destructive",
-      });
-      return;
-    }
-  
-    if (!vaccinationData.vaccine_name?.trim()) {
-      toast({
-        title: "Error",
-        description: "Vaccine name is required",
-        variant: "destructive",
-      });
-      return;
-    }
-  
-    // Date validation
-    try {
-      const dateAdministered = vaccinationData.date_administered 
-        ? new Date(vaccinationData.date_administered)
-        : null;
-  
-      const nextDueDate = vaccinationData.next_due_date
-        ? new Date(vaccinationData.next_due_date)
-        : null;
-  
-      if (!dateAdministered || isNaN(dateAdministered.getTime())) {
-        throw new Error("Invalid administration date format");
-      }
-  
-      if (nextDueDate && isNaN(nextDueDate.getTime())) {
-        throw new Error("Invalid due date format");
-      }
-  
-      if (nextDueDate && dateAdministered && nextDueDate <= dateAdministered) {
-        throw new Error("Due date must be after administration date");
-      }
-  
-      // Prepare payload with proper typing
-      const payload: SaveVaccinationRequest = {
-        pet_id: vaccinationData.pet_id,
-        vaccine_name: vaccinationData.vaccine_name.trim(),
-        date_administered: dateAdministered.toISOString(),
-        next_due_date: nextDueDate?.toISOString() || "",
-        vaccine_provider: vaccinationData.vaccine_provider?.trim() || "",
-        batch_number: vaccinationData.batch_number?.trim() || "",
-        notes: vaccinationData.notes?.trim() || "",
-        appointment_id: selectedAppointmentId || "",
-      };
-  
-      saveVaccination(payload);
-
-      
-      
-    } catch (error) {
-      toast({
-        title: "Validation Error",
-        description: error instanceof Error ? error.message : "Invalid input format",
-        variant: "destructive",
-      });
-    }
-  };
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -236,73 +160,79 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
     });
   };
 
-  const handleAdministrationSiteChange = (site: string) => {
-    setAdministrationSite(site);
-    setVaccinationSiteImage(`/assets/vaccination-sites/${site}.png`);
+  const handleComplete = () => {
+    onComplete();
   };
 
   const validateForm = () => {
     if (!vaccinationData.pet_id) {
       toast({
-        title: "Missing Information",
-        description: "Please select an appointment",
+        title: "Pet selection required",
+        description: "Please select a pet for vaccination",
         variant: "destructive",
       });
       return false;
     }
-
+    
     if (!vaccinationData.vaccine_name) {
       toast({
-        title: "Missing Information",
+        title: "Vaccine required",
         description: "Please select a vaccine",
         variant: "destructive",
       });
       return false;
     }
-
+    
     if (!vaccinationData.batch_number) {
       toast({
-        title: "Missing Information",
-        description: "Please enter the batch number",
+        title: "Batch number required",
+        description: "Please enter the vaccine batch number",
         variant: "destructive",
       });
       return false;
     }
-
+    
     return true;
   };
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-
+    
     setIsSubmitting(true);
-
     try {
-      // Call the saveVaccinationRecord function with the required data
-      await saveVaccinationRecord({
-        pet_id: vaccinationData.pet_id || 0,
-        vaccine_name: vaccinationData.vaccine_name || "",
-        date_administered:
-          vaccinationData.date_administered ||
-          formatDate(new Date(), "yyyy-MM-dd"),
-        next_due_date: vaccinationData.next_due_date || "",
-        vaccine_provider: vaccinationData.vaccine_provider || "",
-        batch_number: vaccinationData.batch_number || "",
-        notes: vaccinationData.notes || "",
-        appointment_id: selectedAppointmentId || "",
+      const result = await saveVaccinationRecord({
+        pet_id: vaccinationData.pet_id as number,
+        vaccine_name: vaccinationData.vaccine_name as string,
+        date_administered: vaccinationData.date_administered as string,
+        next_due_date: vaccinationData.next_due_date as string,
+        vaccine_provider: vaccinationData.vaccine_provider as string,
+        batch_number: vaccinationData.batch_number as string,
+        notes: vaccinationData.notes as string,
+        appointment_id: selectedAppointmentId || undefined,
       });
-
-      setIsCompleted(true);
+      
       toast({
-        title: "Vaccination Administered",
-        description: "Vaccination has been successfully recorded",
-        className: "bg-green-50 border-green-200 text-green-800",
+        title: "Vaccination recorded",
+        description: "The vaccination details have been saved successfully",
       });
+      
+      // Reset form
+      setVaccinationData({
+        pet_id: initialPetId ? Number(initialPetId) : undefined,
+        vaccine_name: "",
+        date_administered: new Date().toISOString().split("T")[0],
+        next_due_date: "",
+        vaccine_provider: "",
+        batch_number: "",
+        notes: "",
+      });
+      
+      if (onComplete) onComplete();
     } catch (error) {
-      console.error("Error administering vaccination:", error);
+      console.error("Failed to save vaccination record:", error);
       toast({
         title: "Error",
-        description: "Failed to record vaccination. Please try again.",
+        description: "Failed to save vaccination record. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -310,22 +240,18 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
     }
   };
 
-  const handleComplete = () => {
-    onComplete();
-  };
-
   return (
-    <Card className="w-full shadow-md border-blue-100">
-      <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+    <Card className="w-full shadow-md border-none overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-indigo-600 to-indigo-800 pb-3 border-b">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Syringe className="h-5 w-5 text-blue-500 mr-2" />
-            <CardTitle className="text-lg text-blue-700">
+            <Syringe className="h-5 w-5 text-white mr-2" />
+            <CardTitle className="text-lg text-white">
               Vaccination Administration
             </CardTitle>
           </div>
           {isCompleted && (
-            <Badge className="bg-green-100 text-green-800 flex items-center">
+            <Badge className="bg-white/20 text-white flex items-center">
               <Check className="h-3.5 w-3.5 mr-1" />
               <span>Completed</span>
             </Badge>
@@ -381,8 +307,8 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
         ) : (
           <div className="space-y-6">
             {/* Appointment Selection Section */}
-            <div className="bg-blue-50 rounded-lg p-4 mb-4">
-              <h3 className="font-medium text-blue-700 mb-3">
+            <div className="bg-indigo-50 rounded-lg p-4 mb-4">
+              <h3 className="font-medium text-indigo-700 mb-3">
                 Select Appointment
               </h3>
               <div className="space-y-4">
@@ -462,10 +388,10 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                 </div>
 
                 {selectedAppointment && (
-                  <div className="bg-white rounded-md p-3 border border-blue-100">
+                  <div className="bg-white rounded-md p-3 border border-indigo-100">
                     <div className="flex items-center mb-2">
-                      <User className="h-4 w-4 text-blue-500 mr-1" />
-                      <h4 className="font-medium text-blue-700">
+                      <User className="h-4 w-4 text-indigo-500 mr-1" />
+                      <h4 className="font-medium text-indigo-700">
                         Appointment Details
                       </h4>
                     </div>
@@ -506,7 +432,7 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="vaccine">Select Vaccine</Label>
@@ -562,26 +488,28 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="date_administered">Administration Date</Label>
-                  <Input
-                    id="date_administered"
-                    name="date_administered"
-                    type="date"
-                    value={vaccinationData.date_administered}
-                    onChange={handleInputChange}
-                  />
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="date_administered">Administration Date</Label>
+                    <Input
+                      id="date_administered"
+                      name="date_administered"
+                      type="date"
+                      value={vaccinationData.date_administered}
+                      onChange={handleInputChange}
+                    />
+                  </div>
 
-                <div>
-                  <Label htmlFor="next_due_date">Next Due Date</Label>
-                  <Input
-                    id="next_due_date"
-                    name="next_due_date"
-                    type="date"
-                    value={vaccinationData.next_due_date || ""}
-                    onChange={handleInputChange}
-                  />
+                  <div>
+                    <Label htmlFor="next_due_date">Next Due Date</Label>
+                    <Input
+                      id="next_due_date"
+                      name="next_due_date"
+                      type="date"
+                      value={vaccinationData.next_due_date || ""}
+                      onChange={handleInputChange}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -597,59 +525,18 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <Label>Administration Site</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {administrationSites.map((site) => (
-                      <Button
-                        key={site}
-                        type="button"
-                        variant={
-                          administrationSite === site ? "default" : "outline"
-                        }
-                        className={`justify-start text-sm capitalize ${
-                          administrationSite === site
-                            ? "bg-blue-600 text-white"
-                            : "text-gray-700"
-                        }`}
-                        onClick={() => handleAdministrationSiteChange(site)}
-                      >
-                        {site}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="border rounded-md p-4 mt-4">
-                  <h3 className="font-medium text-gray-700 mb-2 text-center">
-                    Recommended Injection Site
-                  </h3>
-                  <div className="aspect-square bg-gray-100 rounded-md flex items-center justify-center p-4">
-                    <div className="text-center text-gray-500 text-sm">
-                      <p className="capitalize">
-                        {administrationSite} injection site
-                      </p>
-                      <p className="text-xs mt-1">
-                        Image would show recommended site
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-4">
-                  <div className="flex">
-                    <AlertCircle className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-medium text-amber-800 text-sm">
-                        Important Notes
-                      </h3>
-                      <p className="text-amber-700 text-xs mt-1">
-                        Always monitor the patient for at least 15-30 minutes
-                        after vaccination to observe for any immediate adverse
-                        reactions.
-                      </p>
-                    </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-4">
+                <div className="flex">
+                  <AlertCircle className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-medium text-amber-800 text-sm">
+                      Important Notes
+                    </h3>
+                    <p className="text-amber-700 text-xs mt-1">
+                      Always monitor the patient for at least 15-30 minutes
+                      after vaccination to observe for any immediate adverse
+                      reactions.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -662,34 +549,34 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
         {isCompleted ? (
           <Button
             onClick={handleComplete}
-            className="w-full bg-green-600 hover:bg-green-700"
+            className="w-full bg-indigo-600 hover:bg-indigo-700"
           >
             Continue to Next Step
           </Button>
         ) : (
-          <>
+          <div className="flex justify-end space-x-4">
             <Button
               variant="outline"
               onClick={onCancel}
-              disabled={isSubmitting}
+              className="border-gray-300"
             >
               Cancel
             </Button>
             <Button
-              onClick={handleSaveVaccination}
+              onClick={handleSubmit}
               disabled={isSubmitting || !selectedAppointmentId}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-indigo-600 hover:bg-indigo-700"
             >
               {isSubmitting ? (
-                <div className="flex items-center">
-                  <span className="mr-2">Processing...</span>
-                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                </div>
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Recording...
+                </>
               ) : (
                 "Record Vaccination"
               )}
             </Button>
-          </>
+          </div>
         )}
       </CardFooter>
     </Card>

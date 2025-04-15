@@ -81,47 +81,43 @@ const mockShifts: WorkShift[] = [
   {
     id: "1",
     title: "Morning Shift",
-    startTime: new Date(new Date().setHours(8, 0, 0, 0)),
-    endTime: new Date(new Date().setHours(16, 0, 0, 0)),
-    doctorId: "1",
+    start_time: new Date(new Date().setHours(8, 0, 0, 0)),
+    end_time: new Date(new Date().setHours(16, 0, 0, 0)),
+    doctor_id: "1",
     status: "scheduled",
     location: "Main Building, Room 101",
-    createdAt: new Date(new Date().setDate(new Date().getDate() - 7)),
-    updatedAt: new Date(new Date().setDate(new Date().getDate() - 7)),
+    created_at: new Date(new Date().setDate(new Date().getDate() - 7)),
   },
   {
     id: "2",
     title: "Evening Shift",
-    startTime: new Date(new Date().setHours(16, 0, 0, 0)),
-    endTime: new Date(new Date().setHours(24, 0, 0, 0)),
-    doctorId: "2",
+    start_time: new Date(new Date().setHours(16, 0, 0, 0)),
+    end_time: new Date(new Date().setHours(24, 0, 0, 0)),
+    doctor_id: "2",
     status: "scheduled",
     location: "Main Building, Room 102",
-    createdAt: new Date(new Date().setDate(new Date().getDate() - 7)),
-    updatedAt: new Date(new Date().setDate(new Date().getDate() - 7)),
+    created_at: new Date(new Date().setDate(new Date().getDate() - 7)),
   },
   {
     id: "3",
     title: "Surgery Shift",
-    startTime: new Date(new Date().setDate(new Date().getDate() + 1)),
-    endTime: new Date(new Date().setDate(new Date().getDate() + 1)),
-    doctorId: "1",
+    start_time: new Date(new Date().setDate(new Date().getDate() + 1)),
+    end_time: new Date(new Date().setDate(new Date().getDate() + 1)),
+    doctor_id: "1",
     status: "scheduled",
     description: "Scheduled for surgeries only",
     location: "Surgery Wing, Room 3",
-    createdAt: new Date(new Date().setDate(new Date().getDate() - 5)),
-    updatedAt: new Date(new Date().setDate(new Date().getDate() - 5)),
+    created_at: new Date(new Date().setDate(new Date().getDate() - 5)),
   },
   {
     id: "4",
     title: "Weekend Shift",
-    startTime: new Date(new Date().setDate(new Date().getDate() + 3)),
-    endTime: new Date(new Date().setDate(new Date().getDate() + 3)),
-    doctorId: "3",
+    start_time: new Date(new Date().setDate(new Date().getDate() + 3)),
+    end_time: new Date(new Date().setDate(new Date().getDate() + 3)),
+    doctor_id: "3",
     status: "scheduled",
     location: "Main Building, Reception",
-    createdAt: new Date(new Date().setDate(new Date().getDate() - 14)),
-    updatedAt: new Date(new Date().setDate(new Date().getDate() - 14)),
+    created_at: new Date(new Date().setDate(new Date().getDate() - 14)),
   },
 ];
 
@@ -148,19 +144,19 @@ const ScheduleManagement = () => {
 
     if (filters.doctorId) {
       filtered = filtered.filter(
-        (shift) => shift.doctorId === filters.doctorId
+        (shift) => shift.doctor_id === filters.doctorId
       );
     }
 
     if (filters.startDate) {
       filtered = filtered.filter(
-        (shift) => new Date(shift.startTime) >= filters.startDate!
+        (shift) => new Date(shift.start_time) >= filters.startDate!
       );
     }
 
     if (filters.endDate) {
       filtered = filtered.filter(
-        (shift) => new Date(shift.startTime) <= filters.endDate!
+        (shift) => new Date(shift.start_time) <= filters.endDate!
       );
     }
 
@@ -170,7 +166,7 @@ const ScheduleManagement = () => {
 
     // For doctor view, only show their shifts
     if (userRole === "doctor") {
-      filtered = filtered.filter((shift) => shift.doctorId === currentDoctorId);
+      filtered = filtered.filter((shift) => shift.doctor_id === currentDoctorId);
     }
 
     setFilteredShifts(filtered);
@@ -205,24 +201,23 @@ const ScheduleManagement = () => {
     const newShift: WorkShift = {
       id: Math.random().toString(36).substring(7),
       title: data.title,
-      doctorId: data.doctorId,
-      startTime: new Date(
+      doctor_id: data.doctor_id,
+      start_time: new Date(
         data.date.setHours(
-          parseInt(data.startTime.split(":")[0]),
-          parseInt(data.startTime.split(":")[1])
+          parseInt(data.start_time.split(":")[0]),
+          parseInt(data.start_time.split(":")[1])
         )
       ),
-      endTime: new Date(
+      end_time: new Date(
         data.date.setHours(
-          parseInt(data.endTime.split(":")[0]),
-          parseInt(data.endTime.split(":")[1])
+          parseInt(data.end_time.split(":")[0]),
+          parseInt(data.end_time.split(":")[1])
         )
       ),
       status: data.status,
       location: data.location,
       description: data.description,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      created_at: new Date(),
     };
 
     setShifts([...shifts, newShift]);
@@ -235,23 +230,22 @@ const ScheduleManagement = () => {
       const updatedShift: WorkShift = {
         ...selectedShift,
         title: data.title,
-        doctorId: data.doctorId,
-        startTime: new Date(
+        doctor_id: data.doctor_id,
+        start_time: new Date(
           data.date.setHours(
-            parseInt(data.startTime.split(":")[0]),
-            parseInt(data.startTime.split(":")[1])
+            parseInt(data.start_time.split(":")[0]),
+            parseInt(data.start_time.split(":")[1])
           )
         ),
-        endTime: new Date(
+        end_time: new Date(
           data.date.setHours(
-            parseInt(data.endTime.split(":")[0]),
-            parseInt(data.endTime.split(":")[1])
+            parseInt(data.end_time.split(":")[0]),
+            parseInt(data.end_time.split(":")[1])
           )
         ),
         status: data.status,
         location: data.location,
         description: data.description,
-        updatedAt: new Date(),
       };
 
       setShifts(
@@ -279,14 +273,14 @@ const ScheduleManagement = () => {
   const getSelectedDoctor = () => {
     if (!selectedShift) return undefined;
     return doctors.find(
-      (d) => d.doctor_id.toString() === selectedShift.doctorId
+      (d) => d.doctor_id.toString() === selectedShift.doctor_id
     );
   };
 
   // Data for the list view
   const tableData = filteredShifts.map((shift) => {
     const doctor = doctors.find(
-      (d) => d.doctor_id.toString() === shift.doctorId
+      (d) => d.doctor_id.toString() === shift.doctor_id
     );
     return {
       ...shift,
@@ -441,9 +435,9 @@ const ScheduleManagement = () => {
                           >
                             <TableCell>{shift.title}</TableCell>
                             <TableCell>{shift.doctorName}</TableCell>
-                            <TableCell>{format(new Date(shift.startTime), 'PPP')}</TableCell>
+                            <TableCell>{format(new Date(shift.start_time), 'PPP')}</TableCell>
                             <TableCell>
-                              {format(new Date(shift.startTime), 'HH:mm')} - {format(new Date(shift.endTime), 'HH:mm')}
+                              {format(new Date(shift.start_time), 'HH:mm')} - {format(new Date(shift.end_time), 'HH:mm')}
                             </TableCell>
                             <TableCell>{shift.location}</TableCell>
                             <TableCell>

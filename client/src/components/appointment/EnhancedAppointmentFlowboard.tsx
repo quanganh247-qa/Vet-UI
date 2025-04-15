@@ -594,10 +594,10 @@ const EnhancedAppointmentFlowboard: React.FC<
               <option value="new patient">New Patient</option>
             </select>
 
-            <button className="mr-2 px-3 py-1.5 border rounded text-sm flex items-center hover:bg-gray-50">
+            {/* <button className="mr-2 px-3 py-1.5 border rounded text-sm flex items-center hover:bg-gray-50">
               <RefreshCw size={14} className="mr-1" />
               Refresh
-            </button>
+            </button> */}
 
             {/* Show/Hide Sidebar Button */}
             <div className="hidden sm:block">
@@ -614,13 +614,13 @@ const EnhancedAppointmentFlowboard: React.FC<
             </div>
 
             {/* New Appointment Button */}
-            <Button
+            {/* <Button
               className="bg-indigo-600 hover:bg-indigo-700 text-white"
               onClick={handleNewAppointment}
             >
               <Plus size={16} className="mr-1" />
               <span className="hidden xs:inline">New Appointment</span>
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>

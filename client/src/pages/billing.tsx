@@ -92,7 +92,7 @@ const BillingPage = () => {
       generateQR(qrInfo, {
         onSuccess: (data) => {
           console.log("data", data);
-          setQrUrl(data.image_url); // Assuming data contains the QR URL
+          setQrUrl(data.image_url || ""); // Assuming data contains the QR URL
         },
         onError: (error) => {
           console.error("Error generating QR code:", error);
