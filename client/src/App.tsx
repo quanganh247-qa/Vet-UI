@@ -122,7 +122,7 @@ function Router() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center h-full"><p>Loading...</p></div>}>
       <Switch>
-        <Route path="/dashboard" component={Dashboard as React.ComponentType<RouteComponentProps>} />
+        <Route path="/" component={Dashboard as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointments" component={Appointments as React.ComponentType<RouteComponentProps>} />
         <Route path="/staff" component={Staff as React.ComponentType<RouteComponentProps>} />
         <Route path="/analytics" component={Analytics as React.ComponentType<RouteComponentProps>} />

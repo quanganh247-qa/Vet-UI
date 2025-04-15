@@ -1,28 +1,21 @@
-import axios from "axios";
+import api from "@/lib/api";
 
 export const getPatientById = async (id: number) => {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    throw new Error("No access token found");
+  try {
+    const response = await api.get(`/api/v1/pet/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching patient:", error);
+    throw error;
   }
-  const response = await axios.get(`/api/v1/pet/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return response.data;
 };
 
 export const getPetOwnerByPetId = async (id: number) => {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    throw new Error("No access token found");
+  try {
+    const response = await api.get(`/api/v1/pet/${id}/owner`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching pet owner:", error);
+    throw error;
   }
-  const response = await axios.get(`/api/v1/pet/${id}/owner`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  
-  return response.data;
 };

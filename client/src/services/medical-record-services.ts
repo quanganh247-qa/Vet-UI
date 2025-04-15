@@ -1,47 +1,43 @@
 import axios from "axios";
-
+import api from "@/lib/api";
 export const getMedicalRecordsByPatientId = async (pet_id: number) => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-        throw new Error('No access token found');
-    }
-    const response = await axios.get(`/api/v1/pets/${pet_id}`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+  try {
+    const response = await api.get(`/api/v1/pets/${pet_id}/medical-histories`);
     return response.data;
+  } catch (error) {
+    console.error("Error getting medical records by patient id:", error);
+    throw error;
+  }
 };
 
-
 export type MedicalHistoryRequest = {
-    condition: string;
-    diagnosis_date: string;
-    notes: string;
-}
+  condition: string;
+  diagnosis_date: string;
+  notes: string;
+};
 
-export const createMedicalHistory = async (pet_id: number, medicalHistoryRequest: MedicalHistoryRequest) => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-        throw new Error('No access token found');
-    }
-    const response = await axios.post(`/api/v1/pets/${pet_id}/medical-histories`, medicalHistoryRequest, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+export const createMedicalHistory = async (
+  pet_id: number,
+  medicalHistoryRequest: MedicalHistoryRequest
+) => {
+  try {
+    const response = await api.post(
+      `/api/v1/pets/${pet_id}/medical-histories`,
+      medicalHistoryRequest
+    );
     return response.data;
+  } catch (error) {
+    console.error("Error creating medical history:", error);
+    throw error;
+  }
 };
 
 export const getMedicalHistoryByPetId = async (pet_id: number) => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-        throw new Error('No access token found');
-    }
-    const response = await axios.get(`/api/v1/pets/${pet_id}/medical-histories`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+  try {
+    const response = await api.get(`/api/v1/pets/${pet_id}/medical-histories`);
     return response.data;
-}
+  } catch (error) {
+    console.error("Error getting medical history by pet id:", error);
+    throw error;
+  }
+};

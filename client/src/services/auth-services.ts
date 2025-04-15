@@ -1,12 +1,14 @@
 import axios from "axios";
+import api from "@/lib/api";
 
 export const loginDoctor = async (credentials: {
   username: string;
   password: string;
 }) => {
   try {
+    // Using direct axios here to avoid potential issues with interceptors during login
     const response = await axios.post(
-      "/api/v1/doctor/login", // Using proxy path instead of full URL
+      "/api/v1/doctor/login",
       credentials,
       {
         headers: {
@@ -29,13 +31,14 @@ export const loginDoctor = async (credentials: {
   }
 };
 
-const refreshAccessToken = async () => {
+export const refreshAccessToken = async () => {
   try {
     const refreshToken = localStorage.getItem("refresh_token");
     if (!refreshToken) return false;
 
+    // Using direct axios here to avoid interceptor loops
     const response = await axios.post(
-      "/api/refresh", // Using proxy path instead of full URL
+      "/api/v1/auth/refresh",
       { refresh_token: refreshToken },
       {
         headers: { "Content-Type": "application/json" },
@@ -49,14 +52,26 @@ const refreshAccessToken = async () => {
     return true;
   } catch (error) {
     console.error("Refresh token failed:", error);
+    localStorage.removeItem("doctor");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    window.location.href = "/login";
     return false;
   }
 };
 
-
-export const logout = () => {
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
-  localStorage.removeItem("doctor_id");
+export const logout = async () => {
+  try {
+    // Send logout request to server if needed
+    await api.post("/api/v1/doctor/logout");
+  } catch (error) {
+    console.error("Logout error:", error);
+  } finally {
+    // Always clear local storage, even if server request fails
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("doctor_id");
+    localStorage.removeItem("doctor");
+  }
 };
 

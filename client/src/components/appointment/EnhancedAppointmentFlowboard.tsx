@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
 import {
   Calendar,
   ChevronLeft,
@@ -40,6 +40,9 @@ import {
   Bell,
   PawPrint,
   User,
+  Activity,
+  ClipboardCheck,
+  Circle,
 } from "lucide-react";
 import { Appointment, Doctor, Room, QueueItem } from "@/types";
 import {
@@ -68,9 +71,143 @@ interface AppointmentWithWorkflowData extends Appointment {
   soap_note?: any[];
 }
 
+// Define status IDs as a constant to avoid magic numbers
+const statusIds = {
+  scheduled: 1,
+  checked_in: 2,
+  in_progress: 5,
+  completed: 6,
+  cancelled: 3,
+  no_show: 4
+};
+
+// Memoized formatter functions for reuse across components
+const timeFormatter = new Intl.DateTimeFormat('en-US', {
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true
+});
+
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric'
+});
+
+// Memoized color utility functions
+const getStatusColorClass = (status: string): string => {
+  switch (status.toLowerCase()) {
+    case "confirmed":
+      return "bg-green-200 text-green-800";
+    case "checked in":
+      return "bg-blue-500 text-white";
+    case "in progress":
+      return "bg-purple-500 text-white";
+    case "waiting":
+      return "bg-yellow-500 text-white";
+    case "completed":
+      return "bg-green-500 text-white";
+    case "scheduled":
+      return "bg-green-200 text-green-800";
+    case "cancelled":
+      return "bg-gray-500 text-white";
+    default:
+      return "bg-gray-200 text-gray-800";
+  }
+};
+
+const getTypeColorClass = (type: string): string => {
+  switch (type?.toLowerCase()) {
+    case "check-up":
+      return "bg-green-100 text-green-800";
+    case "surgery":
+      return "bg-red-100 text-red-800";
+    case "sick visit":
+      return "bg-yellow-100 text-yellow-800";
+    case "vaccination":
+      return "bg-blue-100 text-blue-800";
+    case "grooming":
+      return "bg-orange-100 text-orange-800";
+    case "new patient":
+      return "bg-purple-100 text-purple-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+const getPriorityColorClass = (priority: string): string => {
+  switch (priority?.toLowerCase()) {
+    case "urgent":
+      return "bg-red-100 text-red-800";
+    case "high":
+      return "bg-orange-100 text-orange-800";
+    case "medium":
+      return "bg-yellow-100 text-yellow-800";
+    case "low":
+      return "bg-green-100 text-green-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+// Memoized appointment card component to prevent unnecessary re-renders
+const AppointmentCard = memo(({ 
+  appointment, 
+  onClick, 
+  onStatusChange,
+  formatTime,
+  getStatusColorClass,
+  getTypeColorClass,
+  getPriorityColorClass
+}: { 
+  appointment: Appointment; 
+  onClick: (id: number) => void;
+  onStatusChange: (id: number, statusId: number, navigateToDetail?: boolean) => void;
+  formatTime: (date: Date | string) => string;
+  getStatusColorClass: (status: string) => string;
+  getTypeColorClass: (type: string) => string;
+  getPriorityColorClass: (priority: string) => string;
+}) => {
+  const handleClick = useCallback(() => {
+    onClick(appointment.id);
+  }, [appointment.id, onClick]);
+
+  // Precalculate status class for better performance
+  const statusClass = useMemo(() => 
+    getStatusColorClass(appointment.state), 
+    [appointment.state, getStatusColorClass]
+  );
+
+  return (
+    <div 
+      className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-3 hover:shadow-md transition-shadow cursor-pointer"
+      onClick={handleClick}
+    >
+      {/* Appointment card content */}
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <h3 className="font-medium text-gray-900">{appointment.pet?.pet_name}</h3>
+          <p className="text-xs text-gray-500">
+            {appointment.doctor?.doctor_name} • {formatTime(appointment.time_slot?.start_time || "")}
+          </p>
+        </div>
+        <div>
+          <span className={`text-xs px-2 py-1 rounded-full ${statusClass}`}>
+            {appointment.state}
+          </span>
+        </div>
+      </div>
+      {/* Additional content can be added here */}
+    </div>
+  );
+});
+
+AppointmentCard.displayName = 'AppointmentCard';
+
 const EnhancedAppointmentFlowboard: React.FC<
   EnhancedAppointmentFlowboardProps
-> = ({
+> = memo(({
   appointments,
   doctors,
   rooms,
@@ -102,8 +239,10 @@ const EnhancedAppointmentFlowboard: React.FC<
   // Queue data (patients waiting, estimated times)
   const { data: queueData } = useListAppointmentsQueue();
 
-  const queueItem = queueData?.find(
-    (item: QueueItem) => item.id === selectedAppointmentId
+  // Memoize the found queue item to prevent unnecessary calculations
+  const queueItem = useMemo(() => 
+    queueData?.find((item: QueueItem) => item.id === selectedAppointmentId), 
+    [queueData, selectedAppointmentId]
   );
 
   // Add location for navigation
@@ -123,139 +262,61 @@ const EnhancedAppointmentFlowboard: React.FC<
     return () => clearInterval(interval);
   }, [queryClient]);
 
-  // Format time (e.g., 9:00 AM)
-  const formatTime = (timeString: string) => {
-    if (!timeString) return "";
-
-    try {
-      // Parse the time from HH:MM format
-      const [hours, minutes] = timeString
-        .split(":")
-        .map((num) => parseInt(num, 10));
-
-      if (isNaN(hours) || isNaN(minutes)) return timeString;
-
-      // Create a date object for today with the given time
-      const date = new Date();
-      date.setHours(hours);
-      date.setMinutes(minutes);
-
-      // Format to 3:04 PM style
-      return date.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
-    } catch (error) {
-      console.error("Error formatting time:", error);
-      return timeString;
-    }
-  };
+  // Memoize expensive calculations and formatting functions
+  const formatTime = useCallback((time: Date | string): string => {
+    if (!time) return "";
+    const date = typeof time === "string" ? new Date(time) : time;
+    return isNaN(date.getTime()) ? "" : timeFormatter.format(date);
+  }, []);
 
   // Format date
-  const formatDate = (date: Date) => {
+  const formatDate = useCallback((date: Date) => {
     return date.toLocaleDateString("en-US", {
       weekday: "long",
       month: "long",
       day: "numeric",
       year: "numeric",
     });
-  };
+  }, []);
 
   // Navigate to previous day
-  const goToPreviousDay = () => {
+  const goToPreviousDay = useCallback(() => {
     const newDate = new Date(selectedDate);
     newDate.setDate(selectedDate.getDate() - 1);
     setSelectedDate(newDate);
-  };
+  }, [selectedDate]);
 
   // Navigate to next day
-  const goToNextDay = () => {
+  const goToNextDay = useCallback(() => {
     const newDate = new Date(selectedDate);
     newDate.setDate(selectedDate.getDate() + 1);
     setSelectedDate(newDate);
-  };
+  }, [selectedDate]);
 
   // Navigate to today
-  const goToToday = () => {
+  const goToToday = useCallback(() => {
     setSelectedDate(new Date());
-  };
-
-  // Get status color class
-  const getStatusColorClass = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "confirmed":
-        return "bg-green-200 text-green-800";
-      case "checked in":
-        return "bg-blue-500 text-white";
-      case "in progress":
-        return "bg-purple-500 text-white";
-      case "waiting":
-        return "bg-yellow-500 text-white";
-      case "completed":
-        return "bg-green-500 text-white";
-      case "scheduled":
-        return "bg-green-200 text-green-800";
-      case "cancelled":
-        return "bg-gray-500 text-white";
-      default:
-        return "bg-gray-200 text-gray-800";
-    }
-  };
-
-  // Get type color class
-  const getTypeColorClass = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "check-up":
-        return "bg-green-100 text-green-800";
-      case "surgery":
-        return "bg-red-100 text-red-800";
-      case "sick visit":
-        return "bg-yellow-100 text-yellow-800";
-      case "vaccination":
-        return "bg-blue-100 text-blue-800";
-      case "grooming":
-        return "bg-orange-100 text-orange-800";
-      case "new patient":
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  // Get priority color class
-  const getPriorityColorClass = (priority: string) => {
-    switch (priority?.toLowerCase()) {
-      case "urgent":
-        return "bg-red-100 text-red-800";
-      case "high":
-        return "bg-orange-100 text-orange-800";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800";
-      case "low":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  }, []);
 
   // Filter appointments based on selected filters
-  const filteredAppointments = appointments.filter((appointment) => {
-    const statusMatch =
-      filterStatus === "all" ||
-      appointment.state.toLowerCase() === filterStatus.toLowerCase();
-    const doctorMatch =
-      filterDoctor === "all" || appointment.doctor.doctor_name === filterDoctor;
-    const typeMatch =
-      filterType === "all" ||
-      appointment.service.service_name.toLowerCase() ===
-        filterType.toLowerCase();
+  const filteredAppointments = useMemo(() => {
+    return appointments.filter((appointment) => {
+      const statusMatch =
+        filterStatus === "all" ||
+        appointment.state.toLowerCase() === filterStatus.toLowerCase();
+      const doctorMatch =
+        filterDoctor === "all" || appointment.doctor.doctor_name === filterDoctor;
+      const typeMatch =
+        filterType === "all" ||
+        appointment.service.service_name.toLowerCase() ===
+          filterType.toLowerCase();
 
-    return statusMatch && doctorMatch && typeMatch;
-  });
+      return statusMatch && doctorMatch && typeMatch;
+    });
+  }, [appointments, filterStatus, filterDoctor, filterType]);
 
   // Group appointments by status for column view
-  const groupedAppointments = {
+  const groupedAppointments = useMemo(() => ({
     scheduled: filteredAppointments.filter((a) => a.state === "Scheduled"),
     confirmed: filteredAppointments.filter((a) => a.state === "Confirmed"),
     arrived: filteredAppointments.filter(
@@ -263,19 +324,20 @@ const EnhancedAppointmentFlowboard: React.FC<
     ),
     inProgress: filteredAppointments.filter((a) => a.state === "In Progress"),
     completed: filteredAppointments.filter((a) => a.state === "Completed"),
-  };
+  }), [filteredAppointments]);
 
   // Get the selected appointment details
-  const selectedAppointment = appointments.find(
-    (a) => a.id === selectedAppointmentId
+  const selectedAppointment = useMemo(() => 
+    appointments.find((a) => a.id === selectedAppointmentId),
+    [appointments, selectedAppointmentId]
   );
 
   // Handle appointment click
-  const handleAppointmentClick = (id: number) => {
+  const handleAppointmentClick = useCallback((id: number) => {
     setSelectedAppointmentId(id);
     setSidebarContent("details");
     setShowSidebar(true);
-  };
+  }, []);
 
   // Create a single mutation at the component level
   const updateStatusMutation = useMutation({
@@ -288,163 +350,60 @@ const EnhancedAppointmentFlowboard: React.FC<
       console.error("Error updating appointment status:", error);
     },
   });
+  
   // Refresh queue when an appointment status changes
-  const handleStatusChange = (
-    appointmentId: number,
-    newStatus: number,
-    navigateToDetail: boolean = false
-  ) => {
-    const appointment = appointments.find((a) => a.id === appointmentId);
+  const handleStatusChange = useCallback(
+    (appointmentId: number, newStatus: number, navigateToDetail: boolean = false) => {
+      const appointment = appointments.find((a) => a.id === appointmentId);
 
-    if (appointment) {
-      // Use the mutation we defined at the component level
-      updateStatusMutation.mutate(
-        { id: appointmentId, state_id: newStatus },
-        {
-          onSuccess: () => {
-            // Update local state
-            const updatedAppointment = {
-              ...appointment,
-              state_id: newStatus,
-            };
-            onAppointmentUpdate(updatedAppointment);
+      if (appointment) {
+        // Use the mutation we defined at the component level
+        updateStatusMutation.mutate(
+          { id: appointmentId, state_id: newStatus },
+          {
+            onSuccess: () => {
+              // Update local state
+              const updatedAppointment = {
+                ...appointment,
+                state_id: newStatus,
+              };
+              onAppointmentUpdate(updatedAppointment);
 
-            // Navigate to patient management page if requested
-            setLocation(`/appointment/${appointment.id}`);
-          },
-        }
-      );
-    }
-  };
+              // Navigate to patient management page if requested
+              if (navigateToDetail) {
+                setLocation(`/appointment/${appointment.id}`);
+              }
+            },
+          }
+        );
+      }
+    },
+    [appointments, onAppointmentUpdate, setLocation, updateStatusMutation]
+  );
 
   // Handle showing new appointment form
-  const handleNewAppointment = () => {
+  const handleNewAppointment = useCallback(() => {
     setSelectedAppointmentId(null);
     setSidebarContent("new");
     setShowSidebar(true);
-  };
+  }, []);
 
-  // Render appointment card
-  const renderAppointmentCard = (appointment: Appointment) => {
-    // Check if this is a walk-in appointment by checking for a special flag or missing time slots
-    console.log(appointment.room);
-    const isWalkIn =
-      !appointment.time_slot ||
-      !appointment.time_slot.start_time ||
-      appointment.time_slot.start_time === "00:00:00";
-
-    return (
-      <div
+  // Memoize the appointment card rendering function
+  const renderAppointmentCard = useCallback(
+    (appointment: Appointment) => (
+      <AppointmentCard
         key={appointment.id}
-        className={`border rounded-md mb-3 overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${
-          selectedAppointmentId === appointment.id
-            ? "ring-2 ring-indigo-500"
-            : ""
-        }`}
-        onClick={() => handleAppointmentClick(appointment.id)}
-      >
-        <div className={`px-3 py-2 ${getStatusColorClass(appointment.state)}`}>
-          <div className="flex justify-between items-center">
-            <div className="font-medium">
-              {isWalkIn ? (
-                <div className="flex items-center">
-                  <Clock className="h-4 w-4 mr-1" />
-                  <span>
-                    Arrived:{" "}
-                    {appointment.created_at
-                      ? format(new Date(appointment.created_at), "h:mm a")
-                      : "Today"}
-                  </span>
-                </div>
-              ) : (
-                `${formatTime(appointment.time_slot.start_time)} - ${formatTime(
-                  appointment.time_slot.end_time
-                )}`
-              )}
-            </div>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-white bg-opacity-20">
-              {appointment.state}
-            </span>
-          </div>
-        </div>
-
-        <div className="p-4">
-          <div className="flex items-center mb-3">
-            <img
-              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                appointment.pet.pet_name
-              )}&background=f0f9ff&color=3b82f6`}
-              alt={appointment.pet.pet_name}
-              className="h-12 w-12 rounded-full mr-3 border-2 border-blue-100"
-            />
-            <div>
-              <div className="font-medium text-base">
-                {appointment.pet.pet_name}
-              </div>
-              <div className="text-xs text-gray-500 mt-0.5">
-                {appointment.pet.pet_breed}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            <div className="bg-gray-50 rounded p-2">
-              <span
-                className={`text-xs px-2 py-1 rounded-full flex items-center w-fit ${getTypeColorClass(
-                  appointment.service.service_name
-                )}`}
-              >
-                <Tag className="h-3 w-3 mr-1" />
-                {appointment.service.service_name}
-              </span>
-              <div className="text-xs text-gray-500 mt-1.5">
-                {isWalkIn ? (
-                  <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-xs font-medium">
-                    Walk-in
-                  </span>
-                ) : (
-                  `${appointment.service.service_duration} min`
-                )}
-              </div>
-            </div>
-
-            <div className="bg-gray-50 rounded p-2">
-              <div className="text-xs text-gray-500 mb-1">Doctor</div>
-              <div className="text-sm font-medium flex items-center">
-                <Stethoscope className="h-3 w-3 mr-1 text-indigo-500" />
-                {appointment.doctor.doctor_name}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between border-t pt-2 mt-1">
-            <div className="text-sm">
-              <span className="text-gray-500 text-xs">Room:</span>{" "}
-              <span className="font-medium">{appointment.room}</span>
-            </div>
-
-            {appointment.priority === "urgent" && (
-              <div className="bg-red-50 px-2 py-1 rounded-full">
-                <div className="flex items-center text-red-600 text-xs">
-                  <AlertCircle size={12} className="mr-1" />
-                  Urgent
-                </div>
-              </div>
-            )}
-
-            <div className="flex space-x-1">
-              <button className="p-1.5 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100">
-                <MessageSquare size={14} />
-              </button>
-              <button className="p-1.5 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100">
-                <Phone size={14} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+        appointment={appointment}
+        onClick={handleAppointmentClick}
+        onStatusChange={handleStatusChange}
+        formatTime={formatTime}
+        getStatusColorClass={getStatusColorClass}
+        getTypeColorClass={getTypeColorClass}
+        getPriorityColorClass={getPriorityColorClass}
+      />
+    ),
+    [handleAppointmentClick, handleStatusChange, formatTime, getStatusColorClass, getTypeColorClass, getPriorityColorClass]
+  );
 
   // Thêm hàm để xác định bước workflow hiện tại của cuộc hẹn
   const getCurrentWorkflowStep = (appointment: Appointment) => {
@@ -736,144 +695,6 @@ const EnhancedAppointmentFlowboard: React.FC<
               </div>
             </div>
           </div>
-
-          {/* Resource Status Bar */}
-          {/* <div className="flex justify-between items-center px-6 py-2 bg-white shadow-sm mb-4">
-            <div>
-              <span className="text-sm font-medium mr-2">
-                Active Resources:
-              </span>
-              <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">
-                {staff.filter((s) => s.status === "available").length}/
-                {staff.length} Doctors
-              </span>
-              <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full ml-2">
-                {rooms.filter((r) => r.status === "available").length}/
-                {rooms.length} Exam Rooms
-              </span>
-            </div>
-
-            <button
-              className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
-              onClick={() => setShowResourceManagement(!showResourceManagement)}
-            >
-              <Settings size={14} className="mr-1" />
-              Resource Management
-            </button>
-          </div> */}
-
-          {/* Resource Management Panel */}
-          {/* {showResourceManagement && (
-            <div className="mx-4 mb-4 bg-white rounded-lg shadow overflow-hidden">
-              <div className="p-3 border-b flex justify-between items-center bg-gray-50">
-                <h3 className="font-medium">Resource Management</h3>
-                <button
-                  className="text-gray-500 hover:text-gray-700"
-                  onClick={() => setShowResourceManagement(false)}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="p-4">
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="font-medium mb-3 flex items-center">
-                      <Users size={16} className="mr-2 text-indigo-500" />
-                      Staff working
-                    </h4>
-                    <div className="space-y-2">
-                      {staff.map((person) => (
-                        <div
-                          key={person.id}
-                          className="flex items-center justify-between p-2 border rounded"
-                        >
-                          <div className="flex items-center">
-                            <img
-                              src={person.avatar}
-                              alt={person.name}
-                              className="h-8 w-8 rounded-full mr-2"
-                            />
-                            <div>
-                              <div className="font-medium text-sm">
-                                {person.name}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {person.role}
-                              </div>
-                            </div>
-                          </div>
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded-full ${
-                              person.status === "available"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}
-                          >
-                            {person.status === "available" ? "Sẵn sàng" : "Bận"}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium mb-3 flex items-center">
-                      <Layers size={16} className="mr-2 text-indigo-500" />
-                      Rooms
-                    </h4>
-                    <div className="space-y-2">
-                      {rooms.map((room) => (
-                        <div
-                          key={room.id}
-                          className="flex items-center justify-between p-2 border rounded"
-                        >
-                          <div>
-                            <div className="font-medium text-sm">
-                              {room.name}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {room.type === "exam"
-                                ? "Exam Room"
-                                : room.type === "surgery"
-                                ? "Surgery Room"
-                                : "Grooming Room"}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span
-                              className={`text-xs px-2 py-0.5 rounded-full ${
-                                room.status === "available"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {room.status === "available"
-                                ? "Available"
-                                : "Occupied"}
-                            </span>
-                            {room.status === "occupied" && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                <span className="font-medium">
-                                  {room.currentPatient}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex justify-end">
-                  <button className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700">
-                    Update status
-                  </button>
-                </div>
-              </div>
-            </div>
-          )} */}
 
           {/* Appointments View - Column View (Kanban style) */}
           {viewMode === "columns" && (
@@ -2137,6 +1958,6 @@ const EnhancedAppointmentFlowboard: React.FC<
       </div>
     </div>
   );
-};
+});
 
 export default EnhancedAppointmentFlowboard;

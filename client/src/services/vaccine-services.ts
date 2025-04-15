@@ -1,12 +1,13 @@
+import api from "@/lib/api";
 import axios from "axios";
-import { Vaccination } from "@/types";
+
 
 export const getVaccinations = async (pet_id: number) => {
     const token = localStorage.getItem('access_token');
     if (!token) {
         throw new Error('No access token found');
     }
-    const response = await axios.get(`/api/v1/vaccinations/pet/${pet_id}`, {
+    const response = await api.get(`/api/v1/vaccinations/pet/${pet_id}`, {
         headers: {
             Authorization: `Bearer ${token}`,
         },
@@ -47,7 +48,7 @@ export interface SaveVaccinationRequest {
 
 export const saveVaccinationRecord = async (vaccinationData: SaveVaccinationRequest) => {
     try {
-        const response = await axios.post(
+        const response = await api.post(
             `/api/v1/vaccination/create`, 
             vaccinationData,
             {

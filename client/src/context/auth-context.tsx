@@ -1,11 +1,10 @@
-import { loginDoctor } from '@/services/auth-services';
+import { loginDoctor, refreshAccessToken } from '@/services/auth-services';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface Doctor {
   id: string;
   username: string;
   password: string;
-
 }
 
 interface AuthContextType {
@@ -14,6 +13,7 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
+  refreshToken: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -67,19 +67,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } catch (error) {
       setIsLoading(false);
-      console.error('Login failed:', error);
       throw error;
     }
   };
-
-  const refreshAccessToken = async () => {
-    const refreshToken = localStorage.getItem('refresh_token');
-    const response = await fetch('/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken })
-    });
-  }
 
   const logout = () => {
     // Xóa thông tin người dùng khỏi localStorage
@@ -92,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ doctor, login, logout, isAuthenticated, isLoading }}>
+    <AuthContext.Provider value={{ doctor, login, logout, isAuthenticated, isLoading, refreshToken: refreshAccessToken }}>
       {children}
     </AuthContext.Provider>
   );

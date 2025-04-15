@@ -41,6 +41,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [notifications, setNotifications] = useState(3); // Example notification count
   const { doctor, logout } = useAuth();
+  console.log(doctor);
 
   // Save collapsed state to localStorage
   useEffect(() => {
@@ -65,7 +66,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
   };
 
   const mainLinks = [
-    { name: "Dashboard", path: "/dashboard", icon: <Home className="h-5 w-5" /> },
+    { name: "Dashboard", path: "/", icon: <Home className="h-5 w-5" /> },
     { name: "Appointments", path: "/appointments", icon: <Calendar className="h-5 w-5" /> },
     { name: "Flowboard", path: "/appointment-flow", icon: <Activity className="h-5 w-5" /> },
     { name: "Patients", path: "/patients", icon: <PawPrint className="h-5 w-5" /> },
@@ -328,7 +329,17 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
           )}>
             <div className="flex items-center">
               <Avatar className="h-9 w-9 border-2 border-indigo-200">
-                <AvatarImage src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?ixlib=rb-1.2.1&auto=format&fit=crop&w=256&q=80" alt="Dr. Sarah Wilson" />
+                {/* <AvatarImage src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?ixlib=rb-1.2.1&auto=format&fit=crop&w=256&q=80" alt="Dr. Sarah Wilson" /> */}
+
+                <img
+                  src={
+                    doctor?.data_image
+                      ? `data:image/png;base64,${doctor.data_image}`
+                      : "/fallback-image.png"
+                  }
+                  alt={doctor?.username}
+                  className="h-full w-full object-cover"
+                />
                 <AvatarFallback className="bg-indigo-100 text-indigo-800">
                   {doctor ? doctor.username.charAt(0).toUpperCase() : 'SW'}
                 </AvatarFallback>
@@ -339,7 +350,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                   <p className="text-sm font-medium text-gray-900">
                     {doctor ? `Dr. ${doctor.username}` : 'Dr. Sarah Wilson'}
                   </p>
-                  <p className="text-xs text-gray-500">Lead Veterinarian</p>
+                  <p className="text-xs text-gray-500">{doctor?.role}</p>
                 </div>
               )}
             </div>

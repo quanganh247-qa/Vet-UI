@@ -875,7 +875,7 @@ const TreatmentManagement: React.FC = () => {
         const transactionData: MedicineTransactionRequest = {
           medicine_id: medicine.id,
           quantity: medicine.quantity || 1, // Make sure this field exists
-          transaction_type: "out", // Or get from medicine/state
+          transaction_type: "export", // Or get from medicine/state
           unit_price: medicine.unit_price, // Make sure this field exists
           supplier_id: medicine.supplier_id, // Make sure this field exists
           expiration_date: medicine.expiration_date, // Make sure this field exists

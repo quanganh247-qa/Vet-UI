@@ -3,14 +3,13 @@ import {
   CreateTreatmentPhaseRequest,
   CreateTreatmentRequest,
 } from "@/types";
-import axios from "axios";
-
+import api from "@/lib/api";
 export const getPatientTreatments = async (patient_id: string) => {
   const token = localStorage.getItem("access_token");
   if (!token) {
     throw new Error("No access token found");
   }
-  const response = await axios.get(`/api/v1/pet/${patient_id}/treatments`, {
+  const response = await api.get(`/api/v1/pet/${patient_id}/treatments`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -23,7 +22,7 @@ export const getTreatmentPhasesByTreatmentId = async (treatment_id: string) => {
   if (!token) {
     throw new Error("No access token found");
   }
-  const response = await axios.get(`/api/v1/treatment/${treatment_id}/phases`, {
+  const response = await api.get(`/api/v1/treatment/${treatment_id}/phases`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -39,7 +38,7 @@ export const getMedicationByPhaseId = async (
   if (!token) {
     throw new Error("No access token found");
   }
-  const response = await axios.get(
+  const response = await api.get(
     `/api/v1/treatment/${treatment_id}/phases/${phase_id}/medicines`,
     {
       headers: {
@@ -60,7 +59,7 @@ export const addNewPhaseToTreatment = async (
   }
 
   try {
-    const response = await axios.post(
+    const response = await api.post(
       `/api/v1/treatment/${treatment_id}/phases`,
       payload,
       {
@@ -72,11 +71,7 @@ export const addNewPhaseToTreatment = async (
     );
     return response.data;
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      // Handle specific axios errors
-      throw new Error(error.response?.data?.message || error.message);
-    }
-    throw new Error("An unexpected error occurred");
+    throw error;
   }
 };
 export const assignMedicineToPhase = async (
@@ -90,7 +85,7 @@ export const assignMedicineToPhase = async (
   }
 
   try {
-    const response = await axios.post(
+    const response = await api.post(
       `/api/v1/treatment/${treatment_id}/phase/${phase_id}/medicines`,
       payload,
       {
@@ -102,12 +97,7 @@ export const assignMedicineToPhase = async (
     );
     return response.data;
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      // Extract server error message if available
-      const errorMessage = error.response?.data?.message || error.message;
-      throw new Error(`Failed to assign medicine: ${errorMessage}`);
-    }
-    throw new Error("An unexpected error occurred.");
+    throw error;
   }
 };
 
@@ -119,7 +109,7 @@ export const getMedicinesByPhaseId = async (
   if (!token) {
     throw new Error("No access token found");
   }
-  const response = await axios.get(
+  const response = await api.get(
     `/api/v1/treatment/${treatment_id}/phases/${phase_id}/medicines`,
     {
       headers: {
@@ -135,7 +125,7 @@ export const getAllMedicines = async () => {
   if (!token) {
     throw new Error("No access token found");
   }
-  const response = await axios.get(`/api/v1/medicines`, {
+  const response = await api.get(`/api/v1/medicines`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -151,7 +141,7 @@ export const addNewTreatment = async (payload: CreateTreatmentRequest) => {
   }
   console.log("payload", payload);
   try {
-    const response = await axios.post(`/api/v1/treatment`, payload, {
+    const response = await api.post(`/api/v1/treatment`, payload, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
