@@ -1,4 +1,4 @@
-import { LowStockNotification } from '../types';
+import { LowStockNotification, AppointmentNotification } from '../types';
 
 export interface WebSocketMessage {
   type: string;
@@ -98,7 +98,11 @@ class WebSocketService {
 // Singleton instance
 export const websocketService = new WebSocketService();
 
-// Utility hook for React components
+// Utility hooks for React components
 export const useLowStockNotifications = (callback: (notification: LowStockNotification) => void) => {
   return websocketService.subscribe<LowStockNotification>('low_stock_alert', callback);
+};
+
+export const useAppointmentNotifications = (callback: (notification: AppointmentNotification) => void) => {
+  return websocketService.subscribe<AppointmentNotification>('appointment_alert', callback);
 }; 

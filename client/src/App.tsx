@@ -23,8 +23,8 @@ import StaffPageDetail from "@/pages/staff";
 import { WalkInDialog } from "./components/appointment/WalkInDialog";
 
 // Lazy load the TestNotificationListener to avoid hook errors
-const TestNotificationListener = lazy(() => import("@/components/notifications/TestNotificationListener"));
-
+// const TestNotificationListener = lazy(() => import("@/components/notifications/TestNotificationListener"));
+const NotificationsPage = lazy(() => import("@/pages/notifications"));
 // Use lazy loading for new components
 const AppointmentFlow = lazy(() => import("@/pages/appointment-flow"));
 const CheckIn = lazy(() => import("@/pages/check-in"));
@@ -42,7 +42,6 @@ const ShiftAssignment = lazy(() => import("@/pages/shift-assignment"));
 const StaffPage = lazy(() => import("@/pages/staff"));
 const PrescriptionInvoice = lazy(() => import("@/pages/prescription/invoice"));
 const LabManagement = lazy(() => import("@/pages/lab-management"));
-
 // Create LoginPage component that uses LoginForm
 const LoginPage = () => {
   return (
@@ -152,7 +151,8 @@ function Router() {
         <Route path="/appointment/:id/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} />
         
         <Route path="/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
-        <Route path="/notifications" component={NotificationsAdmin as React.ComponentType<RouteComponentProps>} />
+        {/* <Route path="/notifications" component={NotificationsAdmin as React.ComponentType<RouteComponentProps>} /> */}
+        <Route path="/notifications" component={NotificationsPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/chatbot" component={Chatbot as React.ComponentType<RouteComponentProps>} />
         <Route path="/patients" component={PatientsPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/patients/:id" component={PatientDetailPage as React.ComponentType<RouteComponentProps>} />
@@ -203,9 +203,9 @@ function App() {
             
             <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
               <WebSocketInitializer />
-              <Suspense fallback={null}>
-                <TestNotificationListener />
-              </Suspense>
+              {/* <Suspense fallback={null}>
+                <NotificationsPage />
+              </Suspense> */}
               <Router />
             </main>
           </div>

@@ -241,7 +241,7 @@ const StaffPage = () => {
                 <SelectContent>
                   <SelectItem value="all">All Roles</SelectItem>
                   {uniqueRoles.map((role) => (
-                    <SelectItem key={role as string} value={role.toLowerCase()}>
+                    <SelectItem key={role as string} value={role as string}>
                       {role as string}
                     </SelectItem>
                   ))}

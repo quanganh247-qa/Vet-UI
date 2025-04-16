@@ -58,8 +58,12 @@ const ReportsDashboard = () => {
   return (
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h2 className="text-2xl font-semibold text-indigo-900">Clinic Reports</h2>
-        
+        {/* <h2 className="text-2xl font-semibold text-indigo-900">Clinic Reports</h2> */}
+          <div className="flex items-center">
+            <BarChart2 className="h-5 w-5 mr-2 text-indigo-600" />
+            <CardTitle className="text-2xl font-semibold text-indigo-900">Reports Dashboard</CardTitle>
+          </div>
+
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex space-x-2">
             <Button 

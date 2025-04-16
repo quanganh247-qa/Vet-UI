@@ -19,8 +19,8 @@ export const WalkInDialog: React.FC = () => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button 
-          className="bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-lg hover:shadow-indigo-500/30"
           size="lg"
+          className="bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-lg hover:shadow-indigo-500/30"
         >
           <Plus className="mr-2 h-5 w-5 stroke-[2.5]" />
           New Walk-in

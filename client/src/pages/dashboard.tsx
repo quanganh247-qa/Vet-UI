@@ -101,12 +101,12 @@ const Dashboard = () => {
 
       {/* Dashboard with Reports */}
       <Card className="border-none shadow-md overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-3 border-b">
+        {/* <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-3 border-b">
           <div className="flex items-center">
             <BarChart2 className="h-5 w-5 mr-2 text-indigo-600" />
             <CardTitle className="text-lg font-semibold text-indigo-900">Reports Dashboard</CardTitle>
           </div>
-        </CardHeader>
+        </CardHeader> */}
 
         <CardContent className="p-6">
           <ReportsDashboard />

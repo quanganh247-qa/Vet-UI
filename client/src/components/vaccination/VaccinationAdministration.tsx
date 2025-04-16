@@ -242,23 +242,6 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
 
   return (
     <Card className="w-full shadow-md border-none overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-indigo-600 to-indigo-800 pb-3 border-b">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Syringe className="h-5 w-5 text-white mr-2" />
-            <CardTitle className="text-lg text-white">
-              Vaccination Administration
-            </CardTitle>
-          </div>
-          {isCompleted && (
-            <Badge className="bg-white/20 text-white flex items-center">
-              <Check className="h-3.5 w-3.5 mr-1" />
-              <span>Completed</span>
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-
       <CardContent className="pt-6 pb-2">
         {isCompleted ? (
           <div className="flex flex-col items-center justify-center py-6">

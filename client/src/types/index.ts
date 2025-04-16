@@ -75,9 +75,6 @@ export interface Doctor {
   bio?: string;
 }
 
-
-
-
 export interface Service {
   service_name: string;
   service_duration: number;
@@ -134,29 +131,6 @@ export interface QueueItem {
   doctor: string;
 }
 
-// export interface Staff {
-//   id: number;
-//   name: string;
-//   role: string;
-//   specialty?: string;
-//   status: string;
-//   is_active: boolean;
-//   email?: string;
-//   phone?: string;
-//   address?: string;
-//   bio?: string;
-//   education?: string;
-//   experience?: string[];
-//   certifications?: string[];
-//   languages?: string[];
-//   schedule?: {
-//     day: string;
-//     hours: string;
-//   }[];
-//   image_url?: string;
-//   avatar?: string;
-// }
-
 export interface Room {
   id: number;
   name: string;
@@ -198,7 +172,6 @@ export interface Vaccination {
   notes: string;
 }
 
-// Define types for the treatment management
 interface Task {
   id: number;
   name: string;
@@ -244,7 +217,6 @@ export interface PatientAlert {
   detail: string;
 }
 
-// Add interfaces for AI suggestion data
 export interface AIMedication {
   name: string;
   dosage: string;
@@ -281,9 +253,6 @@ export interface AISuggestions {
   medicationDosages: AIMedicationDosage[];
 }
 
-/**
- * Response data interface for chat message response
- */
 export interface ChatResponse {
   message: string;
   data?: any;
@@ -293,9 +262,6 @@ export interface ChatResponse {
   sourceDetails?: string;
 }
 
-/**
- * Error response interface
- */
 export interface ErrorResponse {
   error: string;
   details?: string;
@@ -324,17 +290,18 @@ export interface QRCodeInformation {
 }
 
 export interface GenerateQRCodeResponse {
-  Code: string; // Mã trạng thái trả về
-  Desc: string; // Mô tả trạng thái
-  Data: GenerateQRData; // Dữ liệu trả về
+  Code: string;
+  Desc: string;
+  Data: GenerateQRData;
 }
 
 export interface GenerateQRData {
-  AcpID: number; // Mã ngân hàng
-  AccountName: string; // Tên tài khoản
-  QRCode: string; // Dữ liệu QR code
-  QRDataURL: string; // Dữ liệu QR code dạng base64
+  AcpID: number;
+  AccountName: string;
+  QRCode: string;
+  QRDataURL: string;
 }
+
 export interface ObjectiveData {
   vital_signs: VitalSigns;
   systems: Systems;
@@ -371,7 +338,6 @@ export interface TestCategory {
 
 export interface Test {
   id: string;
-
   name: string;
   description: string;
   price: string;
@@ -568,7 +534,6 @@ export interface DoctorProfile {
   bio: string;
 }
 
-// Work Schedule Management Types
 export interface WorkShift {
   id: string;
   title: string;
@@ -587,9 +552,9 @@ export interface DoctorSchedule extends Doctor {
 
 export interface DoctorAvailability {
   doctorId: string;
-  dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0 = Sunday, 6 = Saturday
-  startTime: string; // Format: HH:MM (24-hour)
-  endTime: string; // Format: HH:MM (24-hour)
+  dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  startTime: string;
+  endTime: string;
 }
 
 export interface WorkScheduleFilters {
@@ -598,7 +563,6 @@ export interface WorkScheduleFilters {
   endDate?: Date;
   status?: 'scheduled' | 'completed' | 'cancelled';
 }
-
 
 export interface DoctorDetail {
 	doctor_id: number;
@@ -619,4 +583,26 @@ export interface TestByAppointment {
 	test_name: string;
 	expiration_date: string;
 	batch_number: string;
+}
+
+// export interface AppointmentNotification {
+//   id: string;
+//   appointmentId: number;
+//   title: string;
+//   date: string;
+//   time: string;
+//   status: 'upcoming' | 'starting_soon' | 'completed';
+//   patient?: string;
+// }
+
+export interface AppointmentNotification {
+  id: string;
+  title: string;
+  appointment_id: number;
+  doctor: Doctor;
+  pet: Pet;
+  reason: string;
+  date: string;
+  time_slot: string | { start_time: string; end_time: string };
+  service_name: string;
 }
