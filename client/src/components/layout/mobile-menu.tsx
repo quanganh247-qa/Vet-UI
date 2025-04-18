@@ -125,8 +125,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ className }) => {
                 <User className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <div className="font-medium">{doctor.name}</div>
-                <div className="text-sm text-gray-500">{doctor.role}</div>
+                <div className="font-medium">{doctor.username}</div>
               </div>
             </div>
           </div>

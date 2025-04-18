@@ -1,7 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createShift, deleteShift, getDoctorProfile, getDoctors, getShiftByDoctorId, getShifts, updateShift } from "@/services/doctor-services";
+import { addNewStaff, createShift, CreateStaffRequest, deleteShift, getDoctorProfile, getDoctors, getShiftByDoctorId, getShifts, updateShift } from "@/services/doctor-services";
 import { queryClient } from "@/lib/queryClient";
 import { getAllStaff } from "@/services/staff-services";
+import { toast } from "./use-toast";
 
 export const useDoctors = () => {
     return useQuery({
@@ -77,3 +78,26 @@ export const useAllStaff = () => {
         queryFn: getAllStaff,
     });
 };
+
+export const useAddNewStaff = () => {
+    return useMutation({
+        mutationFn: (data: CreateStaffRequest) => addNewStaff(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['all-staff'] });
+            toast({
+                title: "Success",
+                description: "Staff added successfully!",
+                className: "bg-green-50 border-green-200 text-green-800",
+              });
+        },
+        onError: (error) => {
+            console.error('Error adding new staff:', error);
+            toast({
+                title: "Error",
+                description: "Failed to add staff",
+                variant: "destructive",
+            });
+        },
+    });
+};
+    

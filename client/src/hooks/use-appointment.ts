@@ -1,15 +1,24 @@
-import { useMutation, UseMutationResult, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  UseMutationResult,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   AppointmentRequest,
+  confirmAppointment,
+  ConfirmAppointmentResponse,
   createWalkInAppointment,
   getAllAppointments,
   getAppointmentAnalytics,
   getAppointmentById,
   getAppointmentsQueue,
   getHistoryAppointments,
+  markMessageDelivered,
   updateAppointmentById,
 } from "@/services/appointment-services";
 import { getPatientById } from "@/services/pet-services";
+import { toast } from "@/components/ui/use-toast";
 
 export const useAppointmentData = (id: string | undefined) => {
   return useQuery({
@@ -19,9 +28,20 @@ export const useAppointmentData = (id: string | undefined) => {
   });
 };
 
-export const useListAppointments = (date: Date, option: string, page: number = 1, pageSize: number = 10) => {
+export const useListAppointments = (
+  date: Date,
+  option: string,
+  page: number = 1,
+  pageSize: number = 10
+) => {
   return useQuery({
-    queryKey: ["appointments", date.toISOString().split("T")[0], option, page, pageSize],
+    queryKey: [
+      "appointments",
+      date.toISOString().split("T")[0],
+      option,
+      page,
+      pageSize,
+    ],
     queryFn: () => getAllAppointments(date, option, page, pageSize),
   });
 };
@@ -50,15 +70,18 @@ export const useHistoryAppointments = (pet_id: number) => {
   });
 };
 
-export const useUpdateAppointmentStatus = (id: number, updateData: {
-  payment_status?: string;
-  state_id?: number;
-  room_id?: number;
-  notes?: string;
-  appointment_reason?: string;
-  reminder_send?: boolean;
-  arrival_time?: string;
-}) => {
+export const useUpdateAppointmentStatus = (
+  id: number,
+  updateData: {
+    payment_status?: string;
+    state_id?: number;
+    room_id?: number;
+    notes?: string;
+    appointment_reason?: string;
+    reminder_send?: boolean;
+    arrival_time?: string;
+  }
+) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => updateAppointmentById(id, updateData),
@@ -91,5 +114,52 @@ export const useCreateWalkInAppointment = (): UseMutationResult<
 > => {
   return useMutation({
     mutationFn: createWalkInAppointment,
+  });
+};
+
+// --- Hook useMutation ---
+export const useConfirmAppointment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    ConfirmAppointmentResponse,
+    Error,
+    number
+  >({
+    mutationFn: confirmAppointment,
+    onSuccess: (data, variables) => {
+      toast({
+        title: "Appointment Confirmed",
+        description: data.message || "Appointment Confirmed",
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
+    },
+    onError: (error, variables) => {
+      toast({
+        title: "Confirmation Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useMarkMessageDelivered = () => {
+  return useMutation({
+    mutationFn: (id: number) => markMessageDelivered(id),
+    onSuccess: () => {
+      toast({
+        title: "Message Delivered",
+        description: "The message has been delivered successfully!",
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Delivery Failed",
+        description: "Unable to deliver the message. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 };

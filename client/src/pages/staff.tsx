@@ -11,7 +11,9 @@ import {
   Grid, 
   ChevronRight,
   Award,
-  Briefcase
+  Briefcase,
+  Upload,
+  ArrowLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,126 +35,35 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DoctorDetail } from "@/types";
 import { useDoctors } from "@/hooks/use-doctor";
-
-// // Mock data for development until API is connected
-// const mockStaffData: Staff[] = [
-//   {
-//     id: 1,
-//     name: "Dr. Sarah Johnson",
-//     role: "Veterinarian",
-//     specialty: "Surgery",
-//     status: "Available",
-//     is_active: true,
-//     email: "sarah.johnson@vetclinic.com",
-//     phone: "555-123-4567",
-//     address: "123 Vet Street, Medical District",
-//     bio: "Dr. Johnson is a board-certified veterinary surgeon with over 10 years of experience in complex surgical procedures.",
-//     education: "Doctor of Veterinary Medicine, State University",
-//     experience: ["Chief Surgeon at Animal Hospital (2018-Present)", "Associate Veterinarian at City Pet Clinic (2012-2018)"],
-//     certifications: ["Board Certified in Veterinary Surgery", "Advanced Cardiac Surgery Certification"],
-//     languages: ["English", "Spanish"],
-//     schedule: [
-//       { day: "Monday", hours: "9:00 AM - 5:00 PM" },
-//       { day: "Wednesday", hours: "9:00 AM - 5:00 PM" },
-//       { day: "Friday", hours: "9:00 AM - 3:00 PM" }
-//     ],
-//     image_url: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=2070&auto=format&fit=crop"
-//   },
-//   {
-//     id: 2,
-//     name: "Dr. Michael Chen",
-//     role: "Veterinarian",
-//     specialty: "Dermatology",
-//     status: "On Leave",
-//     is_active: false,
-//     email: "michael.chen@vetclinic.com",
-//     phone: "555-987-6543",
-//     bio: "Dr. Chen specializes in pet skin conditions and allergies, with particular expertise in treating chronic cases.",
-//     education: "Veterinary Medicine, Pacific University",
-//     experience: ["Dermatology Specialist at PetCare Plus (2015-Present)"],
-//     certifications: ["Certified in Veterinary Dermatology"],
-//     languages: ["English", "Mandarin"],
-//     image_url: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=2070&auto=format&fit=crop"
-//   },
-//   {
-//     id: 3,
-//     name: "Amy Rodriguez",
-//     role: "Technician",
-//     status: "Available",
-//     is_active: true,
-//     email: "amy.rodriguez@vetclinic.com",
-//     phone: "555-456-7890",
-//     experience: ["Senior Technician (2019-Present)", "Junior Technician (2016-2019)"],
-//     certifications: ["Certified Veterinary Technician"],
-//     schedule: [
-//       { day: "Monday", hours: "8:00 AM - 4:00 PM" },
-//       { day: "Tuesday", hours: "8:00 AM - 4:00 PM" },
-//       { day: "Thursday", hours: "8:00 AM - 4:00 PM" },
-//       { day: "Friday", hours: "8:00 AM - 4:00 PM" }
-//     ],
-//     image_url: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=1961&auto=format&fit=crop"
-//   },
-//   {
-//     id: 4,
-//     name: "James Wilson",
-//     role: "Receptionist",
-//     status: "Available",
-//     is_active: true,
-//     email: "james.wilson@vetclinic.com",
-//     phone: "555-789-0123",
-//     bio: "James manages the front desk, scheduling, and ensures smooth clinic operations.",
-//     schedule: [
-//       { day: "Monday", hours: "8:00 AM - 6:00 PM" },
-//       { day: "Tuesday", hours: "8:00 AM - 6:00 PM" },
-//       { day: "Wednesday", hours: "8:00 AM - 6:00 PM" },
-//       { day: "Thursday", hours: "8:00 AM - 6:00 PM" },
-//       { day: "Friday", hours: "8:00 AM - 6:00 PM" }
-//     ],
-//     image_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"
-//   },
-//   {
-//     id: 5,
-//     name: "Dr. Emily Parker",
-//     role: "Veterinarian",
-//     specialty: "Internal Medicine",
-//     status: "Available",
-//     is_active: true,
-//     email: "emily.parker@vetclinic.com",
-//     phone: "555-234-5678",
-//     bio: "Dr. Parker specializes in diagnosing and treating complex internal conditions in pets.",
-//     education: "Doctor of Veterinary Medicine, East State University",
-//     experience: ["Internist at Animal Care Hospital (2017-Present)"],
-//     certifications: ["Board Certified in Veterinary Internal Medicine"],
-//     languages: ["English", "French"],
-//     schedule: [
-//       { day: "Tuesday", hours: "9:00 AM - 5:00 PM" },
-//       { day: "Thursday", hours: "9:00 AM - 5:00 PM" }
-//     ],
-//     image_url: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?q=80&w=1974&auto=format&fit=crop"
-//   },
-//   {
-//     id: 6,
-//     name: "Robert Thompson",
-//     role: "Technician",
-//     status: "Available",
-//     is_active: true,
-//     email: "robert.thompson@vetclinic.com",
-//     phone: "555-345-6789",
-//     certifications: ["Certified Veterinary Technician", "Emergency Care Certified"],
-//     image_url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1974&auto=format&fit=crop"
-//   }
-// ];
-
-
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 
 const StaffPage = () => {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   
+  // Staff form state
+  const [newStaff, setNewStaff] = useState({
+    id: "",
+    email: "",
+    password: "",
+    passwordConfirm: "",
+    verified: false,
+    name: "",
+    role: "",
+    specialization: "",
+    certificateNumber: "",
+    avatar: null as File | null
+  });
+  
   const { data: staffData, isLoading } = useDoctors();
+
+  // Check if we're on the new staff page
+  const isNewStaffPage = location === "/staff/new";
   
   const filteredStaff = (staffData?.data || []).filter((staff: DoctorDetail) => {
   
@@ -186,10 +97,279 @@ const StaffPage = () => {
   const handleStaffClick = (staffId: number) => {
     setLocation(`/staff/${staffId}`);
   };
+  
+  // Handle changes in staff form
+  const handleStaffChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setNewStaff(prev => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value
+    }));
+  };
+  
+  // Handle select change for role
+  const handleRoleChange = (value: string) => {
+    setNewStaff(prev => ({
+      ...prev,
+      role: value
+    }));
+  };
+  
+  // Handle file upload for avatar
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setNewStaff(prev => ({
+        ...prev,
+        avatar: e.target.files![0]
+      }));
+    }
+  };
+  
+  // Handle staff form submission
+  const handleCreateStaff = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Validate passwords match
+    if (newStaff.password !== newStaff.passwordConfirm) {
+      alert("Passwords do not match");
+      return;
+    }
+    
+    // Here you would typically send data to your backend
+    console.log("Creating new staff member:", newStaff);
+    
+    // Reset form and navigate back to staff list
+    setNewStaff({
+      id: "",
+      email: "",
+      password: "",
+      passwordConfirm: "",
+      verified: false,
+      name: "",
+      role: "",
+      specialization: "",
+      certificateNumber: "",
+      avatar: null
+    });
+    
+    setLocation("/staff");
+  };
+  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
+      </div>
+    );
+  }
+  
+  if (isNewStaffPage) {
+    return (
+      <div className="container mx-auto py-6">
+        {/* Header with gradient background */}
+        <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-semibold">New Staff Member</h1>
+              <p className="text-indigo-100 text-sm">
+                Add a new veterinarian or staff member
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setLocation('/staff')}
+                variant="outline"
+                className="bg-transparent border-white text-white hover:bg-white/10 flex items-center gap-1.5"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Staff List
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Staff Creation Form */}
+        <Card>
+          <CardContent className="pt-6">
+            <form onSubmit={handleCreateStaff} className="space-y-4">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center mb-2">
+                  <span className="text-sm font-medium text-gray-500 mr-2">ID</span>
+                  <span className="text-xs bg-gray-200 rounded px-2 py-1">Auto</span>
+                </div>
+                <Input 
+                  id="staff-id"
+                  name="id"
+                  value={newStaff.id}
+                  onChange={handleStaffChange}
+                  className="bg-gray-100"
+                  placeholder="Leave empty to auto generate..."
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center mb-2">
+                    <span className="text-sm font-medium text-gray-500 mr-2">Name</span>
+                    <span className="text-red-500 text-sm">*</span>
+                  </div>
+                  <Input 
+                    id="staff-name"
+                    name="name"
+                    value={newStaff.name}
+                    onChange={handleStaffChange}
+                    required
+                  />
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center">
+                      <span className="text-sm font-medium text-gray-500 mr-2">Email</span>
+                      <span className="text-red-500 text-sm">*</span>
+                    </div>
+                    <span className="text-xs bg-gray-200 rounded px-2 py-1">Public: Off</span>
+                  </div>
+                  <Input 
+                    id="staff-email"
+                    name="email"
+                    type="email"
+                    value={newStaff.email}
+                    onChange={handleStaffChange}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center mb-2">
+                    <span className="text-sm font-medium text-gray-500 mr-2">Password</span>
+                    <span className="text-red-500 text-sm">*</span>
+                  </div>
+                  <Input 
+                    id="staff-password"
+                    name="password"
+                    type="password"
+                    value={newStaff.password}
+                    onChange={handleStaffChange}
+                    required
+                  />
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center mb-2">
+                    <span className="text-sm font-medium text-gray-500 mr-2">Password confirm</span>
+                    <span className="text-red-500 text-sm">*</span>
+                  </div>
+                  <Input 
+                    id="staff-password-confirm"
+                    name="passwordConfirm"
+                    type="password"
+                    value={newStaff.passwordConfirm}
+                    onChange={handleStaffChange}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center mb-2">
+                    <span className="text-sm font-medium text-gray-500 mr-2">Role</span>
+                    <span className="text-red-500 text-sm">*</span>
+                  </div>
+                  <Select value={newStaff.role} onValueChange={handleRoleChange} required>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Veterinarian">Veterinarian</SelectItem>
+                      <SelectItem value="Technician">Technician</SelectItem>
+                      <SelectItem value="Receptionist">Receptionist</SelectItem>
+                      <SelectItem value="Manager">Manager</SelectItem>
+                      <SelectItem value="Assistant">Assistant</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center mb-2">
+                    <span className="text-sm font-medium text-gray-500 mr-2">Specialization</span>
+                  </div>
+                  <Input 
+                    id="staff-specialization"
+                    name="specialization"
+                    value={newStaff.specialization}
+                    onChange={handleStaffChange}
+                    placeholder="E.g., Surgery, Dermatology, etc."
+                  />
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center mb-2">
+                  <span className="text-sm font-medium text-gray-500 mr-2">Certificate Number</span>
+                </div>
+                <Input 
+                  id="staff-certificate"
+                  name="certificateNumber"
+                  value={newStaff.certificateNumber}
+                  onChange={handleStaffChange}
+                  placeholder="Professional certification number"
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2 py-2">
+                <Switch
+                  id="staff-verified"
+                  name="verified"
+                  checked={newStaff.verified}
+                  onCheckedChange={(checked) => setNewStaff(prev => ({ ...prev, verified: checked }))}
+                />
+                <Label htmlFor="staff-verified">Verified</Label>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center mb-2">
+                  <span className="text-sm font-medium text-gray-500 mr-2">Avatar</span>
+                </div>
+                <div className="w-full p-2 border border-dashed border-gray-300 rounded-lg text-center cursor-pointer hover:bg-gray-100 transition-colors">
+                  <label htmlFor="avatar-upload" className="cursor-pointer w-full h-full flex flex-col items-center justify-center py-4">
+                    <Upload className="h-6 w-6 text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-500">Upload new file</span>
+                    <input 
+                      id="avatar-upload" 
+                      name="avatar"
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden" 
+                    />
+                  </label>
+                </div>
+                {newStaff.avatar && (
+                  <p className="text-sm text-gray-500 mt-1">Selected: {newStaff.avatar.name}</p>
+                )}
+              </div>
+              
+              <Separator className="my-6" />
+              
+              <div className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setLocation('/staff')}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-gray-900 text-white hover:bg-gray-800">
+                  Create
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     );
   }

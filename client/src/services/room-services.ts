@@ -1,14 +1,11 @@
-import axios from "axios";
+import api from "@/lib/api";
 
 export const getRooms = async () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-        throw new Error('No access token found');
+    try {
+        const response = await api.get('/rooms');
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        throw new Error('Failed to fetch rooms');
     }
-    const response = await axios.get(`/api/v1/rooms`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
-    return response.data;
 };

@@ -1,17 +1,10 @@
 import { PaginatedResponse } from "@/types";
-import axios from "axios";
+import api from "@/lib/api";
+import { AxiosError } from "axios";
 
 export const getAppointments = async (doctor_id: string) => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.get(
-      `/api/v1/appointment/doctor/${doctor_id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await api.get(`/api/v1/appointment/doctor/${doctor_id}`);
 
     return response.data;
   } catch (error) {
@@ -32,15 +25,12 @@ export const getAllAppointments = async (
   }
 
   try {
-    const response = await axios.get(`/api/v1/appointments`, {
+    const response = await api.get(`/api/v1/appointments`, {
       params: {
         date: date.toISOString().split("T")[0],
         option: option,
         page: page,
         pageSize: pageSize,
-      },
-      headers: {
-        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -127,15 +117,10 @@ export const checkInAppointment = async (
   priority: string
 ) => {
   try {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      throw new Error("No access token found");
-    }
-
     // Debug the URL that will be constructed
     const url = `/api/v1/appointment/check-in/${id}`;
 
-    const response = await axios.post(
+    const response = await api.post(
       `/api/v1/appointment/check-in/${id}`,
       null,
       {
@@ -143,42 +128,18 @@ export const checkInAppointment = async (
           room_id,
           priority,
         },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       }
     );
 
     return response.data;
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      if (error.response?.status === 401) {
-        throw new Error("Unauthorized: Invalid or expired token");
-      } else if (error.response?.status === 403) {
-        throw new Error("Forbidden: You do not have permission");
-      } else if (error.response?.status === 400) {
-        throw new Error(
-          error.response.data.message || "Bad Request: Invalid input"
-        );
-      }
-    }
-    console.error("Error checking in appointment:", error);
     throw error;
   }
 };
 
 export const getAppointmentById = async (id: number) => {
   try {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      throw new Error("No access token found");
-    }
-
-    const response = await axios.get(`/api/v1/appointment/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await api.get(`/api/v1/appointment/${id}`);
 
     if (!response.data) {
       return null;
@@ -186,33 +147,13 @@ export const getAppointmentById = async (id: number) => {
 
     return response.data.data;
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.log("API Error Response:", error.response);
-      if (error.response?.status === 401) {
-        return null;
-      } else if (error.response?.status === 404) {
-        return null;
-      }
-    }
-    return null;
+    throw error;
   }
 };
 
 export const getAppointmentsQueue = async () => {
   try {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      throw new Error("No access token found");
-    }
-
-    const response = await axios.get(`/api/v1/appointments/queue`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    console.log("Appointments Queue Response:", response.data);
-
+    const response = await api.get(`/api/v1/appointments/queue`);
     // Check if response.data has a data property
     if (response.data && response.data.data) {
       return response.data.data; // Return the data property
@@ -227,20 +168,7 @@ export const getAppointmentsQueue = async () => {
 };
 
 export const getHistoryAppointments = async (pet_id: number) => {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    throw new Error("No access token found");
-  }
-
-  const response = await axios.get(
-    `/api/v1/appointments/pet/${pet_id}/history`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
+  const response = await api.get(`/api/v1/appointments/pet/${pet_id}/history`);
   return response.data;
 };
 
@@ -258,14 +186,8 @@ export const updateAppointmentById = async (
   }
 ) => {
   try {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      throw new Error("No access token found");
-    }
-
-    const response = await axios.put(`/api/v1/appointment/${id}`, updateData, {
+    const response = await api.put(`/api/v1/appointment/${id}`, updateData, {
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     });
@@ -278,16 +200,8 @@ export const updateAppointmentById = async (
 };
 
 export const addAppointmentToQueue = async (appointment: any) => {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    throw new Error("No access token found");
-  }
 
-  const response = await axios.post(`/api/v1/appointments/queue`, appointment, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await api.post(`/api/v1/appointments/queue`, appointment);
 
   return response.data;
 };
@@ -302,13 +216,8 @@ export const getAppointmentAnalytics = async (payload: {
       throw new Error("No access token found");
     }
 
-    const response = await axios.get(
-      `/api/v1/appointments/statistic?start_date=${payload.start_date}&end_date=${payload.end_date}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    const response = await api.get(
+      `/api/v1/appointments/statistic?start_date=${payload.start_date}&end_date=${payload.end_date}`
     );
 
     return response.data;
@@ -347,19 +256,48 @@ export const createWalkInAppointment = async (
   }
 
   try {
-    const response = await axios.post("/api/v1/appointments/walk-in", appointmentData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await api.post(
+      "/api/v1/appointments/walk-in",
+      appointmentData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to create appointment";
-      throw new Error(errorMessage);
-    }
     throw new Error("An unexpected error occurred");
   }
+};
+
+// {
+//   "code": "E",
+//   "message": "time slot is fully booked"
+// }
+
+export type ConfirmAppointmentResponse = {
+  code: string;
+  message: string;
+}
+
+export const confirmAppointment = async (appointment_id: number) => {
+  try {
+    const response = await api.post(`/api/v1/appointment/confirm/${appointment_id}`);
+    return response.data;
+  } catch (error) {
+    if (error instanceof AxiosError && error.response?.data) {
+      const errorData = error.response.data as ConfirmAppointmentResponse;
+      if (errorData.code === "E" && errorData.message === "time slot is fully booked") {
+        throw new Error("This time slot is fully booked. Please select another time.");
+      }
+    }
+    throw error;
+  }
+};
+
+// authRoute.PUT("/appointment/notifications/delivered/:id", appointmentApi.controller.MarkMessageDelivered)
+export const markMessageDelivered = async (id: number) => {
+  const response = await api.put(`/api/v1/appointment/notifications/${id}/delivered`);
+  return response.data;
 };

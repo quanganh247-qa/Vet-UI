@@ -585,16 +585,6 @@ export interface TestByAppointment {
 	batch_number: string;
 }
 
-// export interface AppointmentNotification {
-//   id: string;
-//   appointmentId: number;
-//   title: string;
-//   date: string;
-//   time: string;
-//   status: 'upcoming' | 'starting_soon' | 'completed';
-//   patient?: string;
-// }
-
 export interface AppointmentNotification {
   id: string;
   title: string;
@@ -605,4 +595,6 @@ export interface AppointmentNotification {
   date: string;
   time_slot: string | { start_time: string; end_time: string };
   service_name: string;
+  status?: 'confirmed' | 'declined' | 'pending';
+  _notificationId?: number; // Outer notification ID from the server
 }
