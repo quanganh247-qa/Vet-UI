@@ -262,12 +262,18 @@ const MedicalRecordManagement: React.FC = () => {
   // Fetch data
   const { data: patientData, isLoading: isPatientLoading } = usePatientData(effectivePetId);
   const { data: allergies, isLoading: isAllergiesLoading } = useAllergiesData(effectivePetId);
-  const { data: medicalRecords, isLoading: isLoadingMedicalRecords } = useMedicalRecord(petIdNumber);
+  const { data: medicalRecords, isLoading: isLoadingMedicalRecords } = useMedicalRecord(parseInt(effectivePetId || '0'));
 
+  
   const createMedicalRecord = useCreateMedicalRecord(petIdNumber);
 
   // Medical history data from API
-  const medicalHistory = useMemo(() => medicalRecords?.data || [], [medicalRecords]);
+  const medicalHistory = useMemo(() => {
+    if (!medicalRecords) return [];
+    // Handle both possible API response structures
+    return Array.isArray(medicalRecords) ? medicalRecords : 
+           (medicalRecords.data ? medicalRecords.data : []);
+  }, [medicalRecords]);
 
   const selectedHistory = useMemo(() => 
     medicalHistory.find((h: MedicalHistory) => h.id === selectedHistoryId),

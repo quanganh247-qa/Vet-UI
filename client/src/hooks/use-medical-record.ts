@@ -7,6 +7,8 @@ export const useMedicalRecord = (pet_id: number) => {
     return useQuery({
         queryKey: ['medical-record', pet_id],
         queryFn: () => getMedicalHistoryByPetId(pet_id),
+        enabled: pet_id > 0,
+        retry: 1,
     });
 }
 

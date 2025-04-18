@@ -152,16 +152,16 @@ const getPriorityColorClass = (priority: string): string => {
 };
 
 // Memoized appointment card component to prevent unnecessary re-renders
-const AppointmentCard = memo(({ 
-  appointment, 
-  onClick, 
+const AppointmentCard = memo(({
+  appointment,
+  onClick,
   onStatusChange,
   formatTime,
   getStatusColorClass,
   getTypeColorClass,
   getPriorityColorClass
-}: { 
-  appointment: Appointment; 
+}: {
+  appointment: Appointment;
   onClick: (id: number) => void;
   onStatusChange: (id: number, statusId: number, navigateToDetail?: boolean) => void;
   formatTime: (date: Date | string) => string;
@@ -174,13 +174,13 @@ const AppointmentCard = memo(({
   }, [appointment.id, onClick]);
 
   // Precalculate status class for better performance
-  const statusClass = useMemo(() => 
-    getStatusColorClass(appointment.state), 
+  const statusClass = useMemo(() =>
+    getStatusColorClass(appointment.state),
     [appointment.state, getStatusColorClass]
   );
 
   return (
-    <div 
+    <div
       className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-3 hover:shadow-md transition-shadow cursor-pointer"
       onClick={handleClick}
     >
@@ -240,8 +240,8 @@ const EnhancedAppointmentFlowboard: React.FC<
   const { data: queueData } = useListAppointmentsQueue();
 
   // Memoize the found queue item to prevent unnecessary calculations
-  const queueItem = useMemo(() => 
-    queueData?.find((item: QueueItem) => item.id === selectedAppointmentId), 
+  const queueItem = useMemo(() =>
+    queueData?.find((item: QueueItem) => item.id === selectedAppointmentId),
     [queueData, selectedAppointmentId]
   );
 
@@ -309,7 +309,7 @@ const EnhancedAppointmentFlowboard: React.FC<
       const typeMatch =
         filterType === "all" ||
         appointment.service.service_name.toLowerCase() ===
-          filterType.toLowerCase();
+        filterType.toLowerCase();
 
       return statusMatch && doctorMatch && typeMatch;
     });
@@ -327,7 +327,7 @@ const EnhancedAppointmentFlowboard: React.FC<
   }), [filteredAppointments]);
 
   // Get the selected appointment details
-  const selectedAppointment = useMemo(() => 
+  const selectedAppointment = useMemo(() =>
     appointments.find((a) => a.id === selectedAppointmentId),
     [appointments, selectedAppointmentId]
   );
@@ -350,7 +350,7 @@ const EnhancedAppointmentFlowboard: React.FC<
       console.error("Error updating appointment status:", error);
     },
   });
-  
+
   // Refresh queue when an appointment status changes
   const handleStatusChange = useCallback(
     (appointmentId: number, newStatus: number, navigateToDetail: boolean = false) => {
@@ -368,10 +368,8 @@ const EnhancedAppointmentFlowboard: React.FC<
                 state_id: newStatus,
               };
               onAppointmentUpdate(updatedAppointment);
-
-              // Navigate to patient management page if requested
               if (navigateToDetail) {
-                setLocation(`/appointment/${appointment.id}`);
+                setLocation(`/patient/${appointment.pet?.pet_id}?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`);
               }
             },
           }
@@ -480,8 +478,8 @@ const EnhancedAppointmentFlowboard: React.FC<
 
   // Thêm các hàm xử lý sự kiện cho các nút
   const handleStartAppointment = (appointmentId: number) => {
-    // Cập nhật trạng thái thành "In Progress"
-    handleStatusChange(appointmentId, 5, false);
+    // Cập nhật trạng thái thành "In Progress" và chuyển hướng đến trang chi tiết bệnh nhân
+    handleStatusChange(appointmentId, 5, true);
   };
 
   const handleCompleteAppointment = (appointmentId: number) => {
@@ -527,11 +525,10 @@ const EnhancedAppointmentFlowboard: React.FC<
           <div className="flex mb-0 mr-0 sm:mr-4">
             <div className="flex border rounded-md overflow-hidden">
               <button
-                className={`px-2 sm:px-3 py-1.5 text-sm font-medium flex items-center ${
-                  viewMode === "columns"
+                className={`px-2 sm:px-3 py-1.5 text-sm font-medium flex items-center ${viewMode === "columns"
                     ? "bg-indigo-600 text-white"
                     : "bg-white text-gray-700"
-                }`}
+                  }`}
                 onClick={() => setViewMode("columns")}
               >
                 <Columns size={14} className="mr-1" />
@@ -539,11 +536,10 @@ const EnhancedAppointmentFlowboard: React.FC<
               </button>
 
               <button
-                className={`px-2 sm:px-3 py-1.5 text-sm font-medium flex items-center ${
-                  viewMode === "list"
+                className={`px-2 sm:px-3 py-1.5 text-sm font-medium flex items-center ${viewMode === "list"
                     ? "bg-indigo-600 text-white"
                     : "bg-white text-gray-700"
-                }`}
+                  }`}
                 onClick={() => setViewMode("list")}
               >
                 <List size={14} className="mr-1" />
@@ -629,9 +625,8 @@ const EnhancedAppointmentFlowboard: React.FC<
       <div className="flex-1 flex overflow-hidden">
         {/* Main Appointments Area */}
         <div
-          className={`flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 ${
-            showSidebar ? "w-3/5 lg:w-2/3" : "w-full"
-          }`}
+          className={`flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 ${showSidebar ? "w-3/5 lg:w-2/3" : "w-full"
+            }`}
         >
           {/* Status Overview */}
           <div className="grid grid-cols-4 gap-4 p-4">
@@ -986,11 +981,10 @@ const EnhancedAppointmentFlowboard: React.FC<
                         .map((appointment) => (
                           <tr
                             key={appointment.id}
-                            className={`hover:bg-gray-50 cursor-pointer ${
-                              selectedAppointmentId === appointment.id
+                            className={`hover:bg-gray-50 cursor-pointer ${selectedAppointmentId === appointment.id
                                 ? "bg-indigo-50"
                                 : ""
-                            }`}
+                              }`}
                             onClick={() =>
                               handleAppointmentClick(appointment.id)
                             }
@@ -998,17 +992,17 @@ const EnhancedAppointmentFlowboard: React.FC<
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-medium text-gray-900">
                                 {!appointment.time_slot ||
-                                !appointment.time_slot.start_time ||
-                                appointment.time_slot.start_time === "00:00" ? (
+                                  !appointment.time_slot.start_time ||
+                                  appointment.time_slot.start_time === "00:00" ? (
                                   <div className="flex items-center">
                                     <Clock className="h-4 w-4 mr-1 text-orange-500" />
                                     <span>
                                       Arrived:{" "}
                                       {appointment.created_at
                                         ? format(
-                                            new Date(appointment.created_at),
-                                            "h:mm a"
-                                          )
+                                          new Date(appointment.created_at),
+                                          "h:mm a"
+                                        )
                                         : "Today"}
                                     </span>
                                   </div>
@@ -1022,8 +1016,8 @@ const EnhancedAppointmentFlowboard: React.FC<
                               </div>
                               <div className="text-xs text-gray-500">
                                 {!appointment.time_slot ||
-                                !appointment.time_slot.start_time ||
-                                appointment.time_slot.start_time === "00:00" ? (
+                                  !appointment.time_slot.start_time ||
+                                  appointment.time_slot.start_time === "00:00" ? (
                                   <span className="text-orange-600 font-medium">
                                     Walk-in
                                   </span>
@@ -1141,7 +1135,7 @@ const EnhancedAppointmentFlowboard: React.FC<
                 <button
                   className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 flex items-center justify-center"
                   onClick={() => {
-                    handleStatusChange(selectedAppointmentId, 5);
+                    handleStartAppointment(selectedAppointmentId);
                     setIsQuickActionsOpen(false);
                   }}
                 >
@@ -1185,11 +1179,10 @@ const EnhancedAppointmentFlowboard: React.FC<
             {/* Sidebar Header */}
             <div className="p-3 border-b flex justify-between items-center">
               <button
-                className={`p-2 rounded ${
-                  sidebarContent === "queue"
+                className={`p-2 rounded ${sidebarContent === "queue"
                     ? "bg-indigo-50 text-indigo-700"
                     : "text-gray-600 hover:bg-gray-100"
-                }`}
+                  }`}
                 onClick={() =>
                   setSidebarContent(
                     sidebarContent === "details" ? "queue" : "queue"
@@ -1246,18 +1239,16 @@ const EnhancedAppointmentFlowboard: React.FC<
                           return appointment ? (
                             <div
                               key={queueItem.id}
-                              className={`border rounded-lg overflow-hidden shadow-sm transition-all hover:shadow-md ${
-                                queueItem.priority === "high"
+                              className={`border rounded-lg overflow-hidden shadow-sm transition-all hover:shadow-md ${queueItem.priority === "high"
                                   ? "border-red-200 bg-red-50"
                                   : "border-gray-200 bg-white"
-                              }`}
+                                }`}
                             >
                               <div
-                                className={`px-4 py-3 flex justify-between items-center ${
-                                  queueItem.priority === "high"
+                                className={`px-4 py-3 flex justify-between items-center ${queueItem.priority === "high"
                                     ? "bg-red-100 border-b border-red-200"
                                     : getStatusColorClass(queueItem.status)
-                                }`}
+                                  }`}
                               >
                                 <div className="flex items-center">
                                   <div className="bg-white p-1.5 rounded-full mr-3 shadow-sm">
@@ -1286,9 +1277,9 @@ const EnhancedAppointmentFlowboard: React.FC<
                                   <Flag className="h-3 w-3 mr-1" />
                                   {queueItem.priority
                                     ? queueItem.priority
-                                        .charAt(0)
-                                        .toUpperCase() +
-                                      queueItem.priority.slice(1)
+                                      .charAt(0)
+                                      .toUpperCase() +
+                                    queueItem.priority.slice(1)
                                     : "Normal"}
                                 </span>
                               </div>
@@ -1428,12 +1419,12 @@ const EnhancedAppointmentFlowboard: React.FC<
                       {(!selectedAppointment.time_slot ||
                         !selectedAppointment.time_slot.start_time ||
                         selectedAppointment.time_slot.start_time ===
-                          "00:00:00") && (
-                        <span className="text-xs flex items-center bg-orange-100 text-orange-800 px-2 py-1 rounded">
-                          <UserPlus className="h-3 w-3 mr-1" />
-                          Walk-in
-                        </span>
-                      )}
+                        "00:00:00") && (
+                          <span className="text-xs flex items-center bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                            <UserPlus className="h-3 w-3 mr-1" />
+                            Walk-in
+                          </span>
+                        )}
                     </h4>
 
                     <div className="space-y-4">
@@ -1469,8 +1460,8 @@ const EnhancedAppointmentFlowboard: React.FC<
                           <div className="text-sm text-gray-500">Time</div>
                           <div className="font-medium">
                             {!selectedAppointment.time_slot ||
-                            !selectedAppointment.time_slot.start_time ||
-                            selectedAppointment.time_slot.start_time ===
+                              !selectedAppointment.time_slot.start_time ||
+                              selectedAppointment.time_slot.start_time ===
                               "00:00:00" ? (
                               <div className="flex items-center">
                                 <Clock className="h-4 w-4 mr-1 text-orange-500" />
@@ -1478,11 +1469,11 @@ const EnhancedAppointmentFlowboard: React.FC<
                                   Arrived:{" "}
                                   {selectedAppointment.created_at
                                     ? format(
-                                        new Date(
-                                          selectedAppointment.created_at
-                                        ),
-                                        "h:mm a"
-                                      )
+                                      new Date(
+                                        selectedAppointment.created_at
+                                      ),
+                                      "h:mm a"
+                                    )
                                     : "Today"}
                                 </span>
                               </div>
@@ -1503,11 +1494,11 @@ const EnhancedAppointmentFlowboard: React.FC<
                             {(!selectedAppointment.time_slot ||
                               !selectedAppointment.time_slot.start_time ||
                               selectedAppointment.time_slot.start_time ===
-                                "00:00:00") && (
-                              <span className="ml-2 text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
-                                Unscheduled
-                              </span>
-                            )}
+                              "00:00:00") && (
+                                <span className="ml-2 text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
+                                  Unscheduled
+                                </span>
+                              )}
                           </div>
                         </div>
                       </div>
@@ -1604,16 +1595,16 @@ const EnhancedAppointmentFlowboard: React.FC<
                           {selectedAppointment.state === "Scheduled"
                             ? "10%"
                             : selectedAppointment.state === "Confirmed"
-                            ? "25%"
-                            : selectedAppointment.state === "Checked In" ||
-                              selectedAppointment.state === "Arrived" ||
-                              selectedAppointment.state === "Waiting"
-                            ? "50%"
-                            : selectedAppointment.state === "In Progress"
-                            ? "75%"
-                            : selectedAppointment.state === "Completed"
-                            ? "100%"
-                            : "0%"}
+                              ? "25%"
+                              : selectedAppointment.state === "Checked In" ||
+                                selectedAppointment.state === "Arrived" ||
+                                selectedAppointment.state === "Waiting"
+                                ? "50%"
+                                : selectedAppointment.state === "In Progress"
+                                  ? "75%"
+                                  : selectedAppointment.state === "Completed"
+                                    ? "100%"
+                                    : "0%"}
                         </div>
                       </div>
                       <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
@@ -1624,16 +1615,16 @@ const EnhancedAppointmentFlowboard: React.FC<
                               selectedAppointment.state === "Scheduled"
                                 ? "10%"
                                 : selectedAppointment.state === "Confirmed"
-                                ? "25%"
-                                : selectedAppointment.state === "Checked In" ||
-                                  selectedAppointment.state === "Arrived" ||
-                                  selectedAppointment.state === "Waiting"
-                                ? "50%"
-                                : selectedAppointment.state === "In Progress"
-                                ? "75%"
-                                : selectedAppointment.state === "Completed"
-                                ? "100%"
-                                : "0%",
+                                  ? "25%"
+                                  : selectedAppointment.state === "Checked In" ||
+                                    selectedAppointment.state === "Arrived" ||
+                                    selectedAppointment.state === "Waiting"
+                                    ? "50%"
+                                    : selectedAppointment.state === "In Progress"
+                                      ? "75%"
+                                      : selectedAppointment.state === "Completed"
+                                        ? "100%"
+                                        : "0%",
                           }}
                         ></div>
                       </div>

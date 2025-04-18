@@ -87,9 +87,6 @@ export const getAllAppointments = async (
         totalPages,
       };
     }
-
-    // Default case - return a safe structure
-    console.log("Response structure:", response.data);
     return {
       data: response.data?.data?.rows || response.data?.rows || [],
       total: response.data?.data?.count || response.data?.count || 0,

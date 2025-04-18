@@ -71,7 +71,8 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery }) => {
 
   // Use the API hook with pagination and search parameters
   const { data: medicines, isLoading, error } = useGetAllMedicines();
-  console.log("medicines", medicines);
+
+  console.log("medicines: ", medicines);
   useEffect(() => {
     if (medicines?.meta) {
       setTotalPages(medicines.meta.totalPages);
@@ -99,17 +100,6 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery }) => {
 
     setIsSubmitting(true);
     try {
-      // Mock success for demonstration
-      console.log("Adjusting quantity:", {
-        medicine: selectedMedicine.medicine_name,
-        adjustment_type: adjustmentType,
-        quantity: adjustQuantity,
-        reason: adjustmentReason,
-      });
-
-      // Instead of trying to update medicines directly, close the dialog
-      // In a real implementation, you would call an API to update the quantity
-      // and then potentially refetch the medicines data
       
       setAdjustQuantityDialogOpen(false);
     } catch (error) {

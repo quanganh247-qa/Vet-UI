@@ -6,7 +6,6 @@ import {
   Filter, 
   UserCircle, 
   Mail, 
-  Phone, 
   List, 
   Grid, 
   ChevronRight,
@@ -34,7 +33,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DoctorDetail } from "@/types";
-import { useDoctors } from "@/hooks/use-doctor";
+import { useDoctors, useAddNewStaff } from "@/hooks/use-doctor";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -48,16 +47,15 @@ const StaffPage = () => {
   
   // Staff form state
   const [newStaff, setNewStaff] = useState({
-    id: "",
-    email: "",
+    username: "",
     password: "",
     passwordConfirm: "",
-    verified: false,
-    name: "",
+    full_name: "",
+    email: "",
+    phone_number: "",
+    address: "",
     role: "",
-    specialization: "",
-    certificateNumber: "",
-    avatar: null as File | null
+    is_verified_email: false
   });
   
   const { data: staffData, isLoading } = useDoctors();
@@ -116,16 +114,9 @@ const StaffPage = () => {
   };
   
   // Handle file upload for avatar
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setNewStaff(prev => ({
-        ...prev,
-        avatar: e.target.files![0]
-      }));
-    }
-  };
   
   // Handle staff form submission
+  const addNewStaffMutation = useAddNewStaff();
   const handleCreateStaff = (e: React.FormEvent) => {
     e.preventDefault();
     // Validate passwords match
@@ -133,25 +124,25 @@ const StaffPage = () => {
       alert("Passwords do not match");
       return;
     }
-    
-    // Here you would typically send data to your backend
-    console.log("Creating new staff member:", newStaff);
-    
-    // Reset form and navigate back to staff list
-    setNewStaff({
-      id: "",
-      email: "",
-      password: "",
-      passwordConfirm: "",
-      verified: false,
-      name: "",
-      role: "",
-      specialization: "",
-      certificateNumber: "",
-      avatar: null
+    // Prepare data for API (remove passwordConfirm, handle avatar if needed)
+    const { passwordConfirm, ...submitData } = newStaff;
+    addNewStaffMutation.mutate(submitData, {
+      onSuccess: () => {
+        setNewStaff({
+          username: "",
+          password: "",
+          passwordConfirm: "",
+          full_name: "",
+          email: "",
+          phone_number: "",
+          address: "",
+          role: "",
+          is_verified_email: false,
+        });
+        setLocation("/staff");
+      }
+      // onError handled by hook toast
     });
-    
-    setLocation("/staff");
   };
   
   if (isLoading) {
@@ -189,187 +180,196 @@ const StaffPage = () => {
         </div>
         
         {/* Staff Creation Form */}
-        <Card>
-          <CardContent className="pt-6">
-            <form onSubmit={handleCreateStaff} className="space-y-4">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center mb-2">
-                  <span className="text-sm font-medium text-gray-500 mr-2">ID</span>
-                  <span className="text-xs bg-gray-200 rounded px-2 py-1">Auto</span>
-                </div>
-                <Input 
-                  id="staff-id"
-                  name="id"
-                  value={newStaff.id}
-                  onChange={handleStaffChange}
-                  className="bg-gray-100"
-                  placeholder="Leave empty to auto generate..."
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center mb-2">
-                    <span className="text-sm font-medium text-gray-500 mr-2">Name</span>
-                    <span className="text-red-500 text-sm">*</span>
-                  </div>
-                  <Input 
-                    id="staff-name"
-                    name="name"
-                    value={newStaff.name}
-                    onChange={handleStaffChange}
-                    required
-                  />
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center">
-                      <span className="text-sm font-medium text-gray-500 mr-2">Email</span>
-                      <span className="text-red-500 text-sm">*</span>
-                    </div>
-                    <span className="text-xs bg-gray-200 rounded px-2 py-1">Public: Off</span>
-                  </div>
-                  <Input 
-                    id="staff-email"
-                    name="email"
-                    type="email"
-                    value={newStaff.email}
-                    onChange={handleStaffChange}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center mb-2">
-                    <span className="text-sm font-medium text-gray-500 mr-2">Password</span>
-                    <span className="text-red-500 text-sm">*</span>
-                  </div>
-                  <Input 
-                    id="staff-password"
-                    name="password"
-                    type="password"
-                    value={newStaff.password}
-                    onChange={handleStaffChange}
-                    required
-                  />
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center mb-2">
-                    <span className="text-sm font-medium text-gray-500 mr-2">Password confirm</span>
-                    <span className="text-red-500 text-sm">*</span>
-                  </div>
-                  <Input 
-                    id="staff-password-confirm"
-                    name="passwordConfirm"
-                    type="password"
-                    value={newStaff.passwordConfirm}
-                    onChange={handleStaffChange}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center mb-2">
-                    <span className="text-sm font-medium text-gray-500 mr-2">Role</span>
-                    <span className="text-red-500 text-sm">*</span>
-                  </div>
-                  <Select value={newStaff.role} onValueChange={handleRoleChange} required>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Veterinarian">Veterinarian</SelectItem>
-                      <SelectItem value="Technician">Technician</SelectItem>
-                      <SelectItem value="Receptionist">Receptionist</SelectItem>
-                      <SelectItem value="Manager">Manager</SelectItem>
-                      <SelectItem value="Assistant">Assistant</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center mb-2">
-                    <span className="text-sm font-medium text-gray-500 mr-2">Specialization</span>
-                  </div>
-                  <Input 
-                    id="staff-specialization"
-                    name="specialization"
-                    value={newStaff.specialization}
-                    onChange={handleStaffChange}
-                    placeholder="E.g., Surgery, Dermatology, etc."
-                  />
-                </div>
-              </div>
-              
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center mb-2">
-                  <span className="text-sm font-medium text-gray-500 mr-2">Certificate Number</span>
-                </div>
-                <Input 
-                  id="staff-certificate"
-                  name="certificateNumber"
-                  value={newStaff.certificateNumber}
-                  onChange={handleStaffChange}
-                  placeholder="Professional certification number"
-                />
-              </div>
-              
-              <div className="flex items-center space-x-2 py-2">
-                <Switch
-                  id="staff-verified"
-                  name="verified"
-                  checked={newStaff.verified}
-                  onCheckedChange={(checked) => setNewStaff(prev => ({ ...prev, verified: checked }))}
-                />
-                <Label htmlFor="staff-verified">Verified</Label>
-              </div>
-              
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center mb-2">
-                  <span className="text-sm font-medium text-gray-500 mr-2">Avatar</span>
-                </div>
-                <div className="w-full p-2 border border-dashed border-gray-300 rounded-lg text-center cursor-pointer hover:bg-gray-100 transition-colors">
-                  <label htmlFor="avatar-upload" className="cursor-pointer w-full h-full flex flex-col items-center justify-center py-4">
-                    <Upload className="h-6 w-6 text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-500">Upload new file</span>
-                    <input 
-                      id="avatar-upload" 
-                      name="avatar"
-                      type="file" 
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden" 
-                    />
-                  </label>
-                </div>
-                {newStaff.avatar && (
-                  <p className="text-sm text-gray-500 mt-1">Selected: {newStaff.avatar.name}</p>
-                )}
-              </div>
-              
-              <Separator className="my-6" />
-              
-              <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setLocation('/staff')}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="bg-gray-900 text-white hover:bg-gray-800">
-                  Create
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  {/* Main Form Section */}
+  <Card className="lg:col-span-2 shadow-xl">
+    <CardContent className="pt-8">
+      <form onSubmit={handleCreateStaff} className="space-y-8">
+        {/* Section: Account Info */}
+        <div>
+          <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+            <UserCircle className="w-5 h-5 text-indigo-500" /> Account Information
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                name="username"
+                value={newStaff.username}
+                onChange={handleStaffChange}
+                required
+                autoComplete="off"
+                placeholder="e.g. johndoe"
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-500 mt-1">This will be used for login.</p>
+            </div>
+            <div>
+              <Label htmlFor="full_name">Full Name</Label>
+              <Input
+                id="full_name"
+                name="full_name"
+                value={newStaff.full_name}
+                onChange={handleStaffChange}
+                required
+                placeholder="e.g. John Doe"
+                className="mt-1"
+              />
+            </div>
+          </div>
+        </div>
+        {/* Section: Contact Info */}
+        <div>
+          <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+            <Mail className="w-5 h-5 text-indigo-500" /> Contact Information
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={newStaff.email}
+                onChange={handleStaffChange}
+                required
+                placeholder="e.g. johndoe@email.com"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="phone_number">Phone Number</Label>
+              <Input
+                id="phone_number"
+                name="phone_number"
+                value={newStaff.phone_number}
+                onChange={handleStaffChange}
+                placeholder="e.g. 0123456789"
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <div className="mt-4">
+            <Label htmlFor="address">Address</Label>
+            <Input
+              id="address"
+              name="address"
+              value={newStaff.address}
+              onChange={handleStaffChange}
+              placeholder="e.g. 123 Main St, City, Country"
+              className="mt-1"
+            />
+          </div>
+        </div>
+        {/* Section: Security */}
+        <div>
+          {/* <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+            <Lock className="w-5 h-5 text-indigo-500" /> Security
+          </h2> */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                value={newStaff.password}
+                onChange={handleStaffChange}
+                required
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="passwordConfirm">Confirm Password</Label>
+              <Input
+                id="passwordConfirm"
+                name="passwordConfirm"
+                type="password"
+                value={newStaff.passwordConfirm}
+                onChange={handleStaffChange}
+                required
+                className="mt-1"
+              />
+            </div>
+          </div>
+        </div>
+        {/* Section: Role & Verification */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <Label htmlFor="role">Role</Label>
+            <Select value={newStaff.role} onValueChange={handleRoleChange} required>
+              <SelectTrigger className="w-full mt-1">
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Veterinarian">Veterinarian</SelectItem>
+                <SelectItem value="Technician">Technician</SelectItem>
+                <SelectItem value="Receptionist">Receptionist</SelectItem>
+                <SelectItem value="Manager">Manager</SelectItem>
+                <SelectItem value="Assistant">Assistant</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-3 mt-8 md:mt-0">
+            <Switch
+              id="is_verified_email"
+              name="is_verified_email"
+              checked={newStaff.is_verified_email}
+              onCheckedChange={(checked) => setNewStaff(prev => ({ ...prev, is_verified_email: checked }))}
+            />
+            <Label htmlFor="is_verified_email" className="text-gray-700">Verified Email</Label>
+            <span className="text-xs text-gray-500">(Can login immediately if checked)</span>
+          </div>
+        </div>
+        <Separator className="my-8" />
+        {/* Sticky submit (mobile), right aligned (desktop) */}
+        <div className="flex flex-col md:flex-row justify-end gap-2 md:gap-4 sticky bottom-0 bg-white/90 py-4 z-10">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setLocation('/staff')}
+            className="w-full md:w-auto"
+          >
+            Cancel
+          </Button>
+          <Button type="submit" className="w-full md:w-auto bg-indigo-700 hover:bg-indigo-800 text-white font-semibold">
+            Create Staff
+          </Button>
+        </div>
+      </form>
+    </CardContent>
+  </Card>
+  {/* Summary Card (Desktop Only) */}
+  <div className="hidden lg:block">
+    <Card className="shadow-lg">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <UserCircle className="w-5 h-5 text-indigo-500" />
+          Preview
+        </CardTitle>
+        <CardDescription>Staff profile preview</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-20 w-20 rounded-full bg-indigo-100 flex items-center justify-center text-4xl font-bold text-indigo-600">
+            {newStaff.full_name ? newStaff.full_name.split(' ').map(n => n[0]).join('') : <UserCircle className="w-10 h-10" />}
+          </div>
+          <div className="text-lg font-semibold">{newStaff.full_name || 'Full Name'}</div>
+          <div className="text-gray-500 text-sm">{newStaff.role || 'Role'}</div>
+          <div className="text-gray-400 text-xs">{newStaff.email || 'Email'}</div>
+          <Separator className="my-3" />
+          <div className="w-full flex flex-col gap-1">
+            <div><span className="font-medium">Username:</span> {newStaff.username || '-'}</div>
+            <div><span className="font-medium">Phone:</span> {newStaff.phone_number || '-'}</div>
+            <div><span className="font-medium">Address:</span> {newStaff.address || '-'}</div>
+            <div><span className="font-medium">Verified Email:</span> {newStaff.is_verified_email ? 'Yes' : 'No'}</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+</div>
       </div>
     );
   }

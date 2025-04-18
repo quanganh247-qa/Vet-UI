@@ -1,12 +1,22 @@
-import React, { useState, useEffect, Suspense } from 'react';
-import { useLocation } from 'wouter';
-import { 
-  ArrowLeft, Activity, Syringe, FileText, Clock, User, Phone, MapPin,
-  Calendar, UserCog, LogOut, Settings
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { getPatientById } from '@/services/pet-services';
-import { getVaccinations } from '@/services/vaccine-services';
+import React, { useState, useEffect, Suspense } from "react";
+import { useLocation } from "wouter";
+import {
+  ArrowLeft,
+  Activity,
+  Syringe,
+  FileText,
+  Clock,
+  User,
+  Phone,
+  MapPin,
+  Calendar,
+  UserCog,
+  LogOut,
+  Settings,
+} from "lucide-react";
+import { format } from "date-fns";
+import { getPatientById } from "@/services/pet-services";
+import { getVaccinations } from "@/services/vaccine-services";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,7 +77,7 @@ interface Treatment {
   id: string;
   name: string;
   date: string;
-  status: 'completed' | 'ongoing' | 'scheduled';
+  status: "completed" | "ongoing" | "scheduled";
   description: string;
   nextAppointment?: string;
   prescribedMedications?: string[];
@@ -76,7 +86,7 @@ interface Treatment {
 
 export const PatientDetailPage: React.FC = () => {
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState("info");
   const [pet, setPet] = useState<Pet | null>(null);
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,23 +97,24 @@ export const PatientDetailPage: React.FC = () => {
   useEffect(() => {
     const fetchPetData = async () => {
       try {
-        const petId = window.location.pathname.split('/').pop();
+        const petId = window.location.pathname.split("/").pop();
         if (!petId) {
-          throw new Error('No pet ID provided');
+          throw new Error("No pet ID provided");
         }
         const numericPetId = parseInt(petId);
 
         // Fetch pet and vaccines data in parallel
         const [petData, vaccinesData] = await Promise.all([
           getPatientById(numericPetId),
-          getVaccinations(numericPetId)
+          getVaccinations(numericPetId),
         ]);
 
         setPet(petData);
         setVaccines(vaccinesData);
-
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch pet data');
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch pet data"
+        );
       } finally {
         setLoading(false);
       }
@@ -121,14 +132,16 @@ export const PatientDetailPage: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    setLocation('/login');
+    setLocation("/login");
   };
 
   if (loading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-        <p className="text-indigo-600 font-medium">Loading patient details...</p>
+        <p className="text-indigo-600 font-medium">
+          Loading patient details...
+        </p>
       </div>
     );
   }
@@ -136,7 +149,7 @@ export const PatientDetailPage: React.FC = () => {
   if (error || !pet) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-red-600">{error || 'Pet not found'}</div>
+        <div className="text-red-600">{error || "Pet not found"}</div>
       </div>
     );
   }
@@ -150,16 +163,14 @@ export const PatientDetailPage: React.FC = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setLocation('/patients')}
+              onClick={() => setLocation("/patients")}
               className="mr-2 h-8 w-8 text-white hover:bg-white/20"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-white">{pet.name}</h1>
-              <p className="text-indigo-100 text-sm">
-                Patient Profile
-              </p>
+              <p className="text-indigo-100 text-sm">Patient Profile</p>
             </div>
           </div>
 
@@ -168,15 +179,19 @@ export const PatientDetailPage: React.FC = () => {
               <Calendar className="h-4 w-4 text-white/70 mr-2" />
               <input
                 type="date"
-                value={format(selectedDate, 'yyyy-MM-dd')}
+                value={format(selectedDate, "yyyy-MM-dd")}
                 onChange={handleDateChange}
                 className="text-sm bg-transparent border-none focus:outline-none text-white"
               />
             </div>
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                >
                   <UserCog className="h-4 w-4 mr-2" />
                   My Profile
                 </Button>
@@ -219,7 +234,10 @@ export const PatientDetailPage: React.FC = () => {
             <CardContent className="p-0">
               <div className="aspect-w-1 aspect-h-1 relative h-80">
                 <img
-                  src={`data:image/png;base64,${pet.data_image}` || 'https://i.pinimg.com/736x/2a/25/b6/2a25b650a1d075d3f5cff5182cbca1f0.jpg'}
+                  src={
+                    `data:image/png;base64,${pet.data_image}` ||
+                    "https://i.pinimg.com/736x/2a/25/b6/2a25b650a1d075d3f5cff5182cbca1f0.jpg"
+                  }
                   alt={pet.name}
                   className="w-full h-full object-cover"
                 />
@@ -264,22 +282,30 @@ export const PatientDetailPage: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-sm font-medium text-gray-500">Gender</h3>
-                  <p className="text-base text-gray-900">{pet.type === 'Dog' ? 'Male' : 'Female'}</p>
+                  <p className="text-base text-gray-900">
+                    {pet.type === "Dog" ? "Male" : "Female"}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-sm font-medium text-gray-500">Weight</h3>
                   <p className="text-base text-gray-900">{pet.weight} kg</p>
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-sm font-medium text-gray-500">Microchip ID</h3>
-                  <p className="text-base text-gray-900">{pet.microchip_number || 'Not registered'}</p>
+                  <h3 className="text-sm font-medium text-gray-500">
+                    Microchip ID
+                  </h3>
+                  <p className="text-base text-gray-900">
+                    {pet.microchip_number || "Not registered"}
+                  </p>
                 </div>
               </div>
 
               <div className="mt-6 bg-indigo-50 rounded-lg p-4 border border-indigo-100">
                 <div className="flex items-center gap-2 mb-2">
                   <User className="h-4 w-4 text-indigo-600" />
-                  <h3 className="font-medium text-gray-900">Owner Information</h3>
+                  <h3 className="font-medium text-gray-900">
+                    Owner Information
+                  </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -296,156 +322,6 @@ export const PatientDetailPage: React.FC = () => {
           </Card>
         </div>
       </div>
-
-      {/* Tabs */}
-      <Card className="border-none shadow-md overflow-hidden">
-        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 rounded-none border-b bg-transparent p-0">
-            <TabsTrigger
-              value="info"
-              className={cn(
-                "data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600",
-                "rounded-none border-b-2 border-transparent py-3 font-medium text-gray-500",
-                "hover:text-gray-700 transition-colors"
-              )}
-            >
-              Owner Info
-            </TabsTrigger>
-            <TabsTrigger
-              value="vaccines"
-              className={cn(
-                "data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600",
-                "rounded-none border-b-2 border-transparent py-3 font-medium text-gray-500",
-                "hover:text-gray-700 transition-colors"
-              )}
-            >
-              Vaccines
-            </TabsTrigger>
-            <TabsTrigger
-              value="records"
-              className={cn(
-                "data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600",
-                "rounded-none border-b-2 border-transparent py-3 font-medium text-gray-500",
-                "hover:text-gray-700 transition-colors"
-              )}
-            >
-              Medical Records
-            </TabsTrigger>
-            {/* <TabsTrigger
-              value="treatments"
-              className={cn(
-                "data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600",
-                "rounded-none border-b-2 border-transparent py-3 font-medium text-gray-500",
-                "hover:text-gray-700 transition-colors"
-              )}
-            >
-              Treatments
-            </TabsTrigger> */}
-          </TabsList>
-
-          <TabsContent value="info" className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center gap-2">
-                    <User className="h-5 w-5 text-indigo-600" />
-                    Owner Details
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Owner Name</h4>
-                      <p className="text-base text-gray-900">{pet.username}</p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Phone</h4>
-                      <p className="text-base text-gray-900">0978710192</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-indigo-600" />
-                    Address Information
-                  </h3>
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Primary Address</h4>
-                    <p className="text-base text-gray-900">123 Main Street, Cityville</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="vaccines" className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
-                <Syringe className="h-5 w-5 text-indigo-600" />
-                Vaccination History
-              </h3>
-              <Button className="bg-indigo-600 hover:bg-indigo-700">
-                Add Vaccine
-              </Button>
-            </div>
-
-            <div className="overflow-x-auto">
-              <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Due</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {vaccines?.map((vaccine) => (
-                      <tr key={vaccine.vaccination_id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vaccine.vaccine_name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{format(new Date(vaccine.date_administered), 'MMM d, yyyy')}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{format(new Date(vaccine.next_due_date), 'MMM d, yyyy')}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge className={cn(
-                            "px-2 text-xs font-semibold rounded-full",
-                            vaccine.notes === 'completed'
-                              ? "bg-green-100 text-green-800"
-                              : "bg-yellow-100 text-yellow-800"
-                          )}>
-                            {vaccine.notes}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="records">
-            <Suspense fallback={
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-              </div>
-            }>
-              <MedicalRecords />
-            </Suspense>
-          </TabsContent>
-
-          <TabsContent value="treatments">
-            <Suspense fallback={
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-              </div>
-            }>
-              <Treatment />
-            </Suspense>
-          </TabsContent>
-        </Tabs>
-      </Card>
     </div>
   );
-}; 
+};

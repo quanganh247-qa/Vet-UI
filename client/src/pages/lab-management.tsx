@@ -197,8 +197,6 @@ const LabManagement: React.FC = () => {
   const testCategories = React.useMemo(() => {
     if (!apiCategories) return [];
 
-    console.log("API Categories:", apiCategories);
-
     // Check if apiCategories is an array
     const categories = Array.isArray(apiCategories)
       ? apiCategories
@@ -252,8 +250,6 @@ const LabManagement: React.FC = () => {
   // Map API vaccines to UI format
   const vaccineCategory = React.useMemo(() => {
     if (!apiCategories) return null;
-
-    console.log("Processing vaccines from categories:", apiCategories);
 
     // Check if apiCategories is an array
     const categories = Array.isArray(apiCategories)
@@ -571,6 +567,8 @@ const LabManagement: React.FC = () => {
     vaccineCategory && vaccineCategory.tests && vaccineCategory.tests.length > 0
       ? [...validTestCategories, vaccineCategory]
       : validTestCategories;
+
+  console.log("allCategories", allCategories);
 
   if (allCategories.length === 0) {
     return (

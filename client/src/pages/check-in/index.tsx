@@ -68,6 +68,9 @@ const CheckIn = () => {
     !!appointment?.service?.service_name
   );
 
+  console.log("rooms", rooms)
+
+
   // Define QR code information conditionally but call the hook unconditionally
   const qrCodeInformation: QuickLinkRequest = {
     bank_id: "mbbank",
@@ -76,7 +79,7 @@ const CheckIn = () => {
     amount: appointment?.service?.service_amount || 0,
     description: `Payment for ${appointment?.service?.service_name || "appointment"}`,
     account_name: "PET CARE CLINIC",
-    order_id:  0,
+    order_id: 0,
     test_order_id: 0,
   };
 
@@ -165,16 +168,10 @@ const CheckIn = () => {
       });
     }
   };
-  
+
   const handleCancel = () => {
     setLocation("/appointment-flow");
   };
-
-  // const handleCopyPaymentInfo = () => {
-  //   navigator.clipboard.writeText(paymentInfo.description);
-  //   setCopied(true);
-  //   setTimeout(() => setCopied(false), 2000);
-  // };
 
   const handleCompletePayment = () => {
     alert("Payment processed successfully!");
@@ -183,7 +180,7 @@ const CheckIn = () => {
 
   const handleGetQRCode = () => {
     setIsQRLoading(true);
-    
+
     // Actually trigger the mutation
     qrMutation.mutateAsync(qrCodeInformation)
       .then(data => {
@@ -237,7 +234,7 @@ const CheckIn = () => {
                 className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1.5 shadow-sm"
               >
                 <CheckCircle className="w-4 h-4" />
-                Complete Check-in & Go to Waiting Queue
+                Complete Check-in
               </Button>
             </div>
           </div>

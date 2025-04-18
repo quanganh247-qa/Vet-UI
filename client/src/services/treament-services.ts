@@ -5,28 +5,12 @@ import {
 } from "@/types";
 import api from "@/lib/api";
 export const getPatientTreatments = async (patient_id: string) => {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    throw new Error("No access token found");
-  }
-  const response = await api.get(`/api/v1/pet/${patient_id}/treatments`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await api.get(`/api/v1/pet/${patient_id}/treatments`);
   return response.data;
 };
 
 export const getTreatmentPhasesByTreatmentId = async (treatment_id: string) => {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    throw new Error("No access token found");
-  }
-  const response = await api.get(`/api/v1/treatment/${treatment_id}/phases`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await api.get(`/api/v1/treatment/${treatment_id}/phases`);
   return response.data;
 };
 
@@ -34,17 +18,8 @@ export const getMedicationByPhaseId = async (
   treatment_id: string,
   phase_id: string
 ) => {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    throw new Error("No access token found");
-  }
   const response = await api.get(
-    `/api/v1/treatment/${treatment_id}/phases/${phase_id}/medicines`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
+    `/api/v1/treatment/${treatment_id}/phases/${phase_id}/medicines`
   );
   return response.data;
 };
@@ -53,18 +28,12 @@ export const addNewPhaseToTreatment = async (
   payload: CreateTreatmentPhaseRequest[],
   treatment_id: string
 ) => {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    throw new Error("No access token found - please log in again");
-  }
-
   try {
     const response = await api.post(
       `/api/v1/treatment/${treatment_id}/phases`,
       payload,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json", // Explicit content type
         },
       }
@@ -79,18 +48,12 @@ export const assignMedicineToPhase = async (
   treatment_id: string,
   phase_id: string
 ) => {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    throw new Error("No access token found - please log in again.");
-  }
-
   try {
     const response = await api.post(
       `/api/v1/treatment/${treatment_id}/phase/${phase_id}/medicines`,
       payload,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json", // Explicit content type
         },
       }
@@ -105,49 +68,33 @@ export const getMedicinesByPhaseId = async (
   treatment_id: string,
   phase_id: string
 ) => {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    throw new Error("No access token found");
+  try {
+    const response = await api.get(
+      `/api/v1/treatment/${treatment_id}/phases/${phase_id}/medicines`
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
   }
-  const response = await api.get(
-    `/api/v1/treatment/${treatment_id}/phases/${phase_id}/medicines`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-  return response.data;
 };
 
 export const getAllMedicines = async () => {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    throw new Error("No access token found");
+  try {
+    const response = await api.get(`/api/v1/medicines`);
+    console.log("response", response.data);
+    return response.data;
+  } catch (error) {
+    throw error;
   }
-  const response = await api.get(`/api/v1/medicines`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  console.log("response", response);
-  return response.data;
 };
 
 export const addNewTreatment = async (payload: CreateTreatmentRequest) => {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    throw new Error("No access token found");
-  }
-  console.log("payload", payload);
   try {
-    const response = await api.post(`/api/v1/treatment`, payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await api.post(`/api/v1/treatment`, payload);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
+    console.log("Full error:", error);
+    console.log("Response data:", error.response?.data);
     throw error;
   }
 };

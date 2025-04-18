@@ -35,6 +35,7 @@ export const createMedicalHistory = async (
 export const getMedicalHistoryByPetId = async (pet_id: number) => {
   try {
     const response = await api.get(`/api/v1/pets/${pet_id}/medical-histories`);
+    console.log("Medical history response:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error getting medical history by pet id:", error);
