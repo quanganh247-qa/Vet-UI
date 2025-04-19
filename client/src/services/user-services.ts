@@ -19,3 +19,4 @@ export const getPetOwnerByPetId = async (id: number) => {
     throw error;
   }
 };
+

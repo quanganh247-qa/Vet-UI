@@ -1,4 +1,5 @@
 import api from "@/lib/api";
+import { handleApiError } from "@/utils/helper";
 
 export const getDoctorById = async (doctor_id: number) => {
     try {
@@ -93,13 +94,13 @@ export const addNewShift = async (data: { start_time: Date; end_time: Date; doct
 };
 
 export interface CreateStaffRequest {
-    username:        string;
-    password:        string;
-    full_name:        string;
-    email:           string;
-    phone_number:     string;
-    address:         string;
-    role:            string;
+    username: string;
+    password: string;
+    full_name: string;
+    email: string;
+    phone_number: string;
+    address: string;
+    role: string;
     is_verified_email: boolean;
 }
 
@@ -110,5 +111,66 @@ export const addNewStaff = async (data: CreateStaffRequest) => {
     } catch (error) {
         console.error("Error adding new staff:", error);
         throw error;
+    }
+};
+
+
+
+export interface EditDoctorProfileRequest {
+    specialization: string;
+    years_of_experience: number;
+    education: string;
+    certificate_number: string;
+    bio: string;
+}
+
+export const editDoctorProfile = async (data: EditDoctorProfileRequest) => {
+    try {
+        const response = await api.put('/api/v1/doctor/profile', data);
+        return response.data;
+    } catch (error: any) {
+        handleApiError(error); // Use the helper function
+    }
+};
+
+
+export interface UpdatePasswordParams {
+    old_assword: string; // Typo: should likely be old_password
+    password: string;
+}
+
+export const updatePassword = async ( data: UpdatePasswordParams) => {
+    try {
+        const response = await api.put('/api/v1/user/change-password', data);
+        return response.data;
+    } catch (error: any) {
+        handleApiError(error); // Use the helper function
+    }
+};
+
+export const updateUserAvatar = async (data: FormData) => {
+    try {
+        const response = await api.put('/api/v1/user/avatar', data);
+        return response.data;
+    } catch (error: any) {
+        handleApiError(error); // Use the helper function
+    }
+};
+
+export interface UpdateUserParams {
+    username: string;
+    full_name: string;
+    email: string;
+    phone_number: string;
+    address: string;
+}
+
+
+export const updateUser = async (data: UpdateUserParams) => {
+    try {
+        const response = await api.put('/api/v1/user/profile', data);
+        return response.data;
+    } catch (error: any) {
+        handleApiError(error); // Use the helper function
     }
 };

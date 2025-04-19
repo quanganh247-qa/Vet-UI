@@ -8,9 +8,7 @@ import { LoginForm } from "@/pages/login";
 import React, { lazy, Suspense, useEffect, useState } from "react";
 import { AuthProvider } from "@/context/auth-context";
 import { NotificationProvider } from "@/context/notification-context";
-import NotificationsAdmin from "@/pages/notifications-admin";
 import Sidebar from "@/components/layout/sidebar";
-import Topbar from "@/components/layout/topbar";
 import { Toaster } from "@/components/ui/toaster";
 import { PatientsPage } from "@/pages/patient/patients";
 import { PatientDetailPage } from "@/pages/patient/patient-detail";
@@ -22,9 +20,9 @@ import ShiftManagement from "@/pages/shift-management";
 import StaffPageDetail from "@/pages/staff";
 import { WalkInDialog } from "./components/appointment/WalkInDialog";
 import Settings from "./pages/settings";
+import EditProfilePage from "./pages/profile/edit";
 
 // Lazy load the TestNotificationListener to avoid hook errors
-// const TestNotificationListener = lazy(() => import("@/components/notifications/TestNotificationListener"));
 const NotificationsPage = lazy(() => import("@/pages/notifications"));
 // Use lazy loading for new components
 const AppointmentFlow = lazy(() => import("@/pages/appointment-flow"));
@@ -152,7 +150,6 @@ function Router() {
         <Route path="/appointment/:id/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} />
         
         <Route path="/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
-        {/* <Route path="/notifications" component={NotificationsAdmin as React.ComponentType<RouteComponentProps>} /> */}
         <Route path="/notifications" component={NotificationsPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/chatbot" component={Chatbot as React.ComponentType<RouteComponentProps>} />
         <Route path="/patients" component={PatientsPage as React.ComponentType<RouteComponentProps>} />
@@ -167,6 +164,7 @@ function Router() {
         <Route path="/staff" component={StaffPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/staff/:id" component={StaffPageDetail as React.ComponentType<RouteComponentProps>} />
         <Route path="/settings" component={Settings as React.ComponentType<RouteComponentProps>} />
+        <Route path="/profile" component={EditProfilePage as React.ComponentType<RouteComponentProps>} />
         <Route component={NotFound as React.ComponentType<RouteComponentProps>} />
       </Switch>
     </Suspense>

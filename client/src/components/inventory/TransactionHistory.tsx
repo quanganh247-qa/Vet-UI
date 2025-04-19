@@ -121,7 +121,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
             <SelectTrigger className="h-9">
               <SelectValue placeholder="All Types" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="purchase">Purchase</SelectItem>
               <SelectItem value="sale">Sale</SelectItem>
@@ -157,7 +157,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent className="w-auto p-0 bg-white" align="start">
             <Calendar
               initialFocus
               mode="range"

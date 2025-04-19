@@ -74,12 +74,13 @@ const Dashboard = () => {
                 <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
                   <UserCog className="h-4 w-4 mr-2" />
                   My Profile
+
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
                   <User className="h-4 w-4 mr-2" />
                   Profile Settings
                 </DropdownMenuItem>

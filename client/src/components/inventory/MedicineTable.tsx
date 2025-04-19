@@ -38,6 +38,7 @@ import {
 import { useLocation } from "wouter";
 import { Progress } from "@/components/ui/progress";
 import { useGetAllMedicines } from "@/hooks/use-medicine";
+import api from "@/lib/api";
 
 interface Medicine {
   id: number;
@@ -53,9 +54,10 @@ interface Medicine {
 
 interface MedicineTableProps {
   searchQuery: string;
+  onEditMedicine: (medicine: Medicine) => void;
 }
 
-const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery }) => {
+const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedicine }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [adjustQuantityDialogOpen, setAdjustQuantityDialogOpen] =
@@ -63,6 +65,7 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery }) => {
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(
     null
   );
+  const [totalMedicines, setTotalMedicines] = useState(0);
   const [adjustQuantity, setAdjustQuantity] = useState(0);
   const [adjustmentType, setAdjustmentType] = useState("add");
   const [adjustmentReason, setAdjustmentReason] = useState("");
@@ -72,7 +75,7 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery }) => {
   // Use the API hook with pagination and search parameters
   const { data: medicines, isLoading, error } = useGetAllMedicines();
 
-  console.log("medicines: ", medicines);
+
   useEffect(() => {
     if (medicines?.meta) {
       setTotalPages(medicines.meta.totalPages);
@@ -206,32 +209,34 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery }) => {
                               <span className="sr-only">Actions</span>
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="bg-white">
                             <DropdownMenuItem
-                              onClick={() => handleViewDetails(medicine.id)}
+                              onSelect={() => handleViewDetails(medicine.id)}
                             >
                               <ExternalLink className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => handleOpenAdjustQuantity(medicine)}
+                              onSelect={() => handleOpenAdjustQuantity(medicine)}
                             >
                               <PlusCircle className="mr-2 h-4 w-4" />
                               Adjust Quantity
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() =>
+                              onSelect={() =>
                                 handleViewTransactions(medicine.id)
                               }
                             >
                               <History className="mr-2 h-4 w-4" />
                               Transaction History
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={() => onEditMedicine(medicine)}
+                            >
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
+                            <DropdownMenuItem className="text-red-600" onSelect={() => {}}>
                               <Trash className="mr-2 h-4 w-4" />
                               Delete
                             </DropdownMenuItem>
@@ -278,7 +283,7 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery }) => {
         open={adjustQuantityDialogOpen}
         onOpenChange={setAdjustQuantityDialogOpen}
       >
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] bg-white">
           <DialogHeader>
             <DialogTitle>Adjust Inventory Quantity</DialogTitle>
           </DialogHeader>

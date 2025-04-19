@@ -71,7 +71,7 @@ const MedicineAlerts: React.FC<MedicineAlertsProps> = ({
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="low-stock">
+              <TabsContent value="low-stock" className="bg-white">
                 {lowStockAlerts?.length === 0 ? (
                   <div className="bg-green-50 border border-green-100 rounded-md p-4 text-center">
                     <p className="text-green-800">No low stock alerts at the moment.</p>
@@ -114,7 +114,7 @@ const MedicineAlerts: React.FC<MedicineAlertsProps> = ({
                 )}
               </TabsContent>
 
-              <TabsContent value="expiring">
+              <TabsContent value="expiring" className="bg-white">
                 {expiringAlerts?.length === 0 ? (
                   <div className="bg-green-50 border border-green-100 rounded-md p-4 text-center">
                     <p className="text-green-800">No medicines expiring soon.</p>

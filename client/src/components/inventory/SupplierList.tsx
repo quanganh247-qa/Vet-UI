@@ -184,7 +184,7 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
               Add Supplier
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="bg-white sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Add New Supplier</DialogTitle>
             </DialogHeader>
@@ -277,7 +277,7 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
           open={isEditing}
           onOpenChange={(open) => !open && setIsEditing(false)}
         >
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="bg-white sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Edit Supplier</DialogTitle>
             </DialogHeader>
@@ -410,14 +410,14 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                               <span className="sr-only">Actions</span>
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="bg-white">
                             <DropdownMenuItem
-                              onClick={() => handleEditClick(supplier)}
+                              onSelect={() => handleEditClick(supplier)}
                             >
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
+                            <DropdownMenuItem className="text-red-600" onSelect={() => {}}>
                               <Trash className="mr-2 h-4 w-4" />
                               Delete
                             </DropdownMenuItem>

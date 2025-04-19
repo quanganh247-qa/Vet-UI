@@ -22,6 +22,7 @@ import {
 import { useLocation } from "wouter";
 import MedicineAlerts from "@/components/inventory/MedicineAlerts";
 import MedicineTable from "@/components/inventory/MedicineTable";
+import MedicineModal from "@/components/inventory/MedicineModal";
 import SupplierList from "@/components/inventory/SupplierList";
 import TransactionHistory from "@/components/inventory/TransactionHistory";
 import { LowStockNotification, ExpiredMedicineNotification } from "@/types";
@@ -34,47 +35,50 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import api from "@/lib/api";
 
 const MedicineInventory = () => {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("inventory");
   const [searchQuery, setSearchQuery] = useState("");
-  const [lowStockAlerts, setLowStockAlerts] = useState<LowStockNotification[]>(
-    []
-  );
-  const [expiringAlerts, setExpiringAlerts] = useState<
-    ExpiredMedicineNotification[]
-  >([]);
+  const [lowStockAlerts, setLowStockAlerts] = useState<LowStockNotification[]>([]);
+  const [expiringAlerts, setExpiringAlerts] = useState<ExpiredMedicineNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [alertCount, setAlertCount] = useState(0);
+  const [totalMedicines, setTotalMedicines] = useState<number>(0);
+
+  // Modal state for add/edit medicine
+  const [medicineModalOpen, setMedicineModalOpen] = useState(false);
+  const [selectedMedicine, setSelectedMedicine] = useState<any | null>(null);
 
   useEffect(() => {
+    fetchMedicines();
+
     // Fetch initial alerts
     fetchAlerts();
   }, []);
 
+  const fetchMedicines = async () => {
+    try {
+      const response = await api.get(`/api/v1/medicines/count`);
+      setTotalMedicines(response.data.count);
+    } catch (error) {
+      console.error("Error fetching medicines:", error);
+    }
+  };
+
   const fetchAlerts = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("access_token");
       // Fetch low stock medicines
-      const lowStockResponse = await fetch("/api/v1/medicine/alerts/lowstock", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const lowStockData = await lowStockResponse.json();
+      const lowStockResponse = await api.get("/api/v1/medicine/alerts/lowstock");
+      const lowStockData = lowStockResponse.data;
 
       // Fetch expiring medicines (default 30 days)
-      const expiringResponse = await fetch(
-        "/api/v1/medicine/alerts/expiring?days=300",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const expiringResponse = await api.get(
+        "/api/v1/medicine/alerts/expiring?days=300"
       );
-      const expiringData = await expiringResponse.json();
+      const expiringData = expiringResponse.data;
 
       setLowStockAlerts(lowStockData);
       setExpiringAlerts(expiringData);
@@ -87,8 +91,31 @@ const MedicineInventory = () => {
   };
 
   const handleAddMedicine = () => {
-    setLocation("/inventory/medicines/add");
+    setSelectedMedicine(null);
+    setMedicineModalOpen(true);
   };
+
+  const handleEditMedicine = (medicine: any) => {
+    // Map the medicine object from the table to the MedicineRequest shape for the modal
+    const mapped = {
+      id: medicine.id,
+      medicine_name: medicine.medicine_name || "",
+      dosage: medicine.dosage || "",
+      frequency: medicine.frequency || "",
+      duration: medicine.duration || "",
+      side_effects: medicine.side_effects || "",
+      quantity: medicine.current_stock || medicine.quantity || 0,
+      expiration_date: medicine.expiration_date || "",
+      description: medicine.description || "",
+      usage: medicine.usage || "",
+      supplier_id: medicine.supplier_id || 0,
+      unit_price: medicine.unit_price || 0,
+      reorder_level: medicine.reorder_level || 0,
+    };
+    setSelectedMedicine(mapped);
+    setMedicineModalOpen(true);
+  };
+
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -112,7 +139,7 @@ const MedicineInventory = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-white">
-              Medicine Inventory
+              Inventory Management
             </h1>
             <p className="text-indigo-100 text-sm">
               Manage your clinic's medicine inventory, suppliers, and
@@ -168,7 +195,7 @@ const MedicineInventory = () => {
                 <FileDown className="w-4 h-4 mr-2" />
                 Export
               </Button>
-            </div>
+            </div>Actions
           </div> */}
 
           {/* Workflow-style navigation */}
@@ -272,7 +299,9 @@ const MedicineInventory = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-indigo-900">253</div>
+                <div className="text-2xl font-bold text-indigo-900">
+                  {totalMedicines}
+                </div>
                 <p className="text-xs text-indigo-500 mt-1">
                   From 12 categories
                 </p>
@@ -346,7 +375,7 @@ const MedicineInventory = () => {
           <div className="bg-white rounded-lg border border-indigo-100 overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsContent value="inventory" className="p-0 m-0">
-                <MedicineTable searchQuery={searchQuery} />
+                <MedicineTable searchQuery={searchQuery} onEditMedicine={handleEditMedicine} />
               </TabsContent>
 
               <TabsContent value="alerts" className="p-0 m-0">
@@ -369,6 +398,12 @@ const MedicineInventory = () => {
           </div>
         </div>
       </div>
+      {/* Medicine Modal for Add/Edit */}
+      <MedicineModal
+        open={medicineModalOpen}
+        onClose={() => setMedicineModalOpen(false)}
+        initialData={selectedMedicine}
+      />
     </div>
   );
 };
