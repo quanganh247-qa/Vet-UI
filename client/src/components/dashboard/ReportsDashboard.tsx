@@ -59,10 +59,7 @@ const ReportsDashboard = () => {
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         {/* <h2 className="text-2xl font-semibold text-indigo-900">Clinic Reports</h2> */}
-          <div className="flex items-center">
-            <BarChart2 className="h-5 w-5 mr-2 text-indigo-600" />
-            <CardTitle className="text-2xl font-semibold text-indigo-900">Reports Dashboard</CardTitle>
-          </div>
+          
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex space-x-2">
@@ -150,14 +147,7 @@ const ReportsDashboard = () => {
             </div>
           </div>
           
-          <Button 
-            // onClick={handlePrint}
-            variant="outline" 
-            className="h-9 flex items-center border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-          >
-            {/* <Printer className="h-4 w-4 mr-2" />
-            Print */}
-          </Button>
+       
         </div>
       </div>
 

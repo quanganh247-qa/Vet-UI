@@ -198,18 +198,12 @@ function App() {
           <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
           
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* <Topbar openSidebar={() => setSidebarOpen(true)} /> */}
-            
             <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
               <WebSocketInitializer />
-              {/* <Suspense fallback={null}>
-                <NotificationsPage />
-              </Suspense> */}
               <Router />
             </main>
           </div>
         </div>
-        <Toaster />
       </NotificationProvider>
     </AuthProvider>
   );

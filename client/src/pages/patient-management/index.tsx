@@ -88,7 +88,7 @@ const PatientManagement = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [alertsExpanded, setAlertsExpanded] = useState(false);
-  
+
   // Lấy tham số từ query params
   const [workflowParams, setWorkflowParams] = useState<{
     appointmentId: string | null;
@@ -97,45 +97,41 @@ const PatientManagement = () => {
     appointmentId: null,
     petId: null
   });
-  
+
   // Xử lý các tham số từ URL một cách nhất quán
   useEffect(() => {
     // Lấy tất cả các query params từ URL
     const searchParams = new URLSearchParams(window.location.search);
     const urlAppointmentId = searchParams.get("appointmentId");
     const urlPetId = searchParams.get("petId");
-    
-    console.log("Patient Management URL Params:", { urlAppointmentId, urlPetId, routeId });
-    
+
     // Thiết lập appointmentId và petId theo thứ tự ưu tiên
     let appointmentIdValue = urlAppointmentId || routeId || null;
     let petIdValue = urlPetId || null;
-    
+
     setWorkflowParams({
       appointmentId: appointmentIdValue,
       petId: petIdValue
     });
-    
-    console.log("Patient Management Workflow Params Set:", { appointmentIdValue, petIdValue });
   }, [routeId]);
-  
+
   // Sử dụng appointmentId từ workflowParams
   const effectiveAppointmentId = workflowParams.appointmentId || "";
-  
+
   // Utility function to build query parameters
   const buildUrlParams = (params: Record<string, string | number | null | undefined>) => {
     const urlParams = new URLSearchParams();
-    
+
     Object.entries(params).forEach(([key, value]) => {
       if (value !== null && value !== undefined && value !== '') {
         urlParams.append(key, String(value));
       }
     });
-    
+
     const queryString = urlParams.toString();
     return queryString ? `?${queryString}` : '';
   };
-  
+
   const { data: appointment, error: appointmentError } = useAppointmentData(effectiveAppointmentId);
 
   const { data: historyAppointments, error: historyAppointmentsError } =
@@ -214,7 +210,7 @@ const PatientManagement = () => {
       new Date(v.next_due_date) <=
       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
   );
-  
+
   // Create alert items for the patient
   const patientAlerts = [
     ...(hasUpcomingVaccinations ? [{
@@ -230,7 +226,7 @@ const PatientManagement = () => {
       message: patientData?.allergies
     }] : []),
     ...(patientData?.chronic_conditions ? [{
-      type: "info", 
+      type: "info",
       icon: <Activity className="h-4 w-4 text-blue-600" />,
       title: "Chronic Conditions",
       message: patientData?.chronic_conditions
@@ -298,11 +294,10 @@ const PatientManagement = () => {
               </div>
               {patientData?.gender && (
                 <div
-                  className={`absolute bottom-0 right-0 h-6 w-6 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md ${
-                    patientData?.gender === "Male"
+                  className={`absolute bottom-0 right-0 h-6 w-6 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md ${patientData?.gender === "Male"
                       ? "bg-blue-500"
                       : "bg-pink-500"
-                  }`}
+                    }`}
                 >
                   {patientData?.gender === "Male" ? "♂" : "♀"}
                 </div>
@@ -351,9 +346,9 @@ const PatientManagement = () => {
               <Stethoscope className="h-5 w-5" />
               <span>Start Examination</span>
             </Button>
-            
-            {appointment?.service?.service_name?.toLowerCase().includes('vaccine') || 
-             appointment?.reason?.toLowerCase().includes('vaccine') ? (
+
+            {appointment?.service?.service_name?.toLowerCase().includes('vaccine') ||
+              appointment?.reason?.toLowerCase().includes('vaccine') ? (
               <Button
                 onClick={navigateToVaccination}
                 className="bg-green-100 hover:bg-green-200 text-green-700 w-full flex items-center justify-center gap-2 py-5 font-medium transition-all shadow-sm hover:shadow border border-green-200"
@@ -372,7 +367,7 @@ const PatientManagement = () => {
                 <span>SOAP Notes</span>
               </Button>
             )}
-            
+
             <Button
               onClick={navigateToTreatment}
               className="bg-amber-100 hover:bg-amber-200 text-amber-700 w-full flex items-center justify-center gap-2 py-5 font-medium transition-all shadow-sm hover:shadow border border-amber-200"
@@ -424,7 +419,7 @@ const PatientManagement = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Clinical Alerts */}
             <div className="w-full md:w-1/2 lg:w-1/3">
               <div className="flex items-center justify-between mb-2">
@@ -437,31 +432,30 @@ const PatientManagement = () => {
                     </Badge>
                   )}
                 </h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="h-6 w-6 p-0"
                   onClick={() => setAlertsExpanded(!alertsExpanded)}
                 >
-                  {alertsExpanded ? 
-                    <ChevronLeft className="h-4 w-4" /> : 
+                  {alertsExpanded ?
+                    <ChevronLeft className="h-4 w-4" /> :
                     <ChevronRight className="h-4 w-4" />
                   }
                 </Button>
               </div>
-              
+
               {patientAlerts.length > 0 ? (
                 <div className="space-y-2 mt-1 overflow-y-auto max-h-48">
                   {patientAlerts.slice(0, alertsExpanded ? patientAlerts.length : 2).map((alert, index) => (
-                    <div 
+                    <div
                       key={index}
-                      className={`p-2 rounded-md flex items-start gap-2 ${
-                        alert.type === 'critical' 
-                          ? 'bg-red-50 border border-red-200' 
+                      className={`p-2 rounded-md flex items-start gap-2 ${alert.type === 'critical'
+                          ? 'bg-red-50 border border-red-200'
                           : alert.type === 'warning'
-                          ? 'bg-amber-50 border border-amber-200'
-                          : 'bg-blue-50 border border-blue-200'
-                      }`}
+                            ? 'bg-amber-50 border border-amber-200'
+                            : 'bg-blue-50 border border-blue-200'
+                        }`}
                     >
                       <div className="mt-0.5">{alert.icon}</div>
                       <div>
@@ -559,15 +553,14 @@ const PatientManagement = () => {
                         >
                           <div className="flex items-center gap-3">
                             <div
-                              className={`p-2 rounded-full ${
-                                appointment.status === "completed"
+                              className={`p-2 rounded-full ${appointment.status === "completed"
                                   ? "bg-green-100"
                                   : appointment.status === "in-progress"
-                                  ? "bg-blue-100"
-                                  : appointment.status === "scheduled"
-                                  ? "bg-indigo-100"
-                                  : "bg-gray-100"
-                              }`}
+                                    ? "bg-blue-100"
+                                    : appointment.status === "scheduled"
+                                      ? "bg-indigo-100"
+                                      : "bg-gray-100"
+                                }`}
                             >
                               {appointment.status === "completed" ? (
                                 <CheckCircle className="h-4 w-4 text-green-600" />
@@ -577,28 +570,27 @@ const PatientManagement = () => {
                                 <Calendar className="h-4 w-4 text-indigo-600" />
                               )}
                             </div>
-                            
+
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
                                 <div className="font-medium text-gray-900 text-sm truncate">
                                   {appointment.type}
                                 </div>
                                 <Badge
-                                  className={`text-xs px-2 py-0.5 ml-2 ${
-                                    appointment.status === "completed"
+                                  className={`text-xs px-2 py-0.5 ml-2 ${appointment.status === "completed"
                                       ? "bg-green-100 text-green-800 border-green-200"
                                       : appointment.status === "in-progress"
-                                      ? "bg-blue-100 text-blue-800 border-blue-200"
-                                      : appointment.status === "scheduled"
-                                      ? "bg-indigo-100 text-indigo-800 border-indigo-200"
-                                      : "bg-gray-100 text-gray-800 border-gray-200"
-                                  }`}
+                                        ? "bg-blue-100 text-blue-800 border-blue-200"
+                                        : appointment.status === "scheduled"
+                                          ? "bg-indigo-100 text-indigo-800 border-indigo-200"
+                                          : "bg-gray-100 text-gray-800 border-gray-200"
+                                    }`}
                                 >
                                   {appointment.status === "completed"
                                     ? "Completed"
                                     : appointment.status === "in-progress"
-                                    ? "In Progress"
-                                    : "Scheduled"}
+                                      ? "In Progress"
+                                      : "Scheduled"}
                                 </Badge>
                               </div>
                               <div className="flex flex-wrap items-center text-xs text-gray-600 mt-1 gap-3">
@@ -611,12 +603,12 @@ const PatientManagement = () => {
                                   Dr. {appointment.doctor_id === 1
                                     ? "Roberts"
                                     : appointment.doctor_id === 2
-                                    ? "Carter"
-                                    : "Chen"}
+                                      ? "Carter"
+                                      : "Chen"}
                                 </span>
                               </div>
                             </div>
-                            
+
                             <Button
                               variant="ghost"
                               size="sm"
@@ -647,7 +639,7 @@ const PatientManagement = () => {
                       </Button>
                     </div>
                   )}
-                  
+
                   {historyAppointments?.length > 3 && (
                     <div className="p-2 bg-gray-50 border-t border-gray-100 text-center">
                       <Button
@@ -679,7 +671,7 @@ const PatientManagement = () => {
                     <span>New</span>
                   </Button>
                 </div>
-                
+
                 <div className="overflow-hidden">
                   {medicalRecords.length > 0 ? (
                     <div className="divide-y divide-gray-100">
@@ -692,7 +684,7 @@ const PatientManagement = () => {
                             <div className="p-2 rounded-full bg-indigo-100">
                               <FileBarChart className="h-4 w-4 text-indigo-600" />
                             </div>
-                            
+
                             <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-center">
                                 <div className="font-medium text-gray-900 text-sm truncate">
@@ -706,7 +698,7 @@ const PatientManagement = () => {
                                   <Eye className="h-4 w-4" />
                                 </Button>
                               </div>
-                              
+
                               <div className="flex flex-wrap items-center text-xs text-gray-600 mt-1 gap-3">
                                 <span className="flex items-center">
                                   <Calendar className="h-3.5 w-3.5 mr-1 text-gray-400" />
@@ -717,14 +709,14 @@ const PatientManagement = () => {
                                   Dr. {record.doctor_id === 1
                                     ? "Roberts"
                                     : record.doctor_id === 2
-                                    ? "Carter"
-                                    : "Chen"}
+                                      ? "Carter"
+                                      : "Chen"}
                                 </span>
                               </div>
-                              
+
                               {record.diagnosis && (
                                 <div className="mt-2">
-                                  <Badge 
+                                  <Badge
                                     className="bg-blue-100 text-blue-800 border-blue-200 text-xs"
                                   >
                                     {record.diagnosis}
@@ -756,7 +748,7 @@ const PatientManagement = () => {
                       </Button>
                     </div>
                   )}
-                  
+
                   {medicalRecords.length > 3 && (
                     <div className="p-2 bg-gray-50 border-t border-gray-100 text-center">
                       <Button
@@ -797,18 +789,18 @@ const PatientManagement = () => {
                           <Badge className="bg-indigo-100 text-indigo-800 mt-1 text-xs">Primary Owner</Badge>
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2 mt-3">
-                        <a 
+                        <a
                           href={`tel:${appointment.owner.owner_phone}`}
                           className="flex items-center gap-2 p-2 bg-gray-50 rounded-md border border-gray-100 hover:bg-gray-100 transition-colors"
                         >
                           <Phone className="h-4 w-4 text-indigo-500" />
                           <span className="text-sm text-gray-700">{appointment.owner.owner_phone}</span>
                         </a>
-                        
+
                         {appointment.owner.owner_email && (
-                          <a 
+                          <a
                             href={`mailto:${appointment.owner.owner_email}`}
                             className="flex items-center gap-2 p-2 bg-gray-50 rounded-md border border-gray-100 hover:bg-gray-100 transition-colors"
                           >
@@ -816,7 +808,7 @@ const PatientManagement = () => {
                             <span className="text-sm text-gray-700 truncate">{appointment.owner.owner_email}</span>
                           </a>
                         )}
-                        
+
                         {appointment.owner.owner_address && (
                           <div className="flex items-start gap-2 p-2 bg-gray-50 rounded-md border border-gray-100">
                             <Info className="h-4 w-4 text-indigo-500 mt-0.5" />
@@ -826,7 +818,7 @@ const PatientManagement = () => {
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="mt-3 flex justify-end">
                         <Button
                           variant="outline"
@@ -845,7 +837,7 @@ const PatientManagement = () => {
                   )}
                 </div>
               </div>
-              
+
               {/* REDESIGNED: Vaccination Status */}
               <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
                 <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b">
@@ -864,25 +856,24 @@ const PatientManagement = () => {
                           <span className="text-xs text-amber-800">Vaccinations due soon</span>
                         </div>
                       )}
-                    
+
                       <div className="space-y-2">
                         {vaccines.slice(0, 3).map((vaccine: Vaccination) => {
                           const isDue =
                             new Date(vaccine.next_due_date) <=
                             new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-                          const isPastDue = 
+                          const isPastDue =
                             new Date(vaccine.next_due_date) < new Date();
 
                           return (
                             <div
                               key={vaccine.vaccination_id}
-                              className={`p-2 rounded-md border flex justify-between items-center ${
-                                isPastDue
+                              className={`p-2 rounded-md border flex justify-between items-center ${isPastDue
                                   ? "bg-red-50 border-red-200"
                                   : isDue
-                                  ? "bg-amber-50 border-amber-200"
-                                  : "bg-white border-gray-200"
-                              }`}
+                                    ? "bg-amber-50 border-amber-200"
+                                    : "bg-white border-gray-200"
+                                }`}
                             >
                               <div className="min-w-0">
                                 <div className="font-medium text-gray-900 text-sm truncate">
@@ -898,13 +889,12 @@ const PatientManagement = () => {
 
                               <div className="flex flex-col items-end ml-2">
                                 <Badge
-                                  className={`text-xs ${
-                                    isPastDue
+                                  className={`text-xs ${isPastDue
                                       ? "bg-red-100 text-red-800 border-red-200"
                                       : isDue
-                                      ? "bg-amber-100 text-amber-800 border-amber-200"
-                                      : "bg-green-100 text-green-800 border-green-200"
-                                  }`}
+                                        ? "bg-amber-100 text-amber-800 border-amber-200"
+                                        : "bg-green-100 text-green-800 border-green-200"
+                                    }`}
                                 >
                                   {isPastDue ? "Overdue" : isDue ? "Due Soon" : "Up to date"}
                                 </Badge>
@@ -937,9 +927,9 @@ const PatientManagement = () => {
                       <p className="text-gray-500 text-xs mb-2">
                         No vaccination records found
                       </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="text-xs px-3 py-1.5">
                         Add Vaccination Record
                       </Button>
@@ -950,9 +940,9 @@ const PatientManagement = () => {
             </div>
           </div>
         </TabsContent>
-        
+
         {/* Other tab contents would follow with similar sizing improvements */}
-        
+
       </Tabs>
     </div>
   );

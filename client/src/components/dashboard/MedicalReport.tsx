@@ -29,12 +29,35 @@ const MedicalReport = ({ startDate, endDate }: MedicalReportProps) => {
     );
   }
 
-  // Prepare data for pie chart
-  const diseaseData = data.common_diseases.map(item => ({
-    name: item.disease,
-    value: item.count,
-    percentage: item.percentage
-  }));
+  // Prepare data for pie chart - show top 5 diseases and group others
+  const diseaseData = (() => {
+    const sortedDiseases = [...data.common_diseases].sort((a, b) => b.count - a.count);
+    const topDiseases = sortedDiseases.slice(0, 5);
+    const otherDiseases = sortedDiseases.slice(5);
+    
+    if (otherDiseases.length > 0) {
+      const othersCount = otherDiseases.reduce((sum, disease) => sum + disease.count, 0);
+      const othersPercentage = otherDiseases.reduce((sum, disease) => sum + disease.percentage, 0);
+      return [
+        ...topDiseases.map(item => ({
+          name: item.disease,
+          value: item.count,
+          percentage: item.percentage
+        })),
+        {
+          name: 'Others',
+          value: othersCount,
+          percentage: othersPercentage
+        }
+      ];
+    }
+    
+    return sortedDiseases.map(item => ({
+      name: item.disease,
+      value: item.count,
+      percentage: item.percentage
+    }));
+  })();
 
   // Prepare monthly trend data
   const monthlyTrendData = data.monthly_trends
@@ -80,7 +103,7 @@ const MedicalReport = ({ startDate, endDate }: MedicalReportProps) => {
                     fill="#8884d8"
                     dataKey="value"
                     nameKey="name"
-                    label={({ name, percentage }) => `${name}: ${percentage}%`}
+                    label={({ name, percentage }) => `${name}: ${percentage.toFixed(2)}%`}
                   >
                     {diseaseData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -138,4 +161,4 @@ const MedicalReport = ({ startDate, endDate }: MedicalReportProps) => {
   );
 };
 
-export default MedicalReport; 
+export default MedicalReport;

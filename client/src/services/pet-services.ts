@@ -1,39 +1,25 @@
 import { PaginatedResponse } from "@/types";
-import axios from "axios";
+import api from "@/lib/api";
 
 export const getPatientById = async (pet_id: number) => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-        throw new Error('No access token found');
-    }
-    const response = await axios.get(`/api/v1/pet/${pet_id}`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+    const response = await api.get(`/api/v1/pet/${pet_id}`, {
+
     });
-    console.log("response: ", response.data);
+
     return response.data;
 };
 
 export const getAllPatients = async (page: number, pageSize: number): Promise<PaginatedResponse<any>> => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-        throw new Error('No access token found');
-    }
-    
+
     try {
-        const response = await axios.get(`/api/v1/pets?page=${page}&pageSize=${pageSize}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await api.get(`/api/v1/pets?page=${page}&pageSize=${pageSize}`);
 
         // Xử lý phản hồi có định dạng {count: number, rows: Array}
         if (response.data && response.data.count !== undefined && Array.isArray(response.data.rows)) {
             const total = response.data.count;
             const data = response.data.rows;
             const totalPages = Math.ceil(total / pageSize);
-            
+
             return {
                 data: data,
                 total,
@@ -42,18 +28,18 @@ export const getAllPatients = async (page: number, pageSize: number): Promise<Pa
                 totalPages
             };
         }
-        
+
         // Nếu API không trả về định dạng mong đợi, xử lý như trước
         if (Array.isArray(response.data)) {
             const data = response.data;
             const total = data.length; // Giả định tổng số là độ dài mảng
             const totalPages = Math.ceil(total / pageSize);
-            
+
             // Manually paginate the data
             const startIndex = (page - 1) * pageSize;
             const endIndex = Math.min(startIndex + pageSize, total);
             const paginatedData = data.slice(startIndex, endIndex);
-            
+
             return {
                 data: paginatedData,
                 total,
@@ -62,7 +48,7 @@ export const getAllPatients = async (page: number, pageSize: number): Promise<Pa
                 totalPages
             };
         }
-        
+
         return response.data;
     } catch (error) {
         console.error('Error fetching patients:', error);
@@ -80,15 +66,7 @@ export const getAllPatients = async (page: number, pageSize: number): Promise<Pa
 
 export const ListPatients = async (page: number = 1, pageSize: number = 5): Promise<PaginatedResponse<any>> => {
     try {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-            throw new Error('No access token found');
-        }
-        const response = await axios.get(`/api/v1/pets?page=${page}&pageSize=${pageSize}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await api.get(`/api/v1/pets?page=${page}&pageSize=${pageSize}`);
         return response.data || { data: [], total: 0, page: 1, pageSize: 10, totalPages: 1 };
     } catch (error) {
         console.error('Error listing patients:', error);
@@ -110,14 +88,7 @@ export type updatePetRequest = {
 }
 
 export const updatePet = async (pet_id: number, updatePetRequest: updatePetRequest) => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-        throw new Error('No access token found');
-    }
-    const response = await axios.put(`/api/v1/pet/${pet_id}`, updatePetRequest, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+
+    const response = await api.put(`/api/v1/pet/${pet_id}`, updatePetRequest);
     return response.data;
 }

@@ -1,9 +1,9 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { addNewStaff, createShift, CreateStaffRequest, deleteShift, editDoctorProfile, EditDoctorProfileRequest, getDoctorProfile, getDoctors, getDoctorById, getShiftByDoctorId, getShifts, updateShift, updatePassword, UpdatePasswordParams, updateUserAvatar, updateUser, UpdateUserParams } from "@/services/doctor-services"; // Added updateUserAvatar, updateUser, UpdateUserParams
+import { addNewStaff, createShift, deleteShift, editDoctorProfile, EditDoctorProfileRequest, getDoctorProfile, getDoctors, getDoctorById, getShiftByDoctorId, getShifts, updateShift} from "@/services/doctor-services"; // Added updateUserAvatar, updateUser, UpdateUserParams
 import { queryClient } from "@/lib/queryClient";
 import { getAllStaff } from "@/services/staff-services";
 import { toast } from "./use-toast";
-
+import { updatePassword, UpdatePasswordParams, updateUser, updateUserAvatar, UpdateUserParams } from "@/services/user-services";
 export const useDoctors = () => {
     return useQuery({
         queryKey: ['doctors'],
@@ -101,20 +101,30 @@ export const useAllStaff = () => {
 
 export const useAddNewStaff = () => {
     return useMutation({
-        mutationFn: (data: CreateStaffRequest) => addNewStaff(data),
+        mutationFn: addNewStaff,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['all-staff'] });
             toast({
                 title: "Success",
-                description: "Staff added successfully!",
+                description: "Staff member created successfully!",
                 className: "bg-green-50 border-green-200 text-green-800",
-              });
+            });
         },
-        onError: (error) => {
-            console.error('Error adding new staff:', error);
+        onError: (error: any) => {
+            console.error('Error creating staff:', error);
+            let errorMessage = "Failed to create staff member";
+
+            // Handle API error response
+            if (error?.response?.data) {
+                const { code, message } = error.response.data;
+                if (code === 'E' && message) {
+                    errorMessage = message;
+                }
+            }
+            
             toast({
                 title: "Error",
-                description: "Failed to add staff",
+                description: errorMessage,
                 variant: "destructive",
             });
         },
@@ -125,19 +135,24 @@ export const useUpdatePassword = () => {
     return useMutation({
         mutationFn: (data: UpdatePasswordParams) => updatePassword(data),
         onSuccess: () => {
-            // Optionally invalidate queries if password change affects other data
-            // queryClient.invalidateQueries({ queryKey: ['some-key'] });
             toast({
                 title: "Success",
                 description: "Password updated successfully!",
                 className: "bg-green-50 border-green-200 text-green-800",
             });
         },
-        onError: (error) => {
+        onError: (error: any) => {
             console.error('Error updating password:', error);
+            
+            // Extract error message from API response
+            let errorMessage = "Failed to update password";
+            if (error?.message) {
+                errorMessage = error.message;
+            }
+            
             toast({
                 title: "Error",
-                description: "Failed to update password",
+                description: errorMessage,
                 variant: "destructive",
             });
         },

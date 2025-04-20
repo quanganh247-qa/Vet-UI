@@ -108,12 +108,10 @@ export const addNewStaff = async (data: CreateStaffRequest) => {
     try {
         const response = await api.post('/api/v1/staff', data);
         return response.data;
-    } catch (error) {
-        console.error("Error adding new staff:", error);
-        throw error;
+    } catch (error: any) {
+        handleApiError(error);
     }
 };
-
 
 
 export interface EditDoctorProfileRequest {
@@ -133,44 +131,3 @@ export const editDoctorProfile = async (data: EditDoctorProfileRequest) => {
     }
 };
 
-
-export interface UpdatePasswordParams {
-    old_assword: string; // Typo: should likely be old_password
-    password: string;
-}
-
-export const updatePassword = async ( data: UpdatePasswordParams) => {
-    try {
-        const response = await api.put('/api/v1/user/change-password', data);
-        return response.data;
-    } catch (error: any) {
-        handleApiError(error); // Use the helper function
-    }
-};
-
-export const updateUserAvatar = async (data: FormData) => {
-    try {
-        const response = await api.put('/api/v1/user/avatar', data);
-        return response.data;
-    } catch (error: any) {
-        handleApiError(error); // Use the helper function
-    }
-};
-
-export interface UpdateUserParams {
-    username: string;
-    full_name: string;
-    email: string;
-    phone_number: string;
-    address: string;
-}
-
-
-export const updateUser = async (data: UpdateUserParams) => {
-    try {
-        const response = await api.put('/api/v1/user/profile', data);
-        return response.data;
-    } catch (error: any) {
-        handleApiError(error); // Use the helper function
-    }
-};

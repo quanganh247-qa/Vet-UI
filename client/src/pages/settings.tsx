@@ -116,48 +116,54 @@ const Settings = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center">
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="mr-2">
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Dashboard
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md mb-6">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <Link href="/">
+              <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back
+              </Button>
+            </Link>
+            <h1 className="text-2xl font-bold text-white">Settings</h1>
+          </div>
         </div>
       </div>
 
-      <Tabs defaultValue="mail">
-        <TabsList className="mb-6">
-          <TabsTrigger value="mail">Mail Settings</TabsTrigger>
+      <Tabs defaultValue="mail" className="space-y-6">
+        <TabsList className="bg-white/5 p-1 rounded-lg border border-gray-100 shadow-sm">
+          <TabsTrigger value="mail" className="text-sm font-medium">Mail Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="mail">
-          <Card>
-            <CardHeader>
-              <CardTitle>Mail Settings</CardTitle>
-              <CardDescription>Configure common settings for sending emails.</CardDescription>
+          <Card className="border-none shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-4 border-b">
+              <CardTitle className="text-lg font-semibold text-indigo-900">Mail Settings</CardTitle>
+              <CardDescription className="text-indigo-600/70">
+                Configure common settings for sending emails.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6 space-y-6">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="senderName" className="mb-1 block">
+                  <div className="space-y-2">
+                    <Label htmlFor="senderName" className="text-sm font-medium text-gray-700">
                       Sender name <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="senderName"
                       {...register("senderName")}
                       placeholder="Support"
+                      className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                       aria-invalid={!!errors.senderName}
                     />
                     {errors.senderName && (
-                      <p className="text-sm text-red-500 mt-1">{errors.senderName.message}</p>
+                      <p className="text-sm text-red-500">{errors.senderName.message}</p>
                     )}
                   </div>
-                  <div>
-                    <Label htmlFor="senderAddress" className="mb-1 block">
+                  <div className="space-y-2">
+                    <Label htmlFor="senderAddress" className="text-sm font-medium text-gray-700">
                       Sender address <span className="text-red-500">*</span>
                     </Label>
                     <Input
@@ -165,31 +171,33 @@ const Settings = () => {
                       type="email"
                       {...register("senderAddress")}
                       placeholder="support@example.com"
+                      className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                       aria-invalid={!!errors.senderAddress}
                     />
                     {errors.senderAddress && (
-                      <p className="text-sm text-red-500 mt-1">{errors.senderAddress.message}</p>
+                      <p className="text-sm text-red-500">{errors.senderAddress.message}</p>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2 mt-6">
+                <div className="flex items-center space-x-2 py-4 px-4 bg-gray-50 rounded-lg">
                   <Switch
                     id="useSmtp"
                     checked={useSmtp}
                     onCheckedChange={(checked) => {
                       register("useSmtp").onChange({ target: { value: checked } });
                     }}
+                    className="data-[state=checked]:bg-indigo-600"
                   />
-                  <Label htmlFor="useSmtp" className="flex items-center">
-                    Use SMTP mail server 
+                  <Label htmlFor="useSmtp" className="flex items-center cursor-pointer">
+                    <span className="font-medium">Use SMTP mail server</span>
                     <span className="text-sm text-gray-500 ml-2">(recommended)</span>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <HelpCircle className="h-4 w-4 text-gray-400 ml-1" />
                         </TooltipTrigger>
-                        <TooltipContent>
+                        <TooltipContent className="bg-white border border-gray-200 shadow-lg">
                           <p className="w-80 text-sm">
                             Using an SMTP server is recommended for reliable email delivery.
                             If disabled, the system will use the default PHP mail function.
@@ -201,51 +209,54 @@ const Settings = () => {
                 </div>
 
                 {useSmtp && (
-                  <div className="grid grid-cols-1 gap-4 mt-2">
+                  <div className="space-y-6 bg-gray-50/50 p-4 rounded-lg border border-gray-100">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <Label htmlFor="smtpHost" className="mb-1 block">
+                      <div className="space-y-2">
+                        <Label htmlFor="smtpHost" className="text-sm font-medium text-gray-700">
                           SMTP server host <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="smtpHost"
                           {...register("smtpHost")}
                           placeholder="smtp.example.com"
+                          className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                           aria-invalid={!!errors.smtpHost}
                         />
                         {errors.smtpHost && (
-                          <p className="text-sm text-red-500 mt-1">{errors.smtpHost.message}</p>
+                          <p className="text-sm text-red-500">{errors.smtpHost.message}</p>
                         )}
                       </div>
-                      <div>
-                        <Label htmlFor="smtpPort" className="mb-1 block">
+                      <div className="space-y-2">
+                        <Label htmlFor="smtpPort" className="text-sm font-medium text-gray-700">
                           Port <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="smtpPort"
                           {...register("smtpPort")}
                           placeholder="587"
+                          className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                           aria-invalid={!!errors.smtpPort}
                         />
                         {errors.smtpPort && (
-                          <p className="text-sm text-red-500 mt-1">{errors.smtpPort.message}</p>
+                          <p className="text-sm text-red-500">{errors.smtpPort.message}</p>
                         )}
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <Label htmlFor="smtpUsername" className="mb-1 block">
+                      <div className="space-y-2">
+                        <Label htmlFor="smtpUsername" className="text-sm font-medium text-gray-700">
                           Username
                         </Label>
                         <Input
                           id="smtpUsername"
                           {...register("smtpUsername")}
                           placeholder="Your SMTP username"
+                          className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="smtpPassword" className="mb-1 block">
+                      <div className="space-y-2">
+                        <Label htmlFor="smtpPassword" className="text-sm font-medium text-gray-700">
                           Password
                         </Label>
                         <Input
@@ -253,6 +264,7 @@ const Settings = () => {
                           type="password"
                           {...register("smtpPassword")}
                           placeholder="Your SMTP password"
+                          className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                         />
                       </div>
                     </div>
@@ -261,7 +273,7 @@ const Settings = () => {
                       <Button 
                         type="button" 
                         variant="outline" 
-                        className="text-sm"
+                        className="text-sm hover:bg-indigo-50"
                         onClick={handleTestConnection}
                         disabled={isLoading}
                       >
@@ -274,16 +286,21 @@ const Settings = () => {
                   </div>
                 )}
 
-                <div className="flex justify-between mt-6">
+                <div className="flex justify-between pt-6 border-t">
                   <Button 
                     type="button" 
                     variant="outline"
                     onClick={() => reset()}
                     disabled={!isDirty || isLoading}
+                    className="hover:bg-indigo-50"
                   >
                     Reset
                   </Button>
-                  <Button type="submit" disabled={!isDirty || isLoading}>
+                  <Button 
+                    type="submit" 
+                    disabled={!isDirty || isLoading}
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                  >
                     {isLoading ? "Saving..." : "Save changes"}
                   </Button>
                 </div>

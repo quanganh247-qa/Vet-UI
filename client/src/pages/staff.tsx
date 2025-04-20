@@ -37,6 +37,7 @@ import { useDoctors, useAddNewStaff } from "@/hooks/use-doctor";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "@/components/ui/use-toast";
 
 const StaffPage = () => {
   const [location, setLocation] = useLocation();
@@ -91,7 +92,6 @@ const StaffPage = () => {
     ? Array.from(new Set(staffData?.data.map((s: DoctorDetail) => s.role)))
     : [];
 
-  console.log("a", staffData?.data);
   const handleStaffClick = (staffId: number) => {
     setLocation(`/staff/${staffId}`);
   };
@@ -121,13 +121,22 @@ const StaffPage = () => {
     e.preventDefault();
     // Validate passwords match
     if (newStaff.password !== newStaff.passwordConfirm) {
-      alert("Passwords do not match");
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
       return;
     }
     // Prepare data for API (remove passwordConfirm, handle avatar if needed)
     const { passwordConfirm, ...submitData } = newStaff;
     addNewStaffMutation.mutate(submitData, {
       onSuccess: () => {
+        toast({
+          title: "Success",
+          description: "Staff member created successfully",
+          className: "bg-green-50 border-green-200 text-green-800",
+        });
         setNewStaff({
           username: "",
           password: "",
@@ -140,8 +149,26 @@ const StaffPage = () => {
           is_verified_email: false,
         });
         setLocation("/staff");
+      },
+      onError: (error) => {
+        let errorMessage = "Failed to create staff member";
+        
+        if (error && typeof error === 'object' && 'response' in error) {
+          // Extract message from server response if available
+          const responseData = (error as any).response?.data;
+          if (responseData?.message) {
+            errorMessage = responseData.message;
+          }
+        } else if (error instanceof Error) {
+          errorMessage = error.message;
+        }
+
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
       }
-      // onError handled by hook toast
     });
   };
 
@@ -170,10 +197,12 @@ const StaffPage = () => {
               <Button
                 onClick={() => setLocation('/staff')}
                 variant="outline"
-                className="bg-transparent border-white text-white hover:bg-white/10 flex items-center gap-1.5"
+                // className="bg-transparent border-white text-white hover:bg-white/10 flex items-center gap-1.5"
+                className="bg-white text-indigo-700 hover:bg-indigo-50 flex items-center gap-1.5 shadow-sm"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Staff List
+
               </Button>
             </div>
           </div>
