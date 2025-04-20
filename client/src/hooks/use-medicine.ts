@@ -31,6 +31,7 @@ export const useGetAllMedicines = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["medicines"],
     queryFn: () => getAllMedicines(),
+    staleTime: 300000, // Consider data fresh for 5 minutes
   });
   return { data, isLoading, error };
 };
@@ -46,6 +47,24 @@ export const useGetMedicineById = (id: number) => {
 export const useCreateMedicine = () => {
   const { mutateAsync, isPending, error, data } = useMutation({
     mutationFn: (data: MedicineRequest) => createMedicine(data),
+    onMutate: async (newMedicine) => {
+      await queryClient.cancelQueries({ queryKey: ["medicines"] });
+      const previousMedicines = queryClient.getQueryData(["medicines"]);
+      
+      // Add temporary ID for optimistic update
+      const tempMedicine = { ...newMedicine, id: Date.now() };
+      queryClient.setQueryData(["medicines"], (old: any[] = []) => [...old, tempMedicine]);
+      
+      return { previousMedicines };
+    },
+    onError: (err, newMedicine, context: any) => {
+      queryClient.setQueryData(["medicines"], context.previousMedicines);
+      toast({
+        title: "Error",
+        description: "Failed to create medicine. Changes reverted.",
+        variant: "destructive",
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["medicines"] });
       toast({
@@ -53,14 +72,7 @@ export const useCreateMedicine = () => {
         description: "Medicine created successfully!",
         className: "bg-green-50 border-green-200 text-green-800",
       });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to create medicine!",
-        variant: "destructive",
-      });
-    },
+    }
   });
   return { mutateAsync, isPending, error, data };
 };
@@ -68,20 +80,38 @@ export const useCreateMedicine = () => {
 export const useUpdateMedicine = () => {
   const { mutateAsync, isPending, error, data } = useMutation({
     mutationFn: ({ data, medicine_id }: { data: MedicineRequest, medicine_id: number }) => updateMedicine(data, medicine_id),
+    onMutate: async (newMedicine) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["medicines"] });
+      
+      // Snapshot the previous value
+      const previousMedicines = queryClient.getQueryData(["medicines"]);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData(["medicines"], (old: any) => {
+        return old?.map((medicine: any) => 
+          medicine.id === newMedicine.medicine_id ? { ...medicine, ...newMedicine.data } : medicine
+        );
+      });
+      
+      return { previousMedicines };
+    },
+    onError: (err, newMedicine, context: any) => {
+      // If the mutation fails, revert back to the previous value
+      queryClient.setQueryData(["medicines"], context.previousMedicines);
+      toast({
+        title: "Error",
+        description: "Failed to update medicine. Changes reverted.",
+        variant: "destructive",
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["medicines"] });
       toast({
         title: "Success",
         description: "Medicine updated successfully!",
       });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to update medicine!",
-        variant: "destructive",
-      });
-    },
+    }
   });
   return { mutateAsync, isPending, error, data };
 };

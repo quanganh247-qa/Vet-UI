@@ -451,7 +451,7 @@ export interface MedicineTransactionRequest {
   quantity: number;
   transaction_type: string;
   unit_price: number;
-  supplier_id: number;
+  supplier_id?: number;
   expiration_date: string;
   notes: string;
   prescription_id: number;

@@ -1,30 +1,46 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Calendar, RefreshCw } from 'lucide-react';
-import { LowStockNotification, ExpiredMedicineNotification } from '@/types';
 import { useLocation } from 'wouter';
+import { useImportMedicine } from '@/hooks/use-medicine-transaction';
+import { LowStockNotification, ExpiredMedicineNotification } from '@/types';
 
 interface MedicineAlertsProps {
   lowStockAlerts: LowStockNotification[];
   expiringAlerts: ExpiredMedicineNotification[];
   isLoading: boolean;
-  onRefresh: () => void;
+  onRefresh: () => Promise<void>;
 }
 
-const MedicineAlerts: React.FC<MedicineAlertsProps> = ({
+const MedicineAlerts: React.FC<MedicineAlertsProps> = ({ 
   lowStockAlerts,
   expiringAlerts,
   isLoading,
   onRefresh
 }) => {
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState('low-stock');
+  const [activeTab, setActiveTab] = React.useState('low-stock');
+  const importMutation = useImportMedicine();
 
-  const handleReorder = (medicineId: number) => {
-    setLocation(`/inventory/medicines/${medicineId}/reorder`);
+  const handleReorder = async (medicineId: number) => {
+    try {
+      await importMutation.mutateAsync({
+        medicine_id: medicineId,
+        quantity: 100, // Default reorder quantity, could be made configurable
+        transaction_type: "import",
+        unit_price: 0, // This should be filled with actual price
+        supplier_id: 0, // This should be filled with actual supplier
+        expiration_date: new Date().toISOString(),
+        notes: "Auto-reorder",
+        prescription_id: 0,
+        appointment_id: 0
+      });
+    } catch (error) {
+      console.error("Error reordering medicine:", error);
+    }
   };
 
   const handleViewMedicine = (medicineId: number) => {
@@ -72,13 +88,13 @@ const MedicineAlerts: React.FC<MedicineAlertsProps> = ({
               </TabsList>
 
               <TabsContent value="low-stock" className="bg-white">
-                {lowStockAlerts?.length === 0 ? (
+                {lowStockAlerts.length === 0 ? (
                   <div className="bg-green-50 border border-green-100 rounded-md p-4 text-center">
                     <p className="text-green-800">No low stock alerts at the moment.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {lowStockAlerts?.map((alert) => (
+                    {lowStockAlerts.map((alert) => (
                       <Card key={alert.medicine_id} className="p-4 border-l-4 border-amber-500">
                         <div className="flex justify-between items-start">
                           <div>
@@ -101,10 +117,15 @@ const MedicineAlerts: React.FC<MedicineAlertsProps> = ({
                               View
                             </Button>
                             <Button 
-                              size="sm" 
+                              size="sm"
                               onClick={() => handleReorder(alert.medicine_id)}
+                              disabled={importMutation.isPending}
                             >
-                              Reorder
+                              {importMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                'Reorder'
+                              )}
                             </Button>
                           </div>
                         </div>
@@ -128,7 +149,7 @@ const MedicineAlerts: React.FC<MedicineAlertsProps> = ({
                             <h3 className="font-medium text-gray-900">{alert.medicine_name}</h3>
                             <div className="mt-1 flex items-center text-sm text-gray-500">
                               <Calendar className="h-4 w-4 mr-1" /> 
-                              Expires: {alert.expiration_date} ({alert.days_until_expiry} days)
+                              Expires: {new Date(alert.expiration_date).toLocaleDateString()} ({alert.days_until_expiry} days)
                             </div>
                             <div className="mt-2">
                               <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
@@ -157,4 +178,4 @@ const MedicineAlerts: React.FC<MedicineAlertsProps> = ({
   );
 };
 
-export default MedicineAlerts; 
+export default MedicineAlerts;

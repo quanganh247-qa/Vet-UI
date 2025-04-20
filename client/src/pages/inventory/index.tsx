@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import api from "@/lib/api";
+import { toast } from "@/components/ui/use-toast";
 
 const MedicineInventory = () => {
   const [, setLocation] = useLocation();
@@ -52,10 +53,26 @@ const MedicineInventory = () => {
   const [selectedMedicine, setSelectedMedicine] = useState<any | null>(null);
 
   useEffect(() => {
-    fetchMedicines();
+    // Initialize data on component mount
+    const initializeData = async () => {
+      try {
+        await Promise.all([fetchMedicines(), fetchAlerts()]);
+      } catch (error) {
+        console.error("Error initializing data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load inventory data",
+          variant: "destructive",
+        });
+      }
+    };
 
-    // Fetch initial alerts
-    fetchAlerts();
+    initializeData();
+    
+    // Set up periodic refresh for alerts
+    const alertsInterval = setInterval(fetchAlerts, 300000); // Refresh every 5 minutes
+    
+    return () => clearInterval(alertsInterval);
   }, []);
 
   const fetchMedicines = async () => {
@@ -64,20 +81,19 @@ const MedicineInventory = () => {
       setTotalMedicines(response.data.count);
     } catch (error) {
       console.error("Error fetching medicines:", error);
+      throw error;
     }
   };
 
   const fetchAlerts = async () => {
     setIsLoading(true);
     try {
-      // Fetch low stock medicines
-      const lowStockResponse = await api.get("/api/v1/medicine/alerts/lowstock");
-      const lowStockData = lowStockResponse.data;
+      const [lowStockResponse, expiringResponse] = await Promise.all([
+        api.get("/api/v1/medicine/alerts/lowstock"),
+        api.get("/api/v1/medicine/alerts/expiring?days=300")
+      ]);
 
-      // Fetch expiring medicines (default 30 days)
-      const expiringResponse = await api.get(
-        "/api/v1/medicine/alerts/expiring?days=300"
-      );
+      const lowStockData = lowStockResponse.data;
       const expiringData = expiringResponse.data;
 
       setLowStockAlerts(lowStockData);
@@ -85,6 +101,12 @@ const MedicineInventory = () => {
       setAlertCount(lowStockData?.length + expiringData?.length);
     } catch (error) {
       console.error("Error fetching alerts:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch inventory alerts",
+        variant: "destructive",
+      });
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -146,58 +168,12 @@ const MedicineInventory = () => {
               transactions
             </p>
           </div>
-
-          <div className="flex items-center space-x-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  My Profile
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="h-4 w-4 mr-2" />
-                  Profile Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Preferences
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setLocation("/login")}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </div>
       </div>
 
       <div className="container mx-auto">
         <div className="bg-white rounded-lg border border-indigo-100 shadow-sm p-6 mb-6">
-          {/* <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-indigo-900">Medicine Inventory</h1>
-            
-            <div className="flex space-x-2">
-              <Button onClick={fetchAlerts} variant="outline" size="sm" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </Button>
-              <Button onClick={handleExportData} variant="outline" size="sm" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50">
-                <FileDown className="w-4 h-4 mr-2" />
-                Export
-              </Button>
-            </div>Actions
-          </div> */}
-
+ 
           {/* Workflow-style navigation */}
           <div className="flex flex-col space-y-3 mb-6">
             <div className="flex items-center justify-between mb-1">

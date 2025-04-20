@@ -6,7 +6,6 @@ export const listTests = async (type: string) => {
     const response = await api.get(`/api/v1/items?type=${type}`);
     return response.data.data;
   } catch (error) {
-    console.error("Network Error:", error);
     throw error;
   }
 };
@@ -34,7 +33,6 @@ export const listTestOrders = async (appointmentID: number) => {
     const response = await api.get(`/api/v1/test-orders?appointment_id=${appointmentID}`);
     return response.data;
   } catch (error) {
-    console.error("Error fetching test orders:", error);
     throw error;
   }
 };
@@ -146,7 +144,6 @@ export const getTestByAppointmentID = async (appointmentID: number): Promise<Tes
 
     return formattedData;
   } catch (error) {
-    console.error("Error fetching test by appointment ID:", error);
     throw error;
   }
 };

@@ -48,6 +48,10 @@ interface PaginatedPetData extends PaginatedResponse<Pet> {
   total: number;
 }
 
+interface ExpandedCardState {
+  [key: string]: boolean;
+}
+
 export const PatientsPage: React.FC = () => {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,6 +60,7 @@ export const PatientsPage: React.FC = () => {
   const [pageSize, setPageSize] = useState<number>(10); // Changed from 8 to 10
   const [selectedDate, setSelectedDate] = useState(new Date());
   const { doctor, logout } = useAuth();
+  const [expandedCards, setExpandedCards] = useState<ExpandedCardState>({});
 
   // Use React Query for data fetching with pagination with proper typing
   const { 
@@ -103,6 +108,14 @@ export const PatientsPage: React.FC = () => {
 
   const handlePatientClick = (patientId: string) => {
     setLocation(`/patients/${patientId}`);
+  };
+
+  const toggleCardExpansion = (petId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setExpandedCards(prev => ({
+      ...prev,
+      [petId]: !prev[petId]
+    }));
   };
 
   if (isLoading) {
@@ -154,33 +167,6 @@ export const PatientsPage: React.FC = () => {
                 className="text-sm bg-transparent border-none focus:outline-none text-white"
               />
             </div>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
-                  <UserCog className="h-4 w-4 mr-2" />
-                  My Profile
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="h-4 w-4 mr-2" />
-                  Profile Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Preferences
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             <Button 
               onClick={() => setLocation('/patients/new')}
               className="bg-white text-indigo-700 hover:bg-white/90"
@@ -262,72 +248,119 @@ export const PatientsPage: React.FC = () => {
         </CardHeader>
         <CardContent className={viewMode === 'grid' ? 'p-6' : 'p-0'}>
           {/* Patients grid view */}
-          {viewMode === 'grid' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {viewMode === 'grid' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {filteredPatients.length === 0 ? (
-                <div className="col-span-full text-center py-12 text-gray-500">
-                  No patients found matching your search criteria
-                </div>
+              <div className="col-span-full text-center py-12 text-gray-500">
+                No patients found matching your search criteria
+              </div>
               ) : (
-                filteredPatients.map((patient: Pet) => (
-                  <Card 
-                    key={patient.petid} 
-                    className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer border border-gray-200"
-                    onClick={() => handlePatientClick(patient.petid)}
+              filteredPatients.map((patient: Pet) => (
+                <Card 
+                key={patient.petid} 
+                className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer border border-gray-200"
+                >
+                <div 
+                  className="aspect-w-16 aspect-h-9 bg-indigo-50"
+                  onClick={() => handlePatientClick(patient.petid)}
+                >
+                  {patient.data_image ? (
+                  <img 
+                    src={`data:image/png;base64,${patient.data_image}`} 
+                    alt={patient.name}
+                    className="object-cover w-full h-full"
+                  />
+                  ) : (
+                  <div className="flex items-center justify-center h-full text-indigo-300">
+                    <PawPrint className="h-12 w-12" />
+                  </div>
+                  )}
+                </div>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">{patient.name}</CardTitle>
+                  <Badge
+                    variant="outline"
+                    className="bg-indigo-50 text-indigo-600 border-indigo-200"
                   >
-                    <div className="aspect-w-16 aspect-h-9 bg-indigo-50">
-                      {patient.data_image ? (
-                        <img 
-                          src={`data:image/png;base64,${patient.data_image}`} 
-                          alt={patient.name}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-indigo-300">
-                          <PawPrint className="h-12 w-12" />
-                        </div>
-                      )}
+                    {patient.type}
+                  </Badge>
+                  </div>
+                  <CardDescription className="flex items-center gap-1">
+                  <UserCircle className="h-3.5 w-3.5 text-gray-400" />
+                  <span>{patient.username || 'Unknown Owner'}</span>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className={cn(
+                  "grid gap-x-4 gap-y-2 text-sm transition-all duration-300",
+                  expandedCards[patient.petid] ? "grid-cols-2" : "grid-cols-2"
+                  )}>
+                  <div>
+                    <span className="text-gray-500">Breed:</span>
+                    <span className="ml-1 text-gray-900">{patient.breed}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Age:</span>
+                    <span className="ml-1 text-gray-900">{patient.age} years</span>
+                  </div>
+                  {expandedCards[patient.petid] && (
+                    <>
+                    <div>
+                      <span className="text-gray-500">Gender:</span>
+                      <span className="ml-1 text-gray-900">{patient.gender || 'Unknown'}</span>
                     </div>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{patient.name}</CardTitle>
-                        <Badge
-                          variant="outline"
-                          className="bg-indigo-50 text-indigo-600 border-indigo-200"
-                        >
-                          {patient.type}
-                        </Badge>
+                    <div>
+                      <span className="text-gray-500">Weight:</span>
+                      <span className="ml-1 text-gray-900">{patient.weight} kg</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Color:</span>
+                      <span className="ml-1 text-gray-900">{patient.color || 'Unknown'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Birth Date:</span>
+                      <span className="ml-1 text-gray-900">
+                      {patient.birth_date ? format(new Date(patient.birth_date), 'MM/dd/yyyy') : 'Unknown'}
+                      </span>
+                    </div>
+                    {patient.microchip_number && (
+                      <div className="col-span-2">
+                      <span className="text-gray-500">Microchip:</span>
+                      <span className="ml-1 text-gray-900">{patient.microchip_number}</span>
                       </div>
-                      <CardDescription className="flex items-center gap-1">
-                        <UserCircle className="h-3.5 w-3.5 text-gray-400" />
-                        <span>{patient.username || 'Unknown Owner'}</span>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                        <div>
-                          <span className="text-gray-500">Breed:</span>
-                          <span className="ml-1 text-gray-900">{patient.breed}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Age:</span>
-                          <span className="ml-1 text-gray-900">{patient.age} years</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Gender:</span>
-                          <span className="ml-1 text-gray-900">{patient.gender || 'Unknown'}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Weight:</span>
-                          <span className="ml-1 text-gray-900">{patient.weight} kg</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                    )}
+                    </>
+                  )}
+                  </div>
+                  <div className="mt-4 flex justify-between items-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => toggleCardExpansion(patient.petid, e)}
+                    className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                  >
+                    {expandedCards[patient.petid] ? 'Show Less' : 'Show More'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                    e.stopPropagation();
+                    handlePatientClick(patient.petid);
+                    }}
+                    className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                  >
+                    View Details
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                  </div>
+                </CardContent>
+                </Card>
+              ))
               )}
             </div>
-          )}
+            )}
 
           {/* Patients list view */}
           {viewMode === 'list' && (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -28,21 +28,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle, MoreVertical, Loader2, Pencil, Trash } from "lucide-react";
 import { MedicineSupplierResponse } from "@/types";
+import { useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier } from "@/hooks/use-supplier";
 
 interface SupplierListProps {
   searchQuery: string;
 }
 
 const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
-  const [suppliers, setSuppliers] = useState<MedicineSupplierResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [selectedSupplier, setSelectedSupplier] =
-    useState<MedicineSupplierResponse | null>(null);
+  const [selectedSupplier, setSelectedSupplier] = useState<MedicineSupplierResponse | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const token = localStorage.getItem("access_token");
+  const pageSize = 10;
+
 
   // Form state
   const [formData, setFormData] = useState({
@@ -54,33 +51,29 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
     notes: "",
   });
 
-  useEffect(() => {
-    fetchSuppliers();
-  }, [currentPage, searchQuery]);
+  // Use the custom hooks
+  const { data: suppliersData, isLoading } = useSuppliers(currentPage, pageSize);
+  const createSupplierMutation = useCreateSupplier();
+  const updateSupplierMutation = useUpdateSupplier();
+  const deleteSupplierMutation = useDeleteSupplier();
 
-  const fetchSuppliers = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        `/api/v1/medicine/suppliers?page=${currentPage}&pageSize=10`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const data = await response.json();
-
-      setSuppliers(data);
-      // Assuming the API returns a paginated response with total pages
-      // setTotalPages(data.totalPages);
-      setTotalPages(5); // Placeholder, replace with actual data
-    } catch (error) {
-      console.error("Error fetching suppliers:", error);
-    } finally {
-      setIsLoading(false);
+  // Filter suppliers based on search query
+  const suppliers = useMemo(() => {
+    if (!suppliersData || !Array.isArray(suppliersData)) {
+      return [];
     }
-  };
+    
+    return suppliersData.filter((supplier: MedicineSupplierResponse) => {
+      if (!searchQuery) return true;
+      const searchLower = searchQuery.toLowerCase();
+      const matchesName = supplier.name?.toLowerCase().includes(searchLower) || false;
+      const matchesContact = supplier.contact_name?.toLowerCase().includes(searchLower) || false;
+      const matchesEmail = supplier.email?.toLowerCase().includes(searchLower) || false;
+      return matchesName || matchesContact || matchesEmail;
+    });
+  }, [suppliersData, searchQuery]);
+
+  const totalPages = suppliersData?.totalPages || 1;
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -88,63 +81,37 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-    
-  const handleAddSupplier = async () => {
-    setIsSubmitting(true);
-    try {
-      const response = await fetch("/api/medicine/supplier", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
 
-      if (response.ok) {
-        fetchSuppliers();
-        resetForm();
-      } else {
-        const error = await response.json();
-        console.error("Error adding supplier:", error);
-      }
+  const handleAddSupplier = async () => {
+    try {
+      await createSupplierMutation.mutateAsync(formData);
+      resetForm();
     } catch (error) {
-      console.error("Error adding supplier:", error);
-    } finally {
-      setIsSubmitting(false);
+      console.error("Error in handleAddSupplier:", error);
     }
   };
 
   const handleUpdateSupplier = async () => {
     if (!selectedSupplier) return;
-
-    setIsSubmitting(true);
     try {
-      const response = await fetch(
-        `/api/medicine/supplier/${selectedSupplier.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-
-      if (response.ok) {
-        fetchSuppliers();
-        resetForm();
-        setSelectedSupplier(null);
-        setIsEditing(false);
-      } else {
-        const error = await response.json();
-        console.error("Error updating supplier:", error);
-      }
+      await updateSupplierMutation.mutateAsync({
+        id: selectedSupplier.id,
+        data: formData
+      });
+      resetForm();
+      setSelectedSupplier(null);
+      setIsEditing(false);
     } catch (error) {
-      console.error("Error updating supplier:", error);
-    } finally {
-      setIsSubmitting(false);
+      console.error("Error in handleUpdateSupplier:", error);
+    }
+  };
+
+  const handleDeleteSupplier = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this supplier?")) return;
+    try {
+      await deleteSupplierMutation.mutateAsync(id);
+    } catch (error) {
+      console.error("Error in handleDeleteSupplier:", error);
     }
   };
 
@@ -152,11 +119,11 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
     setSelectedSupplier(supplier);
     setFormData({
       name: supplier.name,
-      email: supplier.email,
-      phone: supplier.phone,
-      address: supplier.address,
-      contact_name: supplier.contact_name,
-      notes: supplier.notes,
+      email: supplier.email || "",
+      phone: supplier.phone || "",
+      address: supplier.address || "",
+      contact_name: supplier.contact_name || "",
+      notes: supplier.notes || "",
     });
     setIsEditing(true);
   };
@@ -261,11 +228,9 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
               </DialogClose>
               <Button
                 onClick={handleAddSupplier}
-                disabled={!formData.name || isSubmitting}
+                disabled={!formData.name }
               >
-                {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+               
                 Add Supplier
               </Button>
             </DialogFooter>
@@ -354,11 +319,8 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
               </Button>
               <Button
                 onClick={handleUpdateSupplier}
-                disabled={!formData.name || isSubmitting}
+                disabled={!formData.name}
               >
-                {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
                 Update Supplier
               </Button>
             </DialogFooter>
@@ -384,17 +346,20 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {suppliers?.length === 0 ? (
+                {isLoading ? (
                   <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="text-center py-8 text-gray-500"
-                    >
+                    <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                      Loading suppliers...
+                    </TableCell>
+                  </TableRow>
+                ) : !suppliers || suppliers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-gray-500">
                       No suppliers found. Add a new supplier to get started.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  (suppliers || []).map((supplier) => (
+                  suppliers.map((supplier: MedicineSupplierResponse) => (
                     <TableRow key={supplier.id}>
                       <TableCell className="font-medium">
                         {supplier.name}
@@ -417,7 +382,7 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600" onSelect={() => {}}>
+                            <DropdownMenuItem className="text-red-600" onSelect={() => handleDeleteSupplier(supplier.id)}>
                               <Trash className="mr-2 h-4 w-4" />
                               Delete
                             </DropdownMenuItem>

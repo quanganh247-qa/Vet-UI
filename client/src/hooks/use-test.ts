@@ -124,7 +124,7 @@ export const useListTests = (type: string) => {
 };
 
 export const useCreateTestOrder = (
- 
+
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -175,27 +175,22 @@ export const useGetTestByAppointmentID = (appointmentID: number | undefined) => 
         console.warn('No appointment ID provided, returning empty array');
         return [];
       }
-      try {
-        return await getTestByAppointmentID(appointmentID);
-      } catch (error) {
-        console.error('Error in useGetTestByAppointmentID hook:', error);
-        throw error;
-      }
+      return await getTestByAppointmentID(appointmentID);
     },
     enabled: true, // Always enable the hook, handle empty appointmentID inside
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 2, // Retry failed requests twicxe
-    select: (data) => {      
+    select: (data) => {
       // Handle empty data
       if (!data || data.length === 0) {
         return [];
       }
-      
+
       // Transform data for consistent property names
       return data.map(test => {
         // Safe access to properties with type casting to avoid linter errors
         const item = test as TestByAppointment;
-        
+
         return {
           test_id: item.test_id || `test-${Math.random().toString(36).substring(2, 9)}`,
           test_name: item.test_name || 'Unnamed Vaccine',

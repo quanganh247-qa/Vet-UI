@@ -94,7 +94,6 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
 
   const { data: allVaccines = [], isLoading: isLoadingVaccines } = useGetTestByAppointmentID(Number(selectedAppointmentId));
 
-  console.log(vaccinationData);
   useEffect(() => {
   }, [allVaccines]);
 

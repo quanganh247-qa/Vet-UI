@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { addNewStaff, createShift, CreateStaffRequest, deleteShift, editDoctorProfile, EditDoctorProfileRequest, getDoctorProfile, getDoctors, getShiftByDoctorId, getShifts, updateShift, updatePassword, UpdatePasswordParams, updateUserAvatar, updateUser, UpdateUserParams } from "@/services/doctor-services"; // Added updateUserAvatar, updateUser, UpdateUserParams
+import { addNewStaff, createShift, CreateStaffRequest, deleteShift, editDoctorProfile, EditDoctorProfileRequest, getDoctorProfile, getDoctors, getDoctorById, getShiftByDoctorId, getShifts, updateShift, updatePassword, UpdatePasswordParams, updateUserAvatar, updateUser, UpdateUserParams } from "@/services/doctor-services"; // Added updateUserAvatar, updateUser, UpdateUserParams
 import { queryClient } from "@/lib/queryClient";
 import { getAllStaff } from "@/services/staff-services";
 import { toast } from "./use-toast";
@@ -11,10 +11,10 @@ export const useDoctors = () => {
     });
 };
 
-export const useDoctorProfile = () => {
+export const useDoctorProfile = (id?: number) => {
     return useQuery({
-        queryKey: ['doctor-profile'],
-        queryFn: getDoctorProfile,
+        queryKey: ['doctor-profile', id],
+        queryFn: () => id ? getDoctorById(id) : getDoctorProfile(),
     });
 };
 
@@ -187,4 +187,4 @@ export const useUpdateUser = () => {
         },
     });
 };
-    
+

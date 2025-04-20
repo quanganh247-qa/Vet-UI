@@ -333,37 +333,6 @@ const AppointmentFlow = () => {
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
-                  <UserCog className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">My Profile</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="h-4 w-4 mr-2" />
-                  Profile Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Preferences
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            {/* <Button size="sm" className="bg-white text-indigo-700 hover:bg-white/90" onClick={handleNewAppointment}>
-              <Plus className="h-4 w-4 mr-1" /> 
-              <span className="hidden sm:inline">New Appointment</span>
-            </Button> */}
           </div>
         </div>
       </div>

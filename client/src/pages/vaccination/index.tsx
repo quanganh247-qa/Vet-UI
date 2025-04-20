@@ -19,15 +19,6 @@ import { useAppointmentData } from "@/hooks/use-appointment";
 import { usePatientData } from "@/hooks/use-pet";
 import VaccinationAdministration from "@/components/vaccination/VaccinationAdministration";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 
 const VaccinationPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
@@ -39,6 +30,9 @@ const VaccinationPage: React.FC = () => {
   const { data: patient, isLoading: isPatientLoading } = usePatientData(
     appointment?.pet?.pet_id
   );
+
+  console.log("Appointment Data:", appointment);
+
 
   const [vaccinationCompleted, setVaccinationCompleted] = useState(false);
   const [activeTab, setActiveTab] = useState("administration");
@@ -105,35 +99,7 @@ const VaccinationPage: React.FC = () => {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Patient
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  My Profile
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="h-4 w-4 mr-2" />
-                  Profile Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Preferences
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/login")}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+    
           </div>
         </div>
       </div>

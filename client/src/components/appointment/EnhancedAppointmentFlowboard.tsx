@@ -369,7 +369,7 @@ const EnhancedAppointmentFlowboard: React.FC<
               };
               onAppointmentUpdate(updatedAppointment);
               if (navigateToDetail) {
-                setLocation(`/patient/${appointment.pet?.pet_id}?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`);
+                setLocation(`/patient?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`);
               }
             },
           }

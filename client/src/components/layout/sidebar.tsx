@@ -1,28 +1,21 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { 
-  Home, 
-  Calendar, 
-  Users, 
-  Stethoscope, 
-  BarChart, 
-  TestTube, 
-  DollarSign, 
-  Settings, 
-  HelpCircle, 
-  Pill,
+import {
+  Home,
+  Calendar,
+  Stethoscope,
+  Settings,
+  HelpCircle,
   ChevronLeft,
   ChevronRight,
   Bell,
   MessageCircle,
-  FileText,
   Activity,
   PawPrint,
   BookOpen,
   LogOut,
   UserCircle,
-  Clock,
-  User,
+  DollarSign,
   Syringe
 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -30,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/auth-context";
+import { useDoctorProfile } from "@/hooks/use-doctor";
 
 interface SidebarProps {
   open: boolean;
@@ -41,7 +35,8 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [notifications, setNotifications] = useState(3); // Example notification count
   const { doctor, logout } = useAuth();
-  console.log(doctor);
+
+  const { data: doctorData } = useDoctorProfile();
 
   // Save collapsed state to localStorage
   useEffect(() => {
@@ -84,9 +79,10 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
   ];
 
   const accountLinks = [
-    { 
-      name: "Notifications", 
-      path: "/notifications", 
+    { name: "Profile", path: "/profile", icon: <UserCircle className="h-5 w-5" /> },
+    {
+      name: "Notifications",
+      path: "/notifications",
       icon: <Bell className="h-5 w-5" />,
       badge: notifications > 0 ? notifications : undefined
     },
@@ -98,8 +94,8 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
     <>
       {/* Mobile backdrop */}
       {open && (
-        <div 
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden" 
+        <div
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
           onClick={() => setOpen(false)}
         />
       )}
@@ -107,7 +103,8 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
       {/* Sidebar */}
       <aside 
         className={cn(
-          "bg-white shadow-lg fixed inset-y-0 left-0 z-50 transition-all duration-300 md:relative flex flex-col",
+          "bg-white shadow-lg fixed inset-y-0 left-0 z-50 transition-all duration-300 ease-in-out md:relative flex flex-col",
+          "border-r border-gray-200",
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0",
           collapsed ? "w-16 md:w-16" : "w-64 md:w-64"
         )}
@@ -115,7 +112,12 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
         {/* Toggle button for desktop */}
         <button 
           onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-20 bg-white rounded-full p-1 shadow-md border border-gray-200 hidden md:flex items-center justify-center z-50 hover:bg-gray-50"
+          className={cn(
+            "absolute -right-3 top-20 bg-white rounded-full p-1.5",
+            "shadow-lg border border-gray-200 hidden md:flex items-center justify-center z-50",
+            "hover:bg-gray-50 hover:border-indigo-200 transition-colors duration-200",
+            "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+          )}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? 
@@ -126,7 +128,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
 
         {/* Logo area */}
         <div className={cn(
-          "border-b border-gray-200",
+          "border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80",
           collapsed ? "p-3" : "p-4"
         )}>
           <div className={cn(
@@ -134,7 +136,11 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             collapsed ? "justify-center" : "justify-between"
           )}>
             <div className="flex items-center">
-              <div className="flex-shrink-0 bg-gradient-to-r from-indigo-600 to-indigo-800 text-white rounded-lg flex items-center justify-center overflow-hidden">
+              <div className={cn(
+                "flex-shrink-0 bg-gradient-to-r from-indigo-600 to-indigo-800 text-white rounded-xl",
+                "shadow-md hover:shadow-lg transition-shadow duration-200",
+                "flex items-center justify-center overflow-hidden"
+              )}>
                 <div className={cn(
                   "flex items-center justify-center",
                   collapsed ? "w-10 h-10" : "w-10 h-10"
@@ -143,16 +149,16 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 </div>
               </div>
               {!collapsed && (
-                <h1 className="text-xl font-semibold text-gray-800 ml-3">VetDashboard</h1>
+                <h1 className="text-xl font-semibold text-gray-800 ml-3 tracking-tight">VetDashboard</h1>
               )}
             </div>
           </div>
         </div>
         
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-2">
+        <nav className="flex-1 overflow-y-auto py-4 px-3">
           {/* Main Links */}
-          <div className="mb-4">
+          <div className="mb-6">
             {!collapsed && (
               <div className="px-3 mb-2">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Main</h2>
@@ -168,39 +174,38 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 >
                   <div
                     className={cn(
-                      "flex items-center text-gray-700 rounded-lg",
-                      collapsed ? "justify-center px-2 py-3" : "px-3 py-2",
+                      "flex items-center rounded-lg transition-all duration-200",
+                      "group hover:bg-indigo-50",
+                      collapsed ? "justify-center p-2" : "px-3 py-2",
                       isActive(link.path) 
-                        ? "bg-gradient-to-r from-indigo-50 to-white text-indigo-600 border-l-4 border-indigo-600 font-medium" 
-                        : "hover:bg-gray-100"
+                        ? "bg-indigo-50 text-indigo-600 border-l-[3px] border-indigo-600 font-medium" 
+                        : "text-gray-700 hover:text-indigo-600"
                     )}
                     title={collapsed ? link.name : undefined}
                   >
                     <span className={cn(
-                      "flex-shrink-0",
-                      isActive(link.path) ? "text-indigo-600" : "text-gray-500",
+                      "flex-shrink-0 transition-colors duration-200",
+                      isActive(link.path) ? "text-indigo-600" : "text-gray-500 group-hover:text-indigo-600",
                       collapsed ? "" : "mr-3"
                     )}>
                       {link.icon}
                     </span>
-                    {!collapsed && <span>{link.name}</span>}
+                    {!collapsed && <span className="font-medium">{link.name}</span>}
                   </div>
                 </Link>
               ))}
             </div>
           </div>
-          
-       
-          
+
           {/* Practice Links */}
-          <div className="mb-4">
+          <div className="mb-6">
             {!collapsed && (
               <div className="px-3 mb-2 mt-6">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Practice</h2>
               </div>
             )}
             
-            {collapsed && <div className="my-4 border-t border-gray-200"></div>}
+            {collapsed && <div className="my-4 border-t border-gray-200/70"></div>}
             
             <div className="space-y-1">
               {practiceLinks.map((link) => (
@@ -211,40 +216,29 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 >
                   <div
                     className={cn(
-                      "flex items-center text-gray-700 rounded-lg",
-                      collapsed ? "justify-center px-2 py-3" : "px-3 py-2",
+                      "flex items-center rounded-lg transition-all duration-200",
+                      "group hover:bg-indigo-50",
+                      collapsed ? "justify-center p-2" : "px-3 py-2",
                       isActive(link.path) 
-                        ? "bg-gradient-to-r from-indigo-50 to-white text-indigo-600 border-l-4 border-indigo-600 font-medium" 
-                        : "hover:bg-gray-100"
+                        ? "bg-indigo-50 text-indigo-600 border-l-[3px] border-indigo-600 font-medium" 
+                        : "text-gray-700 hover:text-indigo-600"
                     )}
                     title={collapsed ? link.name : undefined}
                   >
                     <span className={cn(
-                      "flex-shrink-0",
-                      isActive(link.path) ? "text-indigo-600" : "text-gray-500",
+                      "flex-shrink-0 transition-colors duration-200",
+                      isActive(link.path) ? "text-indigo-600" : "text-gray-500 group-hover:text-indigo-600",
                       collapsed ? "" : "mr-3"
                     )}>
                       {link.icon}
                     </span>
-                    {!collapsed && <span>{link.name}</span>}
+                    {!collapsed && <span className="font-medium">{link.name}</span>}
                   </div>
                 </Link>
               ))}
             </div>
           </div>
 
-          {/* Doctor Management Links */}
-          <div className="mb-4">
-            {!collapsed && (
-              <div className="px-3 mb-2 mt-6">
-                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Doctor</h2>
-              </div>
-            )}
-            
-            {collapsed && <div className="my-4 border-t border-gray-200"></div>}
-       
-          </div>
-          
           {/* Account Links */}
           <div>
             {!collapsed && (
@@ -253,7 +247,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
               </div>
             )}
             
-            {collapsed && <div className="my-4 border-t border-gray-200"></div>}
+            {collapsed && <div className="my-4 border-t border-gray-200/70"></div>}
             
             <div className="space-y-1">
               {accountLinks.map((link) => (
@@ -264,29 +258,32 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 >
                   <div
                     className={cn(
-                      "flex items-center text-gray-700 rounded-lg relative",
-                      collapsed ? "justify-center px-2 py-3" : "px-3 py-2",
+                      "flex items-center rounded-lg transition-all duration-200 relative",
+                      "group hover:bg-indigo-50",
+                      collapsed ? "justify-center p-2" : "px-3 py-2",
                       isActive(link.path) 
-                        ? "bg-gradient-to-r from-indigo-50 to-white text-indigo-600 border-l-4 border-indigo-600 font-medium" 
-                        : "hover:bg-gray-100"
+                        ? "bg-indigo-50 text-indigo-600 border-l-[3px] border-indigo-600 font-medium" 
+                        : "text-gray-700 hover:text-indigo-600"
                     )}
                     title={collapsed ? link.name : undefined}
                   >
                     <span className={cn(
-                      "flex-shrink-0",
-                      isActive(link.path) ? "text-indigo-600" : "text-gray-500",
+                      "flex-shrink-0 transition-colors duration-200",
+                      isActive(link.path) ? "text-indigo-600" : "text-gray-500 group-hover:text-indigo-600",
                       collapsed ? "" : "mr-3"
                     )}>
                       {link.icon}
                     </span>
-                    {!collapsed && <span>{link.name}</span>}
+                    {!collapsed && <span className="font-medium">{link.name}</span>}
                     
                     {/* Badge for notifications */}
                     {link.badge && (
                       <Badge 
                         className={cn(
-                          "bg-red-500 text-white ml-auto",
-                          collapsed && "absolute top-1 right-1 w-4 h-4 p-0 flex items-center justify-center"
+                          "bg-red-500 text-white transition-all duration-200",
+                          collapsed 
+                            ? "absolute top-0.5 right-0.5 w-4 h-4 p-0 flex items-center justify-center text-xs" 
+                            : "ml-auto text-xs"
                         )}
                       >
                         {collapsed ? "" : link.badge}
@@ -299,20 +296,22 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
               {/* Logout button */}
               <div
                 className={cn(
-                  "flex items-center text-gray-700 rounded-lg cursor-pointer",
-                  collapsed ? "justify-center px-2 py-3" : "px-3 py-2",
-                  "hover:bg-gray-100 mt-2"
+                  "flex items-center rounded-lg transition-all duration-200 cursor-pointer",
+                  "group hover:bg-red-50",
+                  collapsed ? "justify-center p-2" : "px-3 py-2",
+                  "mt-2"
                 )}
                 title={collapsed ? "Logout" : undefined}
                 onClick={handleLogout}
               >
                 <span className={cn(
-                  "flex-shrink-0 text-red-500",
+                  "flex-shrink-0 transition-colors duration-200",
+                  "text-red-500 group-hover:text-red-600",
                   collapsed ? "" : "mr-3"
                 )}>
                   <LogOut className="h-5 w-5" />
                 </span>
-                {!collapsed && <span className="text-red-500">Logout</span>}
+                {!collapsed && <span className="font-medium text-red-500 group-hover:text-red-600">Logout</span>}
               </div>
             </div>
           </div>
@@ -320,7 +319,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
         
         {/* User profile */}
         <div className={cn(
-          "border-t border-gray-200 p-4",
+          "border-t border-gray-200 p-4 bg-gray-50/80",
           collapsed && "p-2"
         )}>
           <div className={cn(
@@ -328,13 +327,15 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             collapsed ? "justify-center" : "justify-between"
           )}>
             <div className="flex items-center">
-              <Avatar className="h-9 w-9 border-2 border-indigo-200">
-                {/* <AvatarImage src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?ixlib=rb-1.2.1&auto=format&fit=crop&w=256&q=80" alt="Dr. Sarah Wilson" /> */}
-
+              <Avatar className={cn(
+                "border-2 border-indigo-200 transition-shadow duration-200",
+                "hover:shadow-md",
+                collapsed ? "h-10 w-10" : "h-9 w-9"
+              )}>
                 <img
                   src={
-                    doctor?.data_image
-                      ? `data:image/png;base64,${doctor.data_image}`
+                    doctorData?.data_image
+                      ? `data:image/png;base64,${doctorData.data_image}`
                       : "/fallback-image.png"
                   }
                   alt={doctor?.username}
@@ -350,7 +351,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                   <p className="text-sm font-medium text-gray-900">
                     {doctor ? `Dr. ${doctor.username}` : 'Dr. Sarah Wilson'}
                   </p>
-                  <p className="text-xs text-gray-500">{doctor?.role}</p>
+                  <p className="text-xs text-gray-500">{doctorData?.role}</p>
                 </div>
               )}
             </div>
@@ -359,7 +360,11 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="h-8 w-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600"
+                className={cn(
+                  "h-8 w-8 rounded-full transition-all duration-200",
+                  "bg-gray-100 hover:bg-gray-200 text-gray-600",
+                  "focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+                )}
                 onClick={() => navigate('/settings')}
               >
                 <Settings className="h-4 w-4" />

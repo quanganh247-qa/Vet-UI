@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "@/components/ui/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -39,10 +41,13 @@ import { useLocation } from "wouter";
 import { Progress } from "@/components/ui/progress";
 import { useGetAllMedicines } from "@/hooks/use-medicine";
 import api from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
+import { useImportMedicine, useExportMedicine } from "@/hooks/use-medicine-transaction";
 
 interface Medicine {
   id: number;
   medicine_name: string;
+  supplier_id: number;
   dosage: string;
   category: string;
   current_stock: number;
@@ -74,7 +79,8 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
 
   // Use the API hook with pagination and search parameters
   const { data: medicines, isLoading, error } = useGetAllMedicines();
-
+  const importMedicineMutation = useImportMedicine();
+  const exportMedicineMutation = useExportMedicine();
 
   useEffect(() => {
     if (medicines?.meta) {
@@ -101,14 +107,48 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
   const handleAdjustQuantity = async () => {
     if (!selectedMedicine) return;
 
-    setIsSubmitting(true);
     try {
-      
+      const transactionData = {
+        medicine_id: selectedMedicine.id,
+        quantity: adjustQuantity,
+        unit_price: selectedMedicine.unit_price,
+        supplier_id: selectedMedicine.supplier_id,
+        expiration_date: selectedMedicine.expiration_date,
+        notes: adjustmentReason,
+        prescription_id: 0,
+        appointment_id: 0,
+        transaction_type: adjustmentType === "add" ? "import" : "export"
+      };
+
+      if (adjustmentType === "add") {
+        await importMedicineMutation.mutateAsync(transactionData);
+      } else {
+        await exportMedicineMutation.mutateAsync(transactionData);
+      }
+
       setAdjustQuantityDialogOpen(false);
     } catch (error) {
       console.error("Error adjusting quantity:", error);
-    } finally {
-      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteMedicine = async (medicineId: number) => {
+    if (!confirm('Are you sure you want to delete this medicine?')) return;
+    
+    try {
+      await api.delete(`/api/v1/medicine/${medicineId}`);
+      toast({
+        title: "Success",
+        description: "Medicine deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["medicines"] });
+    } catch (error) {
+      console.error("Error deleting medicine:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete medicine",
+        variant: "destructive",
+      });
     }
   };
 
@@ -236,7 +276,7 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600" onSelect={() => {}}>
+                            <DropdownMenuItem className="text-red-600" onSelect={() => handleDeleteMedicine(medicine.id)}>
                               <Trash className="mr-2 h-4 w-4" />
                               Delete
                             </DropdownMenuItem>
