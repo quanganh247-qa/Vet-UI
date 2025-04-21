@@ -41,6 +41,7 @@ const ShiftAssignment = lazy(() => import("@/pages/shift-assignment"));
 const StaffPage = lazy(() => import("@/pages/staff"));
 const PrescriptionInvoice = lazy(() => import("@/pages/prescription/invoice"));
 const LabManagement = lazy(() => import("@/pages/lab-management"));
+const ServicesManagement = lazy(() => import("@/pages/services-management"));
 // Create LoginPage component that uses LoginForm
 const LoginPage = () => {
   return (
@@ -158,6 +159,7 @@ function Router() {
         <Route path="/catalog" component={CatalogManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/test-orders" component={TestOrdersManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/inventory" component={MedicineInventory as React.ComponentType<RouteComponentProps>} />
+        <Route path="/services-management" component={ServicesManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/schedule" component={ScheduleManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/shift-management" component={ShiftManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/shift-assignment" component={ShiftAssignment as React.ComponentType<RouteComponentProps>} />

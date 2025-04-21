@@ -18,7 +18,7 @@ interface VaccinationHistoryProps {
 }
 
 const VaccinationHistory: React.FC<VaccinationHistoryProps> = ({ vaccines }) => {
-  const sortedVaccines = [...vaccines].sort(
+  const sortedVaccines = (vaccines || []).sort(
     (a, b) => new Date(b.date_administered).getTime() - new Date(a.date_administered).getTime()
   );
 

@@ -16,7 +16,8 @@ import {
   LogOut,
   UserCircle,
   DollarSign,
-  Syringe
+  Syringe,
+  FileText
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -71,6 +72,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
   const practiceLinks = [
     // { name: "Lab Management", path: "/lab-management", icon: <TestTube className="h-5 w-5" /> },
     { name: "Vaccination", path: "/vaccination", icon: <Syringe className="h-5 w-5" /> },
+    { name: "Services Management", path: "/services-management", icon: <FileText className="h-5 w-5" /> },
     { name: "Catalog Management", path: "/inventory", icon: <BookOpen className="h-5 w-5" /> },
     { name: "Veterinary Staff", path: "/staff", icon: <Stethoscope className="h-5 w-5" /> },
     { name: "Schedule", path: "/shift-management", icon: <Calendar className="h-5 w-5" /> },
