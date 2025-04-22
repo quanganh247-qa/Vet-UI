@@ -275,7 +275,9 @@ export interface QuickLinkRequest {
   amount: number;         
   account_name: string | "DINH HUU QUANG ANH";
   order_id: number | 0;
-  test_order_id: number | 0;
+  test_order_id?: number;
+  medicine_order_id?: number;
+  service_order_id?: number;
 }
 
 export interface QRCodeInformation {

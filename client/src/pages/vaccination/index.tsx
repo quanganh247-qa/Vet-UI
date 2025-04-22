@@ -105,9 +105,9 @@ const VaccinationPage: React.FC = () => {
       </div>
 
       <div className="container mx-auto">
-        <div className="bg-white rounded-lg border border-indigo-100 shadow-sm p-6 mb-6">
+        {/* <div className="bg-white rounded-lg border border-indigo-100 shadow-sm p-6 mb-6"> */}
           {/* Patient info card */}
-          <div className="mb-6">
+          {/* <div className="mb-6">
             <Card className="border border-indigo-100 bg-indigo-50/50">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center text-indigo-700">
@@ -146,7 +146,7 @@ const VaccinationPage: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </div> */}
 
           {/* Main content */}
           <div className="bg-white rounded-lg border border-indigo-100 overflow-hidden">
@@ -158,7 +158,7 @@ const VaccinationPage: React.FC = () => {
             />
           </div>
         </div>
-      </div>
+      {/* </div> */}
     </div>
   );
 };

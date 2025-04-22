@@ -32,6 +32,7 @@ import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { getInvoices } from "@/services/invoice-services";
 import { useQR } from "@/hooks/use-payment";
+import { useToast } from "@/components/ui/use-toast";
 
 // Default QR code information
 const defaultQRInfo: QRCodeInformation = {
@@ -63,6 +64,8 @@ const BillingPage = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [qrUrl, setQrUrl] = useState("");
+  const [qrError, setQrError] = useState("");
+  const { toast } = useToast();
 
   // Get the QR mutation hook at the component level
   const { mutate: generateQR } = useQR();
@@ -77,37 +80,110 @@ const BillingPage = () => {
   // Generar URL del código QR cuando cambie la factura activa
   useEffect(() => {
     if (activeInvoice) {
-      const qrInfo = {
-        bank_id: "mbbank",
-        account_no: "220220222419",
-        template: "print",
-        description: `Payment for ${activeInvoice.invoice_number}`,
-        account_name: "DINH HUU QUANG ANH",
-        order_id: 0,
-        test_order_id: activeInvoice.id,
-        amount: activeInvoice.amount
-      };
-      
-      // Generate QR code
-      generateQR(qrInfo, {
-        onSuccess: (data) => {
-          console.log("data", data);
-          setQrUrl(data.image_url || ""); // Assuming data contains the QR URL
-        },
-        onError: (error) => {
-          console.error("Error generating QR code:", error);
+      setQrError(""); // Reset any previous errors
+
+      try {
+        // Determine the invoice type and prepare appropriate QR info
+        let qrInfo;
+        
+        // Check the invoice type based on available properties
+        if (activeInvoice.type === 'test' || activeInvoice.test_id) {
+          // For test orders, use test_order_id
+          qrInfo = {
+            bank_id: "mbbank",
+            account_no: "220220222419",
+            template: "compact",
+            description: `Payment for Test: ${activeInvoice.invoice_number}`,
+            account_name: "DINH HUU QUANG ANH",
+            order_id: 0,
+            test_order_id: activeInvoice.id,
+            amount: activeInvoice.amount
+          };
+        } else if (activeInvoice.type === 'medicine' || activeInvoice.medicine_ids) {
+          // For medicine invoices, use medicine_order_id
+          qrInfo = {
+            bank_id: "mbbank",
+            account_no: "220220222419",
+            template: "compact",
+            description: `Payment for Medicine: ${activeInvoice.invoice_number}`,
+            account_name: "DINH HUU QUANG ANH",
+            order_id: 0,
+            test_order_id: 0,
+            amount: activeInvoice.amount
+          };
+        } else if (activeInvoice.type === 'service' || activeInvoice.service_id) {
+          // For service invoices
+          qrInfo = {
+            bank_id: "mbbank",
+            account_no: "220220222419",
+            template: "compact",
+            description: `Payment for Service: ${activeInvoice.invoice_number}`,
+            account_name: "DINH HUU QUANG ANH",
+            order_id: activeInvoice.id, // Use order_id directly for services
+            amount: activeInvoice.amount
+          };
+        } else {
+          // Generic fallback for other invoice types
+          qrInfo = {
+            bank_id: "mbbank",
+            account_no: "220220222419",
+            template: "compact",
+            description: `Payment for ${activeInvoice.invoice_number}`,
+            account_name: "DINH HUU QUANG ANH",
+            order_id: activeInvoice.id,
+            amount: activeInvoice.amount
+          };
         }
-      });
+
+        console.log("QR Info:", JSON.stringify(qrInfo, null, 2));
+
+        // Generate QR code
+        generateQR(qrInfo, {
+          onSuccess: (data) => {
+            if (data && data.image_url) {
+              setQrUrl(data.image_url);
+            } else if (data && data.url) {
+              // Fallback to URL if image_url is not available
+              setQrUrl(data.url);
+            } else if (data && data.dataUrl) {
+              // Another fallback
+              setQrUrl(data.dataUrl);
+            } else {
+              setQrError("QR code generated but no image URL was returned");
+              toast({
+                title: "Warning",
+                description: "QR code generated but no image URL was returned",
+                variant: "destructive",
+              });
+            }
+          },
+          onError: (error) => {
+            console.error("Error generating QR code:", error);
+            setQrError(error.message || "Failed to generate QR code");
+            toast({
+              title: "Error",
+              description: "Failed to generate QR code. Please try again later.",
+              variant: "destructive",
+            });
+
+            // Set a placeholder or fallback QR image
+            setQrUrl("https://via.placeholder.com/250x250?text=QR+Unavailable");
+          }
+        });
+      } catch (err: any) {
+        console.error("Error in QR generation process:", err);
+        setQrError(err.message || "An unexpected error occurred");
+      }
     }
-  }, [activeInvoice, generateQR]);
-  
+  }, [activeInvoice, generateQR, toast]);
+
   // Filtrar facturas según el estado y la búsqueda
   const filteredInvoices = invoicesData?.invoices ? invoicesData.invoices.filter((invoice: any) => {
     // Filtrar por estado
     if (filterStatus !== "all" && invoice.status !== filterStatus) {
       return false;
     }
-    
+
     // Filtrar por término de búsqueda
     if (searchQuery) {
       const lowerCaseQuery = searchQuery.toLowerCase();
@@ -117,19 +193,19 @@ const BillingPage = () => {
         (invoice.customer_name && invoice.customer_name.toLowerCase().includes(lowerCaseQuery))
       );
     }
-    
+
     return true;
   }) : [];
-  
+
   const handlePayNow = () => {
     if (!activeInvoice) return;
-    
+
     setPaymentStatus("processing");
-    
+
     // Simular procesamiento de pago (esto debería ser una llamada a la API real)
     setTimeout(() => {
       setPaymentStatus("success");
-      
+
       // Aquí deberías actualizar el estado de la factura mediante una llamada a la API
     }, 2000);
   };
@@ -160,7 +236,7 @@ const BillingPage = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto py-6">
       {/* Header with gradient background */}
@@ -174,7 +250,7 @@ const BillingPage = () => {
           </div>
 
           <div className="flex gap-2">
-            <Button 
+            <Button
               variant="outline"
               className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
             >
@@ -195,7 +271,7 @@ const BillingPage = () => {
                 <Badge className="ml-2">{filteredInvoices.length}</Badge>
               </CardTitle>
               <CardDescription>View and manage your invoices</CardDescription>
-              
+
               <div className="mt-2 space-y-3">
                 <div className="relative w-full">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
@@ -206,7 +282,7 @@ const BillingPage = () => {
                     className="pl-10 border-gray-200 dark:border-gray-700 dark:bg-gray-900/50 dark:placeholder:text-gray-500"
                   />
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   <Select defaultValue="all" onValueChange={setFilterStatus}>
@@ -222,13 +298,13 @@ const BillingPage = () => {
                 </div>
               </div>
             </CardHeader>
-            
+
             <Separator className="dark:bg-gray-700" />
-            
+
             <CardContent className="p-0 max-h-[500px] overflow-y-auto">
               <div className="grid grid-cols-1 divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredInvoices.map((invoice: any) => (
-                  <div 
+                  <div
                     key={invoice.id}
                     className={cn(
                       "p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors",
@@ -244,8 +320,8 @@ const BillingPage = () => {
                       <Badge
                         variant={invoice.status === "paid" ? "default" : "outline"}
                         className={cn(
-                          invoice.status === "paid" 
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" 
+                          invoice.status === "paid"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                             : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
                         )}
                       >
@@ -263,7 +339,7 @@ const BillingPage = () => {
                     </div>
                   </div>
                 ))}
-                
+
                 {filteredInvoices.length === 0 && (
                   <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                     No invoices found matching your criteria.
@@ -273,7 +349,7 @@ const BillingPage = () => {
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Invoice Details and Payment */}
         <div className="lg:col-span-2">
           {activeInvoice ? (
@@ -287,8 +363,8 @@ const BillingPage = () => {
                   <Badge
                     variant={activeInvoice.status === "paid" ? "default" : "outline"}
                     className={cn(
-                      activeInvoice.status === "paid" 
-                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" 
+                      activeInvoice.status === "paid"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                         : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
                     )}
                   >
@@ -296,9 +372,9 @@ const BillingPage = () => {
                   </Badge>
                 </div>
               </CardHeader>
-              
+
               <Separator className="dark:bg-gray-700" />
-              
+
               <CardContent className="py-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div>
@@ -314,7 +390,7 @@ const BillingPage = () => {
                     <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(activeInvoice.amount)}</p>
                   </div>
                 </div>
-                
+
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-6">
                   <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Service Details</h3>
                   <div className="overflow-x-auto">
@@ -344,11 +420,11 @@ const BillingPage = () => {
                     </table>
                   </div>
                 </div>
-                
+
                 {activeInvoice.status === "unpaid" && (
                   <div>
                     <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Payment Method</h3>
-                    
+
                     <RadioGroup defaultValue="vietqr" className="mb-4" onValueChange={(value) => setPaymentMethod(value as "vietqr" | "paypal")}>
                       <div className="flex items-center space-x-2 rounded-lg border border-gray-200 dark:border-gray-700 p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <RadioGroupItem value="vietqr" id="vietqr" />
@@ -365,13 +441,13 @@ const BillingPage = () => {
                         </Label>
                       </div>
                     </RadioGroup>
-                    
+
                     <Tabs defaultValue="payment" className="mb-4">
                       <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="payment" className="text-center">Make Payment</TabsTrigger>
                         <TabsTrigger value="info" className="text-center">Payment Info</TabsTrigger>
                       </TabsList>
-                      
+
                       <TabsContent value="payment" className="space-y-4 mt-4">
                         {paymentMethod === "vietqr" ? (
                           <div className="flex flex-col items-center">
@@ -391,13 +467,13 @@ const BillingPage = () => {
                             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-blue-800 dark:text-blue-300 text-sm mb-4">
                               You'll be redirected to PayPal to complete your payment securely.
                             </div>
-                            
+
                             <div className="flex flex-col space-y-3">
                               <div>
                                 <Label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">Name on card</Label>
                                 <Input id="name" placeholder="John Doe" className="mt-1" />
                               </div>
-                              
+
                               <div>
                                 <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">Email address</Label>
                                 <Input id="email" type="email" placeholder="john@example.com" className="mt-1" />
@@ -406,11 +482,11 @@ const BillingPage = () => {
                           </div>
                         )}
                       </TabsContent>
-                      
+
                       <TabsContent value="info" className="space-y-4 mt-4">
                         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
                           <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Payment Instructions</h3>
-                          
+
                           {paymentMethod === "vietqr" ? (
                             <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
                               <p>1. Open your mobile banking app</p>
@@ -436,7 +512,7 @@ const BillingPage = () => {
                         </div>
                       </TabsContent>
                     </Tabs>
-                    
+
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                       <div className="text-sm text-gray-500 dark:text-gray-400">
                         <div className="flex items-center gap-1">
@@ -444,7 +520,7 @@ const BillingPage = () => {
                           <span>Due: {format(new Date(activeInvoice.due_date), "MMM dd, yyyy")}</span>
                         </div>
                       </div>
-                      <Button 
+                      <Button
                         onClick={handlePayNow}
                         disabled={paymentStatus === "processing" || paymentStatus === "success"}
                         className="w-full md:w-auto"
@@ -467,7 +543,7 @@ const BillingPage = () => {
                         )}
                       </Button>
                     </div>
-                    
+
                     {paymentStatus === "success" && (
                       <div className="mt-4 bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-green-800 dark:text-green-300 text-sm flex items-start">
                         <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
@@ -479,7 +555,7 @@ const BillingPage = () => {
                     )}
                   </div>
                 )}
-                
+
                 {activeInvoice.status === "paid" && (
                   <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-green-800 dark:text-green-300 text-sm flex items-start">
                     <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
@@ -494,7 +570,7 @@ const BillingPage = () => {
                   </div>
                 )}
               </CardContent>
-              
+
               <CardFooter className="pt-0 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center px-6 py-4">
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   {activeInvoice.status === "paid" ? "Paid on " : "Created on "}
@@ -525,4 +601,4 @@ const BillingPage = () => {
   );
 };
 
-export default BillingPage; 
+export default BillingPage;

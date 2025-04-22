@@ -68,27 +68,29 @@ const CheckIn = () => {
     !!appointment?.service?.service_name
   );
 
-  console.log("rooms", rooms)
 
 
-  // Define QR code information conditionally but call the hook unconditionally
-  const qrCodeInformation: QuickLinkRequest = {
-    bank_id: "mbbank",
-    account_no: "220220222419",
-    template: "print",
-    amount: appointment?.service?.service_amount || 0,
-    description: `Payment for ${appointment?.service?.service_name || "appointment"}`,
-    account_name: "PET CARE CLINIC",
-    order_id: 0,
-    test_order_id: 0,
-  };
+
+  // // Add specific order ID based on service type
+  // if (appointment?.service?.service_name?.toLowerCase().includes("test")) {
+  //   qrCodeInformation.test_order_id = parseInt(id || "0");
+  // } else if (
+  //   appointment?.service?.service_name?.toLowerCase().includes("medicine") ||
+  //   appointment?.service?.service_name?.toLowerCase().includes("medication")
+  // ) {
+  //   qrCodeInformation.medicine_order_id = parseInt(id || "0");
+  // } else {
+  //   // For general services
+  //   qrCodeInformation.service_order_id = parseInt(id || "0");
+  // }
+
 
   // Use the mutation hook with proper methods
   const qrMutation = useQR();
 
   useEffect(() => {
     if (qrMutation.data) {
-      setQrImageUrl(qrMutation.data.url || qrMutation.data.image_url || "");
+      setQrImageUrl(qrMutation.data.url || qrMutation.data.quick_link || "");
     }
   }, [qrMutation.data]);
 
@@ -102,8 +104,8 @@ const CheckIn = () => {
   }
 
   // const subtotal = billingItems.reduce((sum, item) => sum + item.total, 0);
-  const tax = appointment.service.service_amount * 0.1; // 10% tax
-  const total = appointment.service.service_amount + tax;
+  // const tax = appointment.service.service_amount * 0.1; // 10% tax
+  
 
   // Format currency for VND
   const formatCurrency = (amount: number) => {
@@ -169,6 +171,21 @@ const CheckIn = () => {
     }
   };
 
+  const total = appointment.service.service_amount ;
+
+  // Determine the appropriate QR code request based on appointment type
+  const qrCodeInformation: QuickLinkRequest = {
+    bank_id: "mbbank",
+    account_no: "220220222419",
+    template: "compact2",
+    amount: total || 0,
+    description: `Payment for ${appointment?.service?.service_name || "appointment"}`,
+    account_name: "PET CARE CLINIC",
+    order_id: 0,
+  };
+
+  console.log("QR Info:", JSON.stringify(qrCodeInformation, null, 2));
+
   const handleCancel = () => {
     setLocation("/appointment-flow");
   };
@@ -183,14 +200,14 @@ const CheckIn = () => {
 
     // Actually trigger the mutation
     qrMutation.mutateAsync(qrCodeInformation)
-      .then(data => {
+      .then((data) => {
         toast({
           title: "QR Code Generated",
           description: "Payment QR code has been generated successfully.",
           className: "bg-green-50 border-green-200 text-green-800",
         });
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("Error generating QR code:", error);
         toast({
           title: "QR Code Generation Failed",
@@ -572,10 +589,10 @@ const CheckIn = () => {
                         {formatCurrency(appointment.service.service_amount)}
                       </span>
                     </div>
-                    <div className="flex justify-between py-1 text-sm">
+                    {/* <div className="flex justify-between py-1 text-sm">
                       <span className="text-gray-600">Tax (10%):</span>
                       <span className="font-medium">{formatCurrency(tax)}</span>
-                    </div>
+                    </div> */}
                     <div className="flex justify-between py-1 border-t border-gray-200 font-bold text-base">
                       <span>Total:</span>
                       <span>{formatCurrency(total)}</span>

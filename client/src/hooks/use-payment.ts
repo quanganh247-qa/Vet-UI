@@ -3,18 +3,6 @@ import { getQRCode, RevenueAnalytics } from "@/services/payment-services";
 import { QRCodeInformation, QuickLinkRequest } from "@/types";
 import { toast, useToast } from "@/components/ui/use-toast";
 
-// export const useQR = () => {
-//   return useMutation({
-//     mutationFn: (qrCodeInformation: QuickLinkRequest) => getQRCode(qrCodeInformation),
-//     onSuccess: (data) => {
-//       return data;
-//     },
-//     onError: (error) => {
-//       console.error("Error generating QR code:", error);
-//     },
-//   });
-// };
-
 export const useRevenueAnalytics = () => {
   return useQuery({
     queryKey: ["revenue-analytics"],
@@ -25,14 +13,38 @@ export const useRevenueAnalytics = () => {
 export interface QRCodeResponse {
   url: string;
   dataUrl?: string;
-  image_url?: string;
+  quick_link?: string;
 }
 
 export const useQR = () => {
   const queryClient = useQueryClient();
 
   return useMutation<QRCodeResponse, Error, QuickLinkRequest>({
-    mutationFn: getQRCode,
+    mutationFn: async (qrCodeInfo) => {
+      try {
+        // Log request for debugging purposes
+        console.log("QR code request payload:", qrCodeInfo);
+        const result = await getQRCode(qrCodeInfo);
+        console.log("QR code response:", result);
+        return result;
+      } catch (error: any) {
+        console.error("Error in QR code mutation:", error);
+        
+        // Enhanced error message with response details if available
+        if (error.response) {
+          console.error("Response error data:", error.response.data);
+          console.error("Response error status:", error.response.status);
+          console.error("Response error headers:", error.response.headers);
+          throw new Error(
+            `Server error (${error.response.status}): ${
+              error.response.data?.message || error.message
+            }`
+          );
+        }
+        
+        throw error;
+      }
+    },
     onSuccess: (data) => {
       // Invalidate relevant queries if needed
       queryClient.invalidateQueries({ queryKey: ['qr-codes'] });
