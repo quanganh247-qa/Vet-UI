@@ -1,17 +1,20 @@
 import React from 'react';
-import { Calendar, Pill, Clipboard, AlertCircle, BarChart2, Activity } from 'lucide-react';
+import { Calendar, Pill, Clipboard, AlertCircle, BarChart2, Activity, Plus } from 'lucide-react';
 import { MedicalRecord } from '../../types';
+import { Button } from '@/components/ui/button';
 
 interface MedicalRecordsListProps {
   medicalRecords: MedicalRecord[];
   onSelectRecord: (recordId: number) => void;
   selectedRecordId: number | null;
+  onCreateRecord: () => void;
 }
 
 const MedicalRecordsList: React.FC<MedicalRecordsListProps> = ({
   medicalRecords,
   onSelectRecord,
-  selectedRecordId
+  selectedRecordId,
+  onCreateRecord
 }) => {
   // Get icon based on record type
   const getRecordTypeIcon = (type: string) => {
@@ -62,14 +65,27 @@ const MedicalRecordsList: React.FC<MedicalRecordsListProps> = ({
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       <div className="px-4 py-3 border-b font-medium text-gray-700 bg-gray-50 flex justify-between items-center">
         <div>Medical History</div>
-        <button className="text-xs bg-indigo-100 text-indigo-700 py-1 px-2 rounded">
+        <Button 
+          size="sm" 
+          className="bg-indigo-600 hover:bg-indigo-700 text-white"
+          onClick={onCreateRecord}
+        >
+          <Plus className="mr-1 h-3.5 w-3.5" />
           Add Record
-        </button>
+        </Button>
       </div>
       
       {medicalRecords.length === 0 ? (
-        <div className="p-4 text-center text-gray-500">
-          No medical records found
+        <div className="p-8 text-center">
+          <Clipboard className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500 mb-4">No medical records found</p>
+          <Button 
+            onClick={onCreateRecord}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            Create First Record
+          </Button>
         </div>
       ) : (
         <div className="divide-y max-h-[calc(100vh-220px)] overflow-y-auto">

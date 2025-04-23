@@ -104,6 +104,9 @@ import jsPDF from "jspdf";
 import { getMedicineById } from "@/services/medicine-services";
 import { useInvoiceData } from "@/hooks/use-invoice";
 import InvoiceDialog from "@/components/InvoiceDialog";
+import { useMedicalHistory } from "@/hooks/use-medical-history";
+import { useCreateMedicalRecord } from "@/hooks/use-medical-record";
+import { Switch } from "@/components/ui/switch";
 
 const TreatmentManagement: React.FC = () => {
   const [, navigate] = useLocation();
@@ -250,7 +253,7 @@ const TreatmentManagement: React.FC = () => {
   // Common PDF generation function to reduce code duplication
   const generatePDF = async (elementId: string, action: 'print' | 'download', fileName?: string) => {
     const element = document.getElementById(elementId);
-    
+
     if (!element) {
       toast({
         title: "Error",
@@ -259,20 +262,20 @@ const TreatmentManagement: React.FC = () => {
       });
       return;
     }
-    
+
     // Hide the buttons during capturing
     const actionButtons = element.querySelector(".print\\:hidden");
     if (actionButtons) {
       actionButtons.classList.add("hidden");
     }
-    
+
     toast({
       title: action === 'print' ? "Preparing Print" : "Generating PDF",
-      description: action === 'print' 
-        ? "Preparing your invoice for printing..." 
+      description: action === 'print'
+        ? "Preparing your invoice for printing..."
         : "Please wait while we generate your invoice PDF...",
     });
-    
+
     try {
       // Use html2canvas to capture the invoice element
       const canvas = await html2canvas(element, {
@@ -282,7 +285,7 @@ const TreatmentManagement: React.FC = () => {
         allowTaint: true,
         backgroundColor: "#ffffff" // Ensure white background
       });
-      
+
       // Create PDF
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
@@ -290,17 +293,17 @@ const TreatmentManagement: React.FC = () => {
         unit: "mm",
         format: "a4",
       });
-      
+
       const imgWidth = 210; // A4 width in mm
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
+
       pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-      
+
       if (action === 'print') {
         // Print the PDF
         pdf.autoPrint();
         window.open(pdf.output('bloburl'), '_blank');
-        
+
         toast({
           title: "Print Ready",
           description: "Your invoice has been prepared for printing.",
@@ -309,10 +312,10 @@ const TreatmentManagement: React.FC = () => {
       } else {
         // Generate filename with invoice ID
         const outputFileName = fileName || (invoiceData ? `Invoice_${invoiceData.invoiceId}.pdf` : "Invoice.pdf");
-        
+
         // Save the PDF
         pdf.save(outputFileName);
-        
+
         toast({
           title: "Download Complete",
           description: "Your invoice has been saved as PDF.",
@@ -321,7 +324,7 @@ const TreatmentManagement: React.FC = () => {
       }
     } catch (error) {
       console.error(`Error generating PDF for ${action}:`, error);
-      
+
       toast({
         title: "Error",
         description: `There was a problem ${action === 'print' ? 'preparing the print' : 'generating the PDF'}. Please try again.`,
@@ -704,6 +707,21 @@ const TreatmentManagement: React.FC = () => {
     usage?: string;
   }>({});
 
+  // State for new medical history record after medicine assignment
+  const [createHistoryAfterAssign, setCreateHistoryAfterAssign] = useState(true);
+  const [createPrescriptionAfterHistory, setCreatePrescriptionAfterHistory] = useState(true);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isMedicineAssignmentSuccess, setIsMedicineAssignmentSuccess] = useState(false);
+  const [assignedMedicinesForHistory, setAssignedMedicinesForHistory] = useState<any[]>([]);
+  const [historyRecord, setHistoryRecord] = useState({
+    condition: "",
+    diagnosis_date: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+    notes: ""
+  });
+
+  const createMedicalHistoryMutation = useCreateMedicalRecord(petId ? parseInt(petId) : 0);
+  // State for medicine assignment
+
   // Get medicines by phase
   const { data: phaseMedicines, refetch: refetchPhaseMedicines } =
     useGetMedicinesByPhase(
@@ -858,9 +876,6 @@ const TreatmentManagement: React.FC = () => {
       // Submit the array of assignments at once
       await assignMedicineMutation.mutateAsync(assignmentData);
 
-      // Create invoice for the assigned medicines
-      // await createMedicineInvoice();
-
       // Explicitly refetch phase medicines data
       if (selectedPhaseId) {
         await refetchPhaseMedicines();
@@ -894,23 +909,139 @@ const TreatmentManagement: React.FC = () => {
         className: "bg-green-50 border-green-200 text-green-800",
       });
 
-      // Reset state and close modal
-      setSelectedMedicines([]);
-      setIsMedicineModalOpen(false);
+      // Store the assigned medicines for medical history record
+      setAssignedMedicinesForHistory(selectedMedicines);
 
-      // Toggle phase view to refresh display
-      if (selectedPhaseId) {
-        // Force a phase UI refresh by toggling expansion
-        setExpandedPhases((prev) => ({
-          ...prev,
-          [selectedPhaseId]: true,
-        }));
+      // Set flag to indicate medicine assignment was successful
+      setIsMedicineAssignmentSuccess(true);
+
+      // If create history after assignment is enabled, show the history modal
+      if (createHistoryAfterAssign) {
+        // Pre-populate the history record condition based on treatment information
+        setHistoryRecord({
+          condition: selectedTreatment?.name || "Treatment phase medication",
+          diagnosis_date: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+          notes: `Medicines prescribed as part of treatment plan: ${selectedTreatment?.name || ""}. Phase: ${phases?.find((p: any) => p.id === selectedPhaseId)?.phase_name || ""}.\n\nMedications:\n${selectedMedicines.map(m => `- ${m.medicine_name}: ${m.dosage}, ${m.frequency}, ${m.duration}`).join('\n')}`
+        });
+
+        // Close medicine modal and open history modal
+        setIsMedicineModalOpen(false);
+        setTimeout(() => setIsHistoryModalOpen(true), 300);
+      } else {
+        // Just close the medicine modal
+        setIsMedicineModalOpen(false);
+
+        // Toggle phase view to refresh display
+        if (selectedPhaseId) {
+          setExpandedPhases((prev) => ({
+            ...prev,
+            [selectedPhaseId]: true,
+          }));
+        }
       }
     } catch (err) {
       console.error("Error assigning medicines:", err);
       toast({
         title: "Error",
         description: "Failed to assign medicines. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle creating medical history record
+  const handleSubmitMedicalHistory = async () => {
+    if (!petId) {
+      toast({
+        title: "Error",
+        description: "Pet ID is required to create a medical history record",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Create the medical history record
+      const result = await createMedicalHistoryMutation.mutateAsync(historyRecord);
+
+      // Get the created medical history ID
+      const historyId = result?.data?.id || result?.id;
+
+      toast({
+        title: "Success",
+        description: "Medical history record created successfully",
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
+
+      // If prescription creation is enabled, proceed to create it
+      if (createPrescriptionAfterHistory && historyId && assignedMedicinesForHistory.length > 0) {
+        try {
+          // Check if we have doctor information
+          if (!appointmentData?.doctor?.doctor_id) {
+            throw new Error("Doctor information is not available");
+          }
+
+          // Prepare prescription request with medicines from assigned medicines
+          const prescriptionRequest = {
+            medical_history_id: historyId,
+            examination_id: 0, // This might need to come from an examination if available
+            prescription_date: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+            doctor_id: parseInt(appointmentData.doctor.doctor_id),
+            notes: `Prescription created from treatment: ${selectedTreatment?.name || ""}`,
+            medications: assignedMedicinesForHistory.map(med => ({
+              medicine_id: med.id,
+              dosage: med.dosage,
+              frequency: med.frequency,
+              duration: med.duration,
+              instructions: med.notes || ""
+            }))
+          };
+
+          // Use the hook we imported
+          const { createPrescription } = useMedicalHistory();
+          await createPrescription.mutateAsync(prescriptionRequest);
+
+          toast({
+            title: "Success",
+            description: "Prescription created successfully",
+            className: "bg-green-50 border-green-200 text-green-800",
+          });
+
+          // Ask user if they want to go to medical records page
+          const confirmed = window.confirm("Would you like to navigate to the medical records page to see the created records?");
+          if (confirmed) {
+            // Navigate to medical records with the pet ID and appointment ID as query parameters
+            const params = new URLSearchParams();
+            if (appointmentId) params.append("appointmentId", appointmentId);
+            if (petId) params.append("petId", petId);
+            setLocation(`/medical-records?${params.toString()}`);
+            return;
+          }
+        } catch (error) {
+          console.error("Error creating prescription:", error);
+          toast({
+            title: "Warning",
+            description: "Medical history created but failed to create prescription",
+            variant: "destructive",
+          });
+        }
+      }
+
+      // Close history modal
+      setIsHistoryModalOpen(false);
+
+      // Toggle phase view to refresh display
+      if (selectedPhaseId) {
+        setExpandedPhases((prev) => ({
+          ...prev,
+          [selectedPhaseId]: true,
+        }));
+      }
+    } catch (error) {
+      console.error("Error creating medical history:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create medical history record",
         variant: "destructive",
       });
     }
@@ -927,34 +1058,34 @@ const TreatmentManagement: React.FC = () => {
         });
         return;
       }
-      
+
       toast({
         title: "Processing",
         description: "Creating invoice from treatment plan...",
       });
-      
+
       // Collect all medicine IDs that need to be fetched
       const medicineCache = new Map();
       const medicineIds = [];
       const medicineItems = [];
-      
+
       // Calculate treatment base costs and collect medicine data
       let totalAmount = 0;
       const invoiceItems = [];
-      
+
       // First pass - add treatments and collect medicine IDs
       for (const treatment of treatments) {
         // Add base treatment cost
         const treatmentCost = 50; // Example base cost for a treatment
         totalAmount += treatmentCost;
-        
+
         // Add treatment as an invoice item
         invoiceItems.push({
           name: `${treatment.type}: ${treatment.name}`,
           price: treatmentCost,
           quantity: 1
         });
-        
+
         // Collect medicine IDs from phases
         if (treatment.phases) {
           for (const phase of treatment.phases) {
@@ -975,14 +1106,14 @@ const TreatmentManagement: React.FC = () => {
           }
         }
       }
-      
+
       // Fetch all medicine data in parallel
       if (medicineIds.length > 0) {
         try {
           // Fetch all medicines in parallel
           const medicinePromises = medicineIds.map(id => getMedicineById(id));
           const medicineResults = await Promise.all(medicinePromises);
-          
+
           // Store results in cache
           medicineIds.forEach((id, index) => {
             if (medicineResults[index]) {
@@ -994,25 +1125,25 @@ const TreatmentManagement: React.FC = () => {
           // Continue with default values if fetching fails
         }
       }
-      
+
       // Second pass - add medicine items with data from cache
       for (const item of medicineItems) {
         const medicineData = medicineCache.get(item.id);
         const medPrice = medicineData?.unit_price || 10; // Default price if data not available
         const medQuantity = item.quantity;
-        
+
         totalAmount += (medPrice * medQuantity);
-        
+
         invoiceItems.push({
           name: `${item.name} (${item.phaseName})`,
           price: medPrice,
           quantity: medQuantity
         });
       }
-      
+
       // Generate invoice number
       const invoiceNumber = `INV-TRT-${new Date().getFullYear()}${(new Date().getMonth() + 1).toString().padStart(2, '0')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-      
+
       // Create the invoice request
       const invoiceRequest = {
         invoice_number: invoiceNumber,
@@ -1025,10 +1156,10 @@ const TreatmentManagement: React.FC = () => {
         items: invoiceItems
       };
 
-      
+
       // Submit invoice creation request
       const response = await createInvoiceMutation.mutateAsync(invoiceRequest);
-      
+
       // If successful, open the invoice dialog
       if (response && response.id) {
         toast({
@@ -1036,11 +1167,11 @@ const TreatmentManagement: React.FC = () => {
           description: `Invoice #${invoiceNumber} created successfully`,
           className: "bg-green-50 border-green-200 text-green-800",
         });
-        
+
         // Open the invoice dialog with the newly created invoice ID
         setCurrentInvoiceId(response.id.toString());
         setIsInvoiceDialogOpen(true);
-        
+
         return {
           invoiceId: response.id,
           invoiceNumber: invoiceNumber
@@ -1068,27 +1199,27 @@ const TreatmentManagement: React.FC = () => {
       });
       return;
     }
-    
+
     try {
       toast({
         title: "Processing",
         description: "Completing treatment and generating invoice...",
       });
-      
+
       // Here you would normally update the treatment status to "Completed" in your API
       // For example:
       // await updateTreatmentStatus(selectedTreatment.id, "Completed");
-      
+
       // Then export the treatment as invoice
       await handleExportTreatment();
-      
+
       // Refetch treatments to update UI
       await refetchTreatments();
-      
+
       // Optionally, navigate back to list view
       setActiveView("list");
       setSelectedTreatmentId(null);
-      
+
     } catch (error) {
       console.error("Error completing treatment:", error);
       toast({
@@ -1225,10 +1356,10 @@ const TreatmentManagement: React.FC = () => {
                           treatment.status === "Completed"
                             ? "bg-green-100 text-green-800 border-green-200"
                             : treatment.status === "In Progress"
-                            ? "bg-blue-100 text-blue-800 border-blue-200"
-                            : treatment.status === "Not Started"
-                            ? "bg-gray-100 text-gray-800 border-gray-200"
-                            : "bg-indigo-100 text-indigo-800 border-indigo-200" // For Ongoing
+                              ? "bg-blue-100 text-blue-800 border-blue-200"
+                              : treatment.status === "Not Started"
+                                ? "bg-gray-100 text-gray-800 border-gray-200"
+                                : "bg-indigo-100 text-indigo-800 border-indigo-200" // For Ongoing
                         }
                       >
                         {treatment.status}
@@ -1268,15 +1399,14 @@ const TreatmentManagement: React.FC = () => {
                       <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
                         <div className="text-sm text-gray-500">
                           <Badge
-                            className={`mr-2 ${
-                              treatment.status === "Completed"
+                            className={`mr-2 ${treatment.status === "Completed"
                                 ? "bg-green-100 text-green-800 border-green-200"
                                 : treatment.status === "In Progress"
-                                ? "bg-blue-100 text-blue-800 border-blue-200"
-                                : treatment.status === "Not Started"
-                                ? "bg-gray-100 text-gray-800 border-gray-200"
-                                : "bg-indigo-100 text-indigo-800 border-indigo-200"
-                            }`}
+                                  ? "bg-blue-100 text-blue-800 border-blue-200"
+                                  : treatment.status === "Not Started"
+                                    ? "bg-gray-100 text-gray-800 border-gray-200"
+                                    : "bg-indigo-100 text-indigo-800 border-indigo-200"
+                              }`}
                           >
                             {treatment.status}
                           </Badge>
@@ -1324,10 +1454,10 @@ const TreatmentManagement: React.FC = () => {
                       selectedTreatment.status === "Completed"
                         ? "bg-green-100 text-green-800 border-green-200"
                         : selectedTreatment.status === "In Progress"
-                        ? "bg-blue-100 text-blue-800 border-blue-200"
-                        : selectedTreatment.status === "Not Started"
-                        ? "bg-gray-100 text-gray-800 border-gray-200"
-                        : "bg-indigo-100 text-indigo-800 border-indigo-200" // For Ongoing
+                          ? "bg-blue-100 text-blue-800 border-blue-200"
+                          : selectedTreatment.status === "Not Started"
+                            ? "bg-gray-100 text-gray-800 border-gray-200"
+                            : "bg-indigo-100 text-indigo-800 border-indigo-200" // For Ongoing
                     }
                   >
                     {selectedTreatment.status}
@@ -1406,7 +1536,7 @@ const TreatmentManagement: React.FC = () => {
                     {selectedTreatment.description}
                   </div>
                 </div>
-                
+
                 {/* Add Complete & Export button */}
                 <div className="mt-4 flex justify-end">
                   <Button
@@ -1454,24 +1584,22 @@ const TreatmentManagement: React.FC = () => {
                       className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all"
                     >
                       <div
-                        className={`px-5 py-3 border-b flex justify-between items-center cursor-pointer ${
-                          phase.status === "Completed"
+                        className={`px-5 py-3 border-b flex justify-between items-center cursor-pointer ${phase.status === "Completed"
                             ? "bg-gradient-to-r from-green-50 to-white"
                             : phase.status === "In Progress"
-                            ? "bg-gradient-to-r from-blue-50 to-white"
-                            : "bg-gradient-to-r from-gray-50 to-white"
-                        }`}
+                              ? "bg-gradient-to-r from-blue-50 to-white"
+                              : "bg-gradient-to-r from-gray-50 to-white"
+                          }`}
                         onClick={() => togglePhaseExpansion(phase.id)}
                       >
                         <div className="flex items-center">
                           <div
-                            className={`p-1.5 rounded-lg mr-3 ${
-                              phase.status === "Completed"
+                            className={`p-1.5 rounded-lg mr-3 ${phase.status === "Completed"
                                 ? "bg-green-100"
                                 : phase.status === "In Progress"
-                                ? "bg-blue-100"
-                                : "bg-gray-100"
-                            }`}
+                                  ? "bg-blue-100"
+                                  : "bg-gray-100"
+                              }`}
                           >
                             {phase.status === "Completed" ? (
                               <CheckCircle className="h-5 w-5 text-green-600" />
@@ -1505,17 +1633,16 @@ const TreatmentManagement: React.FC = () => {
                               phase.status === "Completed"
                                 ? "bg-green-100 text-green-800 border-green-200"
                                 : phase.status === "In Progress"
-                                ? "bg-blue-100 text-blue-800 border-blue-200"
-                                : "bg-gray-100 text-gray-800 border-gray-200"
+                                  ? "bg-blue-100 text-blue-800 border-blue-200"
+                                  : "bg-gray-100 text-gray-800 border-gray-200"
                             }
                           >
                             {phase.status}
                           </Badge>
                           <ChevronDown
                             size={16}
-                            className={`text-gray-400 transition-transform ${
-                              expandedPhases[phase.id] ? "rotate-180" : ""
-                            }`}
+                            className={`text-gray-400 transition-transform ${expandedPhases[phase.id] ? "rotate-180" : ""
+                              }`}
                           />
                         </div>
                       </div>
@@ -1646,31 +1773,28 @@ const TreatmentManagement: React.FC = () => {
                   {/* Simple step indicator */}
                   <div className="flex items-center gap-2 text-sm bg-white p-2 rounded-md shadow-sm">
                     <span
-                      className={`px-3 py-1 rounded-full font-medium ${
-                        formStep === 0
+                      className={`px-3 py-1 rounded-full font-medium ${formStep === 0
                           ? "bg-indigo-600 text-white"
                           : "bg-gray-100 text-gray-500"
-                      }`}
+                        }`}
                     >
                       1
                     </span>
                     <span className="text-gray-300">→</span>
                     <span
-                      className={`px-3 py-1 rounded-full font-medium ${
-                        formStep === 1
+                      className={`px-3 py-1 rounded-full font-medium ${formStep === 1
                           ? "bg-indigo-600 text-white"
                           : "bg-gray-100 text-gray-500"
-                      }`}
+                        }`}
                     >
                       2
                     </span>
                     <span className="text-gray-300">→</span>
                     <span
-                      className={`px-3 py-1 rounded-full font-medium ${
-                        formStep === 2
+                      className={`px-3 py-1 rounded-full font-medium ${formStep === 2
                           ? "bg-indigo-600 text-white"
                           : "bg-gray-100 text-gray-500"
-                      }`}
+                        }`}
                     >
                       3
                     </span>
@@ -1727,11 +1851,10 @@ const TreatmentManagement: React.FC = () => {
                         <Input
                           id="treatment-name"
                           placeholder="Enter treatment name"
-                          className={`h-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${
-                            formTouched.name && formErrors.name
+                          className={`h-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${formTouched.name && formErrors.name
                               ? "border-red-500 focus-visible:ring-red-500"
                               : ""
-                          }`}
+                            }`}
                           value={newTreatment.name}
                           onChange={(e) =>
                             handleInputChange("name", e.target.value)
@@ -1762,11 +1885,10 @@ const TreatmentManagement: React.FC = () => {
                         <Input
                           id="treatment-type"
                           placeholder="e.g., Surgery Recovery, Medication Protocol"
-                          className={`h-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${
-                            formTouched.type && formErrors.type
+                          className={`h-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${formTouched.type && formErrors.type
                               ? "border-red-500 focus-visible:ring-red-500"
                               : ""
-                          }`}
+                            }`}
                           value={newTreatment.type}
                           onChange={(e) =>
                             handleInputChange("type", e.target.value)
@@ -1852,11 +1974,10 @@ const TreatmentManagement: React.FC = () => {
                         <Input
                           id="start-date"
                           type="date"
-                          className={`h-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${
-                            formTouched.start_date && formErrors.start_date
+                          className={`h-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${formTouched.start_date && formErrors.start_date
                               ? "border-red-500 focus-visible:ring-red-500"
                               : ""
-                          }`}
+                            }`}
                           value={newTreatment.start_date}
                           onChange={(e) =>
                             handleInputChange("start_date", e.target.value)
@@ -2137,8 +2258,8 @@ const TreatmentManagement: React.FC = () => {
                                   phase.status === "Completed"
                                     ? "bg-green-50 text-green-700 border-green-100"
                                     : phase.status === "In Progress"
-                                    ? "bg-blue-50 text-blue-700 border-blue-100"
-                                    : "bg-gray-100 text-gray-700 border-gray-200"
+                                      ? "bg-blue-50 text-blue-700 border-blue-100"
+                                      : "bg-gray-100 text-gray-700 border-gray-200"
                                 }
                               >
                                 {phase.status}
@@ -2305,13 +2426,12 @@ const TreatmentManagement: React.FC = () => {
                                         ? "default"
                                         : "ghost"
                                     }
-                                    className={`h-8 ${
-                                      selectedMedicines.some(
-                                        (m) => m.id === medicine.id
-                                      )
+                                    className={`h-8 ${selectedMedicines.some(
+                                      (m) => m.id === medicine.id
+                                    )
                                         ? "bg-indigo-600 text-white hover:bg-indigo-700"
                                         : "text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50"
-                                    }`}
+                                      }`}
                                     onClick={() =>
                                       handleMedicineSelect(medicine)
                                     }
@@ -2422,11 +2542,10 @@ const TreatmentManagement: React.FC = () => {
                                       e.target.value
                                     )
                                   }
-                                  className={`h-8 text-sm border-gray-200 ${
-                                    medicine.errors?.dosage
+                                  className={`h-8 text-sm border-gray-200 ${medicine.errors?.dosage
                                       ? "border-red-300 focus:ring-red-300"
                                       : ""
-                                  }`}
+                                    }`}
                                 />
                                 {medicine.errors?.dosage && (
                                   <p className="text-xs text-red-500">
@@ -2454,11 +2573,10 @@ const TreatmentManagement: React.FC = () => {
                                       e.target.value
                                     )
                                   }
-                                  className={`h-8 text-sm border-gray-200 ${
-                                    medicine.errors?.frequency
+                                  className={`h-8 text-sm border-gray-200 ${medicine.errors?.frequency
                                       ? "border-red-300 focus:ring-red-300"
                                       : ""
-                                  }`}
+                                    }`}
                                 />
                                 {medicine.errors?.frequency && (
                                   <p className="text-xs text-red-500">
@@ -2486,11 +2604,10 @@ const TreatmentManagement: React.FC = () => {
                                       e.target.value
                                     )
                                   }
-                                  className={`h-8 text-sm border-gray-200 ${
-                                    medicine.errors?.duration
+                                  className={`h-8 text-sm border-gray-200 ${medicine.errors?.duration
                                       ? "border-red-300 focus:ring-red-300"
                                       : ""
-                                  }`}
+                                    }`}
                                 />
                                 {medicine.errors?.duration && (
                                   <p className="text-xs text-red-500">
@@ -2567,6 +2684,159 @@ const TreatmentManagement: React.FC = () => {
                     Assign {selectedMedicines.length} Medication
                     {selectedMedicines.length !== 1 ? "s" : ""}
                   </span>
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Medical History Record Creation Dialog */}
+      <Dialog open={isHistoryModalOpen} onOpenChange={setIsHistoryModalOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] rounded-lg bg-white overflow-hidden">
+          <DialogHeader className="border-b pb-4">
+            <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center">
+              <FileText className="mr-2 h-5 w-5 text-indigo-600" />
+              Create Medical History Record
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
+              Create a medical history record for this treatment's medication
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <div className="space-y-4">
+              <div>
+                <Label
+                  htmlFor="condition"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Condition / Diagnosis <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="condition"
+                  placeholder="Enter medical condition or diagnosis"
+                  value={historyRecord.condition}
+                  onChange={(e) => setHistoryRecord({
+                    ...historyRecord,
+                    condition: e.target.value
+                  })}
+                  className="mt-1 h-10 border-gray-200"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Specify the medical condition or diagnosis
+                </p>
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="diagnosis-date"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Diagnosis Date <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="diagnosis-date"
+                  type="datetime-local"
+                  value={historyRecord.diagnosis_date.replace(" ", "T")}
+                  onChange={(e) => setHistoryRecord({
+                    ...historyRecord,
+                    diagnosis_date: e.target.value.replace("T", " ")
+                  })}
+                  className="mt-1 h-10 border-gray-200"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  When the condition was diagnosed
+                </p>
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="notes"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Notes
+                </Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Enter detailed notes about the condition, treatment, etc."
+                  value={historyRecord.notes}
+                  onChange={(e) => setHistoryRecord({
+                    ...historyRecord,
+                    notes: e.target.value
+                  })}
+                  className="mt-1 min-h-[120px] border-gray-200"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Include any important details about the condition, symptoms, treatments, etc.
+                </p>
+              </div>
+              
+              <div className="flex items-center space-x-2 mt-1 pt-4 border-t">
+                <Switch
+                  id="create-prescription"
+                  checked={createPrescriptionAfterHistory}
+                  onCheckedChange={setCreatePrescriptionAfterHistory}
+                  className="data-[state=checked]:bg-indigo-600"
+                />
+                <Label htmlFor="create-prescription" className="text-sm font-medium text-gray-700">
+                  Automatically create prescription with assigned medicines
+                </Label>
+                <div className="ml-2 px-2 py-1 bg-emerald-50 text-xs font-medium text-emerald-700 rounded border border-emerald-200">
+                  Recommended
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 rounded-lg p-4 mt-2 border border-blue-100">
+                <div className="flex items-start space-x-2">
+                  <Receipt className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-blue-800 font-medium">
+                      Medical Records Workflow
+                    </p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Creating a medical history record allows you to document the condition being treated. 
+                      When enabled, a prescription will also be created using the medicines you've assigned.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="border-t pt-4 flex justify-between">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsHistoryModalOpen(false);
+                // Toggle phase view to refresh display
+                if (selectedPhaseId) {
+                  setExpandedPhases((prev) => ({
+                    ...prev,
+                    [selectedPhaseId]: true,
+                  }));
+                }
+              }}
+              className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 px-6"
+            >
+              Skip for Now
+            </Button>
+            <Button
+              onClick={handleSubmitMedicalHistory}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white h-11 px-6 shadow-md flex items-center gap-2"
+              disabled={createMedicalHistoryMutation.isPending}
+            >
+              {createMedicalHistoryMutation.isPending ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                  <span>Creating...</span>
+                </>
+              ) : (
+                <>
+                  <FileText className="h-5 w-5" />
+                  <span>Create Medical Record</span>
                 </>
               )}
             </Button>

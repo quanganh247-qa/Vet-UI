@@ -107,7 +107,7 @@ export const PatientsPage: React.FC = () => {
   );
 
   const handlePatientClick = (patientId: string) => {
-    setLocation(`/patients/${patientId}`);
+    setLocation(`/patient/${patientId}`);
   };
 
   const toggleCardExpansion = (petId: string, event: React.MouseEvent) => {

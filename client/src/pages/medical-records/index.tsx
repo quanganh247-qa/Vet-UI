@@ -38,6 +38,7 @@ import {
   Play,
   History,
   FileSymlink,
+  Stethoscope,
 } from "lucide-react";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { usePatientData } from "@/hooks/use-pet";
 import { useAllergiesData } from "@/hooks/use-allergy";
+import { useMedicalHistory } from "@/hooks/use-medical-history";
 import {
   useMedicalRecord,
   useCreateMedicalRecord,
@@ -56,6 +58,19 @@ import { toast } from "@/components/ui/use-toast";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from 'date-fns';
+import { createExamination, ExaminationRequest } from "@/services/medical-record-services";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { useDoctorProfile } from "@/hooks/use-doctor";
+import { useAppointmentData } from "@/hooks/use-appointment";
 
 
 // Define interfaces for medical history
@@ -230,6 +245,9 @@ const MedicalRecordManagement: React.FC = () => {
   // State for active view
   const [activeView, setActiveView] = useState<"list" | "detail" | "new">("list");
   const [selectedHistoryId, setSelectedHistoryId] = useState<number | null>(null);
+  const [createExaminationAutomatically, setCreateExaminationAutomatically] = useState(true);
+  const [isExaminationDialogOpen, setIsExaminationDialogOpen] = useState(false);
+  const [createdMedicalHistoryId, setCreatedMedicalHistoryId] = useState<number | null>(null);
 
   const { id } = useParams<{ id?: string }>();
   const [, setLocation] = useLocation();
@@ -263,7 +281,8 @@ const MedicalRecordManagement: React.FC = () => {
   const { data: patientData, isLoading: isPatientLoading } = usePatientData(effectivePetId);
   const { data: allergies, isLoading: isAllergiesLoading } = useAllergiesData(effectivePetId);
   const { data: medicalRecords, isLoading: isLoadingMedicalRecords } = useMedicalRecord(parseInt(effectivePetId || '0'));
-
+  const { data: appointmentData, isLoading: isLoadingAppointment } = useAppointmentData(workflowParams.appointmentId || "");
+  const { data: doctorData } = useDoctorProfile(appointmentData?.doctor_id);
   
   const createMedicalRecord = useCreateMedicalRecord(petIdNumber);
 
@@ -361,6 +380,55 @@ const MedicalRecordManagement: React.FC = () => {
     });
   };
 
+  // Handle creating examination from medical history
+  const handleCreateExamination = async (medicalHistoryId: number) => {
+    if (!doctorData?.doctor_id) {
+      toast({
+        title: "Error",
+        description: "Doctor information is not available",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      // Create examination request
+      const examinationRequest: ExaminationRequest = {
+        medical_history_id: medicalHistoryId,
+        exam_date: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+        exam_type: appointmentData?.type || "General Examination",
+        findings: `Examination for ${newHistory.condition}`,
+        vet_notes: newHistory.notes,
+        doctor_id: doctorData.doctor_id,
+      };
+      
+      // Create examination using the service
+      await createExamination(examinationRequest);
+      
+      toast({
+        title: "Success",
+        description: "Examination created successfully",
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
+      
+      // Navigate to examination view
+      if (workflowParams.appointmentId) {
+        const params = new URLSearchParams();
+        params.append("appointmentId", workflowParams.appointmentId);
+        params.append("petId", effectivePetId);
+        setLocation(`/examination?${params.toString()}`);
+      }
+      
+    } catch (error) {
+      console.error("Error creating examination:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create examination",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Handle creating a new medical history record
   const handleCreateHistory = () => {
     if (!effectivePetId) {
@@ -388,8 +456,6 @@ const MedicalRecordManagement: React.FC = () => {
       return;
     }
     
-    console.log(newHistory);
-    
     const diagnosis_date = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
 
     // Use the mutation hook to create a new record
@@ -397,7 +463,7 @@ const MedicalRecordManagement: React.FC = () => {
       ...newHistory,
       diagnosis_date
     }, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         // Reset form
         setNewHistory({
           condition: "",
@@ -412,10 +478,43 @@ const MedicalRecordManagement: React.FC = () => {
           variant: "default",
         });
 
-        // Back to list view
-        setActiveView("list");
+        // Store the created medical history ID
+        const historyId = data?.data?.id || data?.id || null;
+        setCreatedMedicalHistoryId(historyId);
+
+        // If auto-create examination is enabled, create the examination
+        if (createExaminationAutomatically && historyId) {
+          handleCreateExamination(historyId);
+        } else if (historyId) {
+          // Show dialog to ask if user wants to create examination
+          setIsExaminationDialogOpen(true);
+        } else {
+          // Back to list view
+          setActiveView("list");
+        }
       },
+      onError: (error) => {
+        console.error("Failed to create medical record:", error);
+        toast({
+          title: "Error",
+          description: "Failed to create medical record",
+          variant: "destructive",
+        });
+      }
     });
+  };
+
+  // Navigate to examination page
+  const navigateToExamination = () => {
+    if (workflowParams.appointmentId) {
+      const params = new URLSearchParams();
+      params.append("appointmentId", workflowParams.appointmentId);
+      params.append("petId", effectivePetId);
+      setLocation(`/examination?${params.toString()}`);
+    } else {
+      // If no appointment ID, just go back to the list view
+      setActiveView("list");
+    }
   };
 
   // Render Header
@@ -677,6 +776,21 @@ const MedicalRecordManagement: React.FC = () => {
                 touched={false}
                 description="Include any important details about the condition, symptoms, treatments, or recommendations"
               />
+              
+              <div className="flex items-center space-x-2 pt-3 border-t border-gray-100">
+                <Switch
+                  id="create-examination"
+                  checked={createExaminationAutomatically}
+                  onCheckedChange={setCreateExaminationAutomatically}
+                  className=" data-[state=checked]:bg-indigo-600"
+                />
+                <Label htmlFor="create-examination" className="text-sm font-medium text-gray-700">
+                  Automatically create examination record after saving
+                </Label>
+                <div className="ml-2 px-2 py-1 bg-emerald-50 text-xs font-medium text-emerald-700 rounded border border-emerald-200">
+                  Recommended
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center justify-end pt-6 mt-6 border-t-2 border-gray-100">
@@ -726,6 +840,51 @@ const MedicalRecordManagement: React.FC = () => {
         {activeView === "detail" && renderDetailView()}
         {activeView === "new" && renderFormView()}
       </div>
+      
+      {/* Examination Dialog */}
+      <Dialog open={isExaminationDialogOpen} onOpenChange={setIsExaminationDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Examination Record?</DialogTitle>
+            <DialogDescription>
+              Would you like to create an examination record for this medical history?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="bg-blue-50 border border-blue-100 rounded p-4 mb-4">
+            <div className="flex items-center">
+              <Stethoscope className="h-5 w-5 text-blue-600 mr-2" />
+              <p className="text-blue-700 text-sm font-medium">
+                Creating an examination record helps document findings and track the patient's treatment progress
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex items-center justify-between">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsExaminationDialogOpen(false);
+                setActiveView("list");
+              }}
+            >
+              Skip for Now
+            </Button>
+            <Button 
+              onClick={() => {
+                if (createdMedicalHistoryId) {
+                  handleCreateExamination(createdMedicalHistoryId);
+                }
+                setIsExaminationDialogOpen(false);
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              <Stethoscope size={16} className="mr-1.5" />
+              Create Examination
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

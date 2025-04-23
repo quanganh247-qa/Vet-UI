@@ -53,7 +53,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateAppointmentById } from "@/services/appointment-services";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
+import { usePatientData } from "@/hooks/use-pet";
 
 interface EnhancedAppointmentFlowboardProps {
   appointments: Appointment[];
@@ -173,32 +173,123 @@ const AppointmentCard = memo(({
     onClick(appointment.id);
   }, [appointment.id, onClick]);
 
-  // Precalculate status class for better performance
-  const statusClass = useMemo(() =>
-    getStatusColorClass(appointment.state),
-    [appointment.state, getStatusColorClass]
-  );
+  // Handle start exam button click
+  const handleStartExam = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onStatusChange(appointment.id, 5, true); // Update status and navigate to patient info
+  }, [appointment.id, onStatusChange]);
+  
+  // Format date for display
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+  };
 
+  // Generate random tasks count for demo
+  const tasksTotal = Math.floor(Math.random() * 5) + 1;
+  const tasksCompleted = Math.floor(Math.random() * tasksTotal);
+  
+  // Get service type color class
+  const getServiceBgColor = () => {
+    const serviceName = appointment.service?.service_name?.toLowerCase();
+    
+    if (serviceName?.includes('radiology')) return 'bg-blue-50';
+    if (serviceName?.includes('check-up')) return 'bg-green-50';
+    if (serviceName?.includes('surgery')) return 'bg-red-50';
+    if (serviceName?.includes('lab')) return 'bg-purple-50';
+    if (serviceName?.includes('dental')) return 'bg-yellow-50';
+    if (serviceName?.includes('grooming')) return 'bg-orange-50';
+    
+    return 'bg-blue-50'; // Default
+  };
+  
+  // Get service text color
+  const getServiceTextColor = () => {
+    const serviceName = appointment.service?.service_name?.toLowerCase();
+    
+    if (serviceName?.includes('radiology')) return 'text-blue-600';
+    if (serviceName?.includes('check-up')) return 'text-green-600';
+    if (serviceName?.includes('surgery')) return 'text-red-600';
+    if (serviceName?.includes('lab')) return 'text-purple-600';
+    if (serviceName?.includes('dental')) return 'text-yellow-600';
+    if (serviceName?.includes('grooming')) return 'text-orange-600';
+    
+    return 'text-blue-600'; // Default
+  };
+  
   return (
     <div
-      className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-3 hover:shadow-md transition-shadow cursor-pointer"
+      className={`${getServiceBgColor()} rounded-lg shadow-sm border border-gray-100 p-4 mb-3 hover:shadow-md transition-shadow cursor-pointer`}
       onClick={handleClick}
     >
-      {/* Appointment card content */}
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <h3 className="font-medium text-gray-900">{appointment.pet?.pet_name}</h3>
-          <p className="text-xs text-gray-500">
-            {appointment.doctor?.doctor_name} • {formatTime(appointment.time_slot?.start_time || "")}
-          </p>
-        </div>
-        <div>
-          <span className={`text-xs px-2 py-1 rounded-full ${statusClass}`}>
-            {appointment.state}
+      {/* Service type and time */}
+      <div className="flex justify-between items-center mb-3">
+        <div className="flex items-center">
+          <span className={`text-sm font-medium ${getServiceTextColor()}`}>
+            {appointment.service?.service_name || "Service"}
           </span>
         </div>
+        <div className="text-xs text-gray-500">
+          {formatDate(appointment.date || "")}
+        </div>
       </div>
-      {/* Additional content can be added here */}
+      
+      {/* Check out button */}
+      <div className="flex justify-between items-center mb-4">
+        <button
+          className={`text-sm px-3 py-1.5 border rounded-md ${
+            appointment.state === "Checked In" || appointment.state === "Waiting" 
+              ? "bg-purple-600 text-white border-purple-600 hover:bg-purple-700" 
+              : "border-gray-300 text-gray-700 hover:bg-gray-50"
+          }`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (appointment.state === "Checked In" || appointment.state === "Waiting") {
+              handleStartExam(e);
+            }
+          }}
+        >
+          {appointment.state === "Checked In" || appointment.state === "Waiting" 
+            ? "Start Exam" 
+            : appointment.state === "In Progress" 
+              ? "In Progress"
+              : "Check out"}
+        </button>
+        <div className="text-sm font-medium text-gray-700">
+          {formatTime(appointment.time_slot?.start_time || "")}
+        </div>
+      </div>
+      
+      {/* Progress indicators */}
+      <div className="flex justify-between mb-4 text-xs text-gray-600">
+        <div className="flex gap-1 items-center">
+          <MessageSquare className="h-3.5 w-3.5" />
+          <span>Follow-up: 1</span>
+        </div>
+        <div className="flex gap-1 items-center">
+          <Clipboard className="h-3.5 w-3.5" />
+          <span>Tasks: {tasksCompleted}/{tasksTotal}</span>
+        </div>
+      </div>
+      
+      {/* People section with avatars */}
+      <div className="flex items-center gap-1.5 mt-5 border-t pt-3 border-gray-200">
+        <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-xs font-medium border border-white z-10">
+          {appointment.pet?.pet_name?.substring(0, 1) || "P"}
+        </div>
+        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-medium border border-white z-0 -ml-2">
+          {appointment.doctor?.doctor_name?.substring(0, 1) || "D"}
+        </div>
+        <div className="ml-2 text-xs text-gray-600">
+          <div className="font-medium">
+            {appointment.pet?.pet_name}
+          </div>
+          <div className="text-gray-500">
+            {appointment.pet?.pet_breed}
+          </div>
+        </div>
+      </div>
     </div>
   );
 });
@@ -331,6 +422,8 @@ const EnhancedAppointmentFlowboard: React.FC<
     appointments.find((a) => a.id === selectedAppointmentId),
     [appointments, selectedAppointmentId]
   );
+
+  const {data: patientData} = usePatientData(selectedAppointment?.pet?.pet_id.toString() || "");
 
   // Handle appointment click
   const handleAppointmentClick = useCallback((id: number) => {
@@ -516,7 +609,7 @@ const EnhancedAppointmentFlowboard: React.FC<
             >
               <ChevronRight size={16} />
             </button>
-          </div>
+          </div>  
         </div>
 
         {/* View Controls & Actions */}
@@ -526,8 +619,8 @@ const EnhancedAppointmentFlowboard: React.FC<
             <div className="flex border rounded-md overflow-hidden">
               <button
                 className={`px-2 sm:px-3 py-1.5 text-sm font-medium flex items-center ${viewMode === "columns"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-white text-gray-700"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white text-gray-700"
                   }`}
                 onClick={() => setViewMode("columns")}
               >
@@ -537,8 +630,8 @@ const EnhancedAppointmentFlowboard: React.FC<
 
               <button
                 className={`px-2 sm:px-3 py-1.5 text-sm font-medium flex items-center ${viewMode === "list"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-white text-gray-700"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white text-gray-700"
                   }`}
                 onClick={() => setViewMode("list")}
               >
@@ -590,10 +683,7 @@ const EnhancedAppointmentFlowboard: React.FC<
               <option value="new patient">New Patient</option>
             </select>
 
-            {/* <button className="mr-2 px-3 py-1.5 border rounded text-sm flex items-center hover:bg-gray-50">
-              <RefreshCw size={14} className="mr-1" />
-              Refresh
-            </button> */}
+
 
             {/* Show/Hide Sidebar Button */}
             <div className="hidden sm:block">
@@ -609,14 +699,7 @@ const EnhancedAppointmentFlowboard: React.FC<
               </button>
             </div>
 
-            {/* New Appointment Button */}
-            {/* <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
-              onClick={handleNewAppointment}
-            >
-              <Plus size={16} className="mr-1" />
-              <span className="hidden xs:inline">New Appointment</span>
-            </Button> */}
+
           </div>
         </div>
       </div>
@@ -982,8 +1065,8 @@ const EnhancedAppointmentFlowboard: React.FC<
                           <tr
                             key={appointment.id}
                             className={`hover:bg-gray-50 cursor-pointer ${selectedAppointmentId === appointment.id
-                                ? "bg-indigo-50"
-                                : ""
+                              ? "bg-indigo-50"
+                              : ""
                               }`}
                             onClick={() =>
                               handleAppointmentClick(appointment.id)
@@ -997,7 +1080,6 @@ const EnhancedAppointmentFlowboard: React.FC<
                                   <div className="flex items-center">
                                     <Clock className="h-4 w-4 mr-1 text-orange-500" />
                                     <span>
-                                      Arrived:{" "}
                                       {appointment.created_at
                                         ? format(
                                           new Date(appointment.created_at),
@@ -1180,8 +1262,8 @@ const EnhancedAppointmentFlowboard: React.FC<
             <div className="p-3 border-b flex justify-between items-center">
               <button
                 className={`p-2 rounded ${sidebarContent === "queue"
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-100"
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-100"
                   }`}
                 onClick={() =>
                   setSidebarContent(
@@ -1240,14 +1322,14 @@ const EnhancedAppointmentFlowboard: React.FC<
                             <div
                               key={queueItem.id}
                               className={`border rounded-lg overflow-hidden shadow-sm transition-all hover:shadow-md ${queueItem.priority === "high"
-                                  ? "border-red-200 bg-red-50"
-                                  : "border-gray-200 bg-white"
+                                ? "border-red-200 bg-red-50"
+                                : "border-gray-200 bg-white"
                                 }`}
                             >
                               <div
                                 className={`px-4 py-3 flex justify-between items-center ${queueItem.priority === "high"
-                                    ? "bg-red-100 border-b border-red-200"
-                                    : getStatusColorClass(queueItem.status)
+                                  ? "bg-red-100 border-b border-red-200"
+                                  : getStatusColorClass(queueItem.status)
                                   }`}
                               >
                                 <div className="flex items-center">
@@ -1378,10 +1460,8 @@ const EnhancedAppointmentFlowboard: React.FC<
                   <div className="mb-5 bg-white rounded-lg shadow-sm p-4 border border-gray-100">
                     <div className="flex items-start">
                       <div className="relative">
-                        <img
-                          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            selectedAppointment.pet.pet_name
-                          )}&background=f0f9ff&color=3b82f6`}
+                      <img 
+                        src={`data:image/png;base64,${patientData?.data_image}`} 
                           alt={selectedAppointment.pet.pet_name}
                           className="h-16 w-16 rounded-full mr-4 border-2 border-blue-100"
                         />
@@ -1466,7 +1546,6 @@ const EnhancedAppointmentFlowboard: React.FC<
                               <div className="flex items-center">
                                 <Clock className="h-4 w-4 mr-1 text-orange-500" />
                                 <span>
-                                  Arrived:{" "}
                                   {selectedAppointment.created_at
                                     ? format(
                                       new Date(
@@ -1491,14 +1570,14 @@ const EnhancedAppointmentFlowboard: React.FC<
                           <div className="font-medium">
                             {selectedAppointment.service.service_duration}{" "}
                             minutes
-                            {(!selectedAppointment.time_slot ||
+                            {/* {(!selectedAppointment.time_slot ||
                               !selectedAppointment.time_slot.start_time ||
                               selectedAppointment.time_slot.start_time ===
                               "00:00:00") && (
                                 <span className="ml-2 text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
                                   Unscheduled
                                 </span>
-                              )}
+                              )} */}
                           </div>
                         </div>
                       </div>
@@ -1547,100 +1626,7 @@ const EnhancedAppointmentFlowboard: React.FC<
                     </div>
                   </div>
 
-                  {/* Owner Information */}
-                  <div className="bg-white p-4 rounded-lg mb-4 shadow-sm border border-gray-100">
-                    <h4 className="font-medium mb-3 flex items-center">
-                      <User className="h-4 w-4 text-indigo-500 mr-1.5" />
-                      Owner Information
-                    </h4>
 
-                    <div className="grid grid-cols-2 gap-4 mb-2">
-                      <div>
-                        <div className="text-sm text-gray-500">Name</div>
-                        <div className="font-medium">
-                          {selectedAppointment.owner.owner_name}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-500">Phone</div>
-                        <div className="font-medium">
-                          {selectedAppointment.owner.owner_phone}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* <div className="flex space-x-2 mt-3">
-                      <button className="flex-1 px-3 py-2 border border-gray-200 rounded-md hover:bg-gray-50 shadow-sm flex items-center justify-center">
-                        <Phone size={14} className="mr-1.5" />
-                        Call Owner
-                      </button>
-                      <button className="flex-1 px-3 py-2 border border-gray-200 rounded-md hover:bg-gray-50 shadow-sm flex items-center justify-center">
-                        <MessageSquare size={14} className="mr-1.5" />
-                        Message
-                      </button>
-                    </div> */}
-                  </div>
-
-                  {/* Status Management */}
-                  <div className="bg-white p-4 rounded-lg mb-4 shadow-sm border border-gray-100">
-                    <h4 className="font-medium mb-3 flex items-center">
-                      <RefreshCw className="h-4 w-4 text-indigo-500 mr-1.5" />
-                      Current Status
-                    </h4>
-
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="text-sm font-medium">Progress</div>
-                        <div className="text-xs text-gray-500">
-                          {selectedAppointment.state === "Scheduled"
-                            ? "10%"
-                            : selectedAppointment.state === "Confirmed"
-                              ? "25%"
-                              : selectedAppointment.state === "Checked In" ||
-                                selectedAppointment.state === "Arrived" ||
-                                selectedAppointment.state === "Waiting"
-                                ? "50%"
-                                : selectedAppointment.state === "In Progress"
-                                  ? "75%"
-                                  : selectedAppointment.state === "Completed"
-                                    ? "100%"
-                                    : "0%"}
-                        </div>
-                      </div>
-                      <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-2.5 bg-green-500 rounded-full transition-all duration-500"
-                          style={{
-                            width:
-                              selectedAppointment.state === "Scheduled"
-                                ? "10%"
-                                : selectedAppointment.state === "Confirmed"
-                                  ? "25%"
-                                  : selectedAppointment.state === "Checked In" ||
-                                    selectedAppointment.state === "Arrived" ||
-                                    selectedAppointment.state === "Waiting"
-                                    ? "50%"
-                                    : selectedAppointment.state === "In Progress"
-                                      ? "75%"
-                                      : selectedAppointment.state === "Completed"
-                                        ? "100%"
-                                        : "0%",
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm">Current status:</div>
-                      <span
-                        className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColorClass(
-                          selectedAppointment.state
-                        )}`}
-                      >
-                        {selectedAppointment.state}
-                      </span>
-                    </div>
-                  </div>
 
                   {/* Quick Actions */}
                   <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">

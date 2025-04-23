@@ -11,7 +11,6 @@ import { NotificationProvider } from "@/context/notification-context";
 import Sidebar from "@/components/layout/sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { PatientsPage } from "@/pages/patient/patients";
-import { PatientDetailPage } from "@/pages/patient/patient-detail";
 import Billing from "@/pages/billing";
 import CatalogManagement from "./pages/catalog-management";
 import Chatbot from "./pages/chatbot";
@@ -36,12 +35,13 @@ const FollowUp = lazy(() => import("@/pages/follow-up"));
 const Examination = lazy(() => import("@/pages/examination"));
 const Vaccination = lazy(() => import("@/pages/vaccination"));
 const TestOrdersManagement = lazy(() => import("@/pages/test-orders-management"));
-const MedicineInventory = lazy(() => import("@/pages/inventory"));
 const ShiftAssignment = lazy(() => import("@/pages/shift-assignment"));
 const StaffPage = lazy(() => import("@/pages/staff"));
 const PrescriptionInvoice = lazy(() => import("@/pages/prescription/invoice"));
 const LabManagement = lazy(() => import("@/pages/lab-management"));
 const ServicesManagement = lazy(() => import("@/pages/services-management"));
+const PatientDetailsPage = lazy(() => import("@/pages/patient/patient-details"));
+const ProductManagement = lazy(() => import("@/pages/catalog-management/product-management"));
 // Create LoginPage component that uses LoginForm
 const LoginPage = () => {
   return (
@@ -131,6 +131,7 @@ function Router() {
         {/* Workflow routes - updated to use query params instead of route params */}
         <Route path="/check-in" component={CheckIn as React.ComponentType<RouteComponentProps>} />
         <Route path="/patient" component={PatientManagement as React.ComponentType<RouteComponentProps>} />
+        <Route path="/patient/:id" component={PatientDetailsPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/soap" component={SoapNotes as React.ComponentType<RouteComponentProps>} />
         <Route path="/treatment" component={TreatmentManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/invoice" component={PrescriptionInvoice as React.ComponentType<RouteComponentProps>} />
@@ -151,14 +152,13 @@ function Router() {
         <Route path="/appointment/:id/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} />
         
         <Route path="/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
+
         <Route path="/notifications" component={NotificationsPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/chatbot" component={Chatbot as React.ComponentType<RouteComponentProps>} />
         <Route path="/patients" component={PatientsPage as React.ComponentType<RouteComponentProps>} />
-        <Route path="/patients/:id" component={PatientDetailPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/billing" component={Billing as React.ComponentType<RouteComponentProps>} />
-        <Route path="/catalog" component={CatalogManagement as React.ComponentType<RouteComponentProps>} />
+        <Route path="/catalog-management" component={ProductManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/test-orders" component={TestOrdersManagement as React.ComponentType<RouteComponentProps>} />
-        <Route path="/inventory" component={MedicineInventory as React.ComponentType<RouteComponentProps>} />
         <Route path="/services-management" component={ServicesManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/schedule" component={ScheduleManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/shift-management" component={ShiftManagement as React.ComponentType<RouteComponentProps>} />

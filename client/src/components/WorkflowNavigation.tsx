@@ -57,7 +57,6 @@ const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, 
     { id: 'diagnostic', label: 'Lab/Imaging', icon: FlaskConical, path: `/lab-management${buildUrlParams()}` },
     { id: 'treatment', label: 'Treatment', icon: Tablets, path: `/treatment${buildUrlParams()}` },
     // { id: 'invoice', label: 'Invoice', icon: Receipt, path: `/invoice${buildUrlParams()}` },
-    { id: 'records', label: 'Medical Records', icon: FileText, path: `/medical-records${buildUrlParams()}` },
   ];
 
   // Choose workflow based on role
@@ -149,4 +148,4 @@ const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, 
   );
 };
 
-export default WorkflowNavigation; 
+export default WorkflowNavigation;

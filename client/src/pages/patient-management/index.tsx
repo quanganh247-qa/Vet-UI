@@ -44,6 +44,7 @@ import {
   MoreHorizontal,
   Search,
   CalendarSearch,
+  User,
 } from "lucide-react";
 import {
   Select,
@@ -62,23 +63,15 @@ import {
 } from "@/components/ui/table";
 
 import { usePatientData } from "@/hooks/use-pet";
-import {
-  Appointment,
-  getMedicalRecordsByPatientId,
-  getAppointmentsByPatientId,
-  getVaccinesByPatientId,
-  MedicalRecord,
-  Vaccine,
-  Invoice,
-  mockInvoices,
-} from "@/data/mock-data";
+
 import {
   useAppointmentData,
   useHistoryAppointments,
 } from "@/hooks/use-appointment";
 import { useVaccineData } from "@/hooks/use-vaccine";
-import { Vaccination } from "@/types";
+import { Appointment, MedicalRecord, Vaccination } from "@/types";
 import WorkflowNavigation from "@/components/WorkflowNavigation";
+import { getMedicalRecordsByPatientId } from "@/services/medical-record-services";
 
 const PatientManagement = () => {
   // Lấy params từ cả route params (để tương thích ngược) và query params (phương án mới)
@@ -86,7 +79,7 @@ const PatientManagement = () => {
   const [, navigate] = useLocation();
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [alertsExpanded, setAlertsExpanded] = useState(false);
 
   // Lấy tham số từ query params
@@ -145,10 +138,15 @@ const PatientManagement = () => {
   );
 
   useEffect(() => {
-    if (effectiveAppointmentId) {
-      setMedicalRecords(getMedicalRecordsByPatientId(parseInt(effectiveAppointmentId)));
-      setInvoices(mockInvoices);
-    }
+    const fetchMedicalRecords = async () => {
+      if (effectiveAppointmentId) {
+        const records = await getMedicalRecordsByPatientId(parseInt(effectiveAppointmentId));
+        setMedicalRecords(records);
+        setInvoices([]); // Reset invoices when appointmentId changes
+      }
+    };
+    
+    fetchMedicalRecords();
   }, [effectiveAppointmentId]);
 
   // Function to navigate to treatment page with query params
@@ -158,6 +156,15 @@ const PatientManagement = () => {
       petId: appointment?.pet?.pet_id
     };
     navigate(`/treatment${buildUrlParams(params)}`);
+  };
+
+  // Function to navigate to medical history page with query params
+  const navigateToMedicalHistory = () => {
+    const params = {
+      appointmentId: effectiveAppointmentId,
+      petId: appointment?.pet?.pet_id
+    };
+    navigate(`/patient/medical-history/${appointment?.pet?.pet_id}${buildUrlParams(params)}`);
   };
 
   // Navigate to SOAP with query params
@@ -337,7 +344,7 @@ const PatientManagement = () => {
           </div>
 
           {/* Action buttons */}
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
             <Button
               onClick={navigateToExamination}
               className="bg-blue-100 hover:bg-blue-200 text-blue-700 w-full flex items-center justify-center gap-2 py-5 font-medium transition-all shadow-sm hover:shadow border border-blue-200"
@@ -376,6 +383,8 @@ const PatientManagement = () => {
               <Pill className="h-5 w-5" />
               <span>Treatment Plan</span>
             </Button>
+
+  
           </div>
         </div>
       </div>
@@ -475,475 +484,6 @@ const PatientManagement = () => {
         </div>
       )}
 
-      {/* Action buttons with improved visibility */}
-      {/* <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Button
-            onClick={navigateToExamination}
-            className="bg-blue-600 hover:bg-blue-700 text-white w-full flex items-center justify-center gap-2 py-6 font-medium transition-all shadow-md hover:shadow-lg"
-          >
-            <Stethoscope className="h-5 w-5" />
-            <span>Start Examination</span>
-          </Button>
-          
-          {appointment?.service?.service_name?.toLowerCase().includes('vaccine') || 
-           appointment?.reason?.toLowerCase().includes('vaccine') ? (
-            <Button
-              onClick={navigateToVaccination}
-              className="bg-green-600 hover:bg-green-700 text-white w-full flex items-center justify-center gap-2 py-6 font-medium transition-all shadow-md hover:shadow-lg"
-            >
-              <Syringe className="h-5 w-5" />
-              <span>Administer Vaccine</span>
-            </Button>
-          ) : (
-            <Button
-              onClick={navigateToSOAP}
-              className="bg-purple-600 hover:bg-purple-700 text-white w-full flex items-center justify-center gap-2 py-6 font-medium transition-all shadow-md hover:shadow-lg"
-            >
-              <ClipboardEdit className="h-5 w-5" />
-              <span>SOAP Notes</span>
-            </Button>
-          )}
-          
-          <Button
-            onClick={navigateToTreatment}
-            className="bg-amber-600 hover:bg-amber-700 text-white w-full flex items-center justify-center gap-2 py-6 font-medium transition-all shadow-md hover:shadow-lg"
-          >
-            <Pill className="h-5 w-5" />
-            <span>Treatment Plan</span>
-          </Button>
-        </div>
-      </div> */}
-
-      {/* Tabs section with improved styling */}
-      <Tabs
-        defaultValue="overview"
-        className="w-full px-6 py-4"
-        value={activeTab}
-        onValueChange={setActiveTab}
-      >
-
-        <TabsContent value="overview" className="mt-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              {/* REDESIGNED: Recent Appointments */}
-              <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                <div className="flex justify-between items-center px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b">
-                  <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                    <Calendar className="h-4 w-4 mr-2 text-indigo-600" />
-                    Recent Appointments
-                  </h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-white shadow-sm hover:bg-gray-50 text-xs px-2.5 py-1"
-                  >
-                    <CalendarPlus className="h-3.5 w-3.5 mr-1.5 text-indigo-600" />
-                    <span>New</span>
-                  </Button>
-                </div>
-
-                <div className="overflow-hidden">
-                  {historyAppointments?.length > 0 ? (
-                    <div className="divide-y divide-gray-100">
-                      {historyAppointments.slice(0, 3).map((appointment: Appointment) => (
-                        <div
-                          key={appointment.id}
-                          className="p-3 hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`p-2 rounded-full ${appointment.status === "completed"
-                                  ? "bg-green-100"
-                                  : appointment.status === "in-progress"
-                                    ? "bg-blue-100"
-                                    : appointment.status === "scheduled"
-                                      ? "bg-indigo-100"
-                                      : "bg-gray-100"
-                                }`}
-                            >
-                              {appointment.status === "completed" ? (
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                              ) : appointment.status === "in-progress" ? (
-                                <Activity className="h-4 w-4 text-blue-600" />
-                              ) : (
-                                <Calendar className="h-4 w-4 text-indigo-600" />
-                              )}
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <div className="font-medium text-gray-900 text-sm truncate">
-                                  {appointment.type}
-                                </div>
-                                <Badge
-                                  className={`text-xs px-2 py-0.5 ml-2 ${appointment.status === "completed"
-                                      ? "bg-green-100 text-green-800 border-green-200"
-                                      : appointment.status === "in-progress"
-                                        ? "bg-blue-100 text-blue-800 border-blue-200"
-                                        : appointment.status === "scheduled"
-                                          ? "bg-indigo-100 text-indigo-800 border-indigo-200"
-                                          : "bg-gray-100 text-gray-800 border-gray-200"
-                                    }`}
-                                >
-                                  {appointment.status === "completed"
-                                    ? "Completed"
-                                    : appointment.status === "in-progress"
-                                      ? "In Progress"
-                                      : "Scheduled"}
-                                </Badge>
-                              </div>
-                              <div className="flex flex-wrap items-center text-xs text-gray-600 mt-1 gap-3">
-                                <span className="flex items-center">
-                                  <CalendarClock className="h-3.5 w-3.5 mr-1 text-gray-400" />
-                                  {appointment.date}
-                                </span>
-                                <span className="flex items-center">
-                                  <UserCog className="h-3.5 w-3.5 mr-1 text-gray-400" />
-                                  Dr. {appointment.doctor_id === 1
-                                    ? "Roberts"
-                                    : appointment.doctor_id === 2
-                                      ? "Carter"
-                                      : "Chen"}
-                                </span>
-                              </div>
-                            </div>
-
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-gray-400 hover:text-gray-600 h-8 w-8 p-0"
-                            >
-                              <ChevronRight className="h-5 w-5" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-4 text-center">
-                      <div className="w-12 h-12 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-3">
-                        <Calendar className="h-6 w-6 text-gray-300" />
-                      </div>
-                      <h3 className="text-gray-500 font-medium mb-2 text-sm">
-                        No appointments found
-                      </h3>
-                      <p className="text-gray-400 text-xs mb-3">
-                        This patient doesn't have any appointment history
-                      </p>
-                      <Button
-                        size="sm"
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5"
-                      >
-                        Schedule First Appointment
-                      </Button>
-                    </div>
-                  )}
-
-                  {historyAppointments?.length > 3 && (
-                    <div className="p-2 bg-gray-50 border-t border-gray-100 text-center">
-                      <Button
-                        variant="link"
-                        size="sm"
-                        className="text-indigo-600 text-xs"
-                        onClick={() => setActiveTab("appointments")}
-                      >
-                        View all appointments
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* REDESIGNED: Medical Records */}
-              <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                <div className="flex justify-between items-center px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b">
-                  <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                    <FileText className="h-4 w-4 mr-2 text-indigo-600" />
-                    Medical Records
-                  </h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-white shadow-sm hover:bg-gray-50 text-xs px-2.5 py-1"
-                  >
-                    <FilePlus2 className="h-3.5 w-3.5 mr-1.5 text-indigo-600" />
-                    <span>New</span>
-                  </Button>
-                </div>
-
-                <div className="overflow-hidden">
-                  {medicalRecords.length > 0 ? (
-                    <div className="divide-y divide-gray-100">
-                      {medicalRecords.slice(0, 3).map((record) => (
-                        <div
-                          key={record.id}
-                          className="p-3 hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-full bg-indigo-100">
-                              <FileBarChart className="h-4 w-4 text-indigo-600" />
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex justify-between items-center">
-                                <div className="font-medium text-gray-900 text-sm truncate">
-                                  {record.type || "Medical Visit"}
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-gray-400 hover:text-gray-600 h-8 w-8 p-0 -mr-1"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </div>
-
-                              <div className="flex flex-wrap items-center text-xs text-gray-600 mt-1 gap-3">
-                                <span className="flex items-center">
-                                  <Calendar className="h-3.5 w-3.5 mr-1 text-gray-400" />
-                                  {record.date}
-                                </span>
-                                <span className="flex items-center">
-                                  <UserCog className="h-3.5 w-3.5 mr-1 text-gray-400" />
-                                  Dr. {record.doctor_id === 1
-                                    ? "Roberts"
-                                    : record.doctor_id === 2
-                                      ? "Carter"
-                                      : "Chen"}
-                                </span>
-                              </div>
-
-                              {record.diagnosis && (
-                                <div className="mt-2">
-                                  <Badge
-                                    className="bg-blue-100 text-blue-800 border-blue-200 text-xs"
-                                  >
-                                    {record.diagnosis}
-                                  </Badge>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-4 text-center">
-                      <div className="w-12 h-12 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-3">
-                        <FileText className="h-6 w-6 text-gray-300" />
-                      </div>
-                      <h3 className="text-gray-500 font-medium mb-2 text-sm">
-                        No medical records
-                      </h3>
-                      <p className="text-gray-400 text-xs mb-3">
-                        This patient doesn't have any medical records yet
-                      </p>
-                      <Button
-                        size="sm"
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5"
-                      >
-                        <FilePlus2 className="h-3.5 w-3.5 mr-1.5" />
-                        Create First Record
-                      </Button>
-                    </div>
-                  )}
-
-                  {medicalRecords.length > 3 && (
-                    <div className="p-2 bg-gray-50 border-t border-gray-100 text-center">
-                      <Button
-                        variant="link"
-                        size="sm"
-                        className="text-indigo-600 text-xs"
-                        onClick={() => setActiveTab("medical-records")}
-                      >
-                        View all medical records
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              {/* REDESIGNED: Owner Information */}
-              <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b">
-                  <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                    <UserCog className="h-4 w-4 mr-2 text-indigo-600" />
-                    Owner Information
-                  </h3>
-                </div>
-
-                <div className="p-3">
-                  {appointment?.owner ? (
-                    <div>
-                      <div className="flex items-center mb-3">
-                        <div className="h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 mr-3">
-                          {appointment.owner.owner_name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {appointment.owner.owner_name}
-                          </div>
-                          <Badge className="bg-indigo-100 text-indigo-800 mt-1 text-xs">Primary Owner</Badge>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 mt-3">
-                        <a
-                          href={`tel:${appointment.owner.owner_phone}`}
-                          className="flex items-center gap-2 p-2 bg-gray-50 rounded-md border border-gray-100 hover:bg-gray-100 transition-colors"
-                        >
-                          <Phone className="h-4 w-4 text-indigo-500" />
-                          <span className="text-sm text-gray-700">{appointment.owner.owner_phone}</span>
-                        </a>
-
-                        {appointment.owner.owner_email && (
-                          <a
-                            href={`mailto:${appointment.owner.owner_email}`}
-                            className="flex items-center gap-2 p-2 bg-gray-50 rounded-md border border-gray-100 hover:bg-gray-100 transition-colors"
-                          >
-                            <Mail className="h-4 w-4 text-indigo-500" />
-                            <span className="text-sm text-gray-700 truncate">{appointment.owner.owner_email}</span>
-                          </a>
-                        )}
-
-                        {appointment.owner.owner_address && (
-                          <div className="flex items-start gap-2 p-2 bg-gray-50 rounded-md border border-gray-100">
-                            <Info className="h-4 w-4 text-indigo-500 mt-0.5" />
-                            <div>
-                              <span className="text-sm text-gray-700">{appointment.owner.owner_address}</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="mt-3 flex justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs"
-                        >
-                          <UserCog className="h-3.5 w-3.5 mr-1.5" />
-                          View Owner Profile
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-3">
-                      <p className="text-gray-500 text-sm">Owner information not available</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* REDESIGNED: Vaccination Status */}
-              <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b">
-                  <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                    <Syringe className="h-4 w-4 mr-2 text-indigo-600" />
-                    Vaccination Status
-                  </h3>
-                </div>
-
-                <div className="p-3">
-                  {vaccines.length > 0 ? (
-                    <div>
-                      {hasUpcomingVaccinations && (
-                        <div className="p-2 bg-amber-50 border border-amber-200 rounded-md mb-3 flex items-center">
-                          <Bell className="h-4 w-4 text-amber-600 mr-2" />
-                          <span className="text-xs text-amber-800">Vaccinations due soon</span>
-                        </div>
-                      )}
-
-                      <div className="space-y-2">
-                        {vaccines.slice(0, 3).map((vaccine: Vaccination) => {
-                          const isDue =
-                            new Date(vaccine.next_due_date) <=
-                            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-                          const isPastDue =
-                            new Date(vaccine.next_due_date) < new Date();
-
-                          return (
-                            <div
-                              key={vaccine.vaccination_id}
-                              className={`p-2 rounded-md border flex justify-between items-center ${isPastDue
-                                  ? "bg-red-50 border-red-200"
-                                  : isDue
-                                    ? "bg-amber-50 border-amber-200"
-                                    : "bg-white border-gray-200"
-                                }`}
-                            >
-                              <div className="min-w-0">
-                                <div className="font-medium text-gray-900 text-sm truncate">
-                                  {vaccine.vaccine_name}
-                                </div>
-                                <div className="flex items-center text-xs text-gray-600 mt-1">
-                                  <Calendar className="h-3.5 w-3.5 mr-1 text-gray-400" />
-                                  {vaccine.date_administered
-                                    ? `Last: ${new Date(vaccine.date_administered).toLocaleDateString()}`
-                                    : "Never administered"}
-                                </div>
-                              </div>
-
-                              <div className="flex flex-col items-end ml-2">
-                                <Badge
-                                  className={`text-xs ${isPastDue
-                                      ? "bg-red-100 text-red-800 border-red-200"
-                                      : isDue
-                                        ? "bg-amber-100 text-amber-800 border-amber-200"
-                                        : "bg-green-100 text-green-800 border-green-200"
-                                    }`}
-                                >
-                                  {isPastDue ? "Overdue" : isDue ? "Due Soon" : "Up to date"}
-                                </Badge>
-                                <div className="text-xs text-gray-600 mt-1 whitespace-nowrap">
-                                  Next: {new Date(vaccine.next_due_date).toLocaleDateString()}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {vaccines.length > 3 && (
-                        <div className="mt-3 text-center">
-                          <Button
-                            variant="link"
-                            className="text-indigo-600 text-xs"
-                            onClick={() => setActiveTab("vaccines")}
-                          >
-                            View all vaccinations
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-3">
-                      <div className="w-10 h-10 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-2">
-                        <Syringe className="h-5 w-5 text-gray-300" />
-                      </div>
-                      <p className="text-gray-500 text-xs mb-2">
-                        No vaccination records found
-                      </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs px-3 py-1.5">
-                        Add Vaccination Record
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* Other tab contents would follow with similar sizing improvements */}
-
-      </Tabs>
     </div>
   );
 };

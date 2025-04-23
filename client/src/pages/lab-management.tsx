@@ -42,11 +42,14 @@ import {
   AlertTriangle,
   Syringe,
   Receipt,
+  Search,
+  SearchX,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
 import { usePatientData } from "@/hooks/use-pet";
 import { useAppointmentData } from "@/hooks/use-appointment";
 import {
@@ -86,6 +89,7 @@ const LabManagement: React.FC = () => {
   const [priority, setPriority] = useState("normal");
   const [notes, setNotes] = useState("");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(""); // Add search query state
 
   // Quản lý tham số workflow
   const [workflowParams, setWorkflowParams] = useState<{
@@ -192,6 +196,18 @@ const LabManagement: React.FC = () => {
       }
     }
   }, [effectiveAppointmentId, notes, toast]);
+
+  // Filter tests based on search query
+  const filterTestsBySearch = (tests: Test[] = []): Test[] => {
+    if (!searchQuery) return tests;
+
+    const query = searchQuery.toLowerCase();
+    return tests.filter(
+      (test) =>
+        test.name.toLowerCase().includes(query) ||
+        (test.description && test.description.toLowerCase().includes(query))
+    );
+  };
 
   // Map API test categories to UI format with icons
   const testCategories = React.useMemo(() => {
@@ -689,6 +705,29 @@ const LabManagement: React.FC = () => {
             </div>
           </div>
 
+          {/* Search bar */}
+          <div className="px-6 py-3 border-b border-gray-200">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tests and vaccines..."
+                className="pl-10 w-full"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
+
           {/* Guidance alert */}
           <div className="p-4 m-4 bg-blue-50 border border-blue-200 rounded-md">
             <div className="flex items-start gap-2">
@@ -743,53 +782,70 @@ const LabManagement: React.FC = () => {
                         </p>
                       </div>
 
-                      <div className="space-y-4">
-                        {category.tests?.map((test: any) => (
-                          <div
-                            key={test.id}
-                            className={cn(
-                              "p-4 border rounded-lg transition-all cursor-pointer hover:border-indigo-300",
-                              selectedTests[test.id]
-                                ? "border-indigo-500 bg-indigo-50 shadow-sm"
-                                : "border-gray-200"
-                            )}
-                            onClick={() => toggleTest(test.id)}
-                          >
-                            <div className="flex items-start">
-                              <Checkbox
-                                id={test.id}
-                                checked={selectedTests[test.id] || false}
-                                onCheckedChange={() => toggleTest(test.id)}
-                                className="mt-1"
-                              />
-                              <div className="ml-3 flex-1">
-                                <Label
-                                  htmlFor={test.id}
-                                  className="font-medium cursor-pointer text-gray-800"
-                                >
-                                  {test.name}
-                                </Label>
-                                <p className="text-sm text-gray-500 mt-1">
-                                  {test.description}
-                                </p>
-                                <div className="flex mt-3 items-center gap-4">
-                                  {test.price && (
-                                    <span className="text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-md font-medium">
-                                      {test.price}
-                                    </span>
-                                  )}
-                                  {test.turnaroundTime && (
-                                    <span className="text-sm text-gray-600 flex items-center">
-                                      <Clock className="h-3 w-3 mr-1 text-indigo-500" />
-                                      {test.turnaroundTime}
-                                    </span>
-                                  )}
+                      {/* Apply search filter to tests */}
+                      {(() => {
+                        const filteredTests = filterTestsBySearch(category.tests);
+
+                        if (filteredTests.length === 0 && searchQuery) {
+                          return (
+                            <div className="py-12 text-center">
+                              <SearchX className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                              <p className="text-gray-600 mb-1">No matching tests found</p>
+                              <p className="text-gray-500 text-sm">Try a different search term</p>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="space-y-4">
+                            {filteredTests.map((test: any) => (
+                              <div
+                                key={test.id}
+                                className={cn(
+                                  "p-4 border rounded-lg transition-all cursor-pointer hover:border-indigo-300",
+                                  selectedTests[test.id]
+                                    ? "border-indigo-500 bg-indigo-50 shadow-sm"
+                                    : "border-gray-200"
+                                )}
+                                onClick={() => toggleTest(test.id)}
+                              >
+                                <div className="flex items-start">
+                                  <Checkbox
+                                    id={test.id}
+                                    checked={selectedTests[test.id] || false}
+                                    onCheckedChange={() => toggleTest(test.id)}
+                                    className="mt-1"
+                                  />
+                                  <div className="ml-3 flex-1">
+                                    <Label
+                                      htmlFor={test.id}
+                                      className="font-medium cursor-pointer text-gray-800"
+                                    >
+                                      {test.name}
+                                    </Label>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                      {test.description}
+                                    </p>
+                                    <div className="flex mt-3 items-center gap-4">
+                                      {test.price && (
+                                        <span className="text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-md font-medium">
+                                          {test.price}
+                                        </span>
+                                      )}
+                                      {test.turnaroundTime && (
+                                        <span className="text-sm text-gray-600 flex items-center">
+                                          <Clock className="h-3 w-3 mr-1 text-indigo-500" />
+                                          {test.turnaroundTime}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })()}
                     </TabsContent>
                   ))}
                 </div>

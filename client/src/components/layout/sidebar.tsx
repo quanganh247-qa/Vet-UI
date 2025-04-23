@@ -17,7 +17,8 @@ import {
   UserCircle,
   DollarSign,
   Syringe,
-  FileText
+  FileText,
+  Package
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -72,9 +73,9 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
   const practiceLinks = [
     // { name: "Lab Management", path: "/lab-management", icon: <TestTube className="h-5 w-5" /> },
     { name: "Vaccination", path: "/vaccination", icon: <Syringe className="h-5 w-5" /> },
-    { name: "Services Management", path: "/services-management", icon: <FileText className="h-5 w-5" /> },
-    { name: "Catalog Management", path: "/inventory", icon: <BookOpen className="h-5 w-5" /> },
-    { name: "Veterinary Staff", path: "/staff", icon: <Stethoscope className="h-5 w-5" /> },
+    { name: "Services", path: "/services-management", icon: <FileText className="h-5 w-5" /> },
+    { name: "Catalog", path: "/catalog-management", icon: <Package className="h-5 w-5" /> },
+    { name: "Staff", path: "/staff", icon: <Stethoscope className="h-5 w-5" /> },
     { name: "Schedule", path: "/shift-management", icon: <Calendar className="h-5 w-5" /> },
     { name: "Chatbot", path: "/chatbot", icon: <MessageCircle className="h-5 w-5" /> },
     { name: "Billing", path: "/billing", icon: <DollarSign className="h-5 w-5" /> }
@@ -82,12 +83,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
 
   const accountLinks = [
     { name: "Profile", path: "/profile", icon: <UserCircle className="h-5 w-5" /> },
-    {
-      name: "Notifications",
-      path: "/notifications",
-      icon: <Bell className="h-5 w-5" />,
-      badge: notifications > 0 ? notifications : undefined
-    },
+    { name: "Notifications", path: "/notifications", icon: <Bell className="h-5 w-5" />, badge: notifications > 0 ? notifications : undefined },
     { name: "Settings", path: "/settings", icon: <Settings className="h-5 w-5" /> },
     { name: "Help", path: "/help", icon: <HelpCircle className="h-5 w-5" /> }
   ];
