@@ -1,3 +1,5 @@
+import api from "@/lib/api";
+
 export interface CreateProductRequest {
     name: string;              // Product name (required)
     description?: string;      // Product description (optional)
@@ -12,11 +14,13 @@ export interface CreateProductRequest {
 export interface ProductResponse {
     productId: number;
     name: string;
+    description?: string; // Add optional description
     price: number;
     stock: number;
     category: string;
-    dataImage: Uint8Array;
-    originalImage: string;
+    dataImage?: Uint8Array; // Make optional if not always present
+    originalImage?: string; // Make optional if not always present
+    isAvailable?: boolean; // Add optional availability
 }
 
 export interface PaginatedProductResponse {
@@ -27,7 +31,7 @@ export interface PaginatedProductResponse {
     totalPages: number;
 }
 
-import api from "@/lib/api";
+
 
 /**
  * Creates a new product with the provided information and optional image
@@ -36,27 +40,27 @@ import api from "@/lib/api";
  * @returns Promise with the created product response
  */
 export const createProduct = async (
-    productData: CreateProductRequest, 
+    productData: CreateProductRequest,
     imageFile?: File
 ): Promise<ProductResponse> => {
     try {
         const formData = new FormData();
-        
+
         // Add the product data as a JSON string in the 'data' field
         formData.append('data', JSON.stringify(productData));
-        
+
         // Add the image file if provided
         if (imageFile) {
             formData.append('image', imageFile);
         }
-        
+
         const response = await api.post('/api/v1/products', formData, {
             headers: {
                 // Don't set Content-Type - axios will set it automatically with boundary
                 'Content-Type': undefined
             }
         });
-        
+
         return response.data.data;
     } catch (error) {
         console.error('Error creating product:', error);
@@ -71,28 +75,46 @@ export const createProduct = async (
  * @returns Promise with paginated product response
  */
 export const getProducts = async (
-    page: number = 1, 
+    page: number = 1,
     pageSize: number = 10
 ): Promise<PaginatedProductResponse> => {
     try {
         const response = await api.get('/api/v1/products', {
             params: {
                 page,
-                pageSize: pageSize
+                pageSize
             }
         });
-        
+
+        console.log("Raw API response:", response.data);
+
         // Transform snake_case to camelCase
         const transformProduct = (product: any): ProductResponse => ({
             productId: product.product_id,
             name: product.name,
+            description: product.description,
             price: product.price,
             stock: product.stock,
             category: product.category,
             dataImage: product.data_image,
             originalImage: product.original_image,
+            isAvailable: product.is_available !== undefined ? product.is_available : true,
         });
-        
+
+        // Handle response.data.rows format (common pagination format)
+        if (response.data && response.data.rows && Array.isArray(response.data.rows)) {
+            const products = response.data.rows.map(transformProduct);
+            const total = response.data.count || products.length;
+
+            return {
+                products: products,
+                total: total,
+                page: page,
+                pageSize: pageSize,
+                totalPages: Math.ceil(total / pageSize)
+            };
+        }
+
         // Check if response.data has the expected structure
         if (response.data && Array.isArray(response.data)) {
             const products = response.data.map(transformProduct);
@@ -104,7 +126,7 @@ export const getProducts = async (
                 totalPages: Math.ceil(products.length / pageSize)
             };
         }
-        
+
         // Handle nested products array
         if (response.data && Array.isArray(response.data.products)) {
             const products = response.data.products.map(transformProduct);
@@ -116,19 +138,36 @@ export const getProducts = async (
                 totalPages: response.data.totalPages || Math.ceil(products.length / pageSize)
             };
         }
-        
+
         // If data is nested in data.data
-        if (response.data && response.data.data && Array.isArray(response.data.data)) {
-            const products = response.data.data.map(transformProduct);
-            return {
-                products: products,
-                total: response.data.total || products.length,
-                page: response.data.page || page,
-                pageSize: response.data.pageSize || pageSize,
-                totalPages: response.data.totalPages || Math.ceil(products.length / pageSize)
-            };
+        if (response.data && response.data.data) {
+            // Handle data.data as array
+            if (Array.isArray(response.data.data)) {
+                const products = response.data.data.map(transformProduct);
+                return {
+                    products: products,
+                    total: response.data.total || products.length,
+                    page: response.data.page || page,
+                    pageSize: response.data.pageSize || pageSize,
+                    totalPages: Math.ceil(products.length / pageSize)
+                };
+            }
+
+            // Handle data.data.rows format
+            if (response.data.data.rows && Array.isArray(response.data.data.rows)) {
+                const products = response.data.data.rows.map(transformProduct);
+                const total = response.data.data.count || products.length;
+
+                return {
+                    products: products,
+                    total: total,
+                    page: page,
+                    pageSize: pageSize,
+                    totalPages: Math.ceil(total / pageSize)
+                };
+            }
         }
-        
+
         console.error('Unexpected API response format:', response.data);
         return {
             products: [],
@@ -151,10 +190,171 @@ export const getProducts = async (
 export const getProductById = async (productId: number): Promise<ProductResponse> => {
     try {
         const response = await api.get(`/api/v1/products/${productId}`);
-        
+
         return response.data;
     } catch (error) {
         console.error(`Error fetching product ${productId}:`, error);
         throw error;
     }
 };
+
+export type ImportStockRequest = {
+    quantity: number,
+    unit_price: number,
+    reason: string,
+}
+
+export type ExportStockRequest = {
+    quantity: number,
+    unit_price: number,
+    reason: string,
+}
+
+export type ProductStockMovementResponse = {
+    id: number,
+    product_id: number
+    movement_type: string
+    quantity: number,
+    reason: string,
+    movement_date: string,
+    current_stock: number,
+    price: number,
+}
+
+
+export const importProductStock = async (
+    productId: number,
+    importStockRequest: ImportStockRequest
+): Promise<ProductStockMovementResponse> => {
+    try {
+        const response = await api.post(`/api/v1/products/${productId}/import`, importStockRequest);
+        return response.data;
+    } catch (error) {
+        console.error(`Error importing stock for product ${productId}:`, error);
+        throw error;
+    }
+}
+
+export const exportProductStock = async (
+    productId: number,
+    exportStockRequest: ExportStockRequest
+): Promise<ProductStockMovementResponse> => {
+    try {
+        const response = await api.post(`/api/v1/products/${productId}/export`, exportStockRequest);
+        return response.data;
+    } catch (error) {
+        console.error(`Error importing stock for product ${productId}:`, error);
+        throw error;
+    }
+}
+
+export type PaginatedProductMovementResponse = {
+    movements: ProductStockMovementResponse[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+}
+
+
+export const getProductStockMovements = async (
+    productId: number,
+    page: number ,
+    pageSize: number,
+): Promise<PaginatedProductMovementResponse> => {   
+    try {
+        const response = await api.get(`/api/v1/products/${productId}/movements`, {
+            params: {
+                page,
+                pageSize
+            }
+        });
+
+        console.log("Raw API response:", response.data);
+
+        // Transform snake_case to camelCase
+        const transformMovement = (movement: any): ProductStockMovementResponse => ({
+            id: movement.id,
+            product_id: movement.product_id,
+            movement_type: movement.movement_type,
+            quantity: movement.quantity,
+            reason: movement.reason,
+            movement_date: movement.movement_date,
+            current_stock: movement.current_stock,
+            price: movement.price,
+        });
+        // Handle response.data.rows format (common pagination format)
+        if (response.data && response.data.rows && Array.isArray(response.data.rows)) {
+            const movements = response.data.rows.map(transformMovement);
+            const total = response.data.count || movements.length;
+
+            return {
+                movements: movements,
+                total: total,
+                page: page,
+                pageSize: pageSize,
+                totalPages: Math.ceil(total / pageSize)
+            };
+        }
+        // Check if response.data has the expected structure
+        if (response.data && Array.isArray(response.data)) {
+            const movements = response.data.map(transformMovement);
+            return {
+                movements: movements,
+                total: movements.length,
+                page: page,
+                pageSize: pageSize,
+                totalPages: Math.ceil(movements.length / pageSize)
+            };
+        }
+        // Handle nested products array
+        if (response.data && Array.isArray(response.data.movements)) {
+            const movements = response.data.movements.map(transformMovement);
+            return {
+                movements: movements,
+                total: response.data.total || movements.length,
+                page: response.data.page || page,
+                pageSize: response.data.pageSize || pageSize,
+                totalPages: response.data.totalPages || Math.ceil(movements.length / pageSize)
+            };
+        }
+        // If data is nested in data.data
+        if (response.data && response.data.data) {
+            // Handle data.data as array
+            if (Array.isArray(response.data.data)) {
+                const movements = response.data.data.map(transformMovement);
+                return {
+                    movements: movements,
+                    total: response.data.total || movements.length,
+                    page: response.data.page || page,
+                    pageSize: response.data.pageSize || pageSize,
+                    totalPages: Math.ceil(movements.length / pageSize)
+                };
+            }
+            // Handle data.data.rows format
+            if (response.data.data.rows && Array.isArray(response.data.data.rows)) {
+                const movements = response.data.data.rows.map(transformMovement);
+                const total = response.data.data.count || movements.length;
+
+                return {
+                    movements: movements,
+                    total: total,
+                    page: page,
+                    pageSize: pageSize,
+                    totalPages: Math.ceil(total / pageSize)
+                };
+            }
+        }
+        console.error('Unexpected API response format:', response.data);
+        return {
+            movements: [],
+            total: 0,
+            page: page,
+            pageSize: pageSize,
+            totalPages: 0
+        };
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        throw error;
+    }
+}

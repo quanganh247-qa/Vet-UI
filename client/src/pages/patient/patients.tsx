@@ -7,7 +7,8 @@ import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
   Search, Plus, Loader2, ChevronRight, PawPrint, UserCircle, 
-  List, Grid, Calendar, ArrowLeft, UserCog, LogOut, User, Settings
+  List, Grid, Calendar, ArrowLeft, UserCog, LogOut, User, Settings,
+  MoreHorizontal, Pencil, Trash2, Syringe, Stethoscope, ClipboardList
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -108,6 +109,38 @@ export const PatientsPage: React.FC = () => {
 
   const handlePatientClick = (patientId: string) => {
     setLocation(`/patient/${patientId}`);
+  };
+
+  // Action Handlers
+  const handleEditPatient = (patientId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent card/row click
+    setLocation(`/patient/${patientId}/edit`); // Navigate to edit page (assuming route exists)
+    console.log(`Edit patient: ${patientId}`);
+  };
+
+  const handleDeletePatient = (patientId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent card/row click
+    // Implement deletion logic, possibly with a confirmation dialog
+    console.log(`Delete patient: ${patientId}`);
+    alert(`Placeholder: Delete patient ${patientId}`); // Placeholder alert
+  };
+
+  const handleVaccination = (patientId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent card/row click
+    setLocation(`/patient/${patientId}/vaccination`); // Navigate to vaccination page
+    console.log(`Vaccination for patient: ${patientId}`);
+  };
+
+  const handleTreatment = (patientId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent card/row click
+    setLocation(`/patient/${patientId}/treatment`); // Navigate to treatment page
+    console.log(`Treatment for patient: ${patientId}`);
+  };
+
+  const handlePrescription = (patientId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent card/row click
+    setLocation(`/patient/${patientId}/prescription`); // Navigate to prescription page
+    console.log(`Prescription for patient: ${patientId}`);
   };
 
   const toggleCardExpansion = (petId: string, event: React.MouseEvent) => {
@@ -249,7 +282,7 @@ export const PatientsPage: React.FC = () => {
         <CardContent className={viewMode === 'grid' ? 'p-6' : 'p-0'}>
           {/* Patients grid view */}
             {viewMode === 'grid' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {filteredPatients.length === 0 ? (
               <div className="col-span-full text-center py-12 text-gray-500">
                 No patients found matching your search criteria
@@ -258,10 +291,10 @@ export const PatientsPage: React.FC = () => {
               filteredPatients.map((patient: Pet) => (
                 <Card 
                 key={patient.petid} 
-                className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer border border-gray-200"
+                className="overflow-hidden hover:shadow-lg transition-shadow border border-gray-200 flex flex-col"
                 >
                 <div 
-                  className="aspect-w-16 aspect-h-9 bg-indigo-50"
+                  className="aspect-w-16 aspect-h-9 bg-indigo-50 cursor-pointer"
                   onClick={() => handlePatientClick(patient.petid)}
                 >
                   {patient.data_image ? (
@@ -276,7 +309,10 @@ export const PatientsPage: React.FC = () => {
                   </div>
                   )}
                 </div>
-                <CardHeader className="pb-2">
+                <CardHeader 
+                  className="pb-2 cursor-pointer"
+                  onClick={() => handlePatientClick(patient.petid)}
+                >
                   <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">{patient.name}</CardTitle>
                   <Badge
@@ -286,12 +322,12 @@ export const PatientsPage: React.FC = () => {
                     {patient.type}
                   </Badge>
                   </div>
-                  <CardDescription className="flex items-center gap-1">
+                  <CardDescription className="flex items-center gap-1 pt-1">
                   <UserCircle className="h-3.5 w-3.5 text-gray-400" />
                   <span>{patient.username || 'Unknown Owner'}</span>
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-grow">
                   <div className={cn(
                   "grid gap-x-4 gap-y-2 text-sm transition-all duration-300",
                   expandedCards[patient.petid] ? "grid-cols-2" : "grid-cols-2"
@@ -342,18 +378,49 @@ export const PatientsPage: React.FC = () => {
                   >
                     {expandedCards[patient.petid] ? 'Show Less' : 'Show More'}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                    e.stopPropagation();
-                    handlePatientClick(patient.petid);
-                    }}
-                    className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
-                  >
-                    View Details
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-gray-500 hover:bg-gray-100"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenuItem onClick={() => handlePatientClick(patient.petid)}>
+                        <User className="mr-2 h-4 w-4" />
+                        <span>View Details</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => handleEditPatient(patient.petid, e)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        <span>Edit</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={(e) => handleVaccination(patient.petid, e)}>
+                        <Syringe className="mr-2 h-4 w-4" />
+                        <span>Vaccination</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => handleTreatment(patient.petid, e)}>
+                        <Stethoscope className="mr-2 h-4 w-4" />
+                        <span>Treatment</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => handlePrescription(patient.petid, e)}>
+                        <ClipboardList className="mr-2 h-4 w-4" />
+                        <span>Prescription</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                        onClick={(e) => handleDeletePatient(patient.petid, e)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Delete</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   </div>
                 </CardContent>
                 </Card>
@@ -383,7 +450,7 @@ export const PatientsPage: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Gender
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -399,10 +466,12 @@ export const PatientsPage: React.FC = () => {
                     filteredPatients.map((patient: Pet) => (
                       <tr
                         key={patient.petid}
-                        className="hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => handlePatientClick(patient.petid)}
+                        className="hover:bg-gray-50 transition-colors"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap cursor-pointer"
+                          onClick={() => handlePatientClick(patient.petid)}
+                        >
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
                               {patient.data_image ? (
@@ -421,7 +490,10 @@ export const PatientsPage: React.FC = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap cursor-pointer"
+                          onClick={() => handlePatientClick(patient.petid)}
+                        >
                           <Badge 
                             variant="outline"
                             className="bg-indigo-50 text-indigo-600 border-indigo-200"
@@ -429,17 +501,68 @@ export const PatientsPage: React.FC = () => {
                             {patient.type}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap cursor-pointer"
+                          onClick={() => handlePatientClick(patient.petid)}
+                        >
                           <div className="text-sm text-gray-900">{patient.username || 'Unknown'}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap cursor-pointer"
+                          onClick={() => handlePatientClick(patient.petid)}
+                        >
                           <div className="text-sm text-gray-900">{patient.age} years</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap cursor-pointer"
+                          onClick={() => handlePatientClick(patient.petid)}
+                        >
                           <div className="text-sm text-gray-900">{patient.gender || 'Unknown'}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <ChevronRight className="w-5 h-5 text-gray-400 inline" />
+                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-gray-500 hover:bg-gray-100"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                              <DropdownMenuItem onClick={() => handlePatientClick(patient.petid)}>
+                                <User className="mr-2 h-4 w-4" />
+                                <span>View Details</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => handleEditPatient(patient.petid, e)}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                <span>Edit</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={(e) => handleVaccination(patient.petid, e)}>
+                                <Syringe className="mr-2 h-4 w-4" />
+                                <span>Vaccination</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => handleTreatment(patient.petid, e)}>
+                                <Stethoscope className="mr-2 h-4 w-4" />
+                                <span>Treatment</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => handlePrescription(patient.petid, e)}>
+                                <ClipboardList className="mr-2 h-4 w-4" />
+                                <span>Prescription</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                                onClick={(e) => handleDeletePatient(patient.petid, e)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Delete</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                       </tr>
                     ))

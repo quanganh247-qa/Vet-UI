@@ -12,7 +12,6 @@ import Sidebar from "@/components/layout/sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { PatientsPage } from "@/pages/patient/patients";
 import Billing from "@/pages/billing";
-import CatalogManagement from "./pages/catalog-management";
 import Chatbot from "./pages/chatbot";
 import ScheduleManagement from "./pages/schedule-management";
 import ShiftManagement from "@/pages/shift-management";

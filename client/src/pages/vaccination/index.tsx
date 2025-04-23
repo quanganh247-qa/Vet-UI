@@ -105,49 +105,6 @@ const VaccinationPage: React.FC = () => {
       </div>
 
       <div className="container mx-auto">
-        {/* <div className="bg-white rounded-lg border border-indigo-100 shadow-sm p-6 mb-6"> */}
-          {/* Patient info card */}
-          {/* <div className="mb-6">
-            <Card className="border border-indigo-100 bg-indigo-50/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center text-indigo-700">
-                  <AlertCircle className="h-4 w-4 mr-2 text-indigo-500" />
-                  Patient Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-xs text-indigo-500 font-medium mb-1">
-                      Patient Name
-                    </p>
-                    <p className="text-indigo-900 font-medium">
-                      {patient?.pet_name || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-indigo-500 font-medium mb-1">
-                      Species / Breed
-                    </p>
-                    <p className="text-indigo-900 font-medium">
-                      {patient?.pet_species || "N/A"} /{" "}
-                      {patient?.pet_breed || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-indigo-500 font-medium mb-1">
-                      Age / Weight
-                    </p>
-                    <p className="text-indigo-900 font-medium">
-                      {patient?.pet_age || "N/A"} years /{" "}
-                      {patient?.pet_weight || "N/A"} kg
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div> */}
-
           {/* Main content */}
           <div className="bg-white rounded-lg border border-indigo-100 overflow-hidden">
             <VaccinationAdministration

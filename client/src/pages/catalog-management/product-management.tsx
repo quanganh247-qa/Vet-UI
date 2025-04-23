@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useProducts, useCreateProduct } from "@/hooks/use-product";
-import { CreateProductRequest } from "@/services/product-services";
+import { useProducts, useCreateProduct, useImportProductStock, useExportProductStock, useProductStockMovements } from "@/hooks/use-product";
+import { CreateProductRequest, ImportStockRequest, ExportStockRequest, ProductStockMovementResponse } from "@/services/product-services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
     PlusCircle,
     Search,
@@ -21,7 +23,12 @@ import {
     DollarSign,
     Loader2,
     AlertCircle,
-    Image as ImageIcon
+    Image as ImageIcon,
+    PackageOpen,
+    ArrowDownCircle,
+    ArrowUpCircle,
+    Clock,
+    ShoppingBag
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -63,6 +70,399 @@ const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
     </div>
 );
 
+// StockManagementDialog component
+interface StockManagementDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  productId: number | null;
+  productName: string;
+  currentStock: number;
+}
+
+const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
+  open,
+  onOpenChange,
+  productId,
+  productName,
+  currentStock
+}) => {
+  const { toast } = useToast();
+  const [stockDialogTab, setStockDialogTab] = useState("import");
+  const [quantity, setQuantity] = useState(0);
+  const [unitPrice, setUnitPrice] = useState(0);
+  const [reason, setReason] = useState("");
+  const [historyPage, setHistoryPage] = useState(1);
+  const [movementType, setMovementType] = useState<"import" | "export">("import");
+  const pageSize = 5;
+
+  // Use hooks
+  const { importStock, isLoading: isImportLoading, isSuccess: isImportSuccess, reset: resetImport } = 
+    useImportProductStock(productId);
+  const { exportStock, isLoading: isExportLoading, isSuccess: isExportSuccess, error: exportError, reset: resetExport } = 
+    useExportProductStock(productId);
+  const { movements, pagination, isLoading: isMovementsLoading } = 
+    useProductStockMovements(productId, historyPage, pageSize);
+
+  // Reset form on dialog close
+  const handleCloseDialog = () => {
+    setQuantity(0);
+    setUnitPrice(0);
+    setReason("");
+    resetImport();
+    resetExport();
+    onOpenChange(false);
+  };
+
+  // Handle stock import
+  const handleImportStock = () => {
+    if (productId && quantity > 0) {
+      const importData: ImportStockRequest = {
+        quantity,
+        unit_price: unitPrice,
+        reason
+      };
+      
+      importStock(importData, {
+        onSuccess: () => {
+          toast({
+            title: "Stock updated successfully",
+            description: `Added ${quantity} units to ${productName}`,
+            className: "bg-green-50 text-green-800 border-green-200",
+          });
+          setQuantity(0);
+          setUnitPrice(0);
+          setReason("");
+        },
+        onError: (error) => {
+          toast({
+            title: "Error updating stock",
+            description: error instanceof Error ? error.message : "An unexpected error occurred",
+            variant: "destructive",
+          });
+        }
+      });
+    } else {
+      toast({
+        title: "Invalid input",
+        description: "Please enter a valid quantity greater than zero",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle stock export
+  const handleExportStock = () => {
+    if (productId && quantity > 0) {
+      const exportData: ExportStockRequest = {
+        quantity,
+        unit_price: unitPrice,
+        reason
+      };
+      
+      exportStock(exportData, {
+        onSuccess: () => {
+          toast({
+            title: "Stock updated successfully",
+            description: `Removed ${quantity} units from ${productName}`,
+            className: "bg-green-50 text-green-800 border-green-200",
+          });
+          setQuantity(0);
+          setUnitPrice(0);
+          setReason("");
+        },
+        onError: (error) => {
+          toast({
+            title: "Error updating stock",
+            description: error instanceof Error 
+              ? error.message 
+              : "An unexpected error occurred. Make sure you have enough stock.",
+            variant: "destructive",
+          });
+        }
+      });
+    } else {
+      toast({
+        title: "Invalid input",
+        description: "Please enter a valid quantity greater than zero",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND"
+    }).format(amount);
+  };
+
+  // Handle movement type badge color
+  const getMovementTypeBadge = (type: string) => {
+    switch (type) {
+      case "import":
+        return <Badge className="bg-green-100 text-green-800 border-green-200">Import</Badge>;
+      case "export":
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Export</Badge>;
+      default:
+        return <Badge>{type}</Badge>;
+    }
+  };
+  
+  // Format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+    }).format(date);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleCloseDialog}>
+      <DialogContent className="sm:max-w-[600px] border border-indigo-200 bg-white">
+        <DialogHeader className="border-b border-indigo-100 pb-4">
+          <DialogTitle className="text-indigo-900">
+            Manage Stock - {productName}
+          </DialogTitle>
+          <DialogDescription className="text-indigo-500">
+            Current stock: <span className="font-medium text-indigo-700">{currentStock} units</span>
+          </DialogDescription>
+        </DialogHeader>
+
+        <Tabs value={stockDialogTab} onValueChange={setStockDialogTab} className="mt-2">
+          <TabsList className="grid grid-cols-3">
+            <TabsTrigger value="import" className="data-[state=active]:bg-green-100 data-[state=active]:text-green-800">
+              <ArrowDownCircle className="h-4 w-4 mr-2" />
+              Import
+            </TabsTrigger>
+            <TabsTrigger value="export" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-800">
+              <ArrowUpCircle className="h-4 w-4 mr-2" />
+              Export
+            </TabsTrigger>
+            <TabsTrigger value="history" className="data-[state=active]:bg-indigo-100 data-[state=active]:text-indigo-800">
+              <Clock className="h-4 w-4 mr-2" />
+              History
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="import">
+            <div className="space-y-4 p-1 pt-4">
+              <div>
+                <Label htmlFor="import-quantity" className="mb-1.5 block">Quantity to Import*</Label>
+                <Input
+                  id="import-quantity"
+                  type="number"
+                  placeholder="0"
+                  min="1"
+                  value={quantity || ""}
+                  onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+                  className="border-green-200 focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="import-unit-price" className="mb-1.5 block">Unit Price (VND)*</Label>
+                <Input
+                  id="import-unit-price"
+                  type="number"
+                  placeholder="0"
+                  min="0"
+                  value={unitPrice || ""}
+                  onChange={(e) => setUnitPrice(parseInt(e.target.value) || 0)}
+                  className="border-green-200 focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="import-reason" className="mb-1.5 block">Reason for Import</Label>
+                <Textarea
+                  id="import-reason"
+                  placeholder="E.g., Restocking, New shipment received, etc."
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={3}
+                  className="border-green-200 focus:border-green-500"
+                />
+              </div>
+
+              <Button
+                disabled={isImportLoading || quantity <= 0 || unitPrice <= 0}
+                onClick={handleImportStock}
+                className="w-full bg-green-600 hover:bg-green-700 text-white mt-2"
+              >
+                {isImportLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Importing...
+                  </>
+                ) : (
+                  <>
+                    <ArrowDownCircle className="h-4 w-4 mr-2" />
+                    Import Stock
+                  </>
+                )}
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="export">
+            <div className="space-y-4 p-1 pt-4">
+              <div>
+                <Label htmlFor="export-quantity" className="mb-1.5 block">Quantity to Export*</Label>
+                <Input
+                  id="export-quantity"
+                  type="number"
+                  placeholder="0"
+                  min="1"
+                  max={currentStock}
+                  value={quantity || ""}
+                  onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+                  className="border-blue-200 focus:border-blue-500"
+                />
+                {currentStock > 0 && (
+                  <p className="text-xs mt-1 text-blue-600">
+                    Maximum available: {currentStock} units
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="export-unit-price" className="mb-1.5 block">Unit Price (VND)*</Label>
+                <Input
+                  id="export-unit-price"
+                  type="number"
+                  placeholder="0"
+                  min="0"
+                  value={unitPrice || ""}
+                  onChange={(e) => setUnitPrice(parseInt(e.target.value) || 0)}
+                  className="border-blue-200 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="export-reason" className="mb-1.5 block">Reason for Export</Label>
+                <Textarea
+                  id="export-reason"
+                  placeholder="E.g., Used in treatment, Damaged items, etc."
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={3}
+                  className="border-blue-200 focus:border-blue-500"
+                />
+              </div>
+
+              <Button
+                disabled={isExportLoading || quantity <= 0 || quantity > currentStock}
+                onClick={handleExportStock}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-2"
+              >
+                {isExportLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <ArrowUpCircle className="h-4 w-4 mr-2" />
+                    Export Stock
+                  </>
+                )}
+              </Button>
+
+              {quantity > currentStock && (
+                <p className="text-xs text-red-500 flex items-center mt-1">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Cannot export more than current stock
+                </p>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="history">
+            <div className="p-1 pt-4">
+              <h3 className="text-sm font-medium text-indigo-900 mb-2">Stock Movement History</h3>
+              
+              {isMovementsLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+                </div>
+              ) : movements.length === 0 ? (
+                <div className="text-center py-6 bg-gray-50 rounded-md border border-dashed border-gray-200">
+                  <Clock className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-500">No stock movements found for this product</p>
+                </div>
+              ) : (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[90px]">Type</TableHead>
+                        <TableHead className="w-[60px] text-right">Qty</TableHead>
+                        <TableHead className="text-right">Unit Price</TableHead>
+                        <TableHead>Reason</TableHead>
+                        <TableHead className="text-right">Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {movements.map((movement) => (
+                        <TableRow key={movement.id}>
+                          <TableCell>{getMovementTypeBadge(movement.movement_type)}</TableCell>
+                          <TableCell className="text-right font-medium">
+                            {movement.quantity}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(movement.price || 0)}
+                          </TableCell>
+                          <TableCell className="max-w-[120px] truncate">
+                            {movement.reason || "-"}
+                          </TableCell>
+                          <TableCell className="text-right text-gray-500 text-xs">
+                            {formatDate(movement.movement_date)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  
+                  {pagination.totalPages > 1 && (
+                    <div className="flex justify-center mt-4 space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setHistoryPage(prev => Math.max(1, prev - 1))}
+                        disabled={historyPage === 1}
+                        className="h-8 w-8 p-0 border-indigo-200"
+                      >
+                        &lt;
+                      </Button>
+                      <span className="text-sm flex items-center px-2 bg-indigo-50 rounded-md">
+                        {historyPage} of {pagination.totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setHistoryPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                        disabled={historyPage === pagination.totalPages}
+                        className="h-8 w-8 p-0 border-indigo-200"
+                      >
+                        &gt;
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const ProductManagement: React.FC = () => {
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -76,6 +476,8 @@ const ProductManagement: React.FC = () => {
     const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [stockDialogOpen, setStockDialogOpen] = useState(false);
+    const [stockDialogProduct, setStockDialogProduct] = useState<Product | null>(null);
 
     // Form state
     const [formData, setFormData] = useState<CreateProductRequest>({
@@ -90,6 +492,7 @@ const ProductManagement: React.FC = () => {
     // Hooks
     const { toast } = useToast();
     const { products, pagination, isLoading: isLoadingProducts, error: productsError, refetch } = useProducts(currentPage, pageSize);
+    console.log("pagination", pagination);
     console.log("testing", products);
     const { createProduct, isLoading: isCreating } = useCreateProduct();
 
@@ -133,6 +536,12 @@ const ProductManagement: React.FC = () => {
     const handleOpenDeleteDialog = (id: number) => {
         setSelectedProductId(id);
         setDeleteConfirmOpen(true);
+    };
+
+    // Handle opening stock management dialog
+    const handleOpenStockDialog = (product: Product) => {
+        setStockDialogProduct(product);
+        setStockDialogOpen(true);
     };
 
     // Handle form input changes
@@ -291,8 +700,8 @@ const ProductManagement: React.FC = () => {
                                                     />
                                                 </div>
                                             )}
-                                            {/* <div className="flex justify-between items-center"> */}
-                                                {/* <div className="flex items-center text-sm text-indigo-600">
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center text-sm text-indigo-600">
                                                     <span className={`w-3 h-3 rounded-full mr-2 ${product.isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></span>
                                                     {product.isAvailable ? 'Available' : 'Unavailable'}
                                                 </div>
@@ -300,10 +709,19 @@ const ProductManagement: React.FC = () => {
                                             </div>
                                             {product.description && (
                                                 <p className="text-sm text-gray-600">{product.description}</p>
-                                            )} */}
+                                            )}
                                             <div className="bg-blue-50 p-2 rounded-md text-xs text-blue-800 border border-blue-200">
                                                 <strong>In Stock:</strong> {product.stock} units
                                             </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="border-indigo-300 text-indigo-700 hover:bg-indigo-100 mt-2"
+                                                onClick={() => handleOpenStockDialog(product)}
+                                            >
+                                                <ShoppingBag className="h-4 w-4 mr-2" />
+                                                Manage Stock
+                                            </Button>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -312,43 +730,48 @@ const ProductManagement: React.FC = () => {
                     )}
 
                     {/* Pagination */}
-                    {pagination && pagination.totalPages > 1 && (
-                        <div className="flex justify-center items-center space-x-2 mt-6">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handlePageChange(currentPage - 1)}
-                                disabled={currentPage === 1}
-                                className="border-indigo-200 text-indigo-600"
-                            >
-                                Previous
-                            </Button>
-                            {Array.from({ length: pagination.totalPages }).map((_, index) => (
+                    {/* {pagination && pagination.totalPages > 0 && (
+                        <div className="flex flex-col items-center space-y-4 mt-8 pb-4">
+                            <p className="text-sm text-indigo-600 font-medium">
+                                Page {pagination.page} of {pagination.totalPages} • Showing {filteredProducts.length} of {pagination.total} products
+                            </p>
+                            <div className="flex justify-center items-center space-x-2 bg-indigo-50 px-4 py-3 rounded-lg shadow-sm border border-indigo-100">
                                 <Button
-                                    key={index}
-                                    variant={currentPage === index + 1 ? "default" : "outline"}
+                                    variant="outline"
                                     size="sm"
-                                    onClick={() => handlePageChange(index + 1)}
-                                    className={
-                                        currentPage === index + 1
-                                            ? "bg-indigo-600 text-white"
-                                            : "border-indigo-200 text-indigo-600"
-                                    }
+                                    onClick={() => handlePageChange(pagination.page - 1)}
+                                    disabled={pagination.page === 1}
+                                    className="border-indigo-300 text-indigo-700 hover:bg-indigo-100"
                                 >
-                                    {index + 1}
+                                    Previous
                                 </Button>
-                            ))}
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handlePageChange(currentPage + 1)}
-                                disabled={currentPage === pagination.totalPages}
-                                className="border-indigo-200 text-indigo-600"
-                            >
-                                Next
-                            </Button>
+                                {Array.from({ length: pagination.totalPages }).map((_, index) => (
+                                    <Button
+                                        key={index}
+                                        variant={pagination.page === index + 1 ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => handlePageChange(index + 1)}
+                                        className={
+                                            pagination.page === index + 1
+                                                ? "bg-indigo-600 text-white font-bold hover:bg-indigo-700"
+                                                : "border-indigo-300 text-indigo-700 hover:bg-indigo-100"
+                                        }
+                                    >
+                                        {index + 1}
+                                    </Button>
+                                ))}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(pagination.page + 1)}
+                                    disabled={pagination.page === pagination.totalPages}
+                                    className="border-indigo-300 text-indigo-700 hover:bg-indigo-100"
+                                >
+                                    Next
+                                </Button>
+                            </div>
                         </div>
-                    )}
+                    )} */}
                 </div>
 
                 {/* Add/Edit Dialog */}
@@ -523,6 +946,17 @@ const ProductManagement: React.FC = () => {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+
+                {/* Stock Management Dialog */}
+                {stockDialogProduct && (
+                    <StockManagementDialog
+                        open={stockDialogOpen}
+                        onOpenChange={setStockDialogOpen}
+                        productId={stockDialogProduct.productId}
+                        productName={stockDialogProduct.name}
+                        currentStock={stockDialogProduct.stock}
+                    />
+                )}
             </div>
         </div>
     );
