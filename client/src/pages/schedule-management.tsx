@@ -48,7 +48,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Doctor, WorkShift, WorkScheduleFilters } from "@/types";
+import { Doctor, WorkShift, WorkScheduleFilters, DoctorDetail } from "@/types";
 import {
   Table,
   TableHeader,
@@ -59,78 +59,8 @@ import {
 } from "@/components/ui/table";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-
-// Mock data - replace with actual API calls
-const mockDoctors: Doctor[] = [
-  {
-    doctor_id: 1,
-    doctor_name: "Dr. John Smith",
-    doctor_specialty: "Surgery",
-    doctor_phone: "123-456-7890",
-    doctor_email: "john.smith@vetclinic.com",
-    role: "senior",
-  },
-  {
-    doctor_id: 2,
-    doctor_name: "Dr. Maria Garcia",
-    doctor_specialty: "Internal Medicine",
-    doctor_phone: "123-456-7891",
-    doctor_email: "maria.garcia@vetclinic.com",
-    role: "senior",
-  },
-  {
-    doctor_id: 3,
-    doctor_name: "Dr. Sarah Johnson",
-    doctor_specialty: "Dermatology",
-    doctor_phone: "123-456-7892",
-    doctor_email: "sarah.johnson@vetclinic.com",
-    role: "junior",
-  },
-];
-
-const mockShifts: WorkShift[] = [
-  {
-    id: "1",
-    title: "Morning Shift",
-    start_time: new Date(new Date().setHours(8, 0, 0, 0)),
-    end_time: new Date(new Date().setHours(16, 0, 0, 0)),
-    doctor_id: "1",
-    status: "scheduled",
-    location: "Main Building, Room 101",
-    created_at: new Date(new Date().setDate(new Date().getDate() - 7)),
-  },
-  {
-    id: "2",
-    title: "Evening Shift",
-    start_time: new Date(new Date().setHours(16, 0, 0, 0)),
-    end_time: new Date(new Date().setHours(24, 0, 0, 0)),
-    doctor_id: "2",
-    status: "scheduled",
-    location: "Main Building, Room 102",
-    created_at: new Date(new Date().setDate(new Date().getDate() - 7)),
-  },
-  {
-    id: "3",
-    title: "Surgery Shift",
-    start_time: new Date(new Date().setDate(new Date().getDate() + 1)),
-    end_time: new Date(new Date().setDate(new Date().getDate() + 1)),
-    doctor_id: "1",
-    status: "scheduled",
-    description: "Scheduled for surgeries only",
-    location: "Surgery Wing, Room 3",
-    created_at: new Date(new Date().setDate(new Date().getDate() - 5)),
-  },
-  {
-    id: "4",
-    title: "Weekend Shift",
-    start_time: new Date(new Date().setDate(new Date().getDate() + 3)),
-    end_time: new Date(new Date().setDate(new Date().getDate() + 3)),
-    doctor_id: "3",
-    status: "scheduled",
-    location: "Main Building, Reception",
-    created_at: new Date(new Date().setDate(new Date().getDate() - 14)),
-  },
-];
+import { useDoctors } from "@/hooks/use-doctors";
+import { useGetAllShifts, useShiftMutations } from "@/hooks/use-shifts";
 
 const ScheduleManagement = () => {
   const [userRole, setUserRole] = useState<"doctor" | "admin">("admin"); // For demo, toggle this to show different views
@@ -138,10 +68,15 @@ const ScheduleManagement = () => {
 
   // State for UI
   const [view, setView] = useState<"calendar" | "list">("calendar");
-  const [doctors, setDoctors] = useState<Doctor[]>(mockDoctors);
-  const [shifts, setShifts] = useState<WorkShift[]>(mockShifts);
-  const [filteredShifts, setFilteredShifts] = useState<WorkShift[]>(mockShifts);
   const [filters, setFilters] = useState<WorkScheduleFilters>({});
+
+  // Fetch data using hooks
+  const { data: doctorsData } = useDoctors();
+  const { data: shiftsData, isLoading: shiftsLoading } = useGetAllShifts();
+  const { createMutation, updateMutation, deleteMutation } = useShiftMutations();
+  
+  // Derived state
+  const [filteredShifts, setFilteredShifts] = useState<WorkShift[]>([]);
 
   // Modal states
   const [isAddShiftOpen, setIsAddShiftOpen] = useState(false);
@@ -149,9 +84,14 @@ const ScheduleManagement = () => {
   const [isViewShiftOpen, setIsViewShiftOpen] = useState(false);
   const [selectedShift, setSelectedShift] = useState<WorkShift | null>(null);
 
+  // Update filtered shifts whenever source data changes
   useEffect(() => {
-    // Apply filters
-    let filtered = [...shifts];
+    if (!shiftsData) {
+      setFilteredShifts([]);
+      return;
+    }
+
+    let filtered = [...shiftsData];
 
     if (filters.doctorId) {
       filtered = filtered.filter(
@@ -171,17 +111,14 @@ const ScheduleManagement = () => {
       );
     }
 
-    if (filters.status) {
-      filtered = filtered.filter((shift) => shift.status === filters.status);
-    }
-
+  
     // For doctor view, only show their shifts
     if (userRole === "doctor") {
       filtered = filtered.filter((shift) => shift.doctor_id === currentDoctorId);
     }
 
     setFilteredShifts(filtered);
-  }, [shifts, filters, userRole, currentDoctorId]);
+  }, [shiftsData, filters, userRole, currentDoctorId]);
 
   // For demo, toggle between doctor and admin views
   const toggleUserRole = () => {
@@ -200,70 +137,70 @@ const ScheduleManagement = () => {
 
   const handleDeleteShift = () => {
     if (selectedShift) {
-      // In a real app, call API to delete shift
-      setShifts(shifts.filter((s) => s.id !== selectedShift.id));
-      setIsViewShiftOpen(false);
-      setSelectedShift(null);
+      deleteMutation.mutate(Number(selectedShift.id), {
+        onSuccess: () => {
+          setIsViewShiftOpen(false);
+          setSelectedShift(null);
+        }
+      });
     }
   };
 
   const handleCreateShift = (data: any) => {
-    // In a real app, call API to create shift
-    const newShift: WorkShift = {
-      id: Math.random().toString(36).substring(7),
+    const shiftData = {
       title: data.title,
-      doctor_id: data.doctor_id,
+      doctor_id: Number(data.doctorId),
       start_time: new Date(
         data.date.setHours(
-          parseInt(data.start_time.split(":")[0]),
-          parseInt(data.start_time.split(":")[1])
+          parseInt(data.startTime.split(":")[0]),
+          parseInt(data.startTime.split(":")[1])
         )
       ),
       end_time: new Date(
         data.date.setHours(
-          parseInt(data.end_time.split(":")[0]),
-          parseInt(data.end_time.split(":")[1])
+          parseInt(data.endTime.split(":")[0]),
+          parseInt(data.endTime.split(":")[1])
         )
       ),
-      status: data.status,
-      location: data.location,
       description: data.description,
-      created_at: new Date(),
     };
 
-    setShifts([...shifts, newShift]);
-    setIsAddShiftOpen(false);
+    createMutation.mutate(shiftData, {
+      onSuccess: () => {
+        setIsAddShiftOpen(false);
+      }
+    });
   };
 
   const handleUpdateShift = (data: any) => {
     if (selectedShift) {
-      // In a real app, call API to update shift
-      const updatedShift: WorkShift = {
-        ...selectedShift,
-        title: data.title,
-        doctor_id: data.doctor_id,
-        start_time: new Date(
-          data.date.setHours(
-            parseInt(data.start_time.split(":")[0]),
-            parseInt(data.start_time.split(":")[1])
-          )
-        ),
-        end_time: new Date(
-          data.date.setHours(
-            parseInt(data.end_time.split(":")[0]),
-            parseInt(data.end_time.split(":")[1])
-          )
-        ),
-        status: data.status,
-        location: data.location,
-        description: data.description,
+      const updatedData = {
+        id: Number(selectedShift.id),
+        data: {
+          title: data.title,
+          doctor_id: Number(data.doctorId),
+          start_time: new Date(
+            data.date.setHours(
+              parseInt(data.startTime.split(":")[0]),
+              parseInt(data.startTime.split(":")[1])
+            )
+          ),
+          end_time: new Date(
+            data.date.setHours(
+              parseInt(data.endTime.split(":")[0]),
+              parseInt(data.endTime.split(":")[1])
+            )
+          ),
+          description: data.description,
+        }
       };
 
-      setShifts(
-        shifts.map((s) => (s.id === selectedShift.id ? updatedShift : s))
-      );
-      setIsEditShiftOpen(false);
-      setSelectedShift(null);
+      updateMutation.mutate(updatedData, {
+        onSuccess: () => {
+          setIsEditShiftOpen(false);
+          setSelectedShift(null);
+        }
+      });
     }
   };
 
@@ -282,16 +219,20 @@ const ScheduleManagement = () => {
   };
 
   const getSelectedDoctor = () => {
-    if (!selectedShift) return undefined;
-    return doctors.find(
-      (d) => d.doctor_id.toString() === selectedShift.doctor_id
+    if (!selectedShift || !doctorsData?.data) return undefined;
+    
+    const doctor = doctorsData.data.find(
+      (d: Doctor) => d.doctor_id.toString() === selectedShift.doctor_id.toString()
     );
+    
+    console.log("Found doctor for shift:", doctor);
+    return doctor;
   };
 
   // Data for the list view
   const tableData = filteredShifts.map((shift) => {
-    const doctor = doctors.find(
-      (d) => d.doctor_id.toString() === shift.doctor_id
+    const doctor = doctorsData?.data?.find(
+      (d : Doctor ) => d.doctor_id.toString() === shift.doctor_id
     );
     return {
       ...shift,
@@ -396,7 +337,7 @@ const ScheduleManagement = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-indigo-900">{doctors.length}</div>
+                <div className="text-2xl font-bold text-indigo-900">{doctorsData?.data?.length || 0}</div>
                 <p className="text-xs text-indigo-500 mt-1">Available for scheduling</p>
               </CardContent>
             </Card>
@@ -501,7 +442,7 @@ const ScheduleManagement = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">All Doctors</SelectItem>
-                            {doctors?.map(doctor => (
+                            {doctorsData?.data?.map((doctor: Doctor) => (
                               <SelectItem 
                                 key={doctor.doctor_id} 
                                 value={doctor.doctor_id.toString()}
@@ -513,24 +454,7 @@ const ScheduleManagement = () => {
                         </Select>
                       </div>
                     )}
-                    
-                    <div className="p-2 border-t">
-                      <p className="text-sm font-medium mb-2">Status</p>
-                      <Select 
-                        value={filters.status || 'all'} 
-                        onValueChange={(value) => handleFilterByStatus(value as any)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="All Statuses" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Statuses</SelectItem>
-                          <SelectItem value="scheduled">Scheduled</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  
                     
                     <DropdownMenuItem 
                       className="justify-center text-center cursor-pointer"
@@ -551,7 +475,7 @@ const ScheduleManagement = () => {
               <div className="bg-white rounded-lg border border-indigo-100 overflow-hidden">
                 <DoctorScheduleCalendar
                   shifts={filteredShifts}
-                  doctors={doctors}
+                  doctors={doctorsData?.data}
                   onClickShift={handleViewShift}
                   userRole={userRole}
                   currentDoctorId={currentDoctorId}
@@ -572,12 +496,9 @@ const ScheduleManagement = () => {
                     <Table>
                       <TableHeader className="bg-indigo-50">
                         <TableRow>
-                          <TableHead>Shift Title</TableHead>
                           <TableHead>Doctor</TableHead>
                           <TableHead>Date</TableHead>
                           <TableHead>Time</TableHead>
-                          <TableHead>Location</TableHead>
-                          <TableHead>Status</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -589,22 +510,12 @@ const ScheduleManagement = () => {
                               className="cursor-pointer hover:bg-indigo-50/30"
                               onClick={() => handleViewShift(shift)}
                             >
-                              <TableCell className="font-medium">{shift.title}</TableCell>
-                              <TableCell>{shift.doctorName}</TableCell>
+                              <TableCell>{shift.doctor_name}</TableCell>
                               <TableCell>{format(new Date(shift.start_time), 'PPP')}</TableCell>
                               <TableCell>
                                 {format(new Date(shift.start_time), 'HH:mm')} - {format(new Date(shift.end_time), 'HH:mm')}
                               </TableCell>
-                              <TableCell>{shift.location}</TableCell>
-                              <TableCell>
-                                <Badge className={`
-                                  ${shift.status === 'scheduled' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                                  shift.status === 'completed' ? 'bg-green-100 text-green-800 border-green-200' :
-                                  'bg-red-100 text-red-800 border-red-200'}
-                                `}>
-                                  {shift.status}
-                                </Badge>
-                              </TableCell>
+                            
                               <TableCell>
                                 <Button
                                   variant="ghost"
@@ -647,7 +558,7 @@ const ScheduleManagement = () => {
             </DialogDescription>
           </DialogHeader>
           <ShiftForm
-            doctors={doctors}
+            doctors={doctorsData?.data}
             onSubmit={handleCreateShift}
             onCancel={() => setIsAddShiftOpen(false)}
           />
@@ -666,7 +577,7 @@ const ScheduleManagement = () => {
             </DialogHeader>
             <ShiftForm
               shift={selectedShift}
-              doctors={doctors}
+              doctors={doctorsData?.data}
               onSubmit={handleUpdateShift}
               onCancel={() => setIsEditShiftOpen(false)}
             />

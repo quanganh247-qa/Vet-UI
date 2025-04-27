@@ -8,11 +8,13 @@ import {
   Loader2,
   ArrowLeft,
   UserCog,
+  Layers,
 } from 'lucide-react';
 
 import CustomCalendar from '@/components/doctor-schedule/CustomCalendar';
 import ShiftForm from '@/components/doctor-schedule/ShiftForm';
 import ShiftDetailsDialog from '@/components/doctor-schedule/ShiftDetailsDialog';
+import ShiftTemplateManager, { ShiftTemplate, defaultShiftTemplates } from '@/components/doctor-schedule/ShiftTemplateManager';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -65,6 +67,10 @@ const ShiftManagement = () => {
   const [isAddShiftOpen, setIsAddShiftOpen] = useState(false);
   const [isEditShiftOpen, setIsEditShiftOpen] = useState(false);
   const [isViewShiftOpen, setIsViewShiftOpen] = useState(false);
+  const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
+  
+  // Template state
+  const [shiftTemplates, setShiftTemplates] = useState<ShiftTemplate[]>(defaultShiftTemplates);
 
   // Data fetching
   const { data: doctorProfile, isLoading: profileLoading } = useDoctorProfile();
@@ -74,7 +80,7 @@ const ShiftManagement = () => {
   const { 
     data: shifts = [], 
     isLoading: shiftsLoading,
-  } = useShifts(userRole === 'doctor' ? currentDoctorId : undefined);
+  } = useShifts(currentDoctorId);
   
   const { createMutation, deleteMutation } = useShiftMutations();
 
@@ -279,25 +285,58 @@ const ShiftManagement = () => {
     window.history.back();
   }, []);
 
+  const handleOpenTemplateManager = useCallback(() => {
+    setIsTemplateManagerOpen(true);
+  }, []);
+
   // Helper functions
   const getSelectedDoctor = useCallback(() => {
-    if (!selectedShift) return undefined;
-    return doctors.find(
-      (d: Doctor) => d.doctor_id.toString() === selectedShift.doctor_id.toString()
+    if (!selectedShift || !selectedShift.doctor_id) return undefined;
+    
+    // More robust doctor lookup with console logging for debugging
+    const doctor = doctors?.find((d: Doctor) => 
+      d.doctor_id && selectedShift.doctor_id && 
+      d.doctor_id.toString() === selectedShift.doctor_id.toString()
     );
+    
+    return doctor;
   }, [selectedShift, doctors]);
 
-  const convertToWorkShift = useCallback((shift: Shift): WorkShift => ({
-    id: shift.id.toString(),
-    title: shift.title || `Shift #${shift.id}`,
-    start_time: shift.start_time,
-    end_time: shift.end_time,
-    doctor_id: shift.doctor_id?.toString(),
-    status: shift.status || 'scheduled',
-    location: shift.location,
-    description: shift.description,
-    created_at: shift.created_at,
-  }), []);
+  const convertToWorkShift = useCallback((shift: Shift): WorkShift => {
+    if (!shift) {
+      console.error('Attempted to convert undefined shift');
+      return {
+        id: 'unknown',
+        title: 'Unknown Shift',
+        start_time: new Date(),
+        end_time: new Date(),
+        doctor_id: '',
+        doctor_name: 'Unknown Doctor',
+        status: 'scheduled',
+        created_at: new Date()
+      };
+    }
+    
+    // Find doctor with proper type conversion for IDs
+    const doctor = doctors.find((d: Doctor) => 
+      d.doctor_id && shift.doctor_id && 
+      d.doctor_id.toString() === shift.doctor_id.toString()
+    );
+
+    // Ensure all fields are properly set
+    return {
+      id: shift.id ? shift.id.toString() : 'unknown',
+      title: shift.title || `Shift #${shift.id || 'New'}`,
+      start_time: shift.start_time || new Date(),
+      end_time: shift.end_time || new Date(),
+      doctor_id: shift.doctor_id ? shift.doctor_id.toString() : '',
+      doctor_name: doctor ? doctor.doctor_name : 'Unknown Doctor',
+      status: shift.status || 'scheduled',
+      location: shift.location || 'Not specified',
+      description: shift.description || '',
+      created_at: shift.created_at || new Date(),
+    };
+  }, [doctors]);
 
   // Loading state
   if (profileLoading || doctorsLoading) {
@@ -414,6 +453,15 @@ const ShiftManagement = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
+
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={handleOpenTemplateManager}
+              >
+                <Layers className="h-4 w-4" />
+                Templates
+              </Button>
             </div>
           </div>
 
@@ -439,11 +487,7 @@ const ShiftManagement = () => {
             ) : (
               <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
                 <CustomCalendar
-                  shifts={filteredShifts.map(shift => ({
-                    ...convertToWorkShift(shift),
-                    start_time: new Date(shift.start_time),
-                    end_time: new Date(shift.end_time)
-                  }))}
+                  shifts={filteredShifts.map(shift => convertToWorkShift(shift))}
                   doctors={doctors}
                   onClickShift={(workShift) => {
                     const shift = shifts.find(s => s.id.toString() === workShift.id);
@@ -561,6 +605,7 @@ const ShiftManagement = () => {
               specialization: doctorProfile?.specialization || '',
               role: doctorProfile?.role || '',
             }]}
+            templates={shiftTemplates}
             onSubmit={handleCreateShift}
             onCancel={() => setIsAddShiftOpen(false)}
           />
@@ -604,6 +649,32 @@ const ShiftManagement = () => {
           userRole={userRole}
         />
       )}
+
+      {/* Template Manager Dialog */}
+      <Dialog open={isTemplateManagerOpen} onOpenChange={setIsTemplateManagerOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Shift Templates</DialogTitle>
+            <DialogDescription>
+              Manage predefined shift templates for quick scheduling
+            </DialogDescription>
+          </DialogHeader>
+          <ShiftTemplateManager
+            templates={shiftTemplates}
+            onAddTemplate={(template) => {
+              setShiftTemplates(prev => [...prev, template]);
+            }}
+            onEditTemplate={(id, template) => {
+              setShiftTemplates(prev => 
+                prev.map(t => t.id === id ? template : t)
+              );
+            }}
+            onDeleteTemplate={(id) => {
+              setShiftTemplates(prev => prev.filter(t => t.id !== id));
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

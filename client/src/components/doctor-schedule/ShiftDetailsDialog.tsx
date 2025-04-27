@@ -84,18 +84,6 @@ const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
               </p>
             </div>
           </div>
-
-          {/* Location if available */}
-          {shift.location && (
-            <div className="flex items-start">
-              <MapPin className="h-5 w-5 mr-2 mt-0.5 text-gray-500" />
-              <div>
-                <h4 className="font-medium">Location</h4>
-                <p className="text-sm text-gray-500">{shift.location}</p>
-              </div>
-            </div>
-          )}
-
           {/* Description if available */}
           {shift.description && (
             <div className="flex items-start">
@@ -119,7 +107,7 @@ const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <div className="space-x-2">
+          <div className="space-x-2 ">
             {userRole === 'admin' && onDelete && (
               <Button variant="destructive" onClick={onDelete}>
                 <Trash className="h-4 w-4 mr-2" />
@@ -127,7 +115,7 @@ const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
               </Button>
             )}
             {(userRole === 'admin' || userRole === 'doctor') && onEdit && (
-              <Button onClick={onEdit}>
+              <Button onClick={onEdit} className=' bg-indigo-600 hover:bg-indigo-700 text-white'>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
               </Button>

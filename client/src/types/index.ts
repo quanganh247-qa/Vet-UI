@@ -542,6 +542,7 @@ export interface WorkShift {
   start_time: Date;
   end_time: Date;
   doctor_id: string;
+  doctor_name: string;
   description?: string;
   status: 'scheduled' | 'completed' | 'cancelled';
   location?: string;

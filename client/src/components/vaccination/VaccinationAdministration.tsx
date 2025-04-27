@@ -47,7 +47,7 @@ import {
 } from "@/services/appointment-services";
 import { useGetTestByAppointmentID } from "@/hooks/use-test";
 import { useAllVaccines, useSaveVaccinationRecord } from "@/hooks/use-vaccine";
-
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface VaccinationAdministrationProps {
   appointmentId?: string;
@@ -240,328 +240,334 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
   };
 
   return (
-    <Card className="w-full shadow-md border-none overflow-hidden">
-      <CardContent className="pt-6 pb-2">
-        {isCompleted ? (
-          <div className="flex flex-col items-center justify-center py-6">
-            <div className="rounded-full bg-green-100 p-3 mb-4">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">
-              Vaccination Complete
-            </h3>
-            <p className="text-gray-500 text-center mb-6">
-              {vaccinationData.vaccine_name} vaccine has been administered
-              successfully.
-            </p>
-            <div className="bg-blue-50 rounded-lg p-4 w-full">
-              <h4 className="font-medium text-blue-700 mb-2">
-                Vaccination Details
-              </h4>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                <div>
-                  <p className="text-gray-500">Vaccine</p>
-                  <p className="font-medium">{vaccinationData.vaccine_name}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Batch #</p>
-                  <p className="font-medium">{vaccinationData.batch_number}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Date</p>
-                  <p className="font-medium">
-                    {vaccinationData.date_administered}
+    <ScrollArea className="h-[calc(80vh-120px)]">
+      <div className="space-y-6 p-4 bg-white">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Card className="w-full shadow-md border-none overflow-hidden">
+            <CardContent className="pt-6 pb-2">
+              {isCompleted ? (
+                <div className="flex flex-col items-center justify-center py-6">
+                  <div className="rounded-full bg-green-100 p-3 mb-4">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">
+                    Vaccination Complete
+                  </h3>
+                  <p className="text-gray-500 text-center mb-6">
+                    {vaccinationData.vaccine_name} vaccine has been administered
+                    successfully.
                   </p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Next Due</p>
-                  <p className="font-medium">{vaccinationData.next_due_date}</p>
-                </div>
-                {selectedAppointment && (
-                  <div className="col-span-2">
-                    <p className="text-gray-500">Pet</p>
-                    <p className="font-medium">{selectedAppointment.pet.pet_name}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Appointment Selection Section */}
-            <div className="bg-indigo-50 rounded-lg p-4 mb-4">
-              <h3 className="font-medium text-indigo-700 mb-3">
-                Select Appointment
-              </h3>
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex-1">
-                    <Label htmlFor="appointment-date" className="mb-1 block">
-                      Appointment Date
-                    </Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          id="appointment-date"
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !selectedDate && "text-muted-foreground"
-                          )}
-                        >
-                          <Calendar className="mr-2 h-4 w-4" />
-                          {selectedDate ? (
-                            format(selectedDate, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <CalendarComponent
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={setSelectedDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div className="flex-1">
-                    <Label htmlFor="appointment-select" className="mb-1 block">
-                      Select Appointment
-                    </Label>
-                    <Select
-                      onValueChange={setSelectedAppointmentId}
-                      value={selectedAppointmentId}
-                      disabled={
-                        isLoadingAppointments
-                      }
-                    >
-                      <SelectTrigger id="appointment-select" className="w-full">
-                        <SelectValue
-                          placeholder={
-                            isLoadingAppointments
-                              ? "Loading..."
-                              : "Select appointment"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {appointments.map((appointment) => (
-                          <SelectItem
-                            key={appointment.id}
-                            value={appointment.id.toString()}
-                          >
-                            {(() => {
-                              try {
-                                return appointment.id;
-                              } catch (error) {
-                                return "Invalid time";
-                              }
-                            })()}{" "}
-                            - {appointment.pet.pet_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {selectedAppointment && (
-                  <div className="bg-white rounded-md p-3 border border-indigo-100">
-                    <div className="flex items-center mb-2">
-                      <User className="h-4 w-4 text-indigo-500 mr-1" />
-                      <h4 className="font-medium text-indigo-700">
-                        Appointment Details
-                      </h4>
-                    </div>
+                  <div className="bg-blue-50 rounded-lg p-4 w-full">
+                    <h4 className="font-medium text-blue-700 mb-2">
+                      Vaccination Details
+                    </h4>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                       <div>
-                        <p className="text-gray-500">Pet Name</p>
+                        <p className="text-gray-500">Vaccine</p>
+                        <p className="font-medium">{vaccinationData.vaccine_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Batch #</p>
+                        <p className="font-medium">{vaccinationData.batch_number}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Date</p>
                         <p className="font-medium">
-                          {selectedAppointment.pet.pet_name}
+                          {vaccinationData.date_administered}
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-500">Owner</p>
-                        <p className="font-medium">
-                          {selectedAppointment.owner.owner_name}
-                        </p>
+                        <p className="text-gray-500">Next Due</p>
+                        <p className="font-medium">{vaccinationData.next_due_date}</p>
                       </div>
-                      <div>
-                        <p className="text-gray-500">Time</p>
-                        <p className="font-medium">
-                          {(() => {
-                            try {
-                              return formatDate(selectedAppointment.arrival_time, "HH:mm");
-                            } catch (error) {
-                              return "Invalid time format";
+                      {selectedAppointment && (
+                        <div className="col-span-2">
+                          <p className="text-gray-500">Pet</p>
+                          <p className="font-medium">{selectedAppointment.pet.pet_name}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Appointment Selection Section */}
+                  <div className="bg-indigo-50 rounded-lg p-4 mb-4">
+                    <h3 className="font-medium text-indigo-700 mb-3">
+                      Select Appointment
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-1">
+                          <Label htmlFor="appointment-date" className="mb-1 block">
+                            Appointment Date
+                          </Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                id="appointment-date"
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !selectedDate && "text-muted-foreground"
+                                )}
+                              >
+                                <Calendar className="mr-2 h-4 w-4" />
+                                {selectedDate ? (
+                                  format(selectedDate, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <CalendarComponent
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={setSelectedDate}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+
+                        <div className="flex-1">
+                          <Label htmlFor="appointment-select" className="mb-1 block">
+                            Select Appointment
+                          </Label>
+                          <Select
+                            onValueChange={setSelectedAppointmentId}
+                            value={selectedAppointmentId}
+                            disabled={
+                              isLoadingAppointments
                             }
-                          })()}
-                        </p>
+                          >
+                            <SelectTrigger id="appointment-select" className="w-full">
+                              <SelectValue
+                                placeholder={
+                                  isLoadingAppointments
+                                    ? "Loading..."
+                                    : "Select appointment"
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {appointments.map((appointment) => (
+                                <SelectItem
+                                  key={appointment.id}
+                                  value={appointment.id.toString()}
+                                >
+                                  {(() => {
+                                    try {
+                                      return appointment.id;
+                                    } catch (error) {
+                                      return "Invalid time";
+                                    }
+                                  })()}{" "}
+                                  - {appointment.pet.pet_name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
+
+                      {selectedAppointment && (
+                        <div className="bg-white rounded-md p-3 border border-indigo-100">
+                          <div className="flex items-center mb-2">
+                            <User className="h-4 w-4 text-indigo-500 mr-1" />
+                            <h4 className="font-medium text-indigo-700">
+                              Appointment Details
+                            </h4>
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                            <div>
+                              <p className="text-gray-500">Pet Name</p>
+                              <p className="font-medium">
+                                {selectedAppointment.pet.pet_name}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500">Owner</p>
+                              <p className="font-medium">
+                                {selectedAppointment.owner.owner_name}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500">Time</p>
+                              <p className="font-medium">
+                                {(() => {
+                                  try {
+                                    return formatDate(selectedAppointment.arrival_time, "HH:mm");
+                                  } catch (error) {
+                                    return "Invalid time format";
+                                  }
+                                })()}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500">Reason</p>
+                              <p className="font-medium">
+                                {selectedAppointment.reason}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6">
+                    <div className="space-y-4">
                       <div>
-                        <p className="text-gray-500">Reason</p>
-                        <p className="font-medium">
-                          {selectedAppointment.reason}
-                        </p>
+                        <Label htmlFor="vaccine">Select Vaccine</Label>
+                        <Select
+                          onValueChange={handleVaccineSelect}
+                          value={vaccinationData.vaccine_name}
+                          disabled={isLoadingVaccines || !allVaccines?.length}
+                        >
+                          <SelectTrigger id="vaccine" className="w-full">
+                            <SelectValue 
+                              placeholder={
+                                isLoadingVaccines 
+                                  ? "Loading vaccines..." 
+                                  : !allVaccines?.length 
+                                    ? "No vaccines available" 
+                                    : "Select a vaccine"
+                              } 
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {allVaccines && allVaccines.length > 0 ? (
+                              allVaccines.map((vaccine: TestByAppointment) => (
+                                <SelectItem 
+                                  key={vaccine.test_id || `vaccine-${Math.random()}`} 
+                                  value={vaccine.test_name || "Unknown Vaccine"}
+                                >
+                                  {vaccine.test_name || "Unknown Vaccine"} 
+                                  {vaccine.batch_number ? `(${vaccine.batch_number})` : ""}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no-vaccines" disabled>
+                                No vaccines available
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        {selectedAppointmentId && !allVaccines?.length && !isLoadingVaccines && (
+                          <p className="text-amber-600 text-xs mt-1">
+                            No vaccines available for this appointment. Please select a different appointment.
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="batch_number">Batch Number</Label>
+                        <Input
+                          id="batch_number"
+                          name="batch_number"
+                          value={vaccinationData.batch_number}
+                          onChange={handleInputChange}
+                          placeholder="Enter vaccine batch number"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="date_administered">Administration Date</Label>
+                          <Input
+                            id="date_administered"
+                            name="date_administered"
+                            type="date"
+                            value={vaccinationData.date_administered}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="next_due_date">Next Due Date</Label>
+                          <Input
+                            id="next_due_date"
+                            name="next_due_date"
+                            type="date"
+                            value={vaccinationData.next_due_date || ""}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="notes">Notes</Label>
+                        <Textarea
+                          id="notes"
+                          name="notes"
+                          value={vaccinationData.notes}
+                          onChange={handleInputChange}
+                          placeholder="Enter any observations or reactions"
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-4">
+                      <div className="flex">
+                        <AlertCircle className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0" />
+                        <div>
+                          <h3 className="font-medium text-amber-800 text-sm">
+                            Important Notes
+                          </h3>
+                          <p className="text-amber-700 text-xs mt-1">
+                            Always monitor the patient for at least 15-30 minutes
+                            after vaccination to observe for any immediate adverse
+                            reactions.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="vaccine">Select Vaccine</Label>
-                  <Select
-                    onValueChange={handleVaccineSelect}
-                    value={vaccinationData.vaccine_name}
-                    disabled={isLoadingVaccines || !allVaccines?.length}
-                  >
-                    <SelectTrigger id="vaccine" className="w-full">
-                      <SelectValue 
-                        placeholder={
-                          isLoadingVaccines 
-                            ? "Loading vaccines..." 
-                            : !allVaccines?.length 
-                              ? "No vaccines available" 
-                              : "Select a vaccine"
-                        } 
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allVaccines && allVaccines.length > 0 ? (
-                        allVaccines.map((vaccine: TestByAppointment) => (
-                          <SelectItem 
-                            key={vaccine.test_id || `vaccine-${Math.random()}`} 
-                            value={vaccine.test_name || "Unknown Vaccine"}
-                          >
-                            {vaccine.test_name || "Unknown Vaccine"} 
-                            {vaccine.batch_number ? `(${vaccine.batch_number})` : ""}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="no-vaccines" disabled>
-                          No vaccines available
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  {selectedAppointmentId && !allVaccines?.length && !isLoadingVaccines && (
-                    <p className="text-amber-600 text-xs mt-1">
-                      No vaccines available for this appointment. Please select a different appointment.
-                    </p>
-                  )}
                 </div>
-
-                <div>
-                  <Label htmlFor="batch_number">Batch Number</Label>
-                  <Input
-                    id="batch_number"
-                    name="batch_number"
-                    value={vaccinationData.batch_number}
-                    onChange={handleInputChange}
-                    placeholder="Enter vaccine batch number"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="date_administered">Administration Date</Label>
-                    <Input
-                      id="date_administered"
-                      name="date_administered"
-                      type="date"
-                      value={vaccinationData.date_administered}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="next_due_date">Next Due Date</Label>
-                    <Input
-                      id="next_due_date"
-                      name="next_due_date"
-                      type="date"
-                      value={vaccinationData.next_due_date || ""}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    name="notes"
-                    value={vaccinationData.notes}
-                    onChange={handleInputChange}
-                    placeholder="Enter any observations or reactions"
-                    rows={3}
-                  />
-                </div>
-              </div>
-
-              <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-4">
-                <div className="flex">
-                  <AlertCircle className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-medium text-amber-800 text-sm">
-                      Important Notes
-                    </h3>
-                    <p className="text-amber-700 text-xs mt-1">
-                      Always monitor the patient for at least 15-30 minutes
-                      after vaccination to observe for any immediate adverse
-                      reactions.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </CardContent>
-
-      <CardFooter className="flex justify-between py-4 bg-gray-50 border-t">
-        {isCompleted ? (
-          <Button
-            onClick={handleComplete}
-            className="w-full bg-indigo-600 hover:bg-indigo-700"
-          >
-            Continue to Next Step
-          </Button>
-        ) : (
-          <div className="flex justify-end space-x-4">
-            <Button
-              variant="outline"
-              onClick={onCancel}
-              className="border-gray-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting || !selectedAppointmentId}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Recording...
-                </>
-              ) : (
-                "Record Vaccination"
               )}
-            </Button>
-          </div>
-        )}
-      </CardFooter>
-    </Card>
+            </CardContent>
+
+            <CardFooter className="flex justify-between py-4 bg-gray-50 border-t">
+              {isCompleted ? (
+                <Button
+                  onClick={handleComplete}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Continue to Next Step
+                </Button>
+              ) : (
+                <div className="flex justify-end space-x-4">
+                  <Button
+                    variant="outline"
+                    onClick={onCancel}
+                    className="border-gray-300"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting || !selectedAppointmentId}
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Recording...
+                      </>
+                    ) : (
+                      "Record Vaccination"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </CardFooter>
+          </Card>
+        </form>
+      </div>
+    </ScrollArea>
   );
 };
 

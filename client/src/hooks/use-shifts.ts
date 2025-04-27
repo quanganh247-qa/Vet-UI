@@ -31,6 +31,7 @@ export const useShiftMutations = () => {
     onSuccess: () => {
       // Invalidate and refetch all shifts queries to show new data immediately
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['all-shifts'] });
     }
   });
 
@@ -39,6 +40,7 @@ export const useShiftMutations = () => {
       updateShift(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['all-shifts'] });
     }
   });
 
@@ -46,9 +48,30 @@ export const useShiftMutations = () => {
     mutationFn: deleteShift,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['all-shifts'] });
     }
   });
 
   return { createMutation, updateMutation, deleteMutation };
 };
 
+// Fixed implementation of useGetAllShifts
+export const useGetAllShifts = () => {
+  return useQuery<WorkShift[]>({
+    queryKey: ['all-shifts'],
+    queryFn: async () => {
+      try {
+        const response = await getShifts();
+        return response?.data?.map((shift: any) => ({
+          ...shift,
+          start_time: new Date(shift.start_time),
+          end_time: new Date(shift.end_time),
+          created_at: new Date(shift.created_at)
+        })) || [];
+      } catch (error) {
+        console.error('Error fetching all shifts:', error);
+        return [];
+      }
+    }
+  });
+};

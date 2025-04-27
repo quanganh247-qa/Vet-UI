@@ -145,7 +145,24 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
         <div className="mt-1 space-y-1 max-h-[80px] overflow-y-auto">
           {dayShifts.length > 0 ? (
             dayShifts.map((shift) => {
-              const doctor = doctors.find(d => d.doctor_id?.toString() === shift.doctor_id);
+              // Improved doctor lookup with string conversion to ensure matching
+              const doctor = doctors?.find(d => 
+                d.doctor_id && shift.doctor_id && 
+                d.doctor_id.toString() === shift.doctor_id.toString()
+              );
+
+              console.log('Doctor:', doctor);
+              
+              // Safely handle date conversion
+              const shiftStart = shift.start_time instanceof Date 
+                ? shift.start_time 
+                : new Date(shift.start_time);
+                
+              // Ensure we have a valid date
+              const formattedTime = !isNaN(shiftStart.getTime()) 
+                ? format(shiftStart, 'HH:mm')
+                : '';
+                
               return (
                 <div
                   key={shift.id}
@@ -155,7 +172,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
                     getStatusColor(shift.status),
                   )}
                 >
-                  {format(shift.start_time instanceof Date ? shift.start_time : new Date(shift.start_time), 'HH:mm')} - {doctor?.doctor_name || 'Doctor'}
+                  {formattedTime} {doctor?.doctor_name || ''}
                 </div>
               );
             })
@@ -225,12 +242,29 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
       // Check if the day matches and hour matches
       return isSameDay(day, shiftStart) && shiftStart.getHours() === hour;
     }).map(shift => {
-      const doctor = doctors.find(d => d.doctor_id?.toString() === shift.doctor_id);
-      const shiftStart = shift.start_time instanceof Date ? shift.start_time : new Date(shift.start_time);
-      const shiftEnd = shift.end_time instanceof Date ? shift.end_time : new Date(shift.end_time);
+      // Make sure shift data is properly structured
+      if (!shift || !shift.start_time || !shift.end_time) {
+        console.error('Invalid shift data:', shift);
+        return null;
+      }
       
-      const startTime = format(shiftStart, 'HH:mm');
-      const endTime = format(shiftEnd, 'HH:mm');
+      // Improved doctor lookup with string conversion to ensure matching
+      const doctor = doctors?.find(d => 
+        d.doctor_id && shift.doctor_id && 
+        d.doctor_id.toString() === shift.doctor_id.toString()
+      );
+      
+      // Safely convert dates
+      const shiftStart = shift.start_time instanceof Date 
+        ? shift.start_time 
+        : new Date(shift.start_time);
+      const shiftEnd = shift.end_time instanceof Date 
+        ? shift.end_time 
+        : new Date(shift.end_time);
+      
+      // Format times only if dates are valid
+      const startTime = !isNaN(shiftStart.getTime()) ? format(shiftStart, 'HH:mm') : '';
+      const endTime = !isNaN(shiftEnd.getTime()) ? format(shiftEnd, 'HH:mm') : '';
       
       return (
         <div
@@ -243,7 +277,8 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
         >
           <div className="font-medium truncate">{shift.title || `Shift #${shift.id}`}</div>
           <div className="text-xs">
-            {startTime} - {endTime} | {doctor?.doctor_name || 'Doctor'}
+            {startTime && endTime ? `${startTime} - ${endTime}` : 'Time not set'} 
+            {doctor ? ` | ${doctor.doctor_name}` : ''}
           </div>
         </div>
       );
@@ -406,4 +441,4 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
   );
 };
 
-export default CustomCalendar; 
+export default CustomCalendar;

@@ -25,9 +25,12 @@ const DoctorScheduleCalendar: React.FC<DoctorScheduleCalendarProps> = ({
 }) => {
   const [view, setView] = useState<string>('week');
 
+  console.log("doctors", doctors);
+
   // Format events for the calendar
   const events = shifts.map((shift) => {
-    const doctor = doctors.find((d) => d.doctor_id.toString() === shift.doctor_id);
+    const doctor = doctors?.find((d) => d.doctor_id.toString() === shift.doctor_id.toString());
+    console.log("doctor name", doctor?.doctor_name);
     return {
       id: shift.id,
       title: `${shift.title} - ${doctor?.doctor_name || 'Unknown'}`,
@@ -79,7 +82,7 @@ const DoctorScheduleCalendar: React.FC<DoctorScheduleCalendarProps> = ({
             onSelectEvent={(event) => onClickShift(event.resource)}
             tooltipAccessor={(event) => {
               const shift = event.resource as WorkShift;
-              const doctor = doctors.find((d) => d.doctor_id.toString() === shift.doctor_id);
+              const doctor = doctors?.find((d) => d.doctor_id.toString() === shift.doctor_id);
               return `${shift.title}\nDoctor: ${doctor?.doctor_name || 'Unknown'}\nTime: ${moment(shift.start_time).format('HH:mm')} - ${moment(shift.end_time).format('HH:mm')}\nStatus: ${shift.status}`;
             }}
           />

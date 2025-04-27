@@ -1,13 +1,8 @@
-import { DoctorDetail } from "@/types"
-
+import api from "@/lib/api";
 export const getAllStaff = async () => {
-    const token = localStorage.getItem("token");
     try {
-        const response = await fetch(`api/v1/doctors`, {
-            headers: {
-                "Authorization": `Bearer ${token}`
-            }
-        });
+        const response = await api.get(`api/v1/doctors`);
+        return response.data;
     }
     catch (error) {
         console.error("Error fetching staff:", error);

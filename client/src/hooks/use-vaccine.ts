@@ -9,6 +9,7 @@ export const useVaccineData = (pet_id: number) => {
     queryKey: ["vaccinations", pet_id],
     queryFn: async () => {
       const data = await getVaccinations(pet_id);
+      console.log("Vaccination data:", data);
       return data || [];
     },
     enabled: !!pet_id,

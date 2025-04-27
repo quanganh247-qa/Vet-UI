@@ -8,6 +8,7 @@ import { LoginForm } from "@/pages/login";
 import React, { lazy, Suspense, useEffect, useState } from "react";
 import { AuthProvider } from "@/context/auth-context";
 import { NotificationProvider } from "@/context/notification-context";
+import { MessagingProvider } from "@/context/messaging-context";
 import Sidebar from "@/components/layout/sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { PatientsPage } from "@/pages/patient/patients";
@@ -19,6 +20,7 @@ import StaffPageDetail from "@/pages/staff";
 import { WalkInDialog } from "./components/appointment/WalkInDialog";
 import Settings from "./pages/settings";
 import EditProfilePage from "./pages/profile/edit";
+import Messaging from "@/pages/messaging";
 
 // Lazy load the TestNotificationListener to avoid hook errors
 const NotificationsPage = lazy(() => import("@/pages/notifications"));
@@ -120,7 +122,7 @@ function Router() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center h-full"><p>Loading...</p></div>}>
       <Switch>
-        <Route path="/" component={Dashboard as React.ComponentType<RouteComponentProps>} />
+        <Route path="/dashboard" component={Dashboard as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointments" component={Appointments as React.ComponentType<RouteComponentProps>} />
         <Route path="/staff" component={Staff as React.ComponentType<RouteComponentProps>} />
         <Route path="/analytics" component={Analytics as React.ComponentType<RouteComponentProps>} />
@@ -150,8 +152,10 @@ function Router() {
         <Route path="/appointment/:id/lab-management" component={LabManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} />
         
-        <Route path="/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
-
+        <Route path="/patient/:patientId/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
+        
+        <Route path="/messaging/:conversationId" component={Messaging as React.ComponentType<RouteComponentProps>} />
+        <Route path="/messaging" component={Messaging as React.ComponentType<RouteComponentProps>} />
         <Route path="/notifications" component={NotificationsPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/chatbot" component={Chatbot as React.ComponentType<RouteComponentProps>} />
         <Route path="/patients" component={PatientsPage as React.ComponentType<RouteComponentProps>} />
@@ -159,7 +163,7 @@ function Router() {
         <Route path="/catalog-management" component={ProductManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/test-orders" component={TestOrdersManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/services-management" component={ServicesManagement as React.ComponentType<RouteComponentProps>} />
-        <Route path="/schedule" component={ScheduleManagement as React.ComponentType<RouteComponentProps>} />
+        <Route path="/schedule-management" component={ScheduleManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/shift-management" component={ShiftManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/shift-assignment" component={ShiftAssignment as React.ComponentType<RouteComponentProps>} />
         <Route path="/staff" component={StaffPage as React.ComponentType<RouteComponentProps>} />
@@ -195,16 +199,20 @@ function App() {
   return (
     <AuthProvider>
       <NotificationProvider>
-        <div className="flex h-screen overflow-hidden bg-background text-darkText">
-          <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-          
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
-              <WebSocketInitializer />
-              <Router />
-            </main>
+        <MessagingProvider>
+          <div className="flex h-screen overflow-hidden bg-background text-darkText">
+            <Sidebar 
+              open={sidebarOpen} 
+              setOpen={setSidebarOpen} 
+            />
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
+                <WebSocketInitializer />
+                <Router />
+              </main>
+            </div>
           </div>
-        </div>
+        </MessagingProvider>
       </NotificationProvider>
     </AuthProvider>
   );

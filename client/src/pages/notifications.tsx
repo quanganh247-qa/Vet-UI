@@ -505,7 +505,7 @@ const NotificationsPage = () => {
                             <div>
                               <div className="flex items-center">
                                 <span className="text-sm font-medium text-indigo-900">
-                                  {notification.data.title}
+                                  {notification.data?.title}
                                 </span>
                                 <span className="text-indigo-500 mx-2">•</span>
                                 <span className="text-sm text-indigo-600">

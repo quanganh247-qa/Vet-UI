@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -31,10 +31,12 @@ import {
 } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { Doctor, WorkShift } from '@/types';
+import { ShiftTemplate } from './ShiftTemplateManager';
 
 interface ShiftFormProps {
   doctors: Doctor[];
   shift?: WorkShift;
+  templates?: ShiftTemplate[];
   onSubmit: (data: any) => void;
   onCancel: () => void;
 }
@@ -56,9 +58,13 @@ const formSchema = z.object({
 const ShiftForm: React.FC<ShiftFormProps> = ({
   doctors,
   shift,
+  templates,
   onSubmit,
   onCancel,
 }) => {
+  // State to track if a template is being applied
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+
   // Initialize form with default values or existing shift data
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -89,9 +95,50 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
     onSubmit(values);
   };
 
+  // Apply the selected template to the form
+  const applyTemplate = (templateId: string) => {
+    const template = templates?.find((t) => t.id === templateId);
+    if (template) {
+      form.setValue('title', template.name);
+      form.setValue('startTime', template.startTime);
+      form.setValue('endTime', template.endTime);
+      form.setValue('description', template.description);
+      form.setValue('status', template.status);
+      setSelectedTemplate(templateId);
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        {/* Template selector */}
+        <div className="mb-6">
+          <FormItem>
+            <FormLabel>Shift Template</FormLabel>
+            <Select
+              value={selectedTemplate || ''}
+              onValueChange={applyTemplate}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a template or create custom" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="">Custom Shift</SelectItem>
+                {templates?.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name} ({template.startTime} - {template.endTime})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormDescription>
+              Choose a template to quickly fill shift details or create a custom shift
+            </FormDescription>
+          </FormItem>
+        </div>
+
         <FormField
           control={form.control}
           name="title"
@@ -277,7 +324,7 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
         <div className="flex justify-end space-x-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
-          </Button>
+          </Button> 
           <Button type="submit">{shift ? 'Update' : 'Create'} Shift</Button>
         </div>
       </form>

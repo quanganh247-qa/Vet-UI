@@ -128,13 +128,11 @@ export const PatientsPage: React.FC = () => {
   const handleVaccination = (patientId: string, event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent card/row click
     setLocation(`/patient/${patientId}/vaccination`); // Navigate to vaccination page
-    console.log(`Vaccination for patient: ${patientId}`);
   };
 
   const handleTreatment = (patientId: string, event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent card/row click
     setLocation(`/patient/${patientId}/treatment`); // Navigate to treatment page
-    console.log(`Treatment for patient: ${patientId}`);
   };
 
   const handlePrescription = (patientId: string, event: React.MouseEvent) => {
@@ -231,7 +229,7 @@ export const PatientsPage: React.FC = () => {
               />
             </div>
             
-            <div className="flex items-center space-x-2">
+            {/* <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500">View:</span>
               <div className="flex bg-gray-100 rounded-md p-1">
                 <Button 
@@ -257,7 +255,7 @@ export const PatientsPage: React.FC = () => {
                   <Grid className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
+            </div> */}
           </div>
         </CardContent>
       </Card>
