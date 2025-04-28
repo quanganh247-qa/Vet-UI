@@ -118,56 +118,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-          <Card className="bg-white/10 border-none shadow-none text-white">
-            <CardContent className="p-4 flex items-center space-x-4">
-              <div className="p-3 rounded-full bg-white/20">
-                <User className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-white/70">Total Patients</p>
-                <h3 className="text-2xl font-bold">{dashboardData?.totalPatients || 0}</h3>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/10 border-none shadow-none text-white">
-            <CardContent className="p-4 flex items-center space-x-4">
-              <div className="p-3 rounded-full bg-white/20">
-                <Calendar className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-white/70">Today's Appointments</p>
-                <h3 className="text-2xl font-bold">{dashboardData?.todayAppointments || 0}</h3>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/10 border-none shadow-none text-white">
-            <CardContent className="p-4 flex items-center space-x-4">
-              <div className="p-3 rounded-full bg-white/20">
-                <FileText className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-white/70">Pending Reports</p>
-                <h3 className="text-2xl font-bold">{dashboardData?.pendingReports || 0}</h3>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/10 border-none shadow-none text-white">
-            <CardContent className="p-4 flex items-center space-x-4">
-              <div className="p-3 rounded-full bg-white/20">
-                <AlertCircle className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-white/70">Critical Cases</p>
-                <h3 className="text-2xl font-bold">{dashboardData?.criticalCases || 0}</h3>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
       {/* Main Dashboard Content */}

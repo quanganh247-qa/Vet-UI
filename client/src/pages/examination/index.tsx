@@ -340,7 +340,7 @@ const Examination: React.FC = () => {
         subjective: "",
         objective: objectiveData,
         assessment: "",
-        plan: "",
+        plan: 0, // changed from "" to 0
       });
 
       setUnsavedChanges(false);
@@ -407,13 +407,15 @@ const Examination: React.FC = () => {
         },
       };
 
+      console.log("appointment: ", effectiveAppointmentId);
+
       // Save to SOAP notes
       await updateSoapMutation.mutateAsync({
-        appointmentID: appointment.id,
+        appointmentID: effectiveAppointmentId,
         subjective: "", // This would be filled in the SOAP screen
         objective: objectiveData,
         assessment: "", // This would be filled in the SOAP screen
-        plan: "", // This would be filled in the SOAP screen
+        plan: 0, // changed from "" to 0
       });
       
       setUnsavedChanges(false);

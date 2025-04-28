@@ -26,20 +26,20 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config;
-    
+
     // If error is unauthorized and not a retry
     if (error.response?.status === 401 && originalRequest && !(originalRequest as any)._retry) {
       (originalRequest as any)._retry = true;
-      
+
       try {
         // Try refreshing the token
         const refreshSuccessful = await refreshAccessToken();
-        
+
         if (refreshSuccessful) {
           // Update auth header with new token
           const newToken = localStorage.getItem('access_token');
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          
+
           // Retry the original request with new token
           return axios(originalRequest);
         }
@@ -49,9 +49,10 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
-    
+
     return Promise.reject(error);
   }
 );
+
 
 export default api; 

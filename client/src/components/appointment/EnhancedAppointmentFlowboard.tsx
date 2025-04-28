@@ -46,6 +46,7 @@ import {
 } from "lucide-react";
 import { Appointment, Doctor, Room, QueueItem } from "@/types";
 import {
+  useAppointmentData,
   useListAppointmentsQueue,
   useUpdateAppointmentStatus,
 } from "@/hooks/use-appointment";
@@ -177,6 +178,7 @@ const AppointmentCard = memo(({
   const handleStartExam = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     onStatusChange(appointment.id, 5, true); // Update status and navigate to patient info
+  
   }, [appointment.id, onStatusChange]);
   
   // Format date for display
@@ -573,6 +575,10 @@ const EnhancedAppointmentFlowboard: React.FC<
   const handleStartAppointment = (appointmentId: number) => {
     // Cập nhật trạng thái thành "In Progress" và chuyển hướng đến trang chi tiết bệnh nhân
     handleStatusChange(appointmentId, 5, true);
+
+    const { data: appointment } = useAppointmentData(appointmentId.toString());
+    setLocation(`/patient?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`);
+    
   };
 
   const handleCompleteAppointment = (appointmentId: number) => {
@@ -1214,7 +1220,7 @@ const EnhancedAppointmentFlowboard: React.FC<
                   Check-in
                 </button>
 
-                <button
+                {/* <button
                   className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 flex items-center justify-center"
                   onClick={() => {
                     handleStartAppointment(selectedAppointmentId);
@@ -1223,7 +1229,7 @@ const EnhancedAppointmentFlowboard: React.FC<
                 >
                   <Play size={14} className="mr-1" />
                   Start Exam
-                </button>
+                </button> */}
 
                 <button
                   className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 flex items-center justify-center"
@@ -1644,7 +1650,7 @@ const EnhancedAppointmentFlowboard: React.FC<
                             // Điều hướng đến trang workflow thích hợp
                             if (currentStep === "patient-details") {
                               setLocation(
-                                `/appointment/${selectedAppointment.id}`
+                                `/appointment/${selectedAppointment.id}/patient/${selectedAppointment.pet?.pet_id}`
                               );
                             } else if (currentStep === "examination") {
                               setLocation(

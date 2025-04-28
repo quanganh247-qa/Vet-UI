@@ -216,11 +216,7 @@ const Settings = () => {
     if (!selectedConfig) return;
     
     await testSMTPConfig({
-      name: selectedConfig.name,
-      email: selectedConfig.email,
-      password: editConfigForm.getValues("password") || "", // Use from form if available
-      smtp_host: selectedConfig.smtp_host,
-      smtp_port: selectedConfig.smtp_port,
+      smtp_id: selectedConfig.id,
       test_email: data.test_email
     });
     
@@ -301,16 +297,6 @@ const Settings = () => {
                 )}
               </div>
 
-              <div className="flex justify-end">
-                <Link href="#smtp">
-                  <Button 
-                    variant="outline" 
-                    className="text-sm"
-                  >
-                    Manage SMTP Configurations
-                  </Button>
-                </Link>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -531,7 +517,7 @@ const Settings = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
+              <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)} className="bg-indigo-600 hover:bg-indigo-700 text-white">
                 Cancel
               </Button>
               <Button type="submit" disabled={isCreating}>

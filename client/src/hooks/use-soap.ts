@@ -7,7 +7,7 @@ interface UpdateSOAPParams {
   subjective: string;
   objective: ObjectiveData;
   assessment: string;
-  plan: string;
+  plan: number;
 }
 
 export const useCreateSOAP = () => {
@@ -60,7 +60,7 @@ export const useUpdateSOAP = () => {
           }
         },
         assessment: params.assessment || "",
-        plan: params.plan || ""
+        plan: typeof params.plan === "number" ? params.plan : 0
       };
 
       console.log("SOAP Update Request Body:", JSON.stringify(requestBody, null, 2));

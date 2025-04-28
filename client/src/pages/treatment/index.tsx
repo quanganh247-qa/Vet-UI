@@ -107,6 +107,7 @@ import InvoiceDialog from "@/components/InvoiceDialog";
 import { useMedicalHistory } from "@/hooks/use-medical-history";
 import { useCreateMedicalRecord } from "@/hooks/use-medical-record";
 import { Switch } from "@/components/ui/switch";
+import { useUpdateSOAP, useGetSOAP } from "@/hooks/use-soap";
 
 const TreatmentManagement: React.FC = () => {
   const [, navigate] = useLocation();
@@ -510,6 +511,9 @@ const TreatmentManagement: React.FC = () => {
   };
 
   // Handle creating a new treatment
+  const updateSoapMutation = useUpdateSOAP();
+  const { data: soapData } = useGetSOAP(appointmentId || "");
+
   const handleCreateTreatment = async () => {
     if (!petId) {
       toast({
@@ -555,6 +559,27 @@ const TreatmentManagement: React.FC = () => {
 
       // Explicitly refetch treatments to update UI
       await refetchTreatments();
+
+      // Find the newly created treatment (by name/type or last one)
+      let newTreatmentId = null;
+      if (treatments && treatments.length > 0) {
+        // Try to find by name/type
+        const found = treatments.find(
+          (t: Treatment) => t.name === fullTreatmentData.name && t.type === fullTreatmentData.type
+        );
+        newTreatmentId = found ? found.id : treatments[treatments.length - 1].id;
+      }
+
+      // Update SOAP note plan field with new treatment ID
+      if (appointmentId && newTreatmentId && soapData) {
+        await updateSoapMutation.mutateAsync({
+          appointmentID: appointmentId,
+          subjective: soapData.subjective || "",
+          objective: soapData.objective || {},
+          assessment: soapData.assessment || "",
+          plan: String(newTreatmentId),
+        });
+      }
 
       toast({
         title: "Success",
@@ -1400,12 +1425,12 @@ const TreatmentManagement: React.FC = () => {
                         <div className="text-sm text-gray-500">
                           <Badge
                             className={`mr-2 ${treatment.status === "Completed"
-                                ? "bg-green-100 text-green-800 border-green-200"
-                                : treatment.status === "In Progress"
-                                  ? "bg-blue-100 text-blue-800 border-blue-200"
-                                  : treatment.status === "Not Started"
-                                    ? "bg-gray-100 text-gray-800 border-gray-200"
-                                    : "bg-indigo-100 text-indigo-800 border-indigo-200"
+                              ? "bg-green-100 text-green-800 border-green-200"
+                              : treatment.status === "In Progress"
+                                ? "bg-blue-100 text-blue-800 border-blue-200"
+                                : treatment.status === "Not Started"
+                                  ? "bg-gray-100 text-gray-800 border-gray-200"
+                                  : "bg-indigo-100 text-indigo-800 border-indigo-200"
                               }`}
                           >
                             {treatment.status}
@@ -1585,20 +1610,20 @@ const TreatmentManagement: React.FC = () => {
                     >
                       <div
                         className={`px-5 py-3 border-b flex justify-between items-center cursor-pointer ${phase.status === "Completed"
-                            ? "bg-gradient-to-r from-green-50 to-white"
-                            : phase.status === "In Progress"
-                              ? "bg-gradient-to-r from-blue-50 to-white"
-                              : "bg-gradient-to-r from-gray-50 to-white"
+                          ? "bg-gradient-to-r from-green-50 to-white"
+                          : phase.status === "In Progress"
+                            ? "bg-gradient-to-r from-blue-50 to-white"
+                            : "bg-gradient-to-r from-gray-50 to-white"
                           }`}
                         onClick={() => togglePhaseExpansion(phase.id)}
                       >
                         <div className="flex items-center">
                           <div
                             className={`p-1.5 rounded-lg mr-3 ${phase.status === "Completed"
-                                ? "bg-green-100"
-                                : phase.status === "In Progress"
-                                  ? "bg-blue-100"
-                                  : "bg-gray-100"
+                              ? "bg-green-100"
+                              : phase.status === "In Progress"
+                                ? "bg-blue-100"
+                                : "bg-gray-100"
                               }`}
                           >
                             {phase.status === "Completed" ? (
@@ -1774,8 +1799,8 @@ const TreatmentManagement: React.FC = () => {
                   <div className="flex items-center gap-2 text-sm bg-white p-2 rounded-md shadow-sm">
                     <span
                       className={`px-3 py-1 rounded-full font-medium ${formStep === 0
-                          ? "bg-indigo-600 text-white"
-                          : "bg-gray-100 text-gray-500"
+                        ? "bg-indigo-600 text-white"
+                        : "bg-gray-100 text-gray-500"
                         }`}
                     >
                       1
@@ -1783,8 +1808,8 @@ const TreatmentManagement: React.FC = () => {
                     <span className="text-gray-300">→</span>
                     <span
                       className={`px-3 py-1 rounded-full font-medium ${formStep === 1
-                          ? "bg-indigo-600 text-white"
-                          : "bg-gray-100 text-gray-500"
+                        ? "bg-indigo-600 text-white"
+                        : "bg-gray-100 text-gray-500"
                         }`}
                     >
                       2
@@ -1792,8 +1817,8 @@ const TreatmentManagement: React.FC = () => {
                     <span className="text-gray-300">→</span>
                     <span
                       className={`px-3 py-1 rounded-full font-medium ${formStep === 2
-                          ? "bg-indigo-600 text-white"
-                          : "bg-gray-100 text-gray-500"
+                        ? "bg-indigo-600 text-white"
+                        : "bg-gray-100 text-gray-500"
                         }`}
                     >
                       3
@@ -1852,8 +1877,8 @@ const TreatmentManagement: React.FC = () => {
                           id="treatment-name"
                           placeholder="Enter treatment name"
                           className={`h-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${formTouched.name && formErrors.name
-                              ? "border-red-500 focus-visible:ring-red-500"
-                              : ""
+                            ? "border-red-500 focus-visible:ring-red-500"
+                            : ""
                             }`}
                           value={newTreatment.name}
                           onChange={(e) =>
@@ -1886,8 +1911,8 @@ const TreatmentManagement: React.FC = () => {
                           id="treatment-type"
                           placeholder="e.g., Surgery Recovery, Medication Protocol"
                           className={`h-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${formTouched.type && formErrors.type
-                              ? "border-red-500 focus-visible:ring-red-500"
-                              : ""
+                            ? "border-red-500 focus-visible:ring-red-500"
+                            : ""
                             }`}
                           value={newTreatment.type}
                           onChange={(e) =>
@@ -1975,8 +2000,8 @@ const TreatmentManagement: React.FC = () => {
                           id="start-date"
                           type="date"
                           className={`h-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${formTouched.start_date && formErrors.start_date
-                              ? "border-red-500 focus-visible:ring-red-500"
-                              : ""
+                            ? "border-red-500 focus-visible:ring-red-500"
+                            : ""
                             }`}
                           value={newTreatment.start_date}
                           onChange={(e) =>
@@ -2429,8 +2454,8 @@ const TreatmentManagement: React.FC = () => {
                                     className={`h-8 ${selectedMedicines.some(
                                       (m) => m.id === medicine.id
                                     )
-                                        ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                                        : "text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50"
+                                      ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                                      : "text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50"
                                       }`}
                                     onClick={() =>
                                       handleMedicineSelect(medicine)
@@ -2543,8 +2568,8 @@ const TreatmentManagement: React.FC = () => {
                                     )
                                   }
                                   className={`h-8 text-sm border-gray-200 ${medicine.errors?.dosage
-                                      ? "border-red-300 focus:ring-red-300"
-                                      : ""
+                                    ? "border-red-300 focus:ring-red-300"
+                                    : ""
                                     }`}
                                 />
                                 {medicine.errors?.dosage && (
@@ -2574,8 +2599,8 @@ const TreatmentManagement: React.FC = () => {
                                     )
                                   }
                                   className={`h-8 text-sm border-gray-200 ${medicine.errors?.frequency
-                                      ? "border-red-300 focus:ring-red-300"
-                                      : ""
+                                    ? "border-red-300 focus:ring-red-300"
+                                    : ""
                                     }`}
                                 />
                                 {medicine.errors?.frequency && (
@@ -2605,8 +2630,8 @@ const TreatmentManagement: React.FC = () => {
                                     )
                                   }
                                   className={`h-8 text-sm border-gray-200 ${medicine.errors?.duration
-                                      ? "border-red-300 focus:ring-red-300"
-                                      : ""
+                                    ? "border-red-300 focus:ring-red-300"
+                                    : ""
                                     }`}
                                 />
                                 {medicine.errors?.duration && (
@@ -2773,7 +2798,7 @@ const TreatmentManagement: React.FC = () => {
                   Include any important details about the condition, symptoms, treatments, etc.
                 </p>
               </div>
-              
+
               <div className="flex items-center space-x-2 mt-1 pt-4 border-t">
                 <Switch
                   id="create-prescription"
@@ -2788,7 +2813,7 @@ const TreatmentManagement: React.FC = () => {
                   Recommended
                 </div>
               </div>
-              
+
               <div className="bg-blue-50 rounded-lg p-4 mt-2 border border-blue-100">
                 <div className="flex items-start space-x-2">
                   <Receipt className="h-5 w-5 text-blue-600 mt-0.5" />
@@ -2797,7 +2822,7 @@ const TreatmentManagement: React.FC = () => {
                       Medical Records Workflow
                     </p>
                     <p className="text-xs text-blue-700 mt-1">
-                      Creating a medical history record allows you to document the condition being treated. 
+                      Creating a medical history record allows you to document the condition being treated.
                       When enabled, a prescription will also be created using the medicines you've assigned.
                     </p>
                   </div>
