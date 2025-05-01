@@ -50,6 +50,9 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
+          build-args: |
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
+            VITE_WS_URL=${{ secrets.VITE_WS_URL }}
           tags: |
             ${{ secrets.DOCKERHUB_USN }}/vet-dashboard:latest
             ${{ secrets.DOCKERHUB_USN }}/vet-dashboard:${{ github.sha }}

@@ -10,12 +10,14 @@ COPY package.json package-lock.json* ./
 RUN npm install --legacy-peer-deps && \
     npm cache clean --force
 
-
-# Copy .env file explicitly for better visibility
-COPY .env ./
-
 # Copy application code
 COPY . .
+
+# Set build arguments as environment variables
+ARG VITE_API_URL
+ARG VITE_WS_URL
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_WS_URL=${VITE_WS_URL}
 
 # Build the application
 RUN npm run build
@@ -33,5 +35,4 @@ RUN adduser -S appuser && chown -R appuser /usr/src/app
 USER appuser
 
 # Run the app using Vite's preview server (production mode)
-# The shell form ensures proper variable expansion
-CMD npm run start
+CMD ["npm", "run", "start"]
