@@ -1,0 +1,57 @@
+name: Build and Push React App to Docker Registry
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'client/**'
+      - 'public/**'
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - '.github/**'
+      - 'Dockerfile'
+      - '.dockerignore'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          VITE_API_URL=${{ secrets.VITE_API_URL }}
+          VITE_WS_URL=${{ secrets.VITE_WS_URL }}
+          EOF
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USN }}
+          password: ${{ secrets.DOCKERHUB_PWD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USN }}/vet-dashboard:latest
+            ${{ secrets.DOCKERHUB_USN }}/vet-dashboard:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

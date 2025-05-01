@@ -103,7 +103,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onReorderMedici
 
   useEffect(() => {
     // Connect to WebSocket when component mounts
-    const wsUrl = 'ws://localhost:8088/ws';
+    const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:8088/ws";
     websocketService.connect(wsUrl);
 
     // Cleanup WebSocket connection when component unmounts

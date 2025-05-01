@@ -41,7 +41,7 @@ export const initializeSocket = () => {
   //   const host = window.location.hostname;
   //   const wsBaseUrl = config.wsUrl || `${protocol}//${host}:8088/ws`;
 
-  const wsBaseUrl = "ws://localhost:8088/ws"; // Ignore config.wsUrl temporarily
+  const wsBaseUrl = import.meta.env.VITE_WS_URL || "ws://localhost:8088/ws";
   const wsUrlWithParams = `${wsBaseUrl}?clientId=${clientId}`;
 
   try {
