@@ -1,4 +1,3 @@
-# Build stage
 FROM node:20-alpine as build-stage
 
 # Set working directory
@@ -23,24 +22,31 @@ ENV VITE_WS_URL=${VITE_WS_URL}
 # Build the application
 RUN npm run build
 
-# Production stage with Nginx
-FROM nginx:alpine
+# Use same base image for production
+FROM node:20-alpine
 
-# Copy the nginx configuration
-COPY nginx.conf /etc/nginx/templates/default.conf.template
+# Set working directory
+WORKDIR /app
 
-# Copy built files from build stage - only the dist directory
-COPY --from=build-stage /app/dist /usr/share/nginx/html
+# Install serve globally
+RUN npm install -g serve && \
+    npm cache clean --force
+
+# Copy built files from build stage
+COPY --from=build-stage /app/dist ./dist
 
 # Set default port (Railway will override this)
-ENV PORT=80
-
-# Let nginx substitute environment variables
-ENV NGINX_ENVSUBST_TEMPLATE_DIR=/etc/nginx/templates
-ENV NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/conf.d
+ENV PORT=5173
 
 # Expose the port
 EXPOSE ${PORT}
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Create non-root user for security
+RUN adduser -S appuser && chown -R appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Use shell form to properly expand PORT variable
+CMD serve -s dist -l ${PORT}
+
