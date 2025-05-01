@@ -8,7 +8,6 @@ COPY package.json package-lock.json* ./
 
 # Install all dependencies
 RUN npm install --legacy-peer-deps && \
-    npm install serve --save  --legacy-peer-deps  && \
     npm cache clean --force
 
 # Copy application code
@@ -26,14 +25,12 @@ RUN npm run build
 # Set default port (Railway will override this)
 ENV PORT=5173
 
-# Expose port
+# Stage 3: Production environment
+FROM nginx:alpine AS production
+
+# Copy the production build artifacts from the build stage
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Expose the default NGINX port
 EXPOSE ${PORT}
-
-# Create non-root user and set permissions
-RUN adduser -S appuser && chown -R appuser /usr/src/app
-
-# Switch to non-root user
-USER appuser
-
-# Run the app using Vite's preview server (production mode)
-CMD ["npm", "run", "start"]
+CMD ["nginx", "-g", "daemon off;"]
