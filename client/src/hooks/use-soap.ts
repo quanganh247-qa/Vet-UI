@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createSOAP, getSOAP, updateSOAP } from "@/services/soap-services";
+import { createSOAP, getAllSOAPs, getSOAP, updateSOAP } from "@/services/soap-services";
 import { ObjectiveData } from "@/types";
 
 interface UpdateSOAPParams {
@@ -77,21 +77,14 @@ export const useUpdateSOAP = () => {
   });
 };
 
-// export const useUpdateSOAP = () => {
-//   return useMutation({
-//     mutationFn: ({ 
-//       appointmentID, 
-//       subjective, 
-//       objective, 
-//       assessment, 
-//       plan 
-//     }: UpdateSOAPParams) =>
-//       updateSOAP(appointmentID, subjective, objective, assessment, plan),
-//     onSuccess: () => {
-//       console.log('SOAP note updated successfully');
-//     },
-//     onError: (error) => {
-//       console.error('Error updating SOAP note:', error);
-//     }
-//   });
-// };
+
+export const useGetAllSOAPs = (pet_id: string) => {
+  return useQuery({
+    queryKey: ['soap', pet_id],
+    queryFn: () => getAllSOAPs(pet_id),
+    enabled: !!pet_id,
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 1000 * 60 * 5 // 5 minutes
+  });
+};

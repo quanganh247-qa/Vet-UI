@@ -55,13 +55,6 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     setNotifications(prev => [newNotification, ...prev]);
     setUnreadCount(prev => prev + 1);
 
-    // Play sound if enabled
-    // const soundEnabled = localStorage.getItem('notificationSound') !== 'false';
-    // if (soundEnabled) {
-    //   // Play notification sound
-    //   const audio = new Audio('/notification-sound.mp3');
-    //   audio.play().catch(e => console.log('Error playing notification sound:', e));
-    // }
 
     // Show desktop notification if enabled and permission granted
     const desktopEnabled = localStorage.getItem('desktopNotifications') !== 'false';

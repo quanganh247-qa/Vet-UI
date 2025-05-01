@@ -107,12 +107,6 @@ const LabManagement: React.FC = () => {
     const urlAppointmentId = searchParams.get("appointmentId");
     const urlPetId = searchParams.get("petId");
 
-    console.log("Lab Management URL Params:", {
-      urlAppointmentId,
-      urlPetId,
-      routeId,
-    });
-
     // Thiết lập appointmentId và petId theo thứ tự ưu tiên
     let appointmentIdValue = urlAppointmentId || routeId || null;
     let petIdValue = urlPetId || null;
@@ -122,10 +116,6 @@ const LabManagement: React.FC = () => {
       petId: petIdValue,
     });
 
-    console.log("Lab Management Workflow Params Set:", {
-      appointmentIdValue,
-      petIdValue,
-    });
   }, [routeId]);
 
   // Sử dụng appointmentId từ workflowParams
@@ -155,8 +145,9 @@ const LabManagement: React.FC = () => {
   );
 
   // Fetch all items (tests and vaccines) from API
-  const { data: apiCategories, isLoading: isItemsLoading } = useListTests("");
+  const { data: apiCategories, isLoading: isItemsLoading } = useListTests("test");
 
+  console.log("API Categories:", apiCategories);
   // Create test mutations
   const createTest = useCreateTest();
   const createTestOrders = useCreateTestOrder();
@@ -480,9 +471,8 @@ const LabManagement: React.FC = () => {
             Date.now() + 15 * 24 * 60 * 60 * 1000
           ).toISOString(), // 15 days from now in ISO format
           status: "unpaid",
-          description: `${isVaccineOrder ? "Vaccines" : "Lab tests"} for ${
-            patient?.name
-          } - Appointment #${effectiveAppointmentId}`,
+          description: `${isVaccineOrder ? "Vaccines" : "Lab tests"} for ${patient?.name
+            } - Appointment #${effectiveAppointmentId}`,
           customer_name: patient?.name || "Unknown Patient",
           items: invoiceItems,
         };
@@ -494,14 +484,11 @@ const LabManagement: React.FC = () => {
         console.log("Invoice created successfully:", invoiceResult);
 
         toast({
-          title: `${
-            isVaccineOrder ? "Vaccines" : "Tests"
-          } ordered and invoice created`,
-          description: `${selectedTestObjects.length} ${
-            isVaccineOrder ? "vaccine(s)" : "test(s)"
-          } have been ordered for ${
-            patient?.name
-          } and an invoice has been generated.`,
+          title: `${isVaccineOrder ? "Vaccines" : "Tests"
+            } ordered and invoice created`,
+          description: `${selectedTestObjects.length} ${isVaccineOrder ? "vaccine(s)" : "test(s)"
+            } have been ordered for ${patient?.name
+            } and an invoice has been generated.`,
           className: "bg-green-50 border-green-200 text-green-800",
         });
       } catch (invoiceError) {
@@ -509,14 +496,11 @@ const LabManagement: React.FC = () => {
 
         // Still show success for test order even if invoice creation fails
         toast({
-          title: `${
-            isVaccineOrder ? "Vaccines" : "Tests"
-          } ordered successfully`,
-          description: `${selectedTestObjects.length} ${
-            isVaccineOrder ? "vaccine(s)" : "test(s)"
-          } have been ordered for ${
-            patient?.name
-          }, but there was an issue creating the invoice.`,
+          title: `${isVaccineOrder ? "Vaccines" : "Tests"
+            } ordered successfully`,
+          description: `${selectedTestObjects.length} ${isVaccineOrder ? "vaccine(s)" : "test(s)"
+            } have been ordered for ${patient?.name
+            }, but there was an issue creating the invoice.`,
           className: "bg-yellow-50 border-yellow-200 text-yellow-800",
         });
       }

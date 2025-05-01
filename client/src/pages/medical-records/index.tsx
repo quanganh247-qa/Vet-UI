@@ -71,6 +71,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useDoctorProfile } from "@/hooks/use-doctor";
 import { useAppointmentData } from "@/hooks/use-appointment";
+import { ReadonlyMarkdownView } from "@/components/ui/readonly-markdown-view";
 
 
 // Define interfaces for medical history
@@ -661,8 +662,12 @@ const MedicalRecordManagement: React.FC = () => {
               <div className="text-xs text-gray-500 uppercase font-medium">
                 Detailed Notes
               </div>
-              <div className="text-sm text-gray-700 mt-1">
-                {selectedHistory.notes || "No detailed notes available."}
+              <div className="mt-1">
+                <ReadonlyMarkdownView 
+                  content={selectedHistory.notes || ""} 
+                  placeholder="No detailed notes available."
+                  className="text-sm text-gray-700"
+                />
               </div>
             </div>
 

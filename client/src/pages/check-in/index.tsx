@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { useParams, useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCreateSOAP } from "@/hooks/use-soap";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -33,6 +32,10 @@ import {
   Copy,
   CheckCheck,
   PawPrint,
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
 } from "lucide-react";
 
 import { checkInAppointment } from "@/services/appointment-services";
@@ -46,6 +49,226 @@ import { Toaster } from "@/components/ui/toaster";
 import WorkflowNavigation from "@/components/WorkflowNavigation";
 import { useQR } from "@/hooks/use-payment";
 import { QRCodeInformation, QuickLinkRequest } from "@/types";
+import { Textarea } from "@/components/ui/textarea";
+
+// RichTextEditor component with preview mode
+const RichTextEditor = ({
+  value,
+  onChange,
+  placeholder,
+  minHeight = "150px",
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  minHeight?: string;
+}) => {
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Function to insert formatting around selected text
+  const insertFormatting = (prefix: string, suffix: string = prefix) => {
+    if (!textareaRef.current) return;
+
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = value.substring(start, end);
+
+    // Check if selection is already formatted
+    const beforeSelection = value.substring(Math.max(0, start - prefix.length), start);
+    const afterSelection = value.substring(end, Math.min(value.length, end + suffix.length));
+
+    if (beforeSelection === prefix && afterSelection === suffix) {
+      // Remove formatting
+      const newValue =
+        value.substring(0, start - prefix.length) +
+        selectedText +
+        value.substring(end + suffix.length);
+      onChange(newValue);
+
+      // Adjust cursor position
+      setTimeout(() => {
+        textarea.focus();
+        const newPosition = start - prefix.length;
+        textarea.setSelectionRange(newPosition, newPosition + selectedText.length);
+      }, 0);
+    } else {
+      // Add formatting
+      const newValue =
+        value.substring(0, start) +
+        prefix +
+        selectedText +
+        suffix +
+        value.substring(end);
+      onChange(newValue);
+
+      // Put cursor inside formatting marks if no text was selected
+      setTimeout(() => {
+        textarea.focus();
+        const newPosition = start + prefix.length;
+        const selectionLength = selectedText.length || 0;
+        textarea.setSelectionRange(newPosition, newPosition + selectionLength);
+      }, 0);
+    }
+  };
+
+  // Function to apply list formatting
+  const insertList = (prefix: string) => {
+    if (!textareaRef.current) return;
+
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = value.substring(start, end);
+
+    if (selectedText) {
+      // Format each line of the selected text
+      const lines = selectedText.split("\n");
+      let formattedText: string;
+
+      if (prefix === "1. ") {
+        // For numbered lists
+        formattedText = lines
+          .map((line, i) => (line.trim() ? `${i + 1}. ${line}` : line))
+          .join("\n");
+      } else {
+        // For bullet lists
+        formattedText = lines
+          .map((line) => (line.trim() ? `${prefix}${line}` : line))
+          .join("\n");
+      }
+
+      const newValue =
+        value.substring(0, start) +
+        formattedText +
+        value.substring(end);
+
+      onChange(newValue);
+    } else {
+      // If no text is selected, insert list marker at cursor position
+      const cursorPos = start;
+      const newValue =
+        value.substring(0, cursorPos) +
+        prefix +
+        value.substring(cursorPos);
+
+      onChange(newValue);
+
+      // Place cursor after the list marker
+      setTimeout(() => {
+        textarea.focus();
+        const newPosition = cursorPos + prefix.length;
+        textarea.setSelectionRange(newPosition, newPosition);
+      }, 0);
+    }
+  };
+
+  // Update getPreviewHtml to handle markdown more comprehensively
+  const getPreviewHtml = () => {
+    if (!value) return placeholder || "";
+
+    let html = value
+      // Convert bold
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      // Convert italic
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+      // Convert bullet lists (match across multiple lines)
+      .replace(/^[•●] (.+)$/gm, "<li>$1</li>")
+      // Convert numbered lists
+      .replace(/^\d+\. (.+)$/gm, "<li>$1</li>")
+      // Wrap consecutive list items in ul/ol tags
+      .replace(/((?:<li>.*<\/li>\n?)+)/g, "<ul class='pl-6 list-disc space-y-1'>$1</ul>")
+      // Add paragraph tags to text blocks
+      .replace(/^([^<\n].+)$/gm, "<p>$1</p>")
+      // Fix nested paragraph tags
+      .replace(/<p><li>/g, "<li>")
+      .replace(/<\/li><\/p>/g, "</li>")
+      // Remove empty paragraphs
+      .replace(/<p><\/p>/g, "");
+
+    return html;
+  };
+
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between gap-2 p-2 bg-gray-50 border-b border-gray-200">
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => insertFormatting("**")}
+            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
+            disabled={isPreviewMode}
+          >
+            <Bold className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => insertFormatting("*")}
+            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
+            disabled={isPreviewMode}
+          >
+            <Italic className="h-4 w-4" />
+          </Button>
+          <div className="w-px h-6 bg-gray-200" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => insertList("• ")}
+            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
+            disabled={isPreviewMode}
+          >
+            <List className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => insertList("1. ")}
+            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
+            disabled={isPreviewMode}
+          >
+            <ListOrdered className="h-4 w-4" />
+          </Button>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsPreviewMode(!isPreviewMode)}
+          className={cn(
+            "text-xs px-2 py-1 h-7",
+            isPreviewMode ? "bg-indigo-50 text-indigo-700" : "hover:bg-gray-100"
+          )}
+        >
+          {isPreviewMode ? "Edit" : "Preview"}
+        </Button>
+      </div>
+
+      {isPreviewMode ? (
+        <div
+          className="p-3 prose prose-sm max-w-none min-h-[150px]"
+          style={{ minHeight }}
+          dangerouslySetInnerHTML={{ __html: getPreviewHtml() }}
+        />
+      ) : (
+        <Textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="border-0 rounded-none resize-none p-3"
+          style={{ minHeight }}
+        />
+      )}
+    </div>
+  );
+};
 
 const CheckIn = () => {
   const { id } = useParams<{ id?: string }>();
@@ -68,23 +291,6 @@ const CheckIn = () => {
     !!appointment?.service?.service_name
   );
 
-
-
-
-  // // Add specific order ID based on service type
-  // if (appointment?.service?.service_name?.toLowerCase().includes("test")) {
-  //   qrCodeInformation.test_order_id = parseInt(id || "0");
-  // } else if (
-  //   appointment?.service?.service_name?.toLowerCase().includes("medicine") ||
-  //   appointment?.service?.service_name?.toLowerCase().includes("medication")
-  // ) {
-  //   qrCodeInformation.medicine_order_id = parseInt(id || "0");
-  // } else {
-  //   // For general services
-  //   qrCodeInformation.service_order_id = parseInt(id || "0");
-  // }
-
-
   // Use the mutation hook with proper methods
   const qrMutation = useQR();
 
@@ -102,10 +308,6 @@ const CheckIn = () => {
       </div>
     );
   }
-
-  // const subtotal = billingItems.reduce((sum, item) => sum + item.total, 0);
-  // const tax = appointment.service.service_amount * 0.1; // 10% tax
-  
 
   // Format currency for VND
   const formatCurrency = (amount: number) => {
@@ -171,7 +373,7 @@ const CheckIn = () => {
     }
   };
 
-  const total = appointment.service.service_amount ;
+  const total = appointment.service.service_amount;
 
   // Determine the appropriate QR code request based on appointment type
   const qrCodeInformation: QuickLinkRequest = {
@@ -484,7 +686,7 @@ const CheckIn = () => {
                   </div>
                 </div>
 
-                {/* Subjective Notes - Added directly to the check-in page */}
+                {/* Subjective Notes */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                   <div className="px-5 py-3 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
                     <h3 className="text-sm font-medium text-gray-800 flex items-center">
@@ -493,20 +695,16 @@ const CheckIn = () => {
                     </h3>
                   </div>
                   <div className="p-5">
-                    <Textarea
-                      placeholder="Enter subjective information about the patient..."
-                      className="min-h-[180px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
+                    <RichTextEditor
                       value={subjective}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        console.log("Setting subjective to:", newValue);
-                        setSubjective(newValue);
-                      }}
+                      onChange={setSubjective}
+                      placeholder="Enter subjective information about the patient..."
+                      minHeight="150px"
                     />
-                    {/* Add a visual indicator of the current subjective value */}
-                    <div className="mt-2 text-xs text-gray-500">
-                      <span>
-                        Current note length: {subjective.length} characters
+                    <div className="mt-2 text-xs text-gray-500 flex items-center justify-between">
+                      <span>Characters: {subjective.length}</span>
+                      <span className="text-gray-400">
+                        Use ** for bold, * for italic
                       </span>
                     </div>
                   </div>
@@ -589,10 +787,6 @@ const CheckIn = () => {
                         {formatCurrency(appointment.service.service_amount)}
                       </span>
                     </div>
-                    {/* <div className="flex justify-between py-1 text-sm">
-                      <span className="text-gray-600">Tax (10%):</span>
-                      <span className="font-medium">{formatCurrency(tax)}</span>
-                    </div> */}
                     <div className="flex justify-between py-1 border-t border-gray-200 font-bold text-base">
                       <span>Total:</span>
                       <span>{formatCurrency(total)}</span>
@@ -680,7 +874,8 @@ const CheckIn = () => {
                                 className="w-80 h-80"
                                 onError={(e) => {
                                   console.error("Error loading QR image");
-                                  e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmaWxsPSIjOTA5MDkwIj5RUiBJbWFnZSBMb2FkIEVycm9yPC90ZXh0Pjwvc3ZnPg==";
+                                  e.currentTarget.src =
+                                    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmaWxsPSIjOTA5MDkwIj5RUiBJbWFnZSBMb2FkIEVycm9yPC90ZXh0Pjwvc3ZnPg==";
                                 }}
                               />
                             ) : (
@@ -709,25 +904,6 @@ const CheckIn = () => {
                       <CreditCard className="w-4 h-4" />
                       Confirm Payment
                     </Button>
-                    {/* 
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        className="flex-1 flex items-center justify-center gap-1.5 border-gray-200"
-                        onClick={handlePrintInvoice}
-                      >
-                        <Printer className="w-4 h-4" />
-                        Print Invoice with QR
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="flex-1 flex items-center justify-center gap-1.5 border-gray-200"
-                        onClick={handleDownloadInvoice}
-                      >
-                        <Download className="w-4 h-4" />
-                        Download
-                      </Button>
-                    </div> */}
                   </div>
                 </div>
               </div>

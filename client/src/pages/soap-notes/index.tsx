@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,18 +11,18 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowUpRight,
-  Calendar,
   FileText,
   Activity,
-  Stethoscope,
-  Clock,
   CheckCircle,
   ClipboardEdit,
-  Printer,
   NotebookText,
   FileBarChart,
   Info,
   FlaskConical,
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useGetSOAP, useUpdateSOAP } from "@/hooks/use-soap";
@@ -32,62 +32,189 @@ import WorkflowNavigation from "@/components/WorkflowNavigation";
 import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ObjectiveData } from "@/types";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
+import { SOAPHistory } from "@/components/soap/SOAPHistory";
 
 type InputChangeEvent = React.ChangeEvent<HTMLTextAreaElement>;
+
+// Simple RichText toolbar component
+const RichTextToolbar = ({ onAction }: { onAction: (action: string) => void }) => {
+  return (
+    <div className="flex items-center gap-2 p-1 bg-gray-50 border-b">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => onAction("bold")}
+        className="h-8 w-8 p-0"
+      >
+        <Bold className="h-4 w-4" />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => onAction("italic")}
+        className="h-8 w-8 p-0"
+      >
+        <Italic className="h-4 w-4" />
+      </Button>
+      <div className="w-px h-6 bg-gray-200" />
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => onAction("bulletList")}
+        className="h-8 w-8 p-0"
+      >
+        <List className="h-4 w-4" />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => onAction("numberedList")}
+        className="h-8 w-8 p-0"
+      >
+        <ListOrdered className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+};
+
+// Enhanced textarea with basic rich formatting capability
+const EnhancedTextarea = ({ 
+  value, 
+  onChange, 
+  placeholder, 
+  className,
+  minHeight = "150px"
+}: { 
+  value: string; 
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+  minHeight?: string; 
+}) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleToolbarAction = (action: string) => {
+    if (!textareaRef.current) return;
+    
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = value.substring(start, end);
+    
+    let result = value;
+    
+    switch (action) {
+      case "bold":
+        result = value.substring(0, start) + `**${selectedText}**` + value.substring(end);
+        break;
+      case "italic":
+        result = value.substring(0, start) + `*${selectedText}*` + value.substring(end);
+        break;
+      case "bulletList":
+        if (selectedText) {
+          const bulletItems = selectedText.split('\n').map(item => `• ${item}`).join('\n');
+          result = value.substring(0, start) + bulletItems + value.substring(end);
+        } else {
+          result = value.substring(0, start) + "• " + value.substring(end);
+        }
+        break;
+      case "numberedList":
+        if (selectedText) {
+          const numberedItems = selectedText.split('\n').map((item, i) => `${i + 1}. ${item}`).join('\n');
+          result = value.substring(0, start) + numberedItems + value.substring(end);
+        } else {
+          result = value.substring(0, start) + "1. " + value.substring(end);
+        }
+        break;
+      default:
+        break;
+    }
+    
+    onChange(result);
+    
+    // Set focus back to textarea
+    setTimeout(() => {
+      textarea.focus();
+      // If inserting around selection, put cursor inside the formatting marks
+      const newCursorPos = start + (selectedText ? 2 : 0);
+      textarea.setSelectionRange(newCursorPos, newCursorPos + selectedText.length);
+    }, 0);
+  };
+  
+  return (
+    <div className={`border rounded overflow-hidden ${className || ''}`}>
+      <RichTextToolbar onAction={handleToolbarAction} />
+      <Textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="border-0 rounded-none resize-none p-3"
+        style={{ minHeight }}
+      />
+    </div>
+  );
+};
 
 const SoapNotes = () => {
   // Lấy params từ cả route params và query params
   const { id: routeId } = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
   const [isRecording, setIsRecording] = useState(false);
-  
+
   // Quản lý tham số workflow
   const [workflowParams, setWorkflowParams] = useState<{
     appointmentId: string | null;
     petId: string | null;
   }>({
     appointmentId: null,
-    petId: null
+    petId: null,
   });
-  
+
   // Xử lý các tham số từ URL một cách nhất quán
   useEffect(() => {
     // Lấy tất cả các query params từ URL
     const searchParams = new URLSearchParams(window.location.search);
     const urlAppointmentId = searchParams.get("appointmentId");
     const urlPetId = searchParams.get("petId");
-    
+
     // Thiết lập appointmentId và petId theo thứ tự ưu tiên
     const appointmentIdValue = urlAppointmentId || routeId || null;
     const petIdValue = urlPetId || null;
-    
+
     // IMPORTANT: Kiểm tra xem giá trị mới có khác giá trị cũ không
     // để tránh vòng lặp vô hạn của setState
-    if (appointmentIdValue !== workflowParams.appointmentId || 
-        petIdValue !== workflowParams.petId) {
+    if (
+      appointmentIdValue !== workflowParams.appointmentId ||
+      petIdValue !== workflowParams.petId
+    ) {
       setWorkflowParams({
         appointmentId: appointmentIdValue,
-        petId: petIdValue
+        petId: petIdValue,
       });
-      
     }
   }, [routeId]);
-  
+
   // Sử dụng appointmentId từ workflowParams
   const effectiveAppointmentId = workflowParams.appointmentId || "";
-  
+
   // Utility function to build query parameters
   const buildUrlParams = (params: Record<string, string | number | null | undefined>) => {
     const urlParams = new URLSearchParams();
-    
+
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
+      if (value !== null && value !== undefined && value !== "") {
         urlParams.append(key, String(value));
       }
     });
-    
+
     const queryString = urlParams.toString();
-    return queryString ? `?${queryString}` : '';
+    return queryString ? `?${queryString}` : "";
   };
 
   const {
@@ -95,7 +222,7 @@ const SoapNotes = () => {
     isLoading: isAppointmentLoading,
     error: appointmentError,
   } = useAppointmentData(effectiveAppointmentId);
-  
+
   const {
     data: soapData = {
       subjective: "",
@@ -104,15 +231,15 @@ const SoapNotes = () => {
       plan: "",
     },
     isLoading: isSoapLoading,
-  error: soapError,
+    error: soapError,
   } = useGetSOAP(appointment?.id);
-  
+
   const {
     data: patient,
     isLoading: isPatientLoading,
     error: patientError,
   } = usePatientData(appointment?.pet?.pet_id);
-  
+
   const updateSoapMutation = useUpdateSOAP();
 
   const [localSoapData, setLocalSoapData] = useState({
@@ -126,13 +253,14 @@ const SoapNotes = () => {
   useEffect(() => {
     if (soapData) {
       // Use explicit checks for individual fields instead of comparing entire objects
-      const shouldUpdate = 
-        soapData.subjective !== localSoapData.subjective || 
+      const shouldUpdate =
+        soapData.subjective !== localSoapData.subjective ||
         soapData.assessment !== localSoapData.assessment ||
         soapData.plan !== localSoapData.plan ||
         // For objective, just check if it exists and is different than current
-        (JSON.stringify(soapData.objective || {}) !== JSON.stringify(localSoapData.objective || {}));
-      
+        JSON.stringify(soapData.objective || {}) !==
+          JSON.stringify(localSoapData.objective || {});
+
       if (shouldUpdate) {
         setLocalSoapData({
           subjective: soapData.subjective || "",
@@ -167,20 +295,20 @@ const SoapNotes = () => {
     // Format vital signs with better visual structure
     if (data.vital_signs) {
       formattedText += `🔍 VITAL SIGNS\n${"─".repeat(30)}\n`;
-      
+
       const vitalSigns = [
         { name: "Weight", value: data.vital_signs.weight, unit: "kg", icon: "⚖️" },
         { name: "Temperature", value: data.vital_signs.temperature, unit: "°C", icon: "🌡️" },
         { name: "Heart Rate", value: data.vital_signs.heart_rate, unit: "bpm", icon: "❤️" },
-        { name: "Respiratory Rate", value: data.vital_signs.respiratory_rate, unit: "rpm", icon: "🫁" }
+        { name: "Respiratory Rate", value: data.vital_signs.respiratory_rate, unit: "rpm", icon: "🫁" },
       ];
-      
-      vitalSigns.forEach(sign => {
+
+      vitalSigns.forEach((sign) => {
         if (sign.value) {
           formattedText += `${sign.icon} ${sign.name}: ${sign.value} ${sign.unit}\n`;
         }
       });
-      
+
       if (data.vital_signs.general_notes) {
         formattedText += `\n📝 General Notes:\n${data.vital_signs.general_notes}\n`;
       }
@@ -203,8 +331,8 @@ const SoapNotes = () => {
       ];
 
       // First count how many systems have data
-      const filledSystems = systemPairs.filter(system => system.value).length;
-      
+      const filledSystems = systemPairs.filter((system) => system.value).length;
+
       if (filledSystems === 0) {
         formattedText += "No systems examination data recorded.\n";
       } else {
@@ -267,7 +395,7 @@ const SoapNotes = () => {
         subjective: localSoapData.subjective,
         objective: currentData.objective, // Keep the original objective data
         assessment: localSoapData.assessment,
-        plan: localSoapData.plan,
+        plan: Number(localSoapData.plan) || 0,
       });
       if (updateSoapMutation.isSuccess) {
         toast({
@@ -275,15 +403,14 @@ const SoapNotes = () => {
           description: "SOAP notes saved successfully.",
           className: "bg-green-50 border-green-200 text-green-800",
         });
-        
+
         // Điều hướng đến lab-management với query params
         const params = {
           appointmentId: effectiveAppointmentId,
-          petId: appointment?.pet?.pet_id
+          petId: appointment?.pet?.pet_id,
         };
         navigate(`/lab-management${buildUrlParams(params)}`);
       }
-
     } catch (error) {
       console.error("Error saving SOAP notes:", error);
       toast({
@@ -298,11 +425,11 @@ const SoapNotes = () => {
     if (patient) {
       // Save notes first
       handleSave();
-      
+
       // Then navigate to treatment page with query params
       const params = {
         appointmentId: effectiveAppointmentId,
-        petId: patient.petid
+        petId: patient.petid,
       };
       navigate(`/treatment${buildUrlParams(params)}`);
     }
@@ -313,7 +440,7 @@ const SoapNotes = () => {
       // Navigate to patient page with query params
       const params = {
         appointmentId: effectiveAppointmentId,
-        petId: appointment?.pet?.pet_id
+        petId: appointment?.pet?.pet_id,
       };
       navigate(`/patient${buildUrlParams(params)}`);
     } else {
@@ -326,11 +453,14 @@ const SoapNotes = () => {
       // Navigate to lab management page with query params
       const params = {
         appointmentId: effectiveAppointmentId,
-        petId: patient.petid
+        petId: patient.petid,
       };
       navigate(`/lab-management${buildUrlParams(params)}`);
     }
   };
+
+  // Near the top of the component, add a state for preview mode
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   if (isAppointmentLoading || isPatientLoading || !appointment || !patient) {
     return (
@@ -364,29 +494,8 @@ const SoapNotes = () => {
           </Button>
           <div>
             <h1 className="text-white font-semibold text-lg">SOAP Notes</h1>
-            {/* <p className="text-indigo-100 text-xs hidden sm:block">Subjective, Objective, Assessment, Plan</p> */}
           </div>
         </div>
-        {/* <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
-            onClick={handleProceedToTreatment}
-          >
-            <ArrowUpRight className="h-4 w-4 mr-1" />
-            <span>Proceed to Treatment</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
-            onClick={handleSave}
-          >
-            <Save className="h-4 w-4 mr-1" />
-            <span>Save Notes</span>
-          </Button>
-        </div> */}
       </div>
 
       {/* Workflow Navigation */}
@@ -426,32 +535,57 @@ const SoapNotes = () => {
 
           <div className="p-6">
             <Tabs defaultValue="all" className="w-full">
-              <TabsList className="inline-flex p-1 bg-gray-100 rounded-md mb-4">
-                <TabsTrigger
-                  value="all"
-                  className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
-                >
-                  All Sections
-                </TabsTrigger>
-                <TabsTrigger
-                  value="subjective"
-                  className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
-                >
-                  Subjective
-                </TabsTrigger>
-                <TabsTrigger
-                  value="objective"
-                  className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
-                >
-                  Objective
-                </TabsTrigger>
-                <TabsTrigger
-                  value="assessment"
-                  className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
-                >
-                  Assessment
-                </TabsTrigger>
-              </TabsList>
+              <div className="mb-4">
+                <TabsList className="inline-flex p-1 bg-gray-100 rounded-md mb-4">
+                  <TabsTrigger
+                    value="all"
+                    className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
+                  >
+                    All Sections
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="subjective"
+                    className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
+                  >
+                    Subjective
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="objective"
+                    className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
+                  >
+                    Objective
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="assessment"
+                    className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
+                  >
+                    Assessment
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="plan"
+                    className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
+                  >
+                    Plan
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="history"
+                    className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
+                  >
+                    History
+                  </TabsTrigger>
+                </TabsList>
+                <div className="flex justify-end mb-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsPreviewMode(!isPreviewMode)}
+                    className="text-xs"
+                  >
+                    {isPreviewMode ? "Edit Mode" : "Preview Mode"}
+                  </Button>
+                </div>
+              </div>
 
               <TabsContent value="all" className="space-y-6 py-4">
                 <div>
@@ -461,14 +595,18 @@ const SoapNotes = () => {
                       S - Subjective (Owner's Report)
                     </label>
                   </div>
-                  <Textarea
-                    placeholder="Enter owner's description of the problem..."
-                    className="min-h-[150px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
-                    value={localSoapData.subjective}
-                    onChange={(e: InputChangeEvent) =>
-                      handleInputChange("subjective", e.target.value)
-                    }
-                  />
+                  {isPreviewMode ? (
+                    <div className="p-4 bg-white border rounded-md">
+                      <MarkdownRenderer markdown={localSoapData.subjective} />
+                    </div>
+                  ) : (
+                    <EnhancedTextarea
+                      value={localSoapData.subjective}
+                      onChange={(value) => handleInputChange("subjective", value)}
+                      placeholder="Enter owner's description of the problem..."
+                      minHeight="150px"
+                    />
+                  )}
                 </div>
 
                 <div>
@@ -499,13 +637,12 @@ const SoapNotes = () => {
                       </Badge>
                     </label>
                   </div>
-                  <Textarea
-                    placeholder="Enter diagnosis or assessment of the condition..."
-                    className="min-h-[200px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-indigo-200 bg-indigo-50"
+                  <EnhancedTextarea
                     value={localSoapData.assessment}
-                    onChange={(e: InputChangeEvent) =>
-                      handleInputChange("assessment", e.target.value)
-                    }
+                    onChange={(value) => handleInputChange("assessment", value)}
+                    placeholder="Enter diagnosis or assessment of the condition..."
+                    className="bg-indigo-50"
+                    minHeight="200px"
                   />
                 </div>
               </TabsContent>
@@ -519,14 +656,18 @@ const SoapNotes = () => {
                       S - Subjective (Owner's Report)
                     </label>
                   </div>
-                  <Textarea
-                    placeholder="Enter owner's description of the problem..."
-                    className="min-h-[400px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-gray-200"
-                    value={localSoapData.subjective}
-                    onChange={(e: InputChangeEvent) =>
-                      handleInputChange("subjective", e.target.value)
-                    }
-                  />
+                  {isPreviewMode ? (
+                    <div className="p-4 bg-white border rounded-md">
+                      <MarkdownRenderer markdown={localSoapData.subjective} />
+                    </div>
+                  ) : (
+                    <EnhancedTextarea
+                      value={localSoapData.subjective}
+                      onChange={(value) => handleInputChange("subjective", value)}
+                      placeholder="Enter owner's description of the problem..."
+                      minHeight="400px"
+                    />
+                  )}
                 </div>
               </TabsContent>
 
@@ -577,14 +718,29 @@ const SoapNotes = () => {
                       A - Assessment (Diagnosis)
                     </label>
                   </div>
-                  <Textarea
-                    placeholder="Enter diagnosis or assessment of the condition..."
-                    className="min-h-[400px] resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 border-indigo-200 bg-indigo-50"
+                  <EnhancedTextarea
                     value={localSoapData.assessment}
-                    onChange={(e: InputChangeEvent) =>
-                      handleInputChange("assessment", e.target.value)
-                    }
+                    onChange={(value) => handleInputChange("assessment", value)}
+                    placeholder="Enter diagnosis or assessment of the condition..."
+                    className="bg-indigo-50"
+                    minHeight="400px"
                   />
+                </div>
+              </TabsContent>
+
+              {/* Tab History - SOAP history for this patient */}
+              <TabsContent value="history" className="py-4">
+                <div>
+                  <Alert className="mb-4 bg-blue-50 border-blue-200">
+                    <Info className="h-4 w-4 text-blue-600" />
+                    <AlertTitle className="text-blue-800">
+                      Patient's SOAP History
+                    </AlertTitle>
+                    <AlertDescription className="text-blue-700">
+                      View the complete history of SOAP notes for this patient to track their progress over time.
+                    </AlertDescription>
+                  </Alert>
+                  <SOAPHistory petId={patient?.petid?.toString() || ""} />
                 </div>
               </TabsContent>
             </Tabs>

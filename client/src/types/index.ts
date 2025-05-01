@@ -601,3 +601,10 @@ export interface AppointmentNotification {
   status?: 'confirmed' | 'declined' | 'pending';
   _notificationId?: number; // Outer notification ID from the server
 }
+
+export interface SOAPData {
+  subjective: string;
+  objective: ObjectiveData;
+  assessment: string;
+  plan: string; // Change from number to string for rich text support
+}

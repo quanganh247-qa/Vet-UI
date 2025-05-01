@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ckeditor/ckeditor5-build-classic": "^41.4.2",
+    "@ckeditor/ckeditor5-react": "^9.5.0",
     "@hookform/resolvers": "^3.9.1",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@neondatabase/serverless": "^0.10.4",
@@ -72,6 +74,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.53.1",
     "react-icons": "^5.4.0",
+    "react-quill": "^2.0.0",
     "react-resizable-panels": "^2.1.4",
     "react-router-dom": "^7.4.0",
     "recharts": "^2.13.0",

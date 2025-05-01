@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -41,6 +41,26 @@ interface ShiftFormProps {
   onCancel: () => void;
 }
 
+// Default shift templates
+const DEFAULT_TEMPLATES: ShiftTemplate[] = [
+  {
+    id: 'morning-shift',
+    name: 'Morning Shift',
+    startTime: '08:00',
+    endTime: '12:00',
+    status: 'scheduled',
+    description: 'Standard morning shift'
+  },
+  {
+    id: 'afternoon-shift',
+    name: 'Afternoon Shift',
+    startTime: '13:00',
+    endTime: '17:00',
+    status: 'scheduled',
+    description: 'Standard afternoon shift'
+  }
+];
+
 // Form validation schema
 const formSchema = z.object({
   title: z.string().min(2, { message: 'Title must be at least 2 characters' }),
@@ -63,7 +83,17 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
   onCancel,
 }) => {
   // State to track if a template is being applied
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>("custom");
+  const [allTemplates, setAllTemplates] = useState<ShiftTemplate[]>([]);
+
+  // Combine provided templates with default templates
+  useEffect(() => {
+    const combinedTemplates = [...DEFAULT_TEMPLATES];
+    if (templates && templates.length > 0) {
+      combinedTemplates.push(...templates);
+    }
+    setAllTemplates(combinedTemplates);
+  }, [templates]);
 
   // Initialize form with default values or existing shift data
   const form = useForm<z.infer<typeof formSchema>>({
@@ -97,7 +127,12 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
 
   // Apply the selected template to the form
   const applyTemplate = (templateId: string) => {
-    const template = templates?.find((t) => t.id === templateId);
+    if (templateId === "custom") {
+      setSelectedTemplate("custom");
+      return;
+    }
+    
+    const template = allTemplates?.find((t) => t.id === templateId);
     if (template) {
       form.setValue('title', template.name);
       form.setValue('startTime', template.startTime);
@@ -110,13 +145,13 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto pr-2">
         {/* Template selector */}
         <div className="mb-6">
           <FormItem>
             <FormLabel>Shift Template</FormLabel>
             <Select
-              value={selectedTemplate || ''}
+              value={selectedTemplate || 'custom'}
               onValueChange={applyTemplate}
             >
               <FormControl>
@@ -125,8 +160,8 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="">Custom Shift</SelectItem>
-                {templates?.map((template) => (
+                <SelectItem value="custom">Custom Shift</SelectItem>
+                {allTemplates?.map((template) => (
                   <SelectItem key={template.id} value={template.id}>
                     {template.name} ({template.startTime} - {template.endTime})
                   </SelectItem>
@@ -169,7 +204,7 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {doctors.map((doctor) => (
+                  {doctors?.map((doctor) => (
                     <SelectItem
                       key={doctor.doctor_id}
                       value={doctor.doctor_id.toString()}
@@ -284,22 +319,6 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="location"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Location</FormLabel>
-              <FormControl>
-                <Input placeholder="Main Building, Room 101" {...field} />
-              </FormControl>
-              <FormDescription>
-                Optional: Specify where this shift will take place
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <FormField
           control={form.control}

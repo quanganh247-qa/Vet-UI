@@ -6,7 +6,9 @@ import { getAllAppointments } from '@/services/appointment-services';
 import { getRooms } from '@/services/room-services';
 import { 
   ArrowLeft, Calendar, Loader2, RefreshCw, UserCog, LogOut, 
-  User, Settings, Plus, Menu, X, ChevronLeft, ChevronRight
+  User, Settings, Plus, Menu, X, ChevronLeft, ChevronRight,
+  Search, Filter, RotateCcw, Clock, FileText, Stethoscope,
+  CheckCircle, PlusCircle, PawPrint, AlertCircle
 } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
 import EnhancedAppointmentFlowboard from '@/components/appointment/EnhancedAppointmentFlowboard';
@@ -15,7 +17,9 @@ import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast";
 
 import {
   Select,
@@ -34,6 +38,43 @@ const invalidateRelatedQueries = async (patterns: string[]) => {
   }
 };
 
+// Format date and time
+const formatDateTime = (dateString: string) => {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+  }).format(date);
+};
+
+// Format time only
+const formatTime = (dateString: string) => {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: 'numeric',
+  }).format(date);
+};
+
+// Status badge component
+const getStatusBadge = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'completed':
+      return <Badge className="bg-green-100 text-green-800 border-green-200">Completed</Badge>;
+    case 'in progress':
+      return <Badge className="bg-amber-100 text-amber-800 border-amber-200">In Progress</Badge>;
+    case 'scheduled':
+      return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Waiting</Badge>;
+    case 'cancelled':
+      return <Badge className="bg-red-100 text-red-800 border-red-200">Cancelled</Badge>;
+    default:
+      return <Badge className="bg-gray-100 text-gray-800 border-gray-200">{status}</Badge>;
+  }
+};
+
 const AppointmentFlow = () => {
   const { id } = useParams();
   const [, navigate] = useLocation();
@@ -48,6 +89,9 @@ const AppointmentFlow = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   // Fetch appointments data
   const { 
@@ -86,6 +130,19 @@ const AppointmentFlow = () => {
     { id: 4, name: 'Mike Brown', role: 'Assistant', status: 'Busy', avatar: '' },
   ];
   
+  // Filter appointments based on search term and status
+  const filteredAppointments = appointments.filter((appointment: Appointment) => {
+    const matchesSearch = searchTerm ? 
+      (appointment.pet?.pet_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      appointment.doctor?.doctor_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (appointment.service?.service_name || '').toLowerCase().includes(searchTerm.toLowerCase()))
+      : true;
+    
+    const matchesStatus = statusFilter ? appointment.state.toLowerCase() === statusFilter.toLowerCase() : true;
+    
+    return matchesSearch && matchesStatus;
+  });
+  
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const date = new Date(e.target.value);
     if (!isNaN(date.getTime())) {
@@ -109,6 +166,12 @@ const AppointmentFlow = () => {
   const handlePageSizeChange = (newSize: string) => {
     setPageSize(parseInt(newSize));
     setCurrentPage(1); // Reset to first page when changing page size
+  };
+  
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter(null);
   };
   
   // Update state after appointment is processed
@@ -135,6 +198,12 @@ const AppointmentFlow = () => {
         'rooms'
       ]);
       
+      toast({
+        title: "Status updated",
+        description: `Appointment status has been changed to ${newStatus}`,
+        className: "bg-green-50 text-green-800 border-green-200",
+      });
+      
       // Select the next patient if the current one was completed
       if (newStatus === 'Completed' && selectedAppointmentId === appointmentId) {
         const nextPatient = queueData?.[0]?.id;
@@ -146,6 +215,12 @@ const AppointmentFlow = () => {
       }
     } catch (error) {
       console.error('Error updating appointment status:', error);
+      
+      toast({
+        title: "Error",
+        description: "Failed to update appointment status",
+        variant: "destructive",
+      });
     }
   };
 
@@ -171,6 +246,7 @@ const AppointmentFlow = () => {
     setSelectedAppointmentId(null);
     setSidebarContent('new');
     setShowSidebar(true);
+    navigate('/appointments/new');
   };
 
   const handleRefreshData = async () => {
@@ -181,8 +257,20 @@ const AppointmentFlow = () => {
         'appointments',
         'rooms'
       ]);
+      
+      toast({
+        title: "Data refreshed",
+        description: "Appointment data has been updated",
+        className: "bg-blue-50 text-blue-800 border-blue-200",
+      });
     } catch (error) {
       console.error('Error refreshing data:', error);
+      
+      toast({
+        title: "Error",
+        description: "Failed to refresh data",
+        variant: "destructive",
+      });
     } finally {
       setTimeout(() => setIsRefreshing(false), 500);
     }
@@ -272,26 +360,32 @@ const AppointmentFlow = () => {
   );
 
   return (
-    <div className="space-y-4 md:space-y-6 px-2 sm:px-4 md:px-6 max-w-[100vw]">
+    <div className="space-y-6">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-3 sm:px-4 md:px-6 py-3 md:py-4 rounded-xl shadow-md">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-          {/* Top row with title and mobile menu button */}
-          <div className="flex justify-between items-center">
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
             <div className="flex items-center">
-              <Link href="/dashboard" className="text-white flex items-center hover:bg-white/10 rounded-lg px-2 py-1 md:px-3 md:py-2 transition-all mr-2 md:mr-4 md:block hidden">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                {/* <span className="text-sm font-medium">Back</span> */}
-              </Link>
-              <h1 className="text-xl md:text-2xl font-bold text-white">Appointment Flow</h1>
-              {doctor && (
-                <Badge className="ml-2 md:ml-4 bg-white/20 text-white hover:bg-white/30 hidden sm:inline-flex">
-                  Dr. {doctor.username}
-                </Badge>
-              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="mr-2 h-8 w-8 text-white hover:bg-white/20 md:block hidden"
+                asChild
+              >
+                <Link href="/dashboard">
+                  <ArrowLeft className="h-5 w-5" />
+                </Link>
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold text-white">Appointment Flow</h1>
+                <p className="text-indigo-100 text-sm">
+                  Manage and track appointments through your clinic's workflow
+                </p>
+              </div>
             </div>
-            
-            {/* Mobile menu button */}
+          </div>
+          
+          <div className="flex items-center gap-2">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 md:hidden">
@@ -302,78 +396,158 @@ const AppointmentFlow = () => {
                 {renderMobileMenu()}
               </SheetContent>
             </Sheet>
-          </div>
-          
-          {/* Controls row - hidden on mobile, shown in dropdown */}
-          <div className="hidden md:flex items-center space-x-3">
-            {/* <div className="flex items-center bg-white/10 text-white border-white/20 rounded-md px-3 py-1">
-              <Calendar className="h-4 w-4 text-white/70 mr-2" />
-              <input
-                type="date"
-                value={format(selectedDate, 'yyyy-MM-dd')}
-                onChange={handleDateChange}
-                className="text-sm bg-transparent border-none focus:outline-none text-white"
-              />
-            </div> */}
             
             <Button 
               variant="outline" 
               size="sm" 
-              className="bg-white/10 text-white border-white/20 hover:bg-white/30 flex items-center gap-1.5"
+              className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
               onClick={handleRefreshData}
               disabled={isRefreshing}
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
+            
+            <Button 
+              onClick={handleNewAppointment}
+              className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              New Appointment
+            </Button>
           </div>
         </div>
       </div>
-      
-      {/* Appointment Flow Board */}
-      <Card className="border-none shadow-md overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-3 border-b">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <div className="flex items-center">
-              <CardTitle className="text-base md:text-lg font-semibold text-indigo-900">Appointment Flow Management</CardTitle>
+
+      <div className="container mx-auto">
+        <div className="bg-white rounded-lg border border-indigo-100 shadow-sm p-6 mb-6">
+          {/* Search and filter section */}
+          <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6 bg-indigo-50 p-3 rounded-md border border-indigo-100">
+            <div className="flex flex-1 gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-400" />
+                <Input
+                  placeholder="Search appointments..."
+                  className="pl-10 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              
+              <Select value={statusFilter || "all"} onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}>
+                <SelectTrigger className="w-[180px] border-indigo-200">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="scheduled">Waiting</SelectItem>
+                  <SelectItem value="in progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <div className="flex items-center space-x-2">
+                <Input
+                  type="date"
+                  value={format(selectedDate, 'yyyy-MM-dd')}
+                  onChange={handleDateChange}
+                  className="border-indigo-200 h-10"
+                />
+              </div>
+              
+              <Button variant="outline" size="icon" onClick={clearFilters} className="border-indigo-200">
+                <RotateCcw className="h-4 w-4 text-indigo-600" />
+              </Button>
             </div>
             
-            {/* Status summary as badges */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
-              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 px-2 py-1 text-xs">
-                Completed: {appointments.filter(a => a.state === 'Completed').length}
-              </Badge>
-              <Badge className="bg-amber-100 text-amber-800 border-amber-200 px-2 py-1 text-xs">
-                In Progress: {appointments.filter(a => a.state === 'In Progress').length}
-              </Badge>
-              <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 px-2 py-1 text-xs">
-                Waiting: {appointments.filter(a => a.state === 'Scheduled').length}
-              </Badge>
-              <Badge className="bg-gray-100 text-gray-800 border-gray-200 px-2 py-1 text-xs">
-                Total: {totalAppointments}
-              </Badge>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 whitespace-nowrap"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Advanced Filters
+              </Button>
             </div>
           </div>
-        </CardHeader>
-        
-        <CardContent className="p-2 sm:p-4 md:p-6 overflow-x-auto">
-          {/* Flowboard takes up full width */}
-          <div className="min-w-[600px]"> {/* Minimum width to prevent squeezing */}
-            <EnhancedAppointmentFlowboard
-              appointments={appointments}
-              doctors={staff.map(s => ({
-                doctor_id: s.id,
-                doctor_name: s.name,
-                doctor_phone: '',
-                doctor_email: '',
-                doctor_specialty: s.role,
-                doctor_avatar: s.avatar || ''
-              }))}
-              rooms={rooms}
-              onAppointmentUpdate={(appointment) => handleStatusChange(appointment.id, appointment.state)}
-              onAppointmentCreate={handleNewAppointment}
-              onAppointmentDelete={() => {}} // This is kept but will be ignored in the component
-            />
+
+          {/* Appointment Stats */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">Today's Overview</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <Card className="bg-indigo-50 border-indigo-100">
+                <CardContent className="p-4">
+                  <div className="flex flex-col">
+                    <span className="text-indigo-600 text-sm font-medium">Total</span>
+                    <span className="text-2xl font-bold text-indigo-800">{totalAppointments}</span>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-blue-50 border-blue-100">
+                <CardContent className="p-4">
+                  <div className="flex flex-col">
+                    <span className="text-blue-600 text-sm font-medium">Waiting</span>
+                    <span className="text-2xl font-bold text-blue-800">
+                      {appointments.filter((a: Appointment) => a.state === 'Scheduled').length}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-amber-50 border-amber-100">
+                <CardContent className="p-4">
+                  <div className="flex flex-col">
+                    <span className="text-amber-600 text-sm font-medium">In Progress</span>
+                    <span className="text-2xl font-bold text-amber-800">
+                      {appointments.filter((a: Appointment) => a.state === 'In Progress').length}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-green-50 border-green-100">
+                <CardContent className="p-4">
+                  <div className="flex flex-col">
+                    <span className="text-green-600 text-sm font-medium">Completed</span>
+                    <span className="text-2xl font-bold text-green-800">
+                      {appointments.filter((a: Appointment) => a.state === 'Completed').length}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+          
+          {/* Flowboard section */}
+          <div className="bg-white rounded-lg overflow-hidden mb-6">
+            <div className="border-b border-indigo-100 p-4 bg-gradient-to-r from-indigo-50 to-white">
+              <h2 className="text-lg font-semibold text-indigo-900 flex items-center">
+                <Stethoscope className="mr-2 h-5 w-5 text-indigo-600" />
+                Appointment Flowboard
+              </h2>
+            </div>
+            
+            <div className="p-4 overflow-x-auto">
+              <div className="min-w-[600px]">
+                <EnhancedAppointmentFlowboard
+                  appointments={filteredAppointments}
+                  doctors={staff.map(s => ({
+                    doctor_id: s.id,
+                    doctor_name: s.name,
+                    doctor_phone: '',
+                    doctor_email: '',
+                    doctor_specialty: s.role,
+                    doctor_avatar: s.avatar || ''
+                  }))}
+                  rooms={rooms}
+                  onAppointmentUpdate={(appointment) => handleStatusChange(appointment.id, appointment.state)}
+                  onAppointmentCreate={handleNewAppointment}
+                  onAppointmentDelete={() => {}} // This is kept but will be ignored in the component
+                />
+              </div>
+            </div>
           </div>
 
           {/* Pagination controls */}
@@ -388,7 +562,7 @@ const AppointmentFlow = () => {
                   value={pageSize.toString()}
                   onValueChange={handlePageSizeChange}
                 >
-                  <SelectTrigger className="w-20 h-8 text-xs">
+                  <SelectTrigger className="w-20 h-8 text-xs border-indigo-200">
                     <SelectValue placeholder="10" />
                   </SelectTrigger>
                   <SelectContent>
@@ -406,7 +580,7 @@ const AppointmentFlow = () => {
                   size="sm"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage <= 1}
-                  className="h-8 w-8 p-0 flex items-center justify-center"
+                  className="h-8 w-8 p-0 flex items-center justify-center border-indigo-200"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -432,7 +606,7 @@ const AppointmentFlow = () => {
                         className={`h-8 w-8 p-0 ${
                           currentPage === pageNum 
                             ? "bg-indigo-600 text-white hover:bg-indigo-700" 
-                            : ""
+                            : "border-indigo-200"
                         }`}
                       >
                         {pageNum}
@@ -446,15 +620,15 @@ const AppointmentFlow = () => {
                   size="sm"
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage >= totalPages}
-                  className="h-8 w-8 p-0 flex items-center justify-center"
+                  className="h-8 w-8 p-0 flex items-center justify-center border-indigo-200"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

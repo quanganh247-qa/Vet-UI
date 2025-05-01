@@ -4,7 +4,6 @@ import axios from "axios";
 export const getVaccinations = async (pet_id: number) => {
   try {
     const response = await api.get(`/api/v1/vaccinations/pet/${pet_id}`);
-    console.log("Vaccination data:", response.data);
     return response.data;
   }
   catch (error) {

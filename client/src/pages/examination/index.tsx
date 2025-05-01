@@ -8,6 +8,8 @@ import { useAppointmentData } from "@/hooks/use-appointment";
 import { usePatientData, useUpdatePet } from "@/hooks/use-pet";
 import { updatePetRequest } from "@/services/pet-services";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { updateAppointmentById } from "@/services/appointment-services";
+import { useAuth } from "@/context/auth-context";
 import {
   Check,
   CheckCircle,
@@ -101,6 +103,7 @@ const Examination: React.FC = () => {
   const { id: routeId } = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { doctor } = useAuth();
 
   // Quản lý tham số workflow
   const [workflowParams, setWorkflowParams] = useState<{
@@ -129,7 +132,6 @@ const Examination: React.FC = () => {
       petId: petIdValue
     });
     
-    console.log("Examination Workflow Params Set:", { appointmentIdValue, petIdValue });
   }, [routeId]);
   
   // Sử dụng appointmentId từ workflowParams
@@ -407,7 +409,6 @@ const Examination: React.FC = () => {
         },
       };
 
-      console.log("appointment: ", effectiveAppointmentId);
 
       // Save to SOAP notes
       await updateSoapMutation.mutateAsync({
@@ -533,6 +534,11 @@ const Examination: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [quickSave, saveExamination, setActiveTab]);
+
+  // Add a function to handle back navigation
+  const navigateBack = () => {
+    window.history.back();
+  };
 
   if (isAppointmentLoading || isPatientLoading) {
     return (
@@ -665,15 +671,6 @@ const Examination: React.FC = () => {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* <Button
-            onClick={saveExamination}
-            size="sm"
-            className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1.5 text-xs"
-          >
-            <CheckCircle className="w-3.5 h-3.5" />
-            <span>Save & Proceed to SOAP</span>
-          </Button> */}
         </div>
       </div>
 
@@ -1543,11 +1540,10 @@ const Examination: React.FC = () => {
                     <div className="mt-3 pt-3 border-t border-gray-100">
                       <Button
                         onClick={saveExamination}
-                        size="sm"
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs"
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-1.5 text-xs"
                       >
-                        <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
-                        Complete Examination
+                        <CheckCircle className="h-3.5 w-3.5" />
+                        Save Examination
                       </Button>
                     </div>
                   </div>
@@ -1556,6 +1552,25 @@ const Examination: React.FC = () => {
             </div>
           </TabsContent>
         </Tabs>
+      </div>
+
+      {/* Footer buttons - Remove complete examination button and keep only back and save */}
+      <div className="flex justify-between items-center mt-6 mb-8 px-4">
+        <Button
+          variant="outline"
+          onClick={navigateBack}
+          className="flex items-center gap-1"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </Button>
+        
+        <Button 
+          variant="default"
+          onClick={saveExamination}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1"
+        >
+          <Save className="h-4 w-4" /> Save Examination
+        </Button>
       </div>
     </div>
   );

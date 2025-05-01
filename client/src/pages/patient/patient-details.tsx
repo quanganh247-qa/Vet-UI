@@ -14,7 +14,8 @@ import {
   Dog,
   Cat,
   Bird,
-  Rabbit
+  Rabbit,
+  ClipboardList
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,9 +50,21 @@ const getPetTypeIcon = (type: string) => {
 };
 
 const PatientDetailsPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // Get appointmentId from URL query parameter
+  const [appointmentId, setAppointmentId] = useState<string | null>(null);
   
+  useEffect(() => {
+    // Extract appointmentId from URL search params
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlAppointmentId = searchParams.get("appointmentId");
+    setAppointmentId(urlAppointmentId);
+  }, []);
+
   const { data: patientData, isLoading: isPatientLoading, error: patientError } = usePatientData(id);
   const { data: ownerData, isLoading: isOwnerLoading, error: ownerError } = usePetOwnerByPetId(patientData?.petid);
   const { data: vaccinations, isLoading: isVaccinationsLoading, error: vaccinationsError } = useVaccineData(id ? parseInt(id) : 0);
@@ -422,6 +435,51 @@ const PatientDetailsPage: React.FC = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Card className="border-none shadow-lg overflow-hidden">
+          <CardHeader className="pb-3 border-b bg-gradient-to-r from-indigo-50 to-white flex flex-row justify-between items-center">
+            <div className="flex items-center">
+              <ClipboardList className="h-5 w-5 text-indigo-600 mr-2" />
+              <CardTitle className="text-lg font-semibold text-gray-800">SOAP History</CardTitle>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50"
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (appointmentId) params.append("appointmentId", appointmentId);
+                if (patientData?.petid) params.append("petId", patientData.petid.toString());
+                window.location.href = `/soap-history?${params.toString()}`;
+              }}
+            >
+              View Complete History
+            </Button>
+          </CardHeader>
+          <CardContent className="p-4 md:p-6">
+            <div className="flex flex-col items-center justify-center p-6 text-center">
+              <ClipboardList className="h-12 w-12 text-indigo-300 mb-3" />
+              <h3 className="text-gray-700 font-medium mb-2">Track SOAP Notes History</h3>
+              <p className="text-gray-500 text-sm max-w-md mb-4">
+                View the complete medical SOAP history for this patient, including subjective observations, 
+                objective findings, assessments, and treatment plans.
+              </p>
+              <Button
+                variant="default"
+                size="sm"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                onClick={() => {
+                  const params = new URLSearchParams();
+                  if (appointmentId) params.append("appointmentId", appointmentId);
+                  if (patientData?.petid) params.append("petId", patientData.petid.toString());
+                  window.location.href = `/soap-history?${params.toString()}`;
+                }}
+              >
+                Access SOAP History
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -5,8 +5,6 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
 import { useNotifications } from "@/context/notification-context";
 import { Badge } from "@/components/ui/badge";
-import { MessagingProvider, useMessaging } from "@/context/messaging-context";
-import { MessagingIndicator } from "@/pages/messaging";
 import {
   ChevronRight,
   ChevronLeft,
@@ -58,12 +56,7 @@ const navigation = [
     href: "/schedule-management",
     icon: <CalendarRange className="h-5 w-5" />,
   },
-  {
-    name: "Messaging",
-    href: "/messaging",
-    icon: <MessageSquare className="h-5 w-5" />,
-    indicator: MessagingIndicator,
-  },
+
   {
     name: "Billing",
     href: "/billing",
@@ -179,12 +172,7 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
                       )}
                     </AnimatePresence>
                   </div>
-                  {item.indicator && isExpanded && <item.indicator />}
-                  {item.indicator && !isExpanded && (
-                    <div className="absolute right-1 top-1">
-                      <item.indicator />
-                    </div>
-                  )}
+                 
                 </div>
               </Link>
             );
@@ -276,9 +264,7 @@ interface SidebarProps {
 // Tạo wrapper để cung cấp MessagingProvider khi cần
 const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   return (
-    <MessagingProvider>
       <SidebarContent />
-    </MessagingProvider>
   );
 };
 
