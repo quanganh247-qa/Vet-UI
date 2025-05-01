@@ -48,5 +48,4 @@ RUN adduser -S appuser && chown -R appuser /app
 USER appuser
 
 # Use shell form to properly expand PORT variable
-CMD serve -s dist -l ${PORT}
-
+CMD serve -s . -l ${PORT}
