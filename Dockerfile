@@ -10,6 +10,10 @@ COPY package.json package-lock.json* ./
 RUN npm install --legacy-peer-deps && \
     npm cache clean --force
 
+
+# Copy .env file explicitly for better visibility
+COPY .env ./
+
 # Copy application code
 COPY . .
 
