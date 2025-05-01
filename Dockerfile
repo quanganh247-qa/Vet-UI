@@ -1,12 +1,13 @@
+# Build stage
 FROM node:20-alpine as build-stage
 
 # Set working directory
-WORKDIR /usr/src/app
+WORKDIR /app
 
 # Copy package files first for better caching
 COPY package.json package-lock.json* ./
 
-# Install all dependencies
+# Install dependencies
 RUN npm install --legacy-peer-deps && \
     npm cache clean --force
 
@@ -20,17 +21,26 @@ ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_WS_URL=${VITE_WS_URL}
 
 # Build the application
-RUN npm run build 
+RUN npm run build
+
+# Production stage with Nginx
+FROM nginx:alpine
+
+# Copy the nginx configuration
+COPY nginx.conf /etc/nginx/templates/default.conf.template
+
+# Copy built files from build stage - only the dist directory
+COPY --from=build-stage /app/dist /usr/share/nginx/html
 
 # Set default port (Railway will override this)
-ENV PORT=5173
+ENV PORT=80
 
-# Stage 3: Production environment
-FROM nginx:alpine AS production
+# Let nginx substitute environment variables
+ENV NGINX_ENVSUBST_TEMPLATE_DIR=/etc/nginx/templates
+ENV NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/conf.d
 
-# Copy the production build artifacts from the build stage
-COPY --from=build-stage /usr/src/app /usr/share/nginx/html
-
-# Expose the default NGINX port
+# Expose the port
 EXPOSE ${PORT}
+
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
