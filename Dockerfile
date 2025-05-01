@@ -8,7 +8,7 @@ COPY package.json package-lock.json* ./
 
 # Install all dependencies
 RUN npm install --legacy-peer-deps && \
-    npm install serve --save && \
+    npm install serve --save  --legacy-peer-deps  && \
     npm cache clean --force
 
 # Copy application code
