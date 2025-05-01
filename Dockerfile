@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20-alpine as build-stage
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -20,7 +20,7 @@ ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_WS_URL=${VITE_WS_URL}
 
 # Build the application
-RUN npm run build
+RUN npm run build 
 
 # Set default port (Railway will override this)
 ENV PORT=5173
@@ -29,7 +29,7 @@ ENV PORT=5173
 FROM nginx:alpine AS production
 
 # Copy the production build artifacts from the build stage
-COPY --from=build /app/build /usr/share/nginx/html
+COPY --from=build-stage /usr/src/app /usr/share/nginx/html
 
 # Expose the default NGINX port
 EXPOSE ${PORT}
