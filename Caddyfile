@@ -3,9 +3,12 @@
     admin off # theres no need for the admin api in railway's environment
     persist_config off # storage isn't persistent anyway
     auto_https off # railway handles https for us, this would cause issues if left enabled
+    # Add debug logging
+    debug
     # runtime logs
     log {
         format json # set runtime log format to json mode 
+        level DEBUG
     }
     # server options
     servers {
@@ -21,7 +24,9 @@
     }
 
     # health check for railway
-    rewrite /health /*
+    handle /health {
+        respond "OK" 200
+    }
 
     # serve from the 'dist' folder (Vite builds into the 'dist' folder)
     root * dist
