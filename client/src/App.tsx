@@ -18,7 +18,7 @@ import StaffPageDetail from "@/pages/staff";
 import { WalkInDialog } from "./components/appointment/WalkInDialog";
 import Settings from "./pages/settings";
 import EditProfilePage from "./pages/profile/edit";
-
+import StaffDetailPage from "@/pages/staff/index";
 // Lazy load the TestNotificationListener to avoid hook errors
 const NotificationsPage = lazy(() => import("@/pages/notifications"));
 // Use lazy loading for new components
@@ -161,7 +161,7 @@ function Router() {
         <Route path="/shift-management" component={ShiftManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/shift-assignment" component={ShiftAssignment as React.ComponentType<RouteComponentProps>} />
         <Route path="/staff" component={StaffPage as React.ComponentType<RouteComponentProps>} />
-        <Route path="/staff/:id" component={StaffPageDetail as React.ComponentType<RouteComponentProps>} />
+        <Route path="/staff/:id" component={StaffDetailPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/settings" component={Settings as React.ComponentType<RouteComponentProps>} />
         <Route path="/profile" component={EditProfilePage as React.ComponentType<RouteComponentProps>} />
         <Route component={NotFound as React.ComponentType<RouteComponentProps>} />

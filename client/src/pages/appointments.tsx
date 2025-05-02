@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { parse, format } from "date-fns";
 import {
   Calendar,
@@ -44,6 +44,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/auth-context";
+import { cn } from "@/lib/utils";
 
 const Appointments = () => {
   const [, setLocation] = useLocation();
@@ -55,11 +56,25 @@ const Appointments = () => {
   const { data: patientsData, isLoading: patientsLoading } = usePatientList();
   const { doctor, logout } = useAuth();
 
+  // Safe time formatting helper
+  const formatAppointmentTime = (timeSlot: { start_time?: string } | undefined): string => {
+    if (!timeSlot || !timeSlot.start_time) return "No time";
+    
+    try {
+      return format(
+        parse(timeSlot.start_time, "HH:mm:ss", new Date()),
+        "h:mm a"
+      );
+    } catch (error) {
+      return timeSlot.start_time;
+    }
+  };
+
   // Sử dụng useListAppointments hook thay vì gọi API trực tiếp
   const { data: appointmentsData, isLoading: appointmentsLoading } =
     useListAppointments(
       selectedDate,
-      statusFilter !== "all" ? statusFilter : "all",
+      "all", // Always fetch all appointments and filter client-side for better UX
       currentPage,
       pageSize
     );
@@ -67,32 +82,59 @@ const Appointments = () => {
   const isLoading = appointmentsLoading || patientsLoading;
 
   // Cập nhật cách lấy danh sách cuộc hẹn đã lọc
-  const filteredAppointments = appointmentsData
-    ? (Array.isArray(appointmentsData.data)
-        ? appointmentsData.data
-        : []
-      ).filter((appointment: Appointment) => {
-        // Nếu đã lọc theo trạng thái ở API, không cần lọc lại ở đây
-        if (statusFilter !== "all") {
-          return true; // Đã lọc ở API
+  const filteredAppointments = useMemo(() => {
+    if (!appointmentsData || !Array.isArray(appointmentsData.data)) {
+      return [];
+    }
+    
+    return appointmentsData.data.filter((appointment: Appointment) => {
+      // Apply status filter if not set to "all"
+      if (statusFilter !== "all") {
+        // Check if state is directly available as a string
+        if (typeof appointment.state === 'string') {
+          const appointmentState = appointment.state.trim().toLowerCase();
+          const filterValue = statusFilter.trim().toLowerCase();
+          
+          if (appointmentState !== filterValue) {
+            return false;
+          }
+        } 
+        // Check if state is available via state.state_name (common API pattern)
+        else if (appointment.state && typeof appointment.state === 'object') {
+          const stateObj = appointment.state as { state_name?: string };
+          if (stateObj.state_name) {
+            const stateName = stateObj.state_name.trim().toLowerCase();
+            const filterValue = statusFilter.trim().toLowerCase();
+            
+            if (stateName !== filterValue) {
+              return false;
+            }
+          }
         }
+        // Otherwise filter might not work properly - return all for inspection
+      }
 
-        if (searchTerm) {
-          const searchFields = [
-            appointment.pet?.pet_name,
-            appointment.owner?.owner_name,
-            appointment.doctor?.doctor_name,
-            appointment.service?.service_name,
-          ].map((field) => field?.toLowerCase() || "");
+      // Apply search term filtering
+      if (searchTerm && searchTerm.trim() !== "") {
+        const searchLower = searchTerm.toLowerCase().trim();
+        const searchFields = [
+          appointment.pet?.pet_name,
+          appointment.owner?.owner_name,
+          appointment.doctor?.doctor_name,
+          appointment.service?.service_name,
+        ];
 
-          return searchFields.some((field) =>
-            field.includes(searchTerm.toLowerCase())
-          );
-        }
+        return searchFields.some(
+          (field) => field && field.toLowerCase().includes(searchLower)
+        );
+      }
 
-        return true;
-      })
-    : [];
+      return true;
+    });
+  }, [appointmentsData, statusFilter, searchTerm]);
+
+  // Debug output
+  console.log("Filtered appointments:", filteredAppointments.length);
 
   // Thêm hàm xử lý thay đổi kích thước trang
   const handlePageSizeChange = (newSize: number) => {
@@ -117,7 +159,7 @@ const Appointments = () => {
   const handleLogout = () => {
     logout();
     setLocation('/login');
-  };
+};
 
   return (
     <div className="space-y-6 px-2 sm:px-4 md:px-6 max-w-[100vw]">
@@ -196,7 +238,7 @@ const Appointments = () => {
                 <div className="p-2 bg-indigo-50 rounded-lg">
                   <Filter className="h-4 w-4 text-indigo-500" />
                 </div>
-                <Select defaultValue="all" onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="border border-gray-200 rounded-md text-sm h-10 w-44 focus:ring-2 focus:ring-indigo-500 focus:border-gray-200">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
@@ -227,7 +269,10 @@ const Appointments = () => {
 
             <div className="text-xs text-gray-500">
               {!isLoading && filteredAppointments && (
-                <span>{filteredAppointments.length} appointments found</span>
+                <span>
+                  {filteredAppointments.length} appointments found
+                  {statusFilter !== "all" && ` (filtered by: ${statusFilter})`}
+                </span>
               )}
             </div>
           </div>
@@ -315,14 +360,7 @@ const Appointments = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900 font-medium">
-                            {format(
-                              parse(
-                                appointment.time_slot.start_time,
-                                "HH:mm:ss",
-                                new Date()
-                              ),
-                              "h:mm a"
-                            )}
+                            {formatAppointmentTime(appointment.time_slot)}
                           </div>
                           <div className="text-xs text-gray-500">
                             {format(selectedDate, "MMM d, yyyy")}
@@ -408,59 +446,144 @@ const Appointments = () => {
           </div>
           {/* Pagination Controls */}
           {!isLoading && appointmentsData && (
-            <div className="px-6 py-4 flex items-center justify-between border-t border-gray-100">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-700">
-                  Showing {(currentPage - 1) * pageSize + 1} to{" "}
-                  {Math.min(
-                    currentPage * pageSize,
-                    appointmentsData?.total || filteredAppointments.length
-                  )}{" "}
-                  of {appointmentsData?.total || filteredAppointments.length}{" "}
-                  entries
-                </span>
-                <Select
-                  value={pageSize.toString()}
-                  onValueChange={(value) => handlePageSizeChange(parseInt(value))}
-                >
-                  <SelectTrigger className="w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="bg-white shadow-sm border-gray-200 hover:bg-gray-50"
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={
-                    currentPage >=
-                    Math.ceil(
-                      (appointmentsData?.total || filteredAppointments.length) /
-                        pageSize
-                    )
-                  }
-                  className="bg-white shadow-sm border-gray-200 hover:bg-gray-50"
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
+            <Card className="border-none shadow-md overflow-hidden">
+              <CardContent className="px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">
+                    Showing {filteredAppointments.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} to{" "}
+                    {Math.min(currentPage * pageSize, filteredAppointments.length)}{" "}
+                    of {filteredAppointments.length}{" "}
+                    {statusFilter !== "all" ? `filtered` : ``} entries
+                  </span>
+                  <select
+                    value={pageSize.toString()}
+                    onChange={(e) => handlePageSizeChange(parseInt(e.target.value))}
+                    className="rounded-md border border-gray-200 bg-white text-sm p-1"
+                  >
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="bg-white shadow-sm border-gray-200 hover:bg-gray-50"
+                  >
+                    Previous
+                  </Button>
+                  
+                  {filteredAppointments.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      {Math.ceil(filteredAppointments.length / pageSize) <= 7 ? (
+                        // Show all page numbers if there are 7 or fewer pages
+                        Array.from({ length: Math.ceil(filteredAppointments.length / pageSize) }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => handlePageChange(page)}
+                            className={cn(
+                              'px-3',
+                              currentPage === page && 'bg-indigo-600 text-white hover:bg-indigo-700'
+                            )}
+                          >
+                            {page}
+                          </Button>
+                        ))
+                      ) : (
+                        // Show limited page numbers with ellipsis for many pages
+                        <>
+                          {/* First page */}
+                          <Button
+                            variant={currentPage === 1 ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => handlePageChange(1)}
+                            className={cn(
+                              'px-3',
+                              currentPage === 1 && 'bg-indigo-600 text-white hover:bg-indigo-700'
+                            )}
+                          >
+                            1
+                          </Button>
+                          
+                          {/* Ellipsis if needed */}
+                          {currentPage > 3 && (
+                            <span className="px-2 text-gray-500">...</span>
+                          )}
+                          
+                          {/* Pages around current page */}
+                          {Array.from(
+                            { length: Math.min(3, Math.ceil(filteredAppointments.length / pageSize)) },
+                            (_, i) => {
+                              const pageNum = Math.max(
+                                2,
+                                currentPage - 1 + i - (currentPage > 2 ? 1 : 0)
+                              );
+                              if (pageNum >= 2 && pageNum < Math.ceil(filteredAppointments.length / pageSize)) {
+                                return (
+                                  <Button
+                                    key={pageNum}
+                                    variant={currentPage === pageNum ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => handlePageChange(pageNum)}
+                                    className={cn(
+                                      'px-3',
+                                      currentPage === pageNum && 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                    )}
+                                  >
+                                    {pageNum}
+                                  </Button>
+                                );
+                              }
+                              return null;
+                            }
+                          )}
+                          
+                          {/* Ellipsis if needed */}
+                          {currentPage < Math.ceil(filteredAppointments.length / pageSize) - 2 && (
+                            <span className="px-2 text-gray-500">...</span>
+                          )}
+                          
+                          {/* Last page */}
+                          {Math.ceil(filteredAppointments.length / pageSize) > 1 && (
+                            <Button
+                              variant={currentPage === Math.ceil(filteredAppointments.length / pageSize) ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => handlePageChange(Math.ceil(filteredAppointments.length / pageSize))}
+                              className={cn(
+                                'px-3',
+                                currentPage === Math.ceil(filteredAppointments.length / pageSize) && 'bg-indigo-600 text-white hover:bg-indigo-700'
+                              )}
+                            >
+                              {Math.ceil(filteredAppointments.length / pageSize)}
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={
+                      currentPage >=
+                      Math.ceil(filteredAppointments.length / pageSize) || filteredAppointments.length === 0
+                    }
+                    className="bg-white shadow-sm border-gray-200 hover:bg-gray-50"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </CardContent>
       </Card>

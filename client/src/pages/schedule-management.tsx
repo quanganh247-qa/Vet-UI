@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { format } from "date-fns";
+import { format, addDays, isAfter, isBefore } from "date-fns";
 import {
   Plus,
   Filter,
   Calendar as CalendarIcon,
   RotateCcw,
-  ChevronRight,
   User,
-  Settings,
-  LogOut,
   Clock,
-  Users,
-  Calendar,
-  FileText
+  FileText,
+  Check,
+  X,
 } from "lucide-react";
 
 import DoctorScheduleCalendar from "@/components/doctor-schedule/DoctorScheduleCalendar";
@@ -31,8 +28,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import {
   Select,
@@ -44,11 +39,10 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Doctor, WorkShift, WorkScheduleFilters, DoctorDetail } from "@/types";
+import { Doctor, WorkShift, WorkScheduleFilters } from "@/types";
 import {
   Table,
   TableHeader,
@@ -59,30 +53,36 @@ import {
 } from "@/components/ui/table";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/use-toast";
+import { Input } from "@/components/ui/input";
 import { useDoctors } from "@/hooks/use-doctors";
 import { useGetAllShifts, useShiftMutations } from "@/hooks/use-shifts";
+import { cn } from "@/lib/utils";
 
 const ScheduleManagement = () => {
-  const [userRole, setUserRole] = useState<"doctor" | "admin">("admin"); // For demo, toggle this to show different views
-  const [currentDoctorId, setCurrentDoctorId] = useState<string>("1"); // In a real app, get from auth context
+  const [userRole, setUserRole] = useState<"doctor" | "admin">("admin");
+  const [currentDoctorId, setCurrentDoctorId] = useState<string>("1");
 
   // State for UI
   const [view, setView] = useState<"calendar" | "list">("calendar");
   const [filters, setFilters] = useState<WorkScheduleFilters>({});
-
+  const { toast } = useToast();
+  
   // Fetch data using hooks
   const { data: doctorsData } = useDoctors();
   const { data: shiftsData, isLoading: shiftsLoading } = useGetAllShifts();
   const { createMutation, updateMutation, deleteMutation } = useShiftMutations();
   
-  // Derived state
+  // State for filtered shifts
   const [filteredShifts, setFilteredShifts] = useState<WorkShift[]>([]);
-
+  
   // Modal states
   const [isAddShiftOpen, setIsAddShiftOpen] = useState(false);
   const [isEditShiftOpen, setIsEditShiftOpen] = useState(false);
   const [isViewShiftOpen, setIsViewShiftOpen] = useState(false);
   const [selectedShift, setSelectedShift] = useState<WorkShift | null>(null);
+  const [dateFilter, setDateFilter] = useState({ startDate: '', endDate: '' });
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Update filtered shifts whenever source data changes
   useEffect(() => {
@@ -98,29 +98,41 @@ const ScheduleManagement = () => {
         (shift) => shift.doctor_id === filters.doctorId
       );
     }
-
-    if (filters.startDate) {
+    
+    // Apply date range filter
+    if (dateFilter.startDate) {
+      const startDate = new Date(dateFilter.startDate);
       filtered = filtered.filter(
-        (shift) => new Date(shift.start_time) >= filters.startDate!
+        (shift) => isAfter(new Date(shift.start_time), startDate) || 
+                  format(new Date(shift.start_time), 'yyyy-MM-dd') === format(startDate, 'yyyy-MM-dd')
       );
     }
 
-    if (filters.endDate) {
+    if (dateFilter.endDate) {
+      const endDate = new Date(dateFilter.endDate);
+      endDate.setHours(23, 59, 59, 999);
       filtered = filtered.filter(
-        (shift) => new Date(shift.start_time) <= filters.endDate!
+        (shift) => isBefore(new Date(shift.start_time), endDate) || 
+                  format(new Date(shift.start_time), 'yyyy-MM-dd') === format(endDate, 'yyyy-MM-dd')
+      );
+    }
+    
+    // Apply status filter
+    if (statusFilter && statusFilter !== 'all') {
+      filtered = filtered.filter(
+        (shift) => shift.status === statusFilter
       );
     }
 
-  
     // For doctor view, only show their shifts
     if (userRole === "doctor") {
       filtered = filtered.filter((shift) => shift.doctor_id === currentDoctorId);
     }
 
     setFilteredShifts(filtered);
-  }, [shiftsData, filters, userRole, currentDoctorId]);
+  }, [shiftsData, filters, dateFilter, statusFilter, userRole, currentDoctorId]);
 
-  // For demo, toggle between doctor and admin views
+  // Toggle between doctor and admin views
   const toggleUserRole = () => {
     setUserRole((prev) => (prev === "doctor" ? "admin" : "doctor"));
   };
@@ -139,66 +151,131 @@ const ScheduleManagement = () => {
     if (selectedShift) {
       deleteMutation.mutate(Number(selectedShift.id), {
         onSuccess: () => {
+          toast({
+            title: "Shift deleted successfully",
+            description: "The shift has been removed from the schedule.",
+            className: "bg-green-50 text-green-800 border-green-200",
+          });
           setIsViewShiftOpen(false);
           setSelectedShift(null);
+        },
+        onError: (error) => {
+          toast({
+            title: "Failed to delete shift",
+            description: "An error occurred while deleting the shift.",
+            variant: "destructive",
+          });
+          console.error("Error deleting shift:", error);
         }
       });
     }
   };
 
-  const handleCreateShift = (data: any) => {
+  const handleCreateShift = (data: any) => {    
+    // Ensure we have valid data
+    if (!data.title || !data.doctorId || !data.date) {
+      console.error("Missing required shift data");
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Create a new date object to avoid mutating the original date
+    const dateObj = new Date(data.date);
+    const startTime = data.startTime ? data.startTime.split(':') : ['9', '0'];
+    const endTime = data.endTime ? data.endTime.split(':') : ['17', '0'];
+    
+    const startDate = new Date(dateObj);
+    startDate.setHours(parseInt(startTime[0] || 0), parseInt(startTime[1] || 0), 0);
+    
+    const endDate = new Date(dateObj);
+    endDate.setHours(parseInt(endTime[0] || 0), parseInt(endTime[1] || 0), 0);
+    
     const shiftData = {
       title: data.title,
       doctor_id: Number(data.doctorId),
-      start_time: new Date(
-        data.date.setHours(
-          parseInt(data.startTime.split(":")[0]),
-          parseInt(data.startTime.split(":")[1])
-        )
-      ),
-      end_time: new Date(
-        data.date.setHours(
-          parseInt(data.endTime.split(":")[0]),
-          parseInt(data.endTime.split(":")[1])
-        )
-      ),
-      description: data.description,
+      start_time: startDate,
+      end_time: endDate,
+      description: data.description || "",
+      status: data.status || "scheduled",
     };
-
+    
     createMutation.mutate(shiftData, {
       onSuccess: () => {
+        toast({
+          title: "Shift created successfully",
+          description: `New shift "${data.title}" has been added to the schedule.`,
+          className: "bg-green-50 text-green-800 border-green-200",
+        });
         setIsAddShiftOpen(false);
+      },
+      onError: (error) => {
+        toast({
+          title: "Failed to create shift",
+          description: "An error occurred while creating the shift.",
+          variant: "destructive",
+        });
+        console.error("Error creating shift:", error);
       }
     });
   };
 
   const handleUpdateShift = (data: any) => {
     if (selectedShift) {
+      // Ensure we have valid data
+      if (!data.title || !data.doctorId || !data.date) {
+        console.error("Missing required shift data");
+        toast({
+          title: "Missing information",
+          description: "Please fill in all required fields.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Create a new date object to avoid mutating the original date
+      const dateObj = new Date(data.date);
+      const startTime = data.startTime ? data.startTime.split(':') : ['9', '0'];
+      const endTime = data.endTime ? data.endTime.split(':') : ['17', '0'];
+      
+      const startDate = new Date(dateObj);
+      startDate.setHours(parseInt(startTime[0] || 0), parseInt(startTime[1] || 0), 0);
+      
+      const endDate = new Date(dateObj);
+      endDate.setHours(parseInt(endTime[0] || 0), parseInt(endTime[1] || 0), 0);
+      
       const updatedData = {
         id: Number(selectedShift.id),
         data: {
           title: data.title,
           doctor_id: Number(data.doctorId),
-          start_time: new Date(
-            data.date.setHours(
-              parseInt(data.startTime.split(":")[0]),
-              parseInt(data.startTime.split(":")[1])
-            )
-          ),
-          end_time: new Date(
-            data.date.setHours(
-              parseInt(data.endTime.split(":")[0]),
-              parseInt(data.endTime.split(":")[1])
-            )
-          ),
-          description: data.description,
+          start_time: startDate,
+          end_time: endDate,
+          description: data.description || "",
+          status: data.status || "scheduled",
         }
       };
-
+      
       updateMutation.mutate(updatedData, {
         onSuccess: () => {
+          toast({
+            title: "Shift updated successfully",
+            description: `The shift "${data.title}" has been updated.`,
+            className: "bg-green-50 text-green-800 border-green-200",
+          });
           setIsEditShiftOpen(false);
           setSelectedShift(null);
+        },
+        onError: (error) => {
+          toast({
+            title: "Failed to update shift",
+            description: "An error occurred while updating the shift.",
+            variant: "destructive",
+          });
+          console.error("Error updating shift:", error);
         }
       });
     }
@@ -207,15 +284,19 @@ const ScheduleManagement = () => {
   const handleFilterByDoctor = (doctorId: string) => {
     setFilters({ ...filters, doctorId: doctorId === 'all' ? undefined : doctorId });
   };
+  
+  const handleDateFilterChange = (type: 'startDate' | 'endDate', value: string) => {
+    setDateFilter(prev => ({ ...prev, [type]: value }));
+  };
 
-  const handleFilterByStatus = (
-    status: "scheduled" | "completed" | "cancelled" | "all" | ""
-  ) => {
-    setFilters({ ...filters, status: status === 'all' ? undefined : (status as any) });
+  const handleStatusFilterChange = (status: string) => {
+    setStatusFilter(status);
   };
 
   const handleResetFilters = () => {
     setFilters({});
+    setDateFilter({ startDate: '', endDate: '' });
+    setStatusFilter('all');
   };
 
   const getSelectedDoctor = () => {
@@ -225,335 +306,273 @@ const ScheduleManagement = () => {
       (d: Doctor) => d.doctor_id.toString() === selectedShift.doctor_id.toString()
     );
     
-    console.log("Found doctor for shift:", doctor);
     return doctor;
   };
 
-  // Data for the list view
-  const tableData = filteredShifts.map((shift) => {
-    const doctor = doctorsData?.data?.find(
-      (d : Doctor ) => d.doctor_id.toString() === shift.doctor_id
-    );
-    return {
-      ...shift,
-      doctorName: doctor ? doctor.doctor_name : "Unknown",
-    };
-  });
-
-  // Define view steps
-  const viewSteps = [
-    { id: "calendar", label: "Calendar View", icon: Calendar },
-    { id: "list", label: "List View", icon: FileText }
-  ];
-  
-  const activeViewIndex = viewSteps.findIndex(step => step.id === view);
-  const progressPercentage = ((activeViewIndex + 1) / viewSteps.length) * 100;
-
-  // Count shifts by status
+  // Count shifts by status for simple stats
   const scheduledShifts = filteredShifts.filter(s => s.status === 'scheduled').length;
   const completedShifts = filteredShifts.filter(s => s.status === 'completed').length;
   const cancelledShifts = filteredShifts.filter(s => s.status === 'cancelled').length;
 
   return (
-    <div className="space-y-6">
-      {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md mb-6">
+    <div className="container mx-auto p-4 max-w-6xl">
+      {/* Simple header */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-white">Schedule Management</h1>
-            <p className="text-indigo-100 text-sm">
-              {userRole === "admin"
-                ? "Manage doctor work schedules effectively"
-                : "View your work schedule"}
+            <h1 className="text-xl font-bold text-gray-900">Schedule Management</h1>
+            <p className="text-sm text-gray-500">
+              {userRole === "admin" ? "Manage doctor schedules" : "View your work schedule"}
             </p>
           </div>
-          
-          <div className="flex items-center space-x-3">
+
+          <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
               size="sm" 
               onClick={toggleUserRole}
-              className="bg-white/10 text-white border-white/20 hover:bg-white/20"
             >
               <User className="h-4 w-4 mr-2" />
-              Switch to {userRole === "admin" ? "Doctor" : "Admin"} View
+              {userRole === "admin" ? "Doctor View" : "Admin View"}
             </Button>
-
-          </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto">
-        <div className="bg-white rounded-lg border border-indigo-100 shadow-sm p-6 mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-indigo-900">Doctor Schedule</h1>
             
             {userRole === 'admin' && (
               <Button 
                 onClick={() => setIsAddShiftOpen(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                size="sm"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Shift
               </Button>
             )}
           </div>
-
-          {/* Statistics cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card className="border border-indigo-100 hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center text-indigo-700">
-                  <Calendar className="h-4 w-4 mr-2 text-indigo-500" />
-                  Total Shifts
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-indigo-900">{filteredShifts.length}</div>
-                <p className="text-xs text-indigo-500 mt-1">
-                  {userRole === 'admin' ? 'Across all doctors' : 'Scheduled for you'}
-                </p>
-              </CardContent>
-            </Card>
+        </div>
+      </div>
+      
+      {/* Simple stats row */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <Card>
+          <CardHeader className="p-4">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <Clock className="h-4 w-4 mr-2 text-blue-500" />
+              Scheduled
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 pb-4 px-4">
+            <div className="text-2xl font-bold">{scheduledShifts}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="p-4">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <Check className="h-4 w-4 mr-2 text-green-500" />
+              Completed
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 pb-4 px-4">
+            <div className="text-2xl font-bold">{completedShifts}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="p-4">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <X className="h-4 w-4 mr-2 text-red-500" />
+              Cancelled
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 pb-4 px-4">
+            <div className="text-2xl font-bold">{cancelledShifts}</div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Main content area */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+        <Tabs value={view} onValueChange={(value) => setView(value as 'calendar' | 'list')} className="w-full">
+          {/* Tab controls and filters */}
+          <div className="flex justify-between items-center mb-4">
+            <TabsList>
+              <TabsTrigger value="calendar">Calendar</TabsTrigger>
+              <TabsTrigger value="list">List</TabsTrigger>
+            </TabsList>
             
-            <Card className="border border-indigo-100 hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center text-indigo-700">
-                  <Clock className="h-4 w-4 mr-2 text-indigo-500" />
-                  Scheduled
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-indigo-900">{scheduledShifts}</div>
-                <p className="text-xs text-indigo-500 mt-1">Upcoming shifts</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border border-indigo-100 hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center text-indigo-700">
-                  <Users className="h-4 w-4 mr-2 text-indigo-500" />
-                  Doctors
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-indigo-900">{doctorsData?.data?.length || 0}</div>
-                <p className="text-xs text-indigo-500 mt-1">Available for scheduling</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border border-indigo-100 hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center text-indigo-700">
-                  <FileText className="h-4 w-4 mr-2 text-indigo-500" />
-                  Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-2">
-                <div className="flex items-center space-x-2">
-                  <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-                    {scheduledShifts} scheduled
-                  </Badge>
-                  <Badge className="bg-green-100 text-green-800 border-green-200">
-                    {completedShifts} completed
-                  </Badge>
-                  <Badge className="bg-red-100 text-red-800 border-red-200">
-                    {cancelledShifts} cancelled
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Workflow-style navigation */}
-          <div className="flex flex-col space-y-3 mb-6">
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">
-                View Options
-              </div>
-              <div className="text-xs text-gray-500 font-medium">
-                View {activeViewIndex + 1} of {viewSteps.length}
-              </div>
-            </div>
-            
-            {/* Progress bar */}
-            <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-              <div 
-                className="bg-gradient-to-r from-indigo-500 to-indigo-600 h-2 rounded-full transition-all duration-500 ease-in-out"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
-
-            {/* View options as workflow steps */}
-            <div className="flex justify-between items-center">
-              <div className="relative flex items-center space-x-1 overflow-x-auto hide-scrollbar py-2 px-1">
-                {viewSteps.map((step, index) => {
-                  const isCurrent = step.id === view;
-                  const isPast = index < activeViewIndex;
-                  const isFuture = index > activeViewIndex;
-                  const IconComponent = step.icon;
-                  
-                  return (
-                    <React.Fragment key={step.id}>
-                      <Button
-                        variant={isCurrent ? "default" : "outline"}
-                        size="sm"
-                        className={`
-                          flex items-center gap-1.5 whitespace-nowrap transition-all duration-200
-                          ${isCurrent ? 'bg-indigo-600 text-white shadow-md border-transparent scale-105 hover:bg-indigo-700' : ''}
-                          ${isPast ? 'border-indigo-200 text-indigo-600 bg-indigo-50 hover:bg-indigo-100' : ''}
-                          ${isFuture ? 'border-gray-200 text-gray-500 hover:border-indigo-200 hover:text-indigo-600' : ''}
-                        `}
-                        onClick={() => setView(step.id as 'calendar' | 'list')}
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filters
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[280px] p-4">
+                  {userRole === 'admin' && (
+                    <div className="mb-4">
+                      <p className="text-xs font-medium mb-2">Doctor</p>
+                      <Select 
+                        value={filters.doctorId || 'all'} 
+                        onValueChange={handleFilterByDoctor}
                       >
-                        <IconComponent className={`h-4 w-4 ${isCurrent ? 'text-white' : isPast ? 'text-indigo-500' : 'text-gray-400'}`} />
-                        <span className="text-xs font-medium">{step.label}</span>
-                      </Button>
-                      
-                      {index < viewSteps.length - 1 && (
-                        <ChevronRight className={`h-4 w-4 flex-shrink-0 ${
-                          index < activeViewIndex ? 'text-indigo-400' : 'text-gray-300'
-                        }`} />
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-
-              {/* Filter dropdown */}
-              <div className="flex items-center space-x-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50">
-                      <Filter className="h-4 w-4 mr-2" />
-                      Filters {Object.keys(filters).length > 0 && `(${Object.keys(filters).length})`}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[200px]">
-                    {userRole === 'admin' && (
-                      <div className="p-2">
-                        <p className="text-sm font-medium mb-2">Doctor</p>
-                        <Select 
-                          value={filters.doctorId || 'all'} 
-                          onValueChange={handleFilterByDoctor}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="All Doctors" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Doctors</SelectItem>
-                            {doctorsData?.data?.map((doctor: Doctor) => (
-                              <SelectItem 
-                                key={doctor.doctor_id} 
-                                value={doctor.doctor_id.toString()}
-                              >
-                                {doctor.doctor_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Doctors" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Doctors</SelectItem>
+                          {doctorsData?.data?.map((doctor: Doctor) => (
+                            <SelectItem 
+                              key={doctor.doctor_id} 
+                              value={doctor.doctor_id.toString()}
+                            >
+                              {doctor.doctor_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   
-                    
-                    <DropdownMenuItem 
-                      className="justify-center text-center cursor-pointer"
-                      onClick={handleResetFilters}
+                  <div className="mb-4">
+                    <p className="text-xs font-medium mb-2">Date Range</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-xs mb-1">From</p>
+                        <Input 
+                          type="date" 
+                          value={dateFilter.startDate}
+                          onChange={(e) => handleDateFilterChange('startDate', e.target.value)}
+                          className="text-sm"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs mb-1">To</p>
+                        <Input 
+                          type="date" 
+                          value={dateFilter.endDate}
+                          onChange={(e) => handleDateFilterChange('endDate', e.target.value)}
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <p className="text-xs font-medium mb-2">Status</p>
+                    <Select 
+                      value={statusFilter} 
+                      onValueChange={handleStatusFilterChange}
                     >
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Reset Filters
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Statuses" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="scheduled">Scheduled</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                
+                  <Button 
+                    className="w-full mt-2"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetFilters}
+                  >
+                    <RotateCcw className="h-3.5 w-3.5 mr-2" />
+                    Reset Filters
+                  </Button>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           
-          {/* Main content tabs */}
-          <Tabs value={view} onValueChange={(value) => setView(value as 'calendar' | 'list')} className="w-full">            
-            <TabsContent value="calendar" className="mt-0">
-              <div className="bg-white rounded-lg border border-indigo-100 overflow-hidden">
-                <DoctorScheduleCalendar
-                  shifts={filteredShifts}
-                  doctors={doctorsData?.data}
-                  onClickShift={handleViewShift}
-                  userRole={userRole}
-                  currentDoctorId={currentDoctorId}
-                />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="list" className="mt-0">
-              <Card className="border border-indigo-100 shadow-none">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-indigo-900">Work Shifts</CardTitle>
-                  <CardDescription>
-                    {filteredShifts.length} shifts found
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border border-indigo-100">
-                    <Table>
-                      <TableHeader className="bg-indigo-50">
-                        <TableRow>
-                          <TableHead>Doctor</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Time</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {tableData.length > 0 ? (
-                          tableData.map((shift) => (
-                            <TableRow 
-                              key={shift.id}
-                              className="cursor-pointer hover:bg-indigo-50/30"
-                              onClick={() => handleViewShift(shift)}
-                            >
-                              <TableCell>{shift.doctor_name}</TableCell>
-                              <TableCell>{format(new Date(shift.start_time), 'PPP')}</TableCell>
-                              <TableCell>
-                                {format(new Date(shift.start_time), 'HH:mm')} - {format(new Date(shift.end_time), 'HH:mm')}
-                              </TableCell>
-                            
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleViewShift(shift);
-                                  }}
-                                >
-                                  View
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={7} className="h-24 text-center text-indigo-500">
-                              No shifts found
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
+          {/* Tab Content */}
+          <TabsContent value="calendar" className="mt-2">
+            <DoctorScheduleCalendar
+              shifts={filteredShifts}
+              doctors={doctorsData?.data}
+              onClickShift={handleViewShift}
+              userRole={userRole}
+              currentDoctorId={currentDoctorId}
+            />
+          </TabsContent>
+          
+          <TabsContent value="list" className="mt-2">
+            <Table>
+              <TableHeader className="bg-gray-50">
+                <TableRow>
+                  <TableHead>Doctor</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredShifts.length > 0 ? (
+                  filteredShifts.map((shift) => {
+                    const doctor = doctorsData?.data?.find(
+                      (d: Doctor) => d.doctor_id.toString() === shift.doctor_id.toString()
+                    );
+                    
+                    return (
+                      <TableRow 
+                        key={shift.id}
+                        className="cursor-pointer hover:bg-gray-50"
+                        onClick={() => handleViewShift(shift)}
+                      >
+                        <TableCell>{doctor?.doctor_name || "Unknown"}</TableCell>
+                        <TableCell>{format(new Date(shift.start_time), 'MMM d, yyyy')}</TableCell>
+                        <TableCell>
+                          {format(new Date(shift.start_time), 'HH:mm')} - {format(new Date(shift.end_time), 'HH:mm')}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={cn(
+                            "capitalize",
+                            shift.status === "scheduled" && "bg-blue-100 text-blue-800",
+                            shift.status === "completed" && "bg-green-100 text-green-800",
+                            shift.status === "cancelled" && "bg-red-100 text-red-800",
+                          )}>
+                            {shift.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-gray-600 hover:text-gray-900"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewShift(shift);
+                            }}
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center text-gray-500">
+                      No shifts found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TabsContent>
+        </Tabs>
       </div>
       
       {/* Add Shift Dialog */}
       <Dialog open={isAddShiftOpen} onOpenChange={setIsAddShiftOpen}>
-        <DialogContent className="sm:max-w-[600px] border border-indigo-200">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-indigo-900">Add New Shift</DialogTitle>
-            <DialogDescription className="text-indigo-500">
+            <DialogTitle>Add New Shift</DialogTitle>
+            <DialogDescription>
               Create a new work shift for a doctor
             </DialogDescription>
           </DialogHeader>
@@ -568,10 +587,10 @@ const ScheduleManagement = () => {
       {/* Edit Shift Dialog */}
       {selectedShift && (
         <Dialog open={isEditShiftOpen} onOpenChange={setIsEditShiftOpen}>
-          <DialogContent className="sm:max-w-[600px] border border-indigo-200">
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle className="text-indigo-900">Edit Shift</DialogTitle>
-              <DialogDescription className="text-indigo-500">
+              <DialogTitle>Edit Shift</DialogTitle>
+              <DialogDescription>
                 Update the details of this work shift
               </DialogDescription>
             </DialogHeader>

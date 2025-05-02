@@ -717,68 +717,7 @@ const EnhancedAppointmentFlowboard: React.FC<
           className={`flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 ${showSidebar ? "w-3/5 lg:w-2/3" : "w-full"
             }`}
         >
-          {/* Status Overview */}
-          <div className="grid grid-cols-4 gap-4 p-4">
-            <div className="bg-white rounded-lg shadow p-3">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-medium text-gray-800">Confirmed</h3>
-                <span className="text-lg font-bold text-indigo-600">
-                  {groupedAppointments.confirmed.length}
-                </span>
-              </div>
-              <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-1 bg-green-500 rounded-full"
-                  style={{ width: "40%" }}
-                ></div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-3">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-medium text-gray-800">Waiting</h3>
-                <span className="text-lg font-bold text-indigo-600">
-                  {groupedAppointments.arrived.length}
-                </span>
-              </div>
-              <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-1 bg-blue-500 rounded-full"
-                  style={{ width: "20%" }}
-                ></div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-3">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-medium text-gray-800">In Progress</h3>
-                <span className="text-lg font-bold text-indigo-600">
-                  {groupedAppointments.inProgress.length}
-                </span>
-              </div>
-              <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-1 bg-purple-500 rounded-full"
-                  style={{ width: "20%" }}
-                ></div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-3">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-medium text-gray-800">Completed</h3>
-                <span className="text-lg font-bold text-indigo-600">
-                  {groupedAppointments.completed.length}
-                </span>
-              </div>
-              <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-1 bg-green-500 rounded-full"
-                  style={{ width: "20%" }}
-                ></div>
-              </div>
-            </div>
-          </div>
+   
 
           {/* Appointments View - Column View (Kanban style) */}
           {viewMode === "columns" && (

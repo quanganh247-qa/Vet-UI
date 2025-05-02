@@ -229,33 +229,7 @@ export const PatientsPage: React.FC = () => {
               />
             </div>
             
-            {/* <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">View:</span>
-              <div className="flex bg-gray-100 rounded-md p-1">
-                <Button 
-                  size="sm" 
-                  variant={viewMode === 'list' ? 'default' : 'ghost'} 
-                  onClick={() => setViewMode('list')}
-                  className={cn(
-                    "h-8 w-8 p-0",
-                    viewMode === 'list' ? 'bg-white shadow-sm' : 'bg-transparent hover:bg-gray-200'
-                  )}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'} 
-                  onClick={() => setViewMode('grid')}
-                  className={cn(
-                    "h-8 w-8 p-0",
-                    viewMode === 'grid' ? 'bg-white shadow-sm' : 'bg-transparent hover:bg-gray-200'
-                  )}
-                >
-                  <Grid className="h-4 w-4" />
-                </Button>
-              </div>
-            </div> */}
+          
           </div>
         </CardContent>
       </Card>

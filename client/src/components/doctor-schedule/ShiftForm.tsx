@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, Clock } from 'lucide-react';
+import { CalendarIcon, Clock, Save, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -32,6 +32,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Doctor, WorkShift } from '@/types';
 import { ShiftTemplate } from './ShiftTemplateManager';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { DialogFooter } from '@/components/ui/dialog';
 
 interface ShiftFormProps {
   doctors: Doctor[];
@@ -85,6 +88,8 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
   // State to track if a template is being applied
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>("custom");
   const [allTemplates, setAllTemplates] = useState<ShiftTemplate[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(shift ? new Date(shift.start_time) : new Date());
 
   // Combine provided templates with default templates
   useEffect(() => {
@@ -122,7 +127,9 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
   });
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
     onSubmit(values);
+    setTimeout(() => setIsSubmitting(false), 1000); // Safety timeout in case onSubmit doesn't handle state
   };
 
   // Apply the selected template to the form
@@ -143,22 +150,29 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
     }
   };
 
+  // Handle direct date input change
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const date = new Date(e.target.value);
+    if (!isNaN(date.getTime())) {
+      setSelectedDate(date);
+      form.setValue('date', date);
+    }
+  };
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto pr-2">
-        {/* Template selector */}
-        <div className="mb-6">
-          <FormItem>
-            <FormLabel>Shift Template</FormLabel>
+    <>
+      <ScrollArea className="max-h-[60vh] px-1">
+        <div className="space-y-4 p-1">
+          {/* Template selector */}
+          <div className="mb-4">
+            <Label htmlFor="template" className="mb-1.5 block">Shift Template</Label>
             <Select
               value={selectedTemplate || 'custom'}
               onValueChange={applyTemplate}
             >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a template or create custom" />
-                </SelectTrigger>
-              </FormControl>
+              <SelectTrigger id="template" className="border-indigo-200 focus:border-indigo-500">
+                <SelectValue placeholder="Select a template or create custom" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="custom">Custom Shift</SelectItem>
                 {allTemplates?.map((template) => (
@@ -168,186 +182,178 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
                 ))}
               </SelectContent>
             </Select>
-            <FormDescription>
+            <p className="text-xs text-gray-500 mt-1">
               Choose a template to quickly fill shift details or create a custom shift
-            </FormDescription>
-          </FormItem>
-        </div>
+            </p>
+          </div>
 
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Shift Title</FormLabel>
-              <FormControl>
-                <Input placeholder="Morning Shift" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <div>
+            <Label htmlFor="title" className="mb-1.5 block">Shift Title*</Label>
+            <Input
+              id="title"
+              placeholder="Morning Shift"
+              value={form.watch('title')}
+              onChange={(e) => form.setValue('title', e.target.value)}
+              className="border-indigo-200 focus:border-indigo-500"
+            />
+            {form.formState.errors.title && (
+              <p className="text-xs text-red-500 mt-1">{form.formState.errors.title.message}</p>
+            )}
+          </div>
 
-        <FormField
-          control={form.control}
-          name="doctorId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Doctor</FormLabel>
+          <div>
+            <Label htmlFor="doctorId" className="mb-1.5 block">Doctor*</Label>
+            <Select
+              value={form.watch('doctorId')}
+              onValueChange={(value) => form.setValue('doctorId', value)}
+            >
+              <SelectTrigger id="doctorId" className="border-indigo-200 focus:border-indigo-500">
+                <SelectValue placeholder="Select a doctor" />
+              </SelectTrigger>
+              <SelectContent>
+                {doctors?.map((doctor) => (
+                  <SelectItem
+                    key={doctor.doctor_id}
+                    value={doctor.doctor_id.toString()}
+                  >
+                    {doctor.doctor_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {form.formState.errors.doctorId && (
+              <p className="text-xs text-red-500 mt-1">{form.formState.errors.doctorId.message}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="date" className="mb-1.5 block">Date*</Label>
+              <Input
+                id="date"
+                type="date"
+                value={format(form.watch('date') || new Date(), 'yyyy-MM-dd')}
+                onChange={(e) => {
+                  const date = new Date(e.target.value);
+                  if (!isNaN(date.getTime())) {
+                    form.setValue('date', date);
+                  }
+                }}
+                className="border-indigo-200 focus:border-indigo-500"
+              />
+              {form.formState.errors.date && (
+                <p className="text-xs text-red-500 mt-1">{form.formState.errors.date.message}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="status" className="mb-1.5 block">Status*</Label>
               <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value}
+                value={form.watch('status')}
+                onValueChange={(value) => form.setValue('status', value as any)}
               >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a doctor" />
-                  </SelectTrigger>
-                </FormControl>
+                <SelectTrigger id="status" className="border-indigo-200 focus:border-indigo-500">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
                 <SelectContent>
-                  {doctors?.map((doctor) => (
-                    <SelectItem
-                      key={doctor.doctor_id}
-                      value={doctor.doctor_id.toString()}
-                    >
-                      {doctor.doctor_name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+              {form.formState.errors.status && (
+                <p className="text-xs text-red-500 mt-1">{form.formState.errors.status.message}</p>
+              )}
+            </div>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className="w-full pl-3 text-left font-normal"
-                      >
-                        {field.value ? (
-                          format(field.value, 'PPP')
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="startTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Start Time</FormLabel>
-                <div className="flex items-center">
-                  <Clock className="mr-2 h-4 w-4 opacity-50" />
-                  <FormControl>
-                    <Input type="time" {...field} />
-                  </FormControl>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="endTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>End Time</FormLabel>
-                <div className="flex items-center">
-                  <Clock className="mr-2 h-4 w-4 opacity-50" />
-                  <FormControl>
-                    <Input type="time" {...field} />
-                  </FormControl>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Additional details about this shift"
-                  {...field}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="startTime" className="mb-1.5 block">Start Time*</Label>
+              <div className="flex items-center">
+                <Clock className="mr-2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={form.watch('startTime')}
+                  onChange={(e) => form.setValue('startTime', e.target.value)}
+                  className="border-indigo-200 focus:border-indigo-500"
                 />
-              </FormControl>
-              <FormDescription>
-                Optional: Add any additional information about this shift
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+              </div>
+              {form.formState.errors.startTime && (
+                <p className="text-xs text-red-500 mt-1">{form.formState.errors.startTime.message}</p>
+              )}
+            </div>
 
-        <div className="flex justify-end space-x-2 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button> 
-          <Button type="submit">{shift ? 'Update' : 'Create'} Shift</Button>
+            <div>
+              <Label htmlFor="endTime" className="mb-1.5 block">End Time*</Label>
+              <div className="flex items-center">
+                <Clock className="mr-2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={form.watch('endTime')}
+                  onChange={(e) => form.setValue('endTime', e.target.value)}
+                  className="border-indigo-200 focus:border-indigo-500"
+                />
+              </div>
+              {form.formState.errors.endTime && (
+                <p className="text-xs text-red-500 mt-1">{form.formState.errors.endTime.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="description" className="mb-1.5 block">Description</Label>
+            <Textarea
+              id="description"
+              placeholder="Additional details about this shift"
+              value={form.watch('description') || ''}
+              onChange={(e) => form.setValue('description', e.target.value)}
+              rows={3}
+              className="border-indigo-200 focus:border-indigo-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Optional: Add any additional information about this shift
+            </p>
+            {form.formState.errors.description && (
+              <p className="text-xs text-red-500 mt-1">{form.formState.errors.description.message}</p>
+            )}
+          </div>
         </div>
-      </form>
-    </Form>
+      </ScrollArea>
+
+      <DialogFooter className="border-t border-indigo-100 pt-4 mt-4">
+        <Button
+          variant="outline"
+          onClick={onCancel}
+          className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+        >
+          Cancel
+        </Button>
+        <Button
+          disabled={isSubmitting || (!form.watch('title') || !form.watch('doctorId'))}
+          onClick={() => {
+            // Manually trigger form submission with current values
+            const values = form.getValues();
+            handleSubmit(values);
+          }}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4 mr-2" />
+              {shift ? 'Update' : 'Create'} Shift
+            </>
+          )}
+        </Button>
+      </DialogFooter>
+    </>
   );
 };
 
