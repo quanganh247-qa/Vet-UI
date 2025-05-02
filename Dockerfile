@@ -13,7 +13,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install packages
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Copy local code to the container image.
 COPY . ./
