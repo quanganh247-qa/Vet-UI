@@ -37,4 +37,4 @@ RUN caddy fmt Caddyfile --overwrite
 COPY --from=build /app/dist ./dist
 
 # Use Caddy to run/serve the app
-CMD ["sh", "-c", "echo \"Starting with PORT=${PORT:-5173}\" && caddy run --config Caddyfile --adapter caddyfile"]
+CMD ["sh", "-c", "echo \"Starting with PORT=${PORT}\" && caddy run --config Caddyfile --adapter caddyfile"]

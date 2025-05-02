@@ -29,8 +29,7 @@
     }
 
     # serve from the 'dist' folder (Vite builds into the 'dist' folder)
-    root * /app/dist
-
+    root * dist
     # enable gzipping responses
     encode gzip
 
