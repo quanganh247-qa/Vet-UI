@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { parse, format } from "date-fns";
 import {
   Calendar,
@@ -15,6 +15,7 @@ import {
   LogOut,
   User, 
   Settings,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,8 +33,14 @@ import { useLocation } from "wouter";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { usePatientList } from "@/hooks/use-pet";
-import { useListAppointments } from "@/hooks/use-appointment";
+import { 
+  useListAppointments, 
+  useMarkNotificationAsRead, 
+  useMarkAllNotificationsAsRead,
+  useGetNotificationsFromDB 
+} from "@/hooks/use-appointment";
 import { WalkInDialog } from "@/components/appointment/WalkInDialog";
+import { NotificationDialog } from "@/components/ui/notification-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -53,8 +60,16 @@ const Appointments = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const { data: patientsData, isLoading: patientsLoading } = usePatientList();
   const { doctor, logout } = useAuth();
+
+  const { data: notifications, refetch: refetchNotifications } = useGetNotificationsFromDB();
+
+  console.log("Notifications:", notifications);
+  const markNotificationAsRead = useMarkNotificationAsRead();
+  const markAllNotificationsAsRead = useMarkAllNotificationsAsRead();
 
   // Safe time formatting helper
   const formatAppointmentTime = (timeSlot: { start_time?: string } | undefined): string => {
@@ -159,7 +174,41 @@ const Appointments = () => {
   const handleLogout = () => {
     logout();
     setLocation('/login');
-};
+  };
+
+  const handleMarkNotificationAsRead = (notificationId: string) => {
+    markNotificationAsRead.mutate(Number(notificationId), {
+      onSuccess: () => {
+        refetchNotifications();
+      },
+    });
+  };
+
+  const handleMarkAllNotificationsAsRead = () => {
+    markAllNotificationsAsRead.mutate(undefined, {
+      onSuccess: () => {
+        refetchNotifications();
+      },
+    });
+  };
+
+  const handleNotificationClick = (notification: any) => {
+    setSelectedNotification(notification);
+    setNotificationDialogOpen(true);
+    
+    // Mark as read when opened
+    if (notification.id && !notification.read) {
+      markNotificationAsRead.mutate(notification.id, {
+        onSuccess: () => {
+          refetchNotifications();
+        },
+      });
+    }
+  };
+  
+  const handleCloseNotificationDialog = () => {
+    setNotificationDialogOpen(false);
+  };
 
   return (
     <div className="space-y-6 px-2 sm:px-4 md:px-6 max-w-[100vw]">
@@ -194,6 +243,45 @@ const Appointments = () => {
               />
             </div>
             <WalkInDialog />
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 relative">
+                  <Bell className="h-5 w-5" />
+                  {notifications && notifications.filter((n: any) => !n.read).length > 0 && (
+                    <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-64">
+                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {notifications?.length > 0 ? (
+                  notifications.map((notification: any) => (
+                    <DropdownMenuItem
+                      key={notification.id}
+                      onClick={() => handleNotificationClick(notification)}
+                      className={cn(
+                        "cursor-pointer",
+                        notification.read ? "text-gray-500" : "text-black font-semibold"
+                      )}
+                    >
+                      {notification.message}
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem className="text-gray-500">
+                    No notifications
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleMarkAllNotificationsAsRead}
+                  className="text-indigo-600 cursor-pointer"
+                >
+                  Mark all as read
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
@@ -587,6 +675,13 @@ const Appointments = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Add notification dialog */}
+      <NotificationDialog 
+        notification={selectedNotification} 
+        open={notificationDialogOpen}
+        onClose={handleCloseNotificationDialog}
+      />
     </div>
   );
 };

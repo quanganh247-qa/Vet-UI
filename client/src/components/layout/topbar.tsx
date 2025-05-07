@@ -2,7 +2,6 @@ import { Bell, Search, Menu, MessageSquare, LogOut, Settings, User } from "lucid
 import { Input } from "@/components/ui/input";
 import MobileMenu from "./mobile-menu";
 import { useAuth } from "@/context/auth-context";
-import NotificationCenter from "@/components/notifications/NotificationCenter";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import {
@@ -19,7 +18,8 @@ interface TopbarProps {
   openSidebar: () => void;
 }
 
-const Topbar = ({ openSidebar }: TopbarProps) => {
+// Inner component that safely uses auth context
+const TopbarContent = ({ openSidebar }: TopbarProps) => {
   const { doctor, logout } = useAuth();
   const [, navigate] = useLocation();
 
@@ -29,7 +29,7 @@ const Topbar = ({ openSidebar }: TopbarProps) => {
   };
 
   const getInitials = (name: string) => {
-    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'DR';
+    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'BS';
   };
 
   return (
@@ -37,7 +37,7 @@ const Topbar = ({ openSidebar }: TopbarProps) => {
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center md:hidden">
           <MobileMenu className="text-white hover:text-white/80" />
-          <h1 className="text-lg font-display font-medium ml-3 text-white">Dashboard</h1>
+          <h1 className="text-lg font-display font-medium ml-3 text-white">Bảng điều khiển</h1>
         </div>
         
         <div className="hidden md:block">
@@ -47,19 +47,15 @@ const Topbar = ({ openSidebar }: TopbarProps) => {
             </div>
             <Input 
               type="search" 
-              placeholder="Search patients, appointments..." 
+              placeholder="Tìm kiếm bệnh nhân, cuộc hẹn..." 
               className="pl-10 pr-3 py-2 border-white/20 bg-white/10 text-white placeholder-white/60 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent w-full"
             />
           </div>
         </div>
         
-        <div className="flex items-center">
-          <NotificationCenter 
-            onReorderMedicine={(medicineId) => {
-              navigate(`/inventory/medicines/${medicineId}/reorder`);
-            }} 
-          />
-          <button className="p-2 mr-3 text-white hover:text-white/80">
+        <div className="flex items-center space-x-4">
+          
+          <button className="p-2 text-white hover:bg-white/10 rounded-md transition-colors">
             <MessageSquare className="h-5 w-5" />
           </button>
           
@@ -69,32 +65,32 @@ const Topbar = ({ openSidebar }: TopbarProps) => {
                 <Avatar className="h-8 w-8 border-2 border-white/20">
                   <AvatarImage 
                     src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?ixlib=rb-1.2.1&auto=format&fit=crop&w=256&q=80" 
-                    alt="Profile" 
+                    alt="Hồ sơ" 
                   />
                   <AvatarFallback className="bg-indigo-800 text-white">
-                    {doctor ? getInitials(doctor.username) : 'DR'}
+                    {doctor ? getInitials(doctor.username) : 'BS'}
                   </AvatarFallback>
                 </Avatar>
                 <span className="hidden md:block text-sm font-medium text-white ml-2 mr-1">
-                  {doctor ? `Dr. ${doctor.username}` : 'Doctor'}
+                  {doctor ? `Bác sĩ ${doctor.username}` : 'Bác sĩ'}
                 </span>
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/profile/edit')}>
                 <User className="h-4 w-4 mr-2" />
-                Profile Settings
+                Hồ sơ cá nhân
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/settings')}>
                 <Settings className="h-4 w-4 mr-2" />
-                Preferences
+                Tùy chọn
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600">
                 <LogOut className="h-4 w-4 mr-2" />
-                Logout
+                Đăng xuất
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -108,13 +104,28 @@ const Topbar = ({ openSidebar }: TopbarProps) => {
           </div>
           <Input 
             type="search" 
-            placeholder="Search patients, appointments..." 
+            placeholder="Tìm kiếm bệnh nhân, cuộc hẹn..." 
             className="pl-10 pr-3 py-2 border-white/20 bg-white/10 text-white placeholder-white/60 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent w-full"
           />
         </div>
       </div>
     </header>
   );
+};
+
+// Main wrapper component that handles error catching
+const Topbar: React.FC<TopbarProps> = (props) => {
+  try {
+    return <TopbarContent {...props} />;
+  } catch (error) {
+    console.error('Error rendering top bar:', error);
+    // Return a simplified version if there's an error
+    return (
+      <header className="bg-gradient-to-r from-indigo-600 to-indigo-800 shadow-md z-10 p-4">
+        <h1 className="text-lg font-medium text-white">Phòng khám thú y</h1>
+      </header>
+    );
+  }
 };
 
 export default Topbar;

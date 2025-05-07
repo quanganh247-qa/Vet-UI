@@ -27,10 +27,10 @@ export const useGetMedicineSupplierById = (id: number) => {
   return { data, isLoading, error };
 };
 
-export const useGetAllMedicines = () => {
+export const useGetAllMedicines = (page: number, pageSize: number, search: string = "") => {
   const { data, isLoading, error } = useQuery({
-    queryKey: ["medicines"],
-    queryFn: () => getAllMedicines(),
+    queryKey: ["medicines", page, pageSize, search],
+    queryFn: () => getAllMedicines(page, pageSize),
     staleTime: 300000, // Consider data fresh for 5 minutes
   });
   return { data, isLoading, error };

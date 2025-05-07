@@ -34,129 +34,262 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ObjectiveData } from "@/types";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { SOAPHistory } from "@/components/soap/SOAPHistory";
+import { cn } from "@/lib/utils";
 
 type InputChangeEvent = React.ChangeEvent<HTMLTextAreaElement>;
 
-// Simple RichText toolbar component
-const RichTextToolbar = ({ onAction }: { onAction: (action: string) => void }) => {
-  return (
-    <div className="flex items-center gap-2 p-1 bg-gray-50 border-b">
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => onAction("bold")}
-        className="h-8 w-8 p-0"
-      >
-        <Bold className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => onAction("italic")}
-        className="h-8 w-8 p-0"
-      >
-        <Italic className="h-4 w-4" />
-      </Button>
-      <div className="w-px h-6 bg-gray-200" />
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => onAction("bulletList")}
-        className="h-8 w-8 p-0"
-      >
-        <List className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => onAction("numberedList")}
-        className="h-8 w-8 p-0"
-      >
-        <ListOrdered className="h-4 w-4" />
-      </Button>
-    </div>
-  );
-};
-
-// Enhanced textarea with basic rich formatting capability
-const EnhancedTextarea = ({ 
+// Enhanced rich text editor with preview capability
+const RichTextEditor = ({ 
   value, 
   onChange, 
   placeholder, 
   className,
-  minHeight = "150px"
+  minHeight = "150px",
+  externalPreviewMode
 }: { 
   value: string; 
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
-  minHeight?: string; 
+  minHeight?: string;
+  externalPreviewMode?: boolean;
 }) => {
+  const [internalPreviewMode, setInternalPreviewMode] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Use external preview mode if provided, otherwise use internal state
+  const isPreviewMode = externalPreviewMode !== undefined ? externalPreviewMode : internalPreviewMode;
 
-  const handleToolbarAction = (action: string) => {
+  // Function to insert formatting around selected text
+  const insertFormatting = (prefix: string, suffix: string = prefix) => {
     if (!textareaRef.current) return;
-    
+
     const textarea = textareaRef.current;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = value.substring(start, end);
-    
-    let result = value;
-    
+
+    // Check if selection is already formatted
+    const beforeSelection = value.substring(
+      Math.max(0, start - prefix.length),
+      start
+    );
+    const afterSelection = value.substring(
+      end,
+      Math.min(value.length, end + suffix.length)
+    );
+
+    if (beforeSelection === prefix && afterSelection === suffix) {
+      // Remove formatting
+      const newValue =
+        value.substring(0, start - prefix.length) +
+        selectedText +
+        value.substring(end + suffix.length);
+      onChange(newValue);
+
+      // Adjust cursor position
+      setTimeout(() => {
+        textarea.focus();
+        const newPosition = start - prefix.length;
+        textarea.setSelectionRange(
+          newPosition,
+          newPosition + selectedText.length
+        );
+      }, 0);
+    } else {
+      // Add formatting
+      const newValue =
+        value.substring(0, start) +
+        prefix +
+        selectedText +
+        suffix +
+        value.substring(end);
+      onChange(newValue);
+
+      // Put cursor inside formatting marks if no text was selected
+      setTimeout(() => {
+        textarea.focus();
+        const newPosition = start + prefix.length;
+        const selectionLength = selectedText.length || 0;
+        textarea.setSelectionRange(newPosition, newPosition + selectionLength);
+      }, 0);
+    }
+  };
+
+  // Function to apply list formatting
+  const insertList = (prefix: string) => {
+    if (!textareaRef.current) return;
+
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = value.substring(start, end);
+
+    if (selectedText) {
+      // Format each line of the selected text
+      const lines = selectedText.split("\n");
+      let formattedText: string;
+
+      if (prefix === "1. ") {
+        // For numbered lists
+        formattedText = lines
+          .map((line, i) => (line.trim() ? `${i + 1}. ${line}` : line))
+          .join("\n");
+      } else {
+        // For bullet lists
+        formattedText = lines
+          .map((line) => (line.trim() ? `${prefix}${line}` : line))
+          .join("\n");
+      }
+
+      const newValue =
+        value.substring(0, start) + formattedText + value.substring(end);
+
+      onChange(newValue);
+    } else {
+      // If no text is selected, insert list marker at cursor position
+      const cursorPos = start;
+      const newValue =
+        value.substring(0, cursorPos) + prefix + value.substring(cursorPos);
+
+      onChange(newValue);
+
+      // Place cursor after the list marker
+      setTimeout(() => {
+        textarea.focus();
+        const newPosition = cursorPos + prefix.length;
+        textarea.setSelectionRange(newPosition, newPosition);
+      }, 0);
+    }
+  };
+
+  const handleToolbarAction = (action: string) => {
     switch (action) {
       case "bold":
-        result = value.substring(0, start) + `**${selectedText}**` + value.substring(end);
+        insertFormatting("**");
         break;
       case "italic":
-        result = value.substring(0, start) + `*${selectedText}*` + value.substring(end);
+        insertFormatting("*");
         break;
       case "bulletList":
-        if (selectedText) {
-          const bulletItems = selectedText.split('\n').map(item => `• ${item}`).join('\n');
-          result = value.substring(0, start) + bulletItems + value.substring(end);
-        } else {
-          result = value.substring(0, start) + "• " + value.substring(end);
-        }
+        insertList("• ");
         break;
       case "numberedList":
-        if (selectedText) {
-          const numberedItems = selectedText.split('\n').map((item, i) => `${i + 1}. ${item}`).join('\n');
-          result = value.substring(0, start) + numberedItems + value.substring(end);
-        } else {
-          result = value.substring(0, start) + "1. " + value.substring(end);
-        }
+        insertList("1. ");
         break;
       default:
         break;
     }
-    
-    onChange(result);
-    
-    // Set focus back to textarea
-    setTimeout(() => {
-      textarea.focus();
-      // If inserting around selection, put cursor inside the formatting marks
-      const newCursorPos = start + (selectedText ? 2 : 0);
-      textarea.setSelectionRange(newCursorPos, newCursorPos + selectedText.length);
-    }, 0);
+  };
+
+  // Get HTML preview from markdown
+  const getPreviewHtml = () => {
+    if (!value) return placeholder || "";
+
+    let html = value
+      // Convert bold
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      // Convert italic
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+      // Convert bullet lists (match across multiple lines)
+      .replace(/^[•●] (.+)$/gm, "<li>$1</li>")
+      // Convert numbered lists
+      .replace(/^\d+\. (.+)$/gm, "<li>$1</li>")
+      // Wrap consecutive list items in ul/ol tags
+      .replace(
+        /((?:<li>.*<\/li>\n?)+)/g,
+        "<ul class='pl-6 list-disc space-y-1'>$1</ul>"
+      )
+      // Add paragraph tags to text blocks
+      .replace(/^([^<\n].+)$/gm, "<p>$1</p>")
+      // Fix nested paragraph tags
+      .replace(/<p><li>/g, "<li>")
+      .replace(/<\/li><\/p>/g, "</li>")
+      // Remove empty paragraphs
+      .replace(/<p><\/p>/g, "");
+
+    return html;
   };
   
   return (
     <div className={`border rounded overflow-hidden ${className || ''}`}>
-      <RichTextToolbar onAction={handleToolbarAction} />
-      <Textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="border-0 rounded-none resize-none p-3"
-        style={{ minHeight }}
-      />
+      <div className="flex items-center justify-between gap-2 p-2 bg-gray-50 border-b border-gray-200">
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => handleToolbarAction("bold")}
+            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
+            disabled={isPreviewMode}
+          >
+            <Bold className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => handleToolbarAction("italic")}
+            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
+            disabled={isPreviewMode}
+          >
+            <Italic className="h-4 w-4" />
+          </Button>
+          <div className="w-px h-6 bg-gray-200" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => handleToolbarAction("bulletList")}
+            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
+            disabled={isPreviewMode}
+          >
+            <List className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => handleToolbarAction("numberedList")}
+            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
+            disabled={isPreviewMode}
+          >
+            <ListOrdered className="h-4 w-4" />
+          </Button>
+        </div>
+        {externalPreviewMode === undefined && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setInternalPreviewMode(!internalPreviewMode)}
+            className={cn(
+              "text-xs px-2 py-1 h-7",
+              isPreviewMode ? "bg-indigo-50 text-indigo-700" : "hover:bg-gray-100"
+            )}
+          >
+            {isPreviewMode ? "Edit" : "Preview"}
+          </Button>
+        )}
+      </div>
+
+      {isPreviewMode ? (
+        <div
+          className="p-3"
+          style={{ minHeight }}
+        >
+          <MarkdownRenderer markdown={value || placeholder || ""} />
+        </div>
+      ) : (
+        <Textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="border-0 rounded-none resize-none p-3"
+          style={{ minHeight }}
+        />
+      )}
     </div>
   );
 };
@@ -562,12 +695,6 @@ const SoapNotes = () => {
                     Assessment
                   </TabsTrigger>
                   <TabsTrigger
-                    value="plan"
-                    className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
-                  >
-                    Plan
-                  </TabsTrigger>
-                  <TabsTrigger
                     value="history"
                     className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
                   >
@@ -595,18 +722,13 @@ const SoapNotes = () => {
                       S - Subjective (Owner's Report)
                     </label>
                   </div>
-                  {isPreviewMode ? (
-                    <div className="p-4 bg-white border rounded-md">
-                      <MarkdownRenderer markdown={localSoapData.subjective} />
-                    </div>
-                  ) : (
-                    <EnhancedTextarea
-                      value={localSoapData.subjective}
-                      onChange={(value) => handleInputChange("subjective", value)}
-                      placeholder="Enter owner's description of the problem..."
-                      minHeight="150px"
-                    />
-                  )}
+                  <RichTextEditor
+                    value={localSoapData.subjective}
+                    onChange={(value) => handleInputChange("subjective", value)}
+                    placeholder="Enter owner's description of the problem..."
+                    minHeight="150px"
+                    externalPreviewMode={isPreviewMode}
+                  />
                 </div>
 
                 <div>
@@ -637,12 +759,13 @@ const SoapNotes = () => {
                       </Badge>
                     </label>
                   </div>
-                  <EnhancedTextarea
+                  <RichTextEditor
                     value={localSoapData.assessment}
                     onChange={(value) => handleInputChange("assessment", value)}
                     placeholder="Enter diagnosis or assessment of the condition..."
                     className="bg-indigo-50"
                     minHeight="200px"
+                    externalPreviewMode={isPreviewMode}
                   />
                 </div>
               </TabsContent>
@@ -656,18 +779,13 @@ const SoapNotes = () => {
                       S - Subjective (Owner's Report)
                     </label>
                   </div>
-                  {isPreviewMode ? (
-                    <div className="p-4 bg-white border rounded-md">
-                      <MarkdownRenderer markdown={localSoapData.subjective} />
-                    </div>
-                  ) : (
-                    <EnhancedTextarea
-                      value={localSoapData.subjective}
-                      onChange={(value) => handleInputChange("subjective", value)}
-                      placeholder="Enter owner's description of the problem..."
-                      minHeight="400px"
-                    />
-                  )}
+                  <RichTextEditor
+                    value={localSoapData.subjective}
+                    onChange={(value) => handleInputChange("subjective", value)}
+                    placeholder="Enter owner's description of the problem..."
+                    minHeight="400px"
+                    externalPreviewMode={isPreviewMode}
+                  />
                 </div>
               </TabsContent>
 
@@ -718,12 +836,13 @@ const SoapNotes = () => {
                       A - Assessment (Diagnosis)
                     </label>
                   </div>
-                  <EnhancedTextarea
+                  <RichTextEditor
                     value={localSoapData.assessment}
                     onChange={(value) => handleInputChange("assessment", value)}
                     placeholder="Enter diagnosis or assessment of the condition..."
                     className="bg-indigo-50"
                     minHeight="400px"
+                    externalPreviewMode={isPreviewMode}
                   />
                 </div>
               </TabsContent>

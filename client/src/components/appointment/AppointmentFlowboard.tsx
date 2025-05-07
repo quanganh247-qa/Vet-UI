@@ -64,6 +64,11 @@ interface EnhancedAppointmentFlowboardProps {
   onAppointmentUpdate: (appointment: Appointment) => void;
   onAppointmentCreate: (appointment: Omit<Appointment, "id">) => void;
   onAppointmentDelete: (id: number) => void;
+  selectedDate: Date;
+  onDateChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onPreviousDay: () => void;
+  onNextDay: () => void;
+  onToday: () => void;
 }
 
 interface AppointmentWithWorkflowData extends Appointment {
@@ -158,9 +163,6 @@ const AppointmentCard = memo(({
   onClick,
   onStatusChange,
   formatTime,
-  getStatusColorClass,
-  getTypeColorClass,
-  getPriorityColorClass
 }: {
   appointment: Appointment;
   onClick: (id: number) => void;
@@ -263,17 +265,7 @@ const AppointmentCard = memo(({
         </div>
       </div>
       
-      {/* Progress indicators */}
-      <div className="flex justify-between mb-4 text-xs text-gray-600">
-        <div className="flex gap-1 items-center">
-          <MessageSquare className="h-3.5 w-3.5" />
-          <span>Follow-up: 1</span>
-        </div>
-        <div className="flex gap-1 items-center">
-          <Clipboard className="h-3.5 w-3.5" />
-          <span>Tasks: {tasksCompleted}/{tasksTotal}</span>
-        </div>
-      </div>
+        
       
       {/* People section with avatars */}
       <div className="flex items-center gap-1.5 mt-5 border-t pt-3 border-gray-200">
@@ -308,12 +300,16 @@ const EnhancedAppointmentFlowboard: React.FC<
   onAppointmentUpdate,
   onAppointmentCreate,
   onAppointmentDelete,
+  selectedDate,
+  onDateChange,
+  onPreviousDay,
+  onNextDay,
+  onToday,
 }) => {
   // State for managing views, filters, and selected appointments
   const [viewMode, setViewMode] = useState<"columns" | "timeline" | "list">(
     "columns"
   );
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterDoctor, setFilterDoctor] = useState("all");
   const [filterType, setFilterType] = useState("all");
@@ -346,9 +342,13 @@ const EnhancedAppointmentFlowboard: React.FC<
     // Refresh queue data when component mounts
     queryClient.invalidateQueries({ queryKey: ["appointmentsQueue"] });
 
+    queryClient.invalidateQueries({ queryKey: ["appointments"] });
+
+
     // Set up an interval to refresh queue data every 30 seconds
     const interval = setInterval(() => {
       queryClient.invalidateQueries({ queryKey: ["appointmentsQueue"] });
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
     }, 30000);
 
     // Clean up interval on component unmount
@@ -370,25 +370,6 @@ const EnhancedAppointmentFlowboard: React.FC<
       day: "numeric",
       year: "numeric",
     });
-  }, []);
-
-  // Navigate to previous day
-  const goToPreviousDay = useCallback(() => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(selectedDate.getDate() - 1);
-    setSelectedDate(newDate);
-  }, [selectedDate]);
-
-  // Navigate to next day
-  const goToNextDay = useCallback(() => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(selectedDate.getDate() + 1);
-    setSelectedDate(newDate);
-  }, [selectedDate]);
-
-  // Navigate to today
-  const goToToday = useCallback(() => {
-    setSelectedDate(new Date());
   }, []);
 
   // Filter appointments based on selected filters
@@ -597,20 +578,20 @@ const EnhancedAppointmentFlowboard: React.FC<
           </div>
           <div className="flex items-center">
             <button
-              onClick={goToPreviousDay}
+              onClick={onPreviousDay}
               className="p-1.5 rounded-l border text-gray-500 hover:bg-gray-50"
             >
               <ChevronLeft size={16} />
             </button>
             <button
-              onClick={goToToday}
+              onClick={onToday}
               className="p-1.5 border-t border-b text-gray-500 hover:bg-gray-50 flex items-center px-2"
             >
               <Calendar size={14} className="mr-1" />
               <span className="text-xs">Today</span>
             </button>
             <button
-              onClick={goToNextDay}
+              onClick={onNextDay}
               className="p-1.5 rounded-r border text-gray-500 hover:bg-gray-50"
             >
               <ChevronRight size={16} />
@@ -668,7 +649,7 @@ const EnhancedAppointmentFlowboard: React.FC<
               onChange={(e) => setFilterDoctor(e.target.value)}
             >
               <option value="all">All Doctors</option>
-              {doctors.map((doctor) => (
+              {doctors?.map((doctor: any) => (
                 <option key={doctor.doctor_id} value={doctor.doctor_name}>
                   {doctor.doctor_name}
                 </option>

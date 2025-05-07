@@ -60,3 +60,47 @@ export const RevenueAnalytics = async () => {
     throw error;
   }
 };
+
+
+
+export type ConfirmPaymentPayload = {
+  payment_id: number;
+  payment_status: string;
+  notes: string;
+  appointment_id: number;
+}
+
+export const confirmPayment = async (payload: ConfirmPaymentPayload) => {
+  try {
+    const response = await api.post(`/api/v1/payment/confirm`, payload);
+    console.log("Payment confirmed:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error confirming payment:", error);
+    throw error;
+  }
+};
+
+// authRoute.POST("/payment/cash", paymentApi.controller.CreateCashPayment)
+export type CashPaymentRequest = {
+  amount: number;
+  description: string;
+  order_id: number;
+  test_order_id: number;
+  appointment_id: number;
+  received_by: string;
+  cash_received: number;
+  cash_change: number;
+}
+
+export const createCashPayment = async (payload: CashPaymentRequest) => {
+  try {
+    const response = await api.post(`/api/v1/payment/cash`, payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating cash payment:", error);
+    throw error;
+  }
+};
+
+

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -26,9 +26,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, MoreVertical, Loader2, Pencil, Trash } from "lucide-react";
+import { PlusCircle, MoreVertical, Loader2, Pencil, Trash, Users, Search } from "lucide-react";
 import { MedicineSupplierResponse } from "@/types";
 import { useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier } from "@/hooks/use-supplier";
+import Pagination from "@/components/ui/pagination";
 
 interface SupplierListProps {
   searchQuery: string;
@@ -36,10 +37,11 @@ interface SupplierListProps {
 
 const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [selectedSupplier, setSelectedSupplier] = useState<MedicineSupplierResponse | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [localSearchTerm, setLocalSearchTerm] = useState("");
   const pageSize = 10;
-
 
   // Form state
   const [formData, setFormData] = useState({
@@ -51,29 +53,41 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
     notes: "",
   });
 
+  // Use the search query from props when it changes
+  React.useEffect(() => {
+    if (searchQuery) {
+      setLocalSearchTerm(searchQuery);
+    }
+  }, [searchQuery]);
+
   // Use the custom hooks
   const { data: suppliersData, isLoading } = useSuppliers(currentPage, pageSize);
   const createSupplierMutation = useCreateSupplier();
   const updateSupplierMutation = useUpdateSupplier();
   const deleteSupplierMutation = useDeleteSupplier();
 
+  // Update totalPages when supplier data changes
+  useEffect(() => {
+    if (suppliersData?.meta) {
+      setTotalPages(suppliersData.meta.totalPages || 1);
+    }
+  }, [suppliersData]);
+
   // Filter suppliers based on search query
   const suppliers = useMemo(() => {
-    if (!suppliersData || !Array.isArray(suppliersData)) {
+    if (!suppliersData?.data || !Array.isArray(suppliersData.data)) {
       return [];
     }
     
-    return suppliersData.filter((supplier: MedicineSupplierResponse) => {
-      if (!searchQuery) return true;
-      const searchLower = searchQuery.toLowerCase();
+    return suppliersData.data.filter((supplier: MedicineSupplierResponse) => {
+      if (!localSearchTerm) return true;
+      const searchLower = localSearchTerm.toLowerCase();
       const matchesName = supplier.name?.toLowerCase().includes(searchLower) || false;
       const matchesContact = supplier.contact_name?.toLowerCase().includes(searchLower) || false;
       const matchesEmail = supplier.email?.toLowerCase().includes(searchLower) || false;
       return matchesName || matchesContact || matchesEmail;
     });
-  }, [suppliersData, searchQuery]);
-
-  const totalPages = suppliersData?.totalPages || 1;
+  }, [suppliersData, localSearchTerm]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -140,20 +154,23 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
   };
 
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Suppliers</h2>
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-lg font-semibold text-indigo-900 flex items-center">
+          <Users className="h-5 w-5 mr-2 text-indigo-600" />
+          Suppliers
+        </h2>
 
         <Dialog>
           <DialogTrigger asChild>
-            <Button size="sm">
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
               <PlusCircle className="h-4 w-4 mr-2" />
               Add Supplier
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-white sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Add New Supplier</DialogTitle>
+          <DialogContent className="bg-white sm:max-w-[500px] border border-indigo-100">
+            <DialogHeader className="border-b border-indigo-100 pb-3">
+              <DialogTitle className="text-indigo-900">Add New Supplier</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
@@ -164,6 +181,7 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="Enter supplier name"
+                  className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
                   required
                 />
               </div>
@@ -177,6 +195,7 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="Email address"
+                    className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -187,6 +206,7 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                     value={formData.phone}
                     onChange={handleInputChange}
                     placeholder="Phone number"
+                    className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
                 </div>
               </div>
@@ -198,6 +218,7 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                   value={formData.address}
                   onChange={handleInputChange}
                   placeholder="Full address"
+                  className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
               <div className="grid gap-2">
@@ -208,6 +229,7 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                   value={formData.contact_name}
                   onChange={handleInputChange}
                   placeholder="Contact person name"
+                  className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
               <div className="grid gap-2">
@@ -219,18 +241,19 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                   onChange={handleInputChange}
                   placeholder="Additional notes"
                   rows={3}
+                  className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="border-t border-indigo-100 pt-3">
               <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50">Cancel</Button>
               </DialogClose>
               <Button
                 onClick={handleAddSupplier}
-                disabled={!formData.name }
+                disabled={!formData.name}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
               >
-               
                 Add Supplier
               </Button>
             </DialogFooter>
@@ -242,9 +265,9 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
           open={isEditing}
           onOpenChange={(open) => !open && setIsEditing(false)}
         >
-          <DialogContent className="bg-white sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Edit Supplier</DialogTitle>
+          <DialogContent className="bg-white sm:max-w-[500px] border border-indigo-100">
+            <DialogHeader className="border-b border-indigo-100 pb-3">
+              <DialogTitle className="text-indigo-900">Edit Supplier</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
@@ -255,6 +278,7 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="Enter supplier name"
+                  className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
                   required
                 />
               </div>
@@ -268,6 +292,7 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="Email address"
+                    className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -278,6 +303,7 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                     value={formData.phone}
                     onChange={handleInputChange}
                     placeholder="Phone number"
+                    className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
                 </div>
               </div>
@@ -289,6 +315,7 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                   value={formData.address}
                   onChange={handleInputChange}
                   placeholder="Full address"
+                  className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
               <div className="grid gap-2">
@@ -299,6 +326,7 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                   value={formData.contact_name}
                   onChange={handleInputChange}
                   placeholder="Contact person name"
+                  className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
               <div className="grid gap-2">
@@ -310,16 +338,18 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                   onChange={handleInputChange}
                   placeholder="Additional notes"
                   rows={3}
+                  className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditing(false)}>
+            <DialogFooter className="border-t border-indigo-100 pt-3">
+              <Button variant="outline" onClick={() => setIsEditing(false)} className="border-indigo-200 text-indigo-600 hover:bg-indigo-50">
                 Cancel
               </Button>
               <Button
                 onClick={handleUpdateSupplier}
                 disabled={!formData.name}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
               >
                 Update Supplier
               </Button>
@@ -328,16 +358,40 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
         </Dialog>
       </div>
 
+      {/* Search box */}
+      <div className="flex flex-wrap gap-3 mb-6 bg-indigo-50 p-3 rounded-md border border-indigo-100">
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-400" />
+          <Input
+            placeholder="Search suppliers..."
+            className="pl-10 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
+            value={localSearchTerm}
+            onChange={(e) => setLocalSearchTerm(e.target.value)}
+          />
+        </div>
+        
+        {localSearchTerm && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocalSearchTerm("")}
+            className="h-9 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+          >
+            Clear Search
+          </Button>
+        )}
+      </div>
+
       {isLoading ? (
         <div className="flex justify-center items-center h-48">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
         </div>
       ) : (
         <>
-          <div className="rounded-md border">
+          <div className="rounded-md border border-indigo-100 overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-indigo-50">
                   <TableHead>Supplier Name</TableHead>
                   <TableHead>Contact Person</TableHead>
                   <TableHead>Phone</TableHead>
@@ -360,8 +414,8 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                   </TableRow>
                 ) : (
                   suppliers.map((supplier: MedicineSupplierResponse) => (
-                    <TableRow key={supplier.id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={supplier.id} className="hover:bg-gray-50">
+                      <TableCell className="font-medium text-indigo-900">
                         {supplier.name}
                       </TableCell>
                       <TableCell>{supplier.contact_name}</TableCell>
@@ -378,11 +432,12 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
                           <DropdownMenuContent align="end" className="bg-white">
                             <DropdownMenuItem
                               onSelect={() => handleEditClick(supplier)}
+                              className="cursor-pointer"
                             >
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600" onSelect={() => handleDeleteSupplier(supplier.id)}>
+                            <DropdownMenuItem className="text-red-600 cursor-pointer" onSelect={() => handleDeleteSupplier(supplier.id)}>
                               <Trash className="mr-2 h-4 w-4" />
                               Delete
                             </DropdownMenuItem>
@@ -397,29 +452,11 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery }) => {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-2 mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
-            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           )}
         </>
       )}

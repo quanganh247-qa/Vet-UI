@@ -6,8 +6,6 @@ import Analytics from "@/pages/analytics";
 import NotFound from "@/pages/not-found";
 import { LoginForm } from "@/pages/login";
 import React, { lazy, Suspense, useEffect, useState } from "react";
-import { AuthProvider } from "@/context/auth-context";
-import { NotificationProvider } from "@/context/notification-context";
 import Sidebar from "@/components/layout/sidebar";
 import { PatientsPage } from "@/pages/patient/patients";
 import Billing from "@/pages/billing";
@@ -17,8 +15,10 @@ import ShiftManagement from "@/pages/shift-management";
 import StaffPageDetail from "@/pages/staff";
 import { WalkInDialog } from "./components/appointment/WalkInDialog";
 import Settings from "./pages/settings";
-import EditProfilePage from "./pages/profile/edit";
+import EditProfilePage from "./pages/profile";
 import StaffDetailPage from "@/pages/staff/index";
+import { NotificationsProvider } from "@/context/notifications-context";
+import 'react-toastify/dist/ReactToastify.css';
 // Lazy load the TestNotificationListener to avoid hook errors
 const NotificationsPage = lazy(() => import("@/pages/notifications"));
 // Use lazy loading for new components
@@ -40,6 +40,8 @@ const LabManagement = lazy(() => import("@/pages/lab-management"));
 const ServicesManagement = lazy(() => import("@/pages/services-management"));
 const PatientDetailsPage = lazy(() => import("@/pages/patient/patient-details"));
 const ProductManagement = lazy(() => import("@/pages/catalog-management/product-management"));
+const InventoryPage = lazy(() => import("@/pages/inventory"));
+
 // Create LoginPage component that uses LoginForm
 const LoginPage = () => {
   return (
@@ -47,71 +49,6 @@ const LoginPage = () => {
       <LoginForm />
     </div>
   );
-};
-
-// WebSocket initializer component
-const WebSocketInitializer = () => {
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
-
-  // This is a valid React component that can use hooks
-  useEffect(() => {
-    // Initialize socket connection
-    const initSocket = async () => {
-      try {
-        console.log('Initializing WebSocket connection...');
-        const { initializeSocket, addSocketListener, removeSocketListener } = await import('@/services/socket-service');
-
-        // Setup connection status listeners
-        const handleConnect = () => {
-          console.log('WebSocket connected from App component');
-          setConnectionStatus('connected');
-        };
-
-        const handleDisconnect = () => {
-          console.log('WebSocket disconnected from App component');
-          setConnectionStatus('disconnected');
-        };
-
-        const handleError = (error: any) => {
-          console.error('WebSocket error from App component:', error);
-          setConnectionStatus('error');
-        };
-
-        // Register listeners
-        addSocketListener('connect', handleConnect);
-        addSocketListener('disconnect', handleDisconnect);
-        addSocketListener('error', handleError);
-
-        // Initialize connection
-        initializeSocket();
-
-        // Cleanup function
-        return () => {
-          removeSocketListener('connect', handleConnect);
-          removeSocketListener('disconnect', handleDisconnect);
-          removeSocketListener('error', handleError);
-        };
-      } catch (error) {
-        console.error('Error initializing WebSocket:', error);
-        setConnectionStatus('error');
-      }
-    };
-
-    initSocket();
-
-    return () => {
-      // Cleanup on unmount
-      import('@/services/socket-service').then(({ disconnectSocket }) => {
-        console.log('Disconnecting WebSocket...');
-        disconnectSocket();
-      }).catch(error => {
-        console.error('Error during WebSocket cleanup:', error);
-      });
-    };
-  }, []);
-
-  // This component could provide a small indicator but we'll keep it hidden for now
-  return null;
 };
 
 // Add the route in the Router component's Switch block
@@ -123,6 +60,7 @@ function Router() {
         <Route path="/appointments" component={Appointments as React.ComponentType<RouteComponentProps>} />
         <Route path="/staff" component={Staff as React.ComponentType<RouteComponentProps>} />
         <Route path="/analytics" component={Analytics as React.ComponentType<RouteComponentProps>} />
+        <Route path="/inventory" component={InventoryPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment-flow" component={AppointmentFlow as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/walk-in" component={WalkInDialog as React.ComponentType<RouteComponentProps>} />
 
@@ -160,6 +98,7 @@ function Router() {
         <Route path="/schedule-management" component={ScheduleManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/shift-management" component={ShiftManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/shift-assignment" component={ShiftAssignment as React.ComponentType<RouteComponentProps>} />
+        <Route path="/staff/new" component={StaffPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/staff" component={StaffPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/staff/:id" component={StaffDetailPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/settings" component={Settings as React.ComponentType<RouteComponentProps>} />
@@ -183,30 +122,27 @@ function App() {
   // If we're on the login page, render only the LoginPage
   if (location === '/login') {
     return (
-      <AuthProvider>
+      <>
         <LoginPage />
-      </AuthProvider>
+      </>
     );
   }
 
   // Otherwise render the main layout with sidebar and content
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <div className="flex h-screen overflow-hidden bg-background text-darkText">
-          <Sidebar
-            open={sidebarOpen}
-            setOpen={setSidebarOpen}
-          />
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
-              <WebSocketInitializer />
-              <Router />
-            </main>
-          </div>
+    <NotificationsProvider>
+      <div className="flex h-screen overflow-hidden bg-background text-darkText">
+        <Sidebar
+          open={sidebarOpen}
+          setOpen={setSidebarOpen}
+        />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
+            <Router />
+          </main>
         </div>
-      </NotificationProvider>
-    </AuthProvider>
+      </div>
+    </NotificationsProvider>
   );
 }
 

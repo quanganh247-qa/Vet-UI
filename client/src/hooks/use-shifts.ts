@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getShifts, getShiftByDoctorId, createShift, updateShift, deleteShift } from '@/services/doctor-services';
 import { Shift, WorkShift } from '@/types';
+import { getShiftByDoctorId, getShifts, createShift, updateShift, deleteShift } from '@/services/shiftService';
+import { queryClient } from '@/lib/queryClient';
 
 export const useShifts = (doctorId?: number) => {
   return useQuery<Shift[]>({
@@ -73,5 +74,59 @@ export const useGetAllShifts = () => {
         return [];
       }
     }
+  });
+};
+
+
+export const useCreateShift = () => {
+  return useMutation({
+      mutationFn: createShift,
+      onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['doctor-shifts'] });
+      },
+      onError: (error) => {
+          console.error('Error creating shift:', error);
+      },
+  });
+};
+
+export const useUpdateShift = () => {
+  return useMutation({
+      mutationFn: ({ shiftId, data }: { shiftId: number, data: { start_time: Date; end_time: Date; doctor_id: number } }) => 
+          updateShift(shiftId, data),
+      onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['doctor-shifts'] });
+      },
+      onError: (error) => {
+          console.error('Error updating shift:', error);
+      },
+  });
+};
+
+export const useDeleteShift = () => {
+  return useMutation({
+      mutationFn: deleteShift,
+      onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['doctor-shifts'] });
+      },
+      onError: (error) => {
+          console.error('Error deleting shift:', error);
+      },
+  });
+};
+
+
+export const useDoctorShifts = () => {
+  return useQuery({
+      queryKey: ['doctor-shifts'],
+      queryFn: getShifts,
+  });
+};
+
+export const useDoctorShiftsByDoctorId = (doctorId: number) => {
+  return useQuery({
+      queryKey: ['doctor-shifts', doctorId],
+      queryFn: () => getShiftByDoctorId(doctorId),
+      enabled: !!doctorId,
   });
 };

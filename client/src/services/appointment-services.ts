@@ -24,6 +24,7 @@ export const getAllAppointments = async (
     throw new Error("No access token found");
   }
 
+
   try {
     const response = await api.get(`/api/v1/appointments`, {
       params: {
@@ -298,3 +299,97 @@ export const markMessageDelivered = async (id: number) => {
   const response = await api.put(`/api/v1/appointment/notifications/${id}/delivered`);
   return response.data;
 };
+
+
+export const getAppointmentByState = async (state: string) => {
+  try {
+    const response = await api.get(`/api/v1/appointment/state?state=${state}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching appointments by state:", error);
+    throw error;
+  }
+};
+
+
+
+
+// // Database notification routes
+// authRoute.GET("/appointment/notifications/db", appointmentApi.controller.getNotificationsFromDB)
+// authRoute.PUT("/appointment/notifications/read/:id", appointmentApi.controller.markNotificationAsRead)
+// authRoute.PUT("/appointment/notifications/read-all", appointmentApi.controller.markAllNotificationsAsRead)
+
+export const getNotificationsFromDB = async () => {
+  try {
+    const response = await api.get("/api/v1/appointment/notifications/db");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching notifications from DB:", error);
+    throw error;
+  }
+};
+
+export const markNotificationAsRead = async (id: number) => {
+  const response = await api.put(`/api/v1/appointment/notifications/read/${id}`);
+  return response.data;
+};
+
+export const markAllNotificationsAsRead = async () => {
+  const response = await api.put("/api/v1/appointment/notifications/read-all");
+  return response.data;
+};
+
+export const registerUserRole = async (role: string) => {
+  try {
+    const response = await api.post('/api/v1/appointment/register-role', { role });
+    return response.data;
+  } catch (error) {
+    console.error('Error registering user role:', error);
+    throw error;
+  }
+};
+
+export const waitForNotifications = async (signal?: AbortSignal) => {
+  console.log('Starting waitForNotifications polling request...');
+  try {
+    // Use a slightly shorter timeout to ensure client timeout happens before server timeout
+    const response = await api.get('/api/v1/appointment/notifications/wait', {
+      signal,
+      timeout: 25000, // 25 second timeout (shorter than the server's expected 30s)
+    });
+    console.log('Notifications received:', response.data);
+    return response.data;
+  } catch (error: any) {
+    // Handle timeout errors specifically
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      console.log('Long polling timeout - this is normal, will retry');
+      return []; // Return empty array to continue polling
+    }
+    
+    // Don't treat cancellation as an error that needs to be logged
+    if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
+      console.log('Long polling request canceled - component likely unmounted');
+      throw error; // Re-throw but it will be handled properly in the hook
+    }
+    
+    console.error('Error in long polling:', error);
+    // Log more information about the error
+    if (error.response) {
+      console.error('Error response:', {
+        status: error.response.status,
+        headers: error.response.headers,
+        data: error.response.data
+      });
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+    }
+    throw error;
+  }
+};
+
+
+
+
+
+
+

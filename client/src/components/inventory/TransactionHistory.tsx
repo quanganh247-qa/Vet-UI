@@ -18,8 +18,9 @@ import {
 import {
   Calendar as CalendarIcon,
   Loader2,
-  SearchIcon,
+  Search,
   FileDownIcon,
+  ShoppingBag,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -31,6 +32,8 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { MedicineTransactionResponse } from "@/types";
+import { Input } from "@/components/ui/input";
+import Pagination from "@/components/ui/pagination";
 
 interface TransactionHistoryProps {
   searchQuery: string;
@@ -39,9 +42,7 @@ interface TransactionHistoryProps {
 const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   searchQuery,
 }) => {
-  const [transactions, setTransactions] = useState<
-    MedicineTransactionResponse[]
-  >([]);
+  const [transactions, setTransactions] = useState<MedicineTransactionResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -53,16 +54,40 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
     from: undefined,
     to: undefined,
   });
+  const [localSearchTerm, setLocalSearchTerm] = useState("");
+  
+  // Use the search query from props when it changes
+  useEffect(() => {
+    if (searchQuery) {
+      setLocalSearchTerm(searchQuery);
+    }
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchTransactions();
-  }, [currentPage, searchQuery, typeFilter, dateRange]);
+  }, [currentPage, localSearchTerm, typeFilter, dateRange]);
 
   const token = localStorage.getItem("access_token");
   const fetchTransactions = async () => {
     setIsLoading(true);
     try {
       let url = `/api/v1/medicine/transactions?page=${currentPage}&pageSize=10`;
+
+      // Add filters to the URL
+      if (localSearchTerm) {
+        url += `&search=${encodeURIComponent(localSearchTerm)}`;
+      }
+      
+      if (typeFilter !== "all") {
+        url += `&type=${encodeURIComponent(typeFilter)}`;
+      }
+      
+      if (dateRange.from) {
+        url += `&startDate=${format(dateRange.from, "yyyy-MM-dd")}`;
+        if (dateRange.to) {
+          url += `&endDate=${format(dateRange.to, "yyyy-MM-dd")}`;
+        }
+      }
 
       const response = await fetch(url, {
         headers: {
@@ -72,8 +97,6 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
       const data = await response.json();
 
       setTransactions(data);
-      // Assuming the API returns a paginated response with total pages
-      // setTotalPages(data.totalPages);
       setTotalPages(5); // Placeholder, replace with actual data
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -89,45 +112,55 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
   const getTransactionTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
-      case "purchase":
+      case "import":
         return "bg-green-100 text-green-800 border-green-200";
-      case "sale":
+      case "export":
         return "bg-blue-100 text-blue-800 border-blue-200";
-      case "adjustment":
-        return "bg-purple-100 text-purple-800 border-purple-200";
-      case "return":
-        return "bg-amber-100 text-amber-800 border-amber-200";
-      case "write_off":
-        return "bg-red-100 text-red-800 border-red-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   return (
-    <div className="p-4">
+    <div className="p-6">
+      {/* Search and filters section */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Transaction History</h2>
-        <Button variant="outline" size="sm" onClick={handleExport}>
+        <h2 className="text-lg font-semibold text-indigo-900 flex items-center">
+          <ShoppingBag className="h-5 w-5 mr-2 text-indigo-600" />
+          Transaction History
+        </h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleExport}
+          className="h-9 border-indigo-200 text-indigo-600 hover:bg-indigo-50"
+        >
           <FileDownIcon className="h-4 w-4 mr-2" />
           Export
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-3 mb-4">
+      <div className="flex flex-wrap gap-3 mb-6 bg-indigo-50 p-3 rounded-md border border-indigo-100">
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-400" />
+          <Input
+            placeholder="Search transactions..."
+            className="pl-10 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
+            value={localSearchTerm}
+            onChange={(e) => setLocalSearchTerm(e.target.value)}
+          />
+        </div>
+
         {/* Transaction Type Filter */}
         <div className="w-40">
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="h-9">
+            <SelectTrigger className="h-9 border-indigo-200">
               <SelectValue placeholder="All Types" />
             </SelectTrigger>
             <SelectContent className="bg-white">
               <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="purchase">Purchase</SelectItem>
-              <SelectItem value="sale">Sale</SelectItem>
-              <SelectItem value="adjustment">Adjustment</SelectItem>
-              <SelectItem value="return">Return</SelectItem>
-              <SelectItem value="write_off">Write-off</SelectItem>
+              <SelectItem value="import">Import</SelectItem>
+              <SelectItem value="export">Export</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -138,7 +171,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
             <Button
               variant="outline"
               className={cn(
-                "w-[240px] justify-start text-left font-normal h-9",
+                "w-[240px] justify-start text-left font-normal h-9 border-indigo-200",
                 !dateRange.from && "text-muted-foreground"
               )}
             >
@@ -164,20 +197,22 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
               selected={dateRange}
               onSelect={setDateRange as any}
               numberOfMonths={2}
+              className="border rounded-md"
             />
           </PopoverContent>
         </Popover>
 
         {/* Clear Filters Button */}
-        {(typeFilter !== "all" || dateRange.from) && (
+        {(typeFilter !== "all" || dateRange.from || localSearchTerm) && (
           <Button
             variant="ghost"
             size="sm"
             onClick={() => {
               setTypeFilter("all");
               setDateRange({ from: undefined, to: undefined });
+              setLocalSearchTerm("");
             }}
-            className="h-9"
+            className="h-9 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
           >
             Clear Filters
           </Button>
@@ -186,14 +221,14 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
       {isLoading ? (
         <div className="flex justify-center items-center h-48">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
         </div>
       ) : (
         <>
-          <div className="rounded-md border">
+          <div className="rounded-md border border-indigo-100 overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-indigo-50">
                   <TableHead>Date</TableHead>
                   <TableHead>Medicine</TableHead>
                   <TableHead>Type</TableHead>
@@ -215,11 +250,9 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                   </TableRow>
                 ) : (
                   transactions?.map((transaction) => (
-                    <TableRow key={transaction.id}>
+                    <TableRow key={transaction.id} className="hover:bg-gray-50">
                       <TableCell>
-                        {new Date(
-                          transaction.transaction_date
-                        ).toLocaleDateString()}
+                        {new Date(transaction.transaction_date).toLocaleDateString("vi-VN")}
                       </TableCell>
                       <TableCell className="font-medium">
                         {transaction.medicine_name}
@@ -228,9 +261,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                         <Badge
                           variant="outline"
                           className={cn(
-                            getTransactionTypeColor(
-                              transaction.transaction_type
-                            )
+                            getTransactionTypeColor(transaction.transaction_type)
                           )}
                         >
                           {transaction.transaction_type}
@@ -238,14 +269,19 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                       </TableCell>
                       <TableCell>{transaction.quantity}</TableCell>
                       <TableCell>
-                        ${transaction.unit_price.toFixed(2)}
+                        {new Intl.NumberFormat("vi-VN", {
+                          style: "currency",
+                          currency: "VND"
+                        }).format(transaction.unit_price)}
                       </TableCell>
                       <TableCell>
-                        ${transaction.total_amount.toFixed(2)}
+                        {new Intl.NumberFormat("vi-VN", {
+                          style: "currency",
+                          currency: "VND"
+                        }).format(transaction.total_amount)}
                       </TableCell>
                       <TableCell>
-                        {transaction.transaction_type.toLowerCase() ===
-                        "purchase"
+                        {transaction.transaction_type.toLowerCase() === "import"
                           ? transaction.supplier_name
                           : transaction.appointment_id > 0
                           ? `Appointment #${transaction.appointment_id}`
@@ -259,29 +295,11 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-2 mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
-            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           )}
         </>
       )}

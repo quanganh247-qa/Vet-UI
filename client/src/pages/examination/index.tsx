@@ -1467,7 +1467,7 @@ const Examination: React.FC = () => {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
                           <p className="text-xs text-gray-500">Species</p>
-                          <p className="font-medium">{patient.species || "Unknown"}</p>
+                          <p className="font-medium">{patient.type || "Unknown"}</p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Breed</p>
@@ -1478,8 +1478,8 @@ const Examination: React.FC = () => {
                           <p className="font-medium">{patient.age || "Unknown"}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Sex</p>
-                          <p className="font-medium">{patient.sex || "Unknown"}</p>
+                          <p className="text-xs text-gray-500">Gender</p>
+                          <p className="font-medium">{patient.gender || "Unknown"}</p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Weight (kg)</p>

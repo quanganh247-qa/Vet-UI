@@ -276,6 +276,7 @@ export interface QuickLinkRequest {
   account_name: string | "DINH HUU QUANG ANH";
   order_id: number | 0;
   test_order_id?: number;
+  appointment_id?: number;
   medicine_order_id?: number;
   service_order_id?: number;
 }
@@ -385,6 +386,7 @@ export interface AssignMedicineRequest {
   dosage: string;
   frequency: string;
   duration: string;
+  quantity: number;
   notes: string;
 }
 

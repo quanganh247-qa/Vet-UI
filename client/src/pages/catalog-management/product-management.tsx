@@ -61,11 +61,11 @@ const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
         </div>
         <h3 className="text-lg font-medium mb-2 text-indigo-700">No products found</h3>
         <p className="text-sm text-indigo-500 text-center mb-4">
-            Get started by creating your first product
+            Start by creating your first product
         </p>
         <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white" onClick={onAdd}>
             <PlusCircle className="h-4 w-4 mr-2" />
-            Add product
+            Add Product
         </Button>
     </div>
 );
@@ -125,7 +125,7 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
       importStock(importData, {
         onSuccess: () => {
           toast({
-            title: "Stock updated successfully",
+            title: "Update stock successfully",
             description: `Added ${quantity} units to ${productName}`,
             className: "bg-green-50 text-green-800 border-green-200",
           });
@@ -143,8 +143,8 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
       });
     } else {
       toast({
-        title: "Invalid input",
-        description: "Please enter a valid quantity greater than zero",
+        title: "Invalid data",
+        description: "Please enter a valid quantity greater than 0",
         variant: "destructive",
       });
     }
@@ -162,7 +162,7 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
       exportStock(exportData, {
         onSuccess: () => {
           toast({
-            title: "Stock updated successfully",
+            title: "Update stock successfully",
             description: `Removed ${quantity} units from ${productName}`,
             className: "bg-green-50 text-green-800 border-green-200",
           });
@@ -175,15 +175,15 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
             title: "Error updating stock",
             description: error instanceof Error 
               ? error.message 
-              : "An unexpected error occurred. Make sure you have enough stock.",
+              : "An unexpected error occurred. Ensure you have enough stock.",
             variant: "destructive",
           });
         }
       });
     } else {
       toast({
-        title: "Invalid input",
-        description: "Please enter a valid quantity greater than zero",
+        title: "Invalid data",
+        description: "Please enter a valid quantity greater than 0",
         variant: "destructive",
       });
     }
@@ -212,7 +212,7 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
   // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat('vi-VN', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -226,7 +226,7 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
       <DialogContent className="sm:max-w-[600px] border border-indigo-200 bg-white">
         <DialogHeader className="border-b border-indigo-100 pb-4">
           <DialogTitle className="text-indigo-900">
-            Manage Stock - {productName}
+            Stock Management - {productName}
           </DialogTitle>
           <DialogDescription className="text-indigo-500">
             Current stock: <span className="font-medium text-indigo-700">{currentStock} units</span>
@@ -252,7 +252,7 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
           <TabsContent value="import">
             <div className="space-y-4 p-1 pt-4">
               <div>
-                <Label htmlFor="import-quantity" className="mb-1.5 block">Quantity to Import*</Label>
+                <Label htmlFor="import-quantity" className="mb-1.5 block">Import quantity*</Label>
                 <Input
                   id="import-quantity"
                   type="number"
@@ -265,7 +265,7 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
               </div>
 
               <div>
-                <Label htmlFor="import-unit-price" className="mb-1.5 block">Unit Price (VND)*</Label>
+                <Label htmlFor="import-unit-price" className="mb-1.5 block">Unit price (VND)*</Label>
                 <Input
                   id="import-unit-price"
                   type="number"
@@ -278,10 +278,10 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
               </div>
 
               <div>
-                <Label htmlFor="import-reason" className="mb-1.5 block">Reason for Import</Label>
+                <Label htmlFor="import-reason" className="mb-1.5 block">Reason for import</Label>
                 <Textarea
                   id="import-reason"
-                  placeholder="E.g., Restocking, New shipment received, etc."
+                  placeholder="Example: Supplement stock, Receive new stock, etc."
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   rows={3}
@@ -302,7 +302,7 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
                 ) : (
                   <>
                     <ArrowDownCircle className="h-4 w-4 mr-2" />
-                    Import Stock
+                    Import
                   </>
                 )}
               </Button>
@@ -312,7 +312,7 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
           <TabsContent value="export">
             <div className="space-y-4 p-1 pt-4">
               <div>
-                <Label htmlFor="export-quantity" className="mb-1.5 block">Quantity to Export*</Label>
+                <Label htmlFor="export-quantity" className="mb-1.5 block">Export quantity*</Label>
                 <Input
                   id="export-quantity"
                   type="number"
@@ -331,7 +331,7 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
               </div>
 
               <div>
-                <Label htmlFor="export-unit-price" className="mb-1.5 block">Unit Price (VND)*</Label>
+                <Label htmlFor="export-unit-price" className="mb-1.5 block">Unit price (VND)*</Label>
                 <Input
                   id="export-unit-price"
                   type="number"
@@ -344,10 +344,10 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
               </div>
 
               <div>
-                <Label htmlFor="export-reason" className="mb-1.5 block">Reason for Export</Label>
+                <Label htmlFor="export-reason" className="mb-1.5 block">Reason for export</Label>
                 <Textarea
                   id="export-reason"
-                  placeholder="E.g., Used in treatment, Damaged items, etc."
+                  placeholder="Example: Used in treatment, Product damaged, etc."
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   rows={3}
@@ -368,7 +368,7 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
                 ) : (
                   <>
                     <ArrowUpCircle className="h-4 w-4 mr-2" />
-                    Export Stock
+                    Export
                   </>
                 )}
               </Button>
@@ -376,7 +376,7 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
               {quantity > currentStock && (
                 <p className="text-xs text-red-500 flex items-center mt-1">
                   <AlertCircle className="h-3 w-3 mr-1" />
-                  Cannot export more than current stock
+                  Cannot export more than stock quantity
                 </p>
               )}
             </div>
@@ -384,7 +384,7 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
 
           <TabsContent value="history">
             <div className="p-1 pt-4">
-              <h3 className="text-sm font-medium text-indigo-900 mb-2">Stock Movement History</h3>
+              <h3 className="text-sm font-medium text-indigo-900 mb-2">Stock movement history</h3>
               
               {isMovementsLoading ? (
                 <div className="flex justify-center items-center py-8">
@@ -393,7 +393,7 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
               ) : movements.length === 0 ? (
                 <div className="text-center py-6 bg-gray-50 rounded-md border border-dashed border-gray-200">
                   <Clock className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500">No stock movements found for this product</p>
+                  <p className="text-gray-500">No stock movement found for this product</p>
                 </div>
               ) : (
                 <>
@@ -401,8 +401,8 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[90px]">Type</TableHead>
-                        <TableHead className="w-[60px] text-right">Qty</TableHead>
-                        <TableHead className="text-right">Unit Price</TableHead>
+                        <TableHead className="w-[60px] text-right">Quantity</TableHead>
+                        <TableHead className="text-right">Unit price</TableHead>
                         <TableHead>Reason</TableHead>
                         <TableHead className="text-right">Date</TableHead>
                       </TableRow>
@@ -440,7 +440,7 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
                         &lt;
                       </Button>
                       <span className="text-sm flex items-center px-2 bg-indigo-50 rounded-md">
-                        {historyPage} of {pagination.totalPages}
+                        {historyPage} / {pagination.totalPages}
                       </span>
                       <Button
                         variant="outline"
@@ -585,8 +585,8 @@ const ProductManagement: React.FC = () => {
             }, {
                 onSuccess: () => {
                     toast({
-                        title: "Product created successfully",
-                        description: "The new product has been added to the catalog.",
+                        title: "Tạo sản phẩm thành công",
+                        description: "Sản phẩm mới đã được thêm vào danh mục.",
                         className: "bg-green-50 text-green-800 border-green-200",
                     });
                     setIsAddingItem(false);
@@ -594,8 +594,8 @@ const ProductManagement: React.FC = () => {
                 },
                 onError: (error) => {
                     toast({
-                        title: "Error creating product",
-                        description: error instanceof Error ? error.message : "An unexpected error occurred",
+                        title: "Lỗi tạo sản phẩm",
+                        description: error instanceof Error ? error.message : "Đã xảy ra lỗi không mong muốn",
                         variant: "destructive",
                     });
                 }
@@ -617,7 +617,7 @@ const ProductManagement: React.FC = () => {
                     <div>
                         <h1 className="text-2xl font-bold text-white">Product Management</h1>
                         <p className="text-indigo-100 text-sm">
-                            Manage your clinic's inventory and products
+                            Manage product and stock of the clinic
                         </p>
                     </div>
                 </div>
@@ -630,7 +630,7 @@ const ProductManagement: React.FC = () => {
                         <div className="relative w-64">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-400" />
                             <Input
-                                placeholder="Search products..."
+                                placeholder="Search product..."
                                 className="pl-10 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -641,7 +641,7 @@ const ProductManagement: React.FC = () => {
                             className="bg-indigo-600 hover:bg-indigo-700 text-white"
                         >
                             <PlusCircle className="h-4 w-4 mr-2" />
-                            Add New Product
+                            Add new product
                         </Button>
                     </div>
 
@@ -703,7 +703,7 @@ const ProductManagement: React.FC = () => {
                                             <div className="flex justify-between items-center">
                                                 <div className="flex items-center text-sm text-indigo-600">
                                                     <span className={`w-3 h-3 rounded-full mr-2 ${product.isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                                                    {product.isAvailable ? 'Available' : 'Unavailable'}
+                                                    {product.isAvailable ? 'Available' : 'Not available'}
                                                 </div>
                                                 <span className="font-medium text-green-600">{formatCurrency(product.price)}</span>
                                             </div>
@@ -711,7 +711,7 @@ const ProductManagement: React.FC = () => {
                                                 <p className="text-sm text-gray-600">{product.description}</p>
                                             )}
                                             <div className="bg-blue-50 p-2 rounded-md text-xs text-blue-800 border border-blue-200">
-                                                <strong>In Stock:</strong> {product.stock} units
+                                                <strong>Stock:</strong> {product.stock} units
                                             </div>
                                             <Button
                                                 variant="outline"
@@ -720,7 +720,7 @@ const ProductManagement: React.FC = () => {
                                                 onClick={() => handleOpenStockDialog(product)}
                                             >
                                                 <ShoppingBag className="h-4 w-4 mr-2" />
-                                                Manage Stock
+                                                Stock Management
                                             </Button>
                                         </div>
                                     </CardContent>
@@ -733,7 +733,7 @@ const ProductManagement: React.FC = () => {
                     {/* {pagination && pagination.totalPages > 0 && (
                         <div className="flex flex-col items-center space-y-4 mt-8 pb-4">
                             <p className="text-sm text-indigo-600 font-medium">
-                                Page {pagination.page} of {pagination.totalPages} • Showing {filteredProducts.length} of {pagination.total} products
+                                Trang {pagination.page} / {pagination.totalPages} • Hiển thị {filteredProducts.length} / {pagination.total} sản phẩm
                             </p>
                             <div className="flex justify-center items-center space-x-2 bg-indigo-50 px-4 py-3 rounded-lg shadow-sm border border-indigo-100">
                                 <Button
@@ -743,7 +743,7 @@ const ProductManagement: React.FC = () => {
                                     disabled={pagination.page === 1}
                                     className="border-indigo-300 text-indigo-700 hover:bg-indigo-100"
                                 >
-                                    Previous
+                                    Trước
                                 </Button>
                                 {Array.from({ length: pagination.totalPages }).map((_, index) => (
                                     <Button
@@ -767,14 +767,14 @@ const ProductManagement: React.FC = () => {
                                     disabled={pagination.page === pagination.totalPages}
                                     className="border-indigo-300 text-indigo-700 hover:bg-indigo-100"
                                 >
-                                    Next
+                                    Sau
                                 </Button>
                             </div>
                         </div>
                     )} */}
                 </div>
 
-                {/* Add/Edit Dialog */}
+                {/* Hộp thoại Thêm/Sửa */}
                 <Dialog
                     open={isAddingItem || isEditingItem}
                     onOpenChange={(open) => {
@@ -789,7 +789,7 @@ const ProductManagement: React.FC = () => {
                     <DialogContent className="sm:max-w-[600px] border border-indigo-200 bg-white">
                         <DialogHeader className="border-b border-indigo-100 pb-4">
                             <DialogTitle className="text-indigo-900">
-                                {isAddingItem ? "Add New Product" : "Edit Product"}
+                                {isAddingItem ? "Add new product" : "Edit product"}
                             </DialogTitle>
                             <DialogDescription className="text-indigo-500">
                                 Fill in the details below to {isAddingItem ? "create" : "update"} this product in your catalog.
@@ -799,7 +799,7 @@ const ProductManagement: React.FC = () => {
                         <ScrollArea className="max-h-[60vh] px-1">
                             <div className="space-y-4 p-1">
                                 <div>
-                                    <Label htmlFor="name" className="mb-1.5 block">Product Name*</Label>
+                                    <Label htmlFor="name" className="mb-1.5 block">Product name*</Label>
                                     <Input
                                         id="name"
                                         name="name"
@@ -816,7 +816,7 @@ const ProductManagement: React.FC = () => {
                                         name="category"
                                         value={formData.category}
                                         onChange={handleInputChange}
-                                        placeholder="Product category (e.g., Medication, Food, Toys)"
+                                        placeholder="Product category (e.g. Medicine, Food, Toys)"
                                     />
                                 </div>
 
@@ -833,7 +833,7 @@ const ProductManagement: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="stockQuantity" className="mb-1.5 block">Stock Quantity*</Label>
+                                        <Label htmlFor="stockQuantity" className="mb-1.5 block">Stock quantity*</Label>
                                         <Input
                                             id="stockQuantity"
                                             name="stockQuantity"
@@ -863,11 +863,11 @@ const ProductManagement: React.FC = () => {
                                         checked={formData.isAvailable}
                                         onCheckedChange={handleCheckboxChange}
                                     />
-                                    <Label htmlFor="isAvailable">Product is available</Label>
+                                    <Label htmlFor="isAvailable">Product available</Label>
                                 </div>
 
                                 <div>
-                                    <Label htmlFor="image" className="mb-1.5 block">Product Image</Label>
+                                    <Label htmlFor="image" className="mb-1.5 block">Product image</Label>
                                     <div className="flex items-center gap-4">
                                         <Input
                                             id="image"
@@ -914,7 +914,7 @@ const ProductManagement: React.FC = () => {
                                 ) : (
                                     <>
                                         <Save className="h-4 w-4 mr-2" />
-                                        Save Changes
+                                        Save changes
                                     </>
                                 )}
                             </Button>

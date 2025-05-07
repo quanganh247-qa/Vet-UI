@@ -248,182 +248,180 @@ const StaffPage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6">
-                <ScrollArea className="max-h-[70vh]">
-                  <div className="space-y-8 pr-4">
-                    {/* Section: Account Info */}
-                    <div>
-                      <h3 className="text-sm font-medium mb-3 text-indigo-700 uppercase flex items-center">
-                        <UserCircle className="h-4 w-4 mr-1.5 text-indigo-600" />
-                        Account Information
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="username" className="mb-1.5 block">Username *</Label>
-                          <Input
-                            id="username"
-                            name="username"
-                            value={newStaff.username}
-                            onChange={handleStaffChange}
-                            required
-                            autoComplete="off"
-                            placeholder="e.g. johndoe"
-                            className="border-indigo-200 focus:border-indigo-500"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">This will be used for login.</p>
-                        </div>
-                        <div>
-                          <Label htmlFor="full_name" className="mb-1.5 block">Full Name *</Label>
-                          <Input
-                            id="full_name"
-                            name="full_name"
-                            value={newStaff.full_name}
-                            onChange={handleStaffChange}
-                            required
-                            placeholder="e.g. John Doe"
-                            className="border-indigo-200 focus:border-indigo-500"
-                          />
-                        </div>
+                <div className="space-y-8">
+                  {/* Section: Account Info */}
+                  <div>
+                    <h3 className="text-sm font-medium mb-3 text-indigo-700 uppercase flex items-center">
+                      <UserCircle className="h-4 w-4 mr-1.5 text-indigo-600" />
+                      Account Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="username" className="mb-1.5 block">Username *</Label>
+                        <Input
+                          id="username"
+                          name="username"
+                          value={newStaff.username}
+                          onChange={handleStaffChange}
+                          required
+                          autoComplete="off"
+                          placeholder="e.g. johndoe"
+                          className="border-indigo-200 focus:border-indigo-500"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">This will be used for login.</p>
+                      </div>
+                      <div>
+                        <Label htmlFor="full_name" className="mb-1.5 block">Full Name *</Label>
+                        <Input
+                          id="full_name"
+                          name="full_name"
+                          value={newStaff.full_name}
+                          onChange={handleStaffChange}
+                          required
+                          placeholder="e.g. John Doe"
+                          className="border-indigo-200 focus:border-indigo-500"
+                        />
                       </div>
                     </div>
+                  </div>
 
-                    {/* Section: Security */}
-                    <div>
-                      <h3 className="text-sm font-medium mb-3 text-indigo-700 uppercase flex items-center">
-                        <Shield className="h-4 w-4 mr-1.5 text-indigo-600" />
-                        Security
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="password" className="mb-1.5 block">Password *</Label>
-                          <div className="flex items-center">
-                            <Lock className="mr-2 h-4 w-4 text-gray-400" />
-                            <Input
-                              id="password"
-                              name="password"
-                              type="password"
-                              value={newStaff.password}
-                              onChange={handleStaffChange}
-                              required
-                              className="border-indigo-200 focus:border-indigo-500"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <Label htmlFor="passwordConfirm" className="mb-1.5 block">Confirm Password *</Label>
-                          <div className="flex items-center">
-                            <Lock className="mr-2 h-4 w-4 text-gray-400" />
-                            <Input
-                              id="passwordConfirm"
-                              name="passwordConfirm"
-                              type="password"
-                              value={newStaff.passwordConfirm}
-                              onChange={handleStaffChange}
-                              required
-                              className="border-indigo-200 focus:border-indigo-500"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Section: Contact Info */}
-                    <div>
-                      <h3 className="text-sm font-medium mb-3 text-indigo-700 uppercase flex items-center">
-                        <Mail className="h-4 w-4 mr-1.5 text-indigo-600" />
-                        Contact Information
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="email" className="mb-1.5 block">Email *</Label>
-                          <div className="flex items-center">
-                            <Mail className="mr-2 h-4 w-4 text-gray-400" />
-                            <Input
-                              id="email"
-                              name="email"
-                              type="email"
-                              value={newStaff.email}
-                              onChange={handleStaffChange}
-                              required
-                              placeholder="e.g. johndoe@email.com"
-                              className="border-indigo-200 focus:border-indigo-500"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <Label htmlFor="phone_number" className="mb-1.5 block">Phone Number</Label>
-                          <div className="flex items-center">
-                            <Phone className="mr-2 h-4 w-4 text-gray-400" />
-                            <Input
-                              id="phone_number"
-                              name="phone_number"
-                              value={newStaff.phone_number}
-                              onChange={handleStaffChange}
-                              placeholder="e.g. 0123456789"
-                              className="border-indigo-200 focus:border-indigo-500"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-4">
-                        <Label htmlFor="address" className="mb-1.5 block">Address</Label>
+                  {/* Section: Security */}
+                  <div>
+                    <h3 className="text-sm font-medium mb-3 text-indigo-700 uppercase flex items-center">
+                      <Shield className="h-4 w-4 mr-1.5 text-indigo-600" />
+                      Security
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="password" className="mb-1.5 block">Password *</Label>
                         <div className="flex items-center">
-                          <Building className="mr-2 h-4 w-4 text-gray-400" />
+                          <Lock className="mr-2 h-4 w-4 text-gray-400" />
                           <Input
-                            id="address"
-                            name="address"
-                            value={newStaff.address}
+                            id="password"
+                            name="password"
+                            type="password"
+                            value={newStaff.password}
                             onChange={handleStaffChange}
-                            placeholder="e.g. 123 Main St, City, Country"
+                            required
                             className="border-indigo-200 focus:border-indigo-500"
                           />
                         </div>
                       </div>
-                    </div>
-
-                    {/* Section: Role & Verification */}
-                    <div>
-                      <h3 className="text-sm font-medium mb-3 text-indigo-700 uppercase flex items-center">
-                        <BadgeCheck className="h-4 w-4 mr-1.5 text-indigo-600" />
-                        Role & Verification
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="role" className="mb-1.5 block">Role *</Label>
-                          <div className="flex items-center">
-                            <UserCog className="mr-2 h-4 w-4 text-gray-400" />
-                            <Select value={newStaff.role} onValueChange={handleRoleChange} required>
-                              <SelectTrigger className="w-full border-indigo-200 focus:border-indigo-500">
-                                <SelectValue placeholder="Select a role" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Veterinarian">Veterinarian</SelectItem>
-                                <SelectItem value="Technician">Technician</SelectItem>
-                                <SelectItem value="Receptionist">Receptionist</SelectItem>
-                                <SelectItem value="Manager">Manager</SelectItem>
-                                <SelectItem value="Assistant">Assistant</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="mb-1.5 block">Email Verification</Label>
-                          <div className="flex items-center gap-3 mt-2 bg-indigo-50 p-3 rounded-md">
-                            <Switch
-                              id="is_verified_email"
-                              name="is_verified_email"
-                              checked={newStaff.is_verified_email}
-                              onCheckedChange={(checked) => setNewStaff(prev => ({ ...prev, is_verified_email: checked }))}
-                            />
-                            <Label htmlFor="is_verified_email" className="text-indigo-700 font-medium text-sm">
-                              Verified Email
-                            </Label>
-                            <span className="text-xs text-indigo-500">(Can login immediately if checked)</span>
-                          </div>
+                      <div>
+                        <Label htmlFor="passwordConfirm" className="mb-1.5 block">Confirm Password *</Label>
+                        <div className="flex items-center">
+                          <Lock className="mr-2 h-4 w-4 text-gray-400" />
+                          <Input
+                            id="passwordConfirm"
+                            name="passwordConfirm"
+                            type="password"
+                            value={newStaff.passwordConfirm}
+                            onChange={handleStaffChange}
+                            required
+                            className="border-indigo-200 focus:border-indigo-500"
+                          />
                         </div>
                       </div>
                     </div>
                   </div>
-                </ScrollArea>
+
+                  {/* Section: Contact Info */}
+                  <div>
+                    <h3 className="text-sm font-medium mb-3 text-indigo-700 uppercase flex items-center">
+                      <Mail className="h-4 w-4 mr-1.5 text-indigo-600" />
+                      Contact Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="email" className="mb-1.5 block">Email *</Label>
+                        <div className="flex items-center">
+                          <Mail className="mr-2 h-4 w-4 text-gray-400" />
+                          <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            value={newStaff.email}
+                            onChange={handleStaffChange}
+                            required
+                            placeholder="e.g. johndoe@email.com"
+                            className="border-indigo-200 focus:border-indigo-500"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="phone_number" className="mb-1.5 block">Phone Number</Label>
+                        <div className="flex items-center">
+                          <Phone className="mr-2 h-4 w-4 text-gray-400" />
+                          <Input
+                            id="phone_number"
+                            name="phone_number"
+                            value={newStaff.phone_number}
+                            onChange={handleStaffChange}
+                            placeholder="e.g. 0123456789"
+                            className="border-indigo-200 focus:border-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <Label htmlFor="address" className="mb-1.5 block">Address</Label>
+                      <div className="flex items-center">
+                        <Building className="mr-2 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="address"
+                          name="address"
+                          value={newStaff.address}
+                          onChange={handleStaffChange}
+                          placeholder="e.g. 123 Main St, City, Country"
+                          className="border-indigo-200 focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section: Role & Verification */}
+                  <div>
+                    <h3 className="text-sm font-medium mb-3 text-indigo-700 uppercase flex items-center">
+                      <BadgeCheck className="h-4 w-4 mr-1.5 text-indigo-600" />
+                      Role & Verification
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="role" className="mb-1.5 block">Role *</Label>
+                        <div className="flex items-center">
+                          <UserCog className="mr-2 h-4 w-4 text-gray-400" />
+                          <Select value={newStaff.role} onValueChange={handleRoleChange} required>
+                            <SelectTrigger className="w-full border-indigo-200 focus:border-indigo-500">
+                              <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Veterinarian">Veterinarian</SelectItem>
+                              <SelectItem value="Technician">Technician</SelectItem>
+                              <SelectItem value="Receptionist">Receptionist</SelectItem>
+                              <SelectItem value="Manager">Manager</SelectItem>
+                              <SelectItem value="Assistant">Assistant</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="mb-1.5 block">Email Verification</Label>
+                        <div className="flex items-center gap-3 mt-2 bg-indigo-50 p-3 rounded-md">
+                          <Switch
+                            id="is_verified_email"
+                            name="is_verified_email"
+                            checked={newStaff.is_verified_email}
+                            onCheckedChange={(checked) => setNewStaff(prev => ({ ...prev, is_verified_email: checked }))}
+                          />
+                          <Label htmlFor="is_verified_email" className="text-indigo-700 font-medium text-sm">
+                            Verified Email
+                          </Label>
+                          <span className="text-xs text-indigo-500">(Can login immediately if checked)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

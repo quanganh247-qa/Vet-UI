@@ -53,6 +53,8 @@ import {
   useGetMedicinesByPhase,
   useMedicineSearch,
   useAddTreatment,
+  useUpdateTreatmentPhaseStatus,
+  useUpdateTreatmentStatus,
 } from "@/hooks/use-treatment";
 import {
   PhaseMedicine,
@@ -62,6 +64,7 @@ import {
   AssignMedicineRequest,
   CreateTreatmentRequest,
   MedicineTransactionRequest,
+  CreateInvoiceRequest,
 } from "@/types";
 import { useAppointmentData } from "@/hooks/use-appointment";
 import { usePatientData } from "@/hooks/use-pet";
@@ -103,7 +106,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { getMedicineById } from "@/services/medicine-services";
 import { useInvoiceData } from "@/hooks/use-invoice";
-import InvoiceDialog from "@/components/InvoiceDialog";
+import InvoiceDialog from "@/components/invoice/InvoiceDialog";
 import { useMedicalHistory } from "@/hooks/use-medical-history";
 import { useCreateMedicalRecord } from "@/hooks/use-medical-record";
 import { Switch } from "@/components/ui/switch";
@@ -247,123 +250,7 @@ const TreatmentManagement: React.FC = () => {
     return queryString ? `?${queryString}` : "";
   };
 
-  // Replace navigateToInvoice with openInvoiceDialog
-  const openInvoiceDialog = (invoiceId: string) => {
-    setCurrentInvoiceId(invoiceId);
-    setIsInvoiceDialogOpen(true);
-  };
-
-  // Common PDF generation function to reduce code duplication
-  const generatePDF = async (
-    elementId: string,
-    action: "print" | "download",
-    fileName?: string
-  ) => {
-    const element = document.getElementById(elementId);
-
-    if (!element) {
-      toast({
-        title: "Error",
-        description: `Could not find content to ${
-          action === "print" ? "print" : "export"
-        }.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Hide the buttons during capturing
-    const actionButtons = element.querySelector(".print\\:hidden");
-    if (actionButtons) {
-      actionButtons.classList.add("hidden");
-    }
-
-    toast({
-      title: action === "print" ? "Preparing Print" : "Generating PDF",
-      description:
-        action === "print"
-          ? "Preparing your invoice for printing..."
-          : "Please wait while we generate your invoice PDF...",
-    });
-
-    try {
-      // Use html2canvas to capture the invoice element
-      const canvas = await html2canvas(element, {
-        scale: 2, // Higher scale for better quality
-        useCORS: true,
-        logging: false,
-        allowTaint: true,
-        backgroundColor: "#ffffff", // Ensure white background
-      });
-
-      // Create PDF
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-
-      if (action === "print") {
-        // Print the PDF
-        pdf.autoPrint();
-        window.open(pdf.output("bloburl"), "_blank");
-
-        toast({
-          title: "Print Ready",
-          description: "Your invoice has been prepared for printing.",
-          className: "bg-green-50 border-green-200 text-green-800",
-        });
-      } else {
-        // Generate filename with invoice ID
-        const outputFileName =
-          fileName ||
-          (invoiceData
-            ? `Invoice_${invoiceData.invoiceId}.pdf`
-            : "Invoice.pdf");
-
-        // Save the PDF
-        pdf.save(outputFileName);
-
-        toast({
-          title: "Download Complete",
-          description: "Your invoice has been saved as PDF.",
-          className: "bg-green-50 border-green-200 text-green-800",
-        });
-      }
-    } catch (error) {
-      console.error(`Error generating PDF for ${action}:`, error);
-
-      toast({
-        title: "Error",
-        description: `There was a problem ${
-          action === "print" ? "preparing the print" : "generating the PDF"
-        }. Please try again.`,
-        variant: "destructive",
-      });
-    } finally {
-      // Always show buttons again in case of success or error
-      if (actionButtons) {
-        actionButtons.classList.remove("hidden");
-      }
-    }
-  };
-
-  // Handle printing the invoice
-  const handlePrintInvoice = () => {
-    generatePDF("invoice-pdf-content", "print");
-  };
-
-  // Handle downloading the invoice as PDF
-  const handleDownloadInvoice = () => {
-    generatePDF("invoice-pdf-content", "download");
-  };
-
+ 
   // Handle sharing the invoice
   const handleShareInvoice = () => {
     // In a real implementation, you would open a share dialog
@@ -751,12 +638,7 @@ const TreatmentManagement: React.FC = () => {
     usage?: string;
   }>({});
 
-  // State for new medical history record after medicine assignment
-  const [createHistoryAfterAssign, setCreateHistoryAfterAssign] =
-    useState(true);
-  const [createPrescriptionAfterHistory, setCreatePrescriptionAfterHistory] =
-    useState(true);
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
   const [isMedicineAssignmentSuccess, setIsMedicineAssignmentSuccess] =
     useState(false);
   const [assignedMedicinesForHistory, setAssignedMedicinesForHistory] =
@@ -807,26 +689,19 @@ const TreatmentManagement: React.FC = () => {
   );
   const isMedicineAssigning = assignMedicineMutation.isPending;
 
-  // New state for medicine assignment
-  const [medicineAssignment, setMedicineAssignment] = useState({
-    medicine_id: 0,
-    medicine_name: "",
-    description: "",
-    type: "",
-    side_effects: "",
-    usage: "",
-    dosage: "",
-    frequency: "",
-    notes: "",
-    duration: "",
-  });
-
   // Handle medicine selection
   const handleMedicineSelect = (medicine: any) => {
     const alreadySelected = selectedMedicines.some((m) => m.id === medicine.id);
 
     if (!alreadySelected) {
-      setSelectedMedicines([...selectedMedicines, medicine]);
+      // Initialize with quantity = 1 when adding a medicine
+      setSelectedMedicines([
+        ...selectedMedicines, 
+        {
+          ...medicine, 
+          quantity: "1" // Always initialize as a string "1" for consistency with form input
+        }
+      ]);
       setMedicineSearchTerm("");
     }
   };
@@ -839,7 +714,6 @@ const TreatmentManagement: React.FC = () => {
   // Handle opening medicine modal for a specific phase
   const handleOpenMedicineModal = (phaseId: number) => {
     setSelectedPhaseId(phaseId);
-    // Reset selected medicines when opening the modal
     setSelectedMedicines([]);
     setMedicineSearchTerm("");
     setIsMedicineModalOpen(true);
@@ -867,6 +741,7 @@ const TreatmentManagement: React.FC = () => {
       dosage?: string;
       frequency?: string;
       duration?: string;
+      quantity?: string;
     } = {};
 
     if (!medicine.dosage) {
@@ -877,6 +752,14 @@ const TreatmentManagement: React.FC = () => {
     }
     if (!medicine.duration) {
       errors.duration = "Duration is required";
+    }
+    if (!medicine.quantity) {
+      errors.quantity = "Quantity is required";
+    } else {
+      const quantityNum = parseInt(medicine.quantity, 10);
+      if (isNaN(quantityNum) || quantityNum <= 0) {
+        errors.quantity = "Quantity must be a positive number";
+      }
     }
 
     return errors;
@@ -918,6 +801,8 @@ const TreatmentManagement: React.FC = () => {
       const assignmentData = selectedMedicines.map((medicine) => ({
         medicine_id: medicine.id,
         dosage: medicine.dosage,
+        appointment_id: parseInt(appointmentId || "0", 10),
+        quantity: parseInt(medicine.quantity || "1", 10),  // Convert to number
         frequency: medicine.frequency,
         notes: medicine.notes || "",
         duration: medicine.duration || "",
@@ -929,30 +814,8 @@ const TreatmentManagement: React.FC = () => {
       // Explicitly refetch phase medicines data
       if (selectedPhaseId) {
         await refetchPhaseMedicines();
-        // Also refetch phases to update medication counts
         await refetchPhases();
       }
-
-      // Prepare and export each medicine transaction
-      const exportPromises = selectedMedicines.map((medicine) => {
-        // Map selected medicine to MedicineTransactionRequest
-        // Ensure all required fields are available in selectedMedicines
-        const transactionData: MedicineTransactionRequest = {
-          medicine_id: medicine.id,
-          quantity: medicine.quantity || 1, // Make sure this field exists
-          transaction_type: "export", // Or get from medicine/state
-          unit_price: medicine.unit_price, // Make sure this field exists
-          supplier_id: medicine.supplier_id, // Make sure this field exists
-          expiration_date: medicine.expiration_date, // Make sure this field exists
-          notes: medicine.notes || "",
-          prescription_id: medicine.prescription_id || 0, // Adjust as needed
-          appointment_id: medicine.appointment_id || 0, // Adjust as needed
-        };
-        return exportMedicineMutateAsync(transactionData);
-      });
-
-      await Promise.all(exportPromises);
-
       toast({
         title: "Success",
         description: `${selectedMedicines.length} medications assigned successfully`,
@@ -965,38 +828,15 @@ const TreatmentManagement: React.FC = () => {
       // Set flag to indicate medicine assignment was successful
       setIsMedicineAssignmentSuccess(true);
 
-      // If create history after assignment is enabled, show the history modal
-      if (createHistoryAfterAssign) {
-        // Pre-populate the history record condition based on treatment information
-        setHistoryRecord({
-          condition: selectedTreatment?.name || "Treatment phase medication",
-          diagnosis_date: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
-          notes: `Medicines prescribed as part of treatment plan: ${
-            selectedTreatment?.name || ""
-          }. Phase: ${
-            phases?.find((p: any) => p.id === selectedPhaseId)?.phase_name || ""
-          }.\n\nMedications:\n${selectedMedicines
-            .map(
-              (m) =>
-                `- ${m.medicine_name}: ${m.dosage}, ${m.frequency}, ${m.duration}`
-            )
-            .join("\n")}`,
-        });
-
-        // Close medicine modal and open history modal
-        setIsMedicineModalOpen(false);
-        setTimeout(() => setIsHistoryModalOpen(true), 300);
-      } else {
-        // Just close the medicine modal
-        setIsMedicineModalOpen(false);
-
-        // Toggle phase view to refresh display
-        if (selectedPhaseId) {
-          setExpandedPhases((prev) => ({
-            ...prev,
-            [selectedPhaseId]: true,
-          }));
-        }
+      // Close medicine modal
+      setIsMedicineModalOpen(false);
+      
+      // Toggle phase view to refresh display
+      if (selectedPhaseId) {
+        setExpandedPhases((prev) => ({
+          ...prev,
+          [selectedPhaseId]: true,
+        }));
       }
     } catch (err) {
       console.error("Error assigning medicines:", err);
@@ -1008,277 +848,16 @@ const TreatmentManagement: React.FC = () => {
     }
   };
 
-  // Handle creating medical history record
-  const handleSubmitMedicalHistory = async () => {
-    if (!petId) {
-      toast({
-        title: "Error",
-        description: "Pet ID is required to create a medical history record",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Create the medical history record
-      const result = await createMedicalHistoryMutation.mutateAsync(
-        historyRecord
-      );
-
-      // Get the created medical history ID
-      const historyId = result?.data?.id || result?.id;
-
-      toast({
-        title: "Success",
-        description: "Medical history record created successfully",
-        className: "bg-green-50 border-green-200 text-green-800",
-      });
-
-      // If prescription creation is enabled, proceed to create it
-      if (
-        createPrescriptionAfterHistory &&
-        historyId &&
-        assignedMedicinesForHistory.length > 0
-      ) {
-        try {
-          // Check if we have doctor information
-          if (!appointmentData?.doctor?.doctor_id) {
-            throw new Error("Doctor information is not available");
-          }
-
-          // Prepare prescription request with medicines from assigned medicines
-          const prescriptionRequest = {
-            medical_history_id: historyId,
-            examination_id: 0, // This might need to come from an examination if available
-            prescription_date: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
-            doctor_id: parseInt(appointmentData.doctor.doctor_id),
-            notes: `Prescription created from treatment: ${
-              selectedTreatment?.name || ""
-            }`,
-            medications: assignedMedicinesForHistory.map((med) => ({
-              medicine_id: med.id,
-              dosage: med.dosage,
-              frequency: med.frequency,
-              duration: med.duration,
-              instructions: med.notes || "",
-            })),
-          };
-
-          // Use the hook we imported
-          const { createPrescription } = useMedicalHistory();
-          await createPrescription.mutateAsync(prescriptionRequest);
-
-          toast({
-            title: "Success",
-            description: "Prescription created successfully",
-            className: "bg-green-50 border-green-200 text-green-800",
-          });
-
-          // Ask user if they want to go to medical records page
-          const confirmed = window.confirm(
-            "Would you like to navigate to the medical records page to see the created records?"
-          );
-          if (confirmed) {
-            // Navigate to medical records with the pet ID and appointment ID as query parameters
-            const params = new URLSearchParams();
-            if (appointmentId) params.append("appointmentId", appointmentId);
-            if (petId) params.append("petId", petId);
-            setLocation(`/medical-records?${params.toString()}`);
-            return;
-          }
-        } catch (error) {
-          console.error("Error creating prescription:", error);
-          toast({
-            title: "Warning",
-            description:
-              "Medical history created but failed to create prescription",
-            variant: "destructive",
-          });
-        }
-      }
-
-      // Close history modal
-      setIsHistoryModalOpen(false);
-
-      // Toggle phase view to refresh display
-      if (selectedPhaseId) {
-        setExpandedPhases((prev) => ({
-          ...prev,
-          [selectedPhaseId]: true,
-        }));
-      }
-    } catch (error) {
-      console.error("Error creating medical history:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create medical history record",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Handle exporting treatment as invoice
-  const handleExportTreatment = async () => {
-    try {
-      if (!appointmentData || !treatments || treatments.length === 0) {
-        toast({
-          title: "Export Failed",
-          description: "No treatment data available to export",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Processing",
-        description: "Creating invoice from treatment plan...",
-      });
-
-      // Collect all medicine IDs that need to be fetched
-      const medicineCache = new Map();
-      const medicineIds = [];
-      const medicineItems = [];
-
-      // Calculate treatment base costs and collect medicine data
-      let totalAmount = 0;
-      const invoiceItems = [];
-
-      // First pass - add treatments and collect medicine IDs
-      for (const treatment of treatments) {
-        // Add base treatment cost
-        const treatmentCost = 50; // Example base cost for a treatment
-        totalAmount += treatmentCost;
-
-        // Add treatment as an invoice item
-        invoiceItems.push({
-          name: `${treatment.type}: ${treatment.name}`,
-          price: treatmentCost,
-          quantity: 1,
-        });
-
-        // Collect medicine IDs from phases
-        if (treatment.phases) {
-          for (const phase of treatment.phases) {
-            if (phase.medications && phase.medications.length > 0) {
-              for (const med of phase.medications) {
-                if (!medicineCache.has(med.medicine_id)) {
-                  medicineIds.push(med.medicine_id);
-                  medicineCache.set(med.medicine_id, null); // Placeholder until we fetch the data
-                }
-                medicineItems.push({
-                  id: med.medicine_id,
-                  name: med.medicine_name,
-                  phaseName: phase.phase_name,
-                  quantity: med.quantity || 1,
-                });
-              }
-            }
-          }
-        }
-      }
-
-      // Fetch all medicine data in parallel
-      if (medicineIds.length > 0) {
-        try {
-          // Fetch all medicines in parallel
-          const medicinePromises = medicineIds.map((id) => getMedicineById(id));
-          const medicineResults = await Promise.all(medicinePromises);
-
-          // Store results in cache
-          medicineIds.forEach((id, index) => {
-            if (medicineResults[index]) {
-              medicineCache.set(id, medicineResults[index]);
-            }
-          });
-        } catch (error) {
-          console.error("Error fetching medicines:", error);
-          // Continue with default values if fetching fails
-        }
-      }
-
-      // Second pass - add medicine items with data from cache
-      for (const item of medicineItems) {
-        const medicineData = medicineCache.get(item.id);
-        const medPrice = medicineData?.unit_price || 10; // Default price if data not available
-        const medQuantity = item.quantity;
-
-        totalAmount += medPrice * medQuantity;
-
-        invoiceItems.push({
-          name: `${item.name} (${item.phaseName})`,
-          price: medPrice,
-          quantity: medQuantity,
-        });
-      }
-
-      // Generate invoice number
-      const invoiceNumber = `INV-TRT-${new Date().getFullYear()}${(
-        new Date().getMonth() + 1
-      )
-        .toString()
-        .padStart(2, "0")}${Math.floor(Math.random() * 1000)
-        .toString()
-        .padStart(3, "0")}`;
-
-      // Create the invoice request
-      const invoiceRequest = {
-        invoice_number: invoiceNumber,
-        amount: totalAmount,
-        date: format(new Date(), "yyyy-MM-dd"),
-        due_date: format(
-          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          "yyyy-MM-dd"
-        ), // 30 days from now
-        status: "pending",
-        description: `Complete treatment plan for ${
-          patientData?.name || "pet"
-        }`,
-        customer_name: appointmentData.owner?.owner_name || "Patient",
-        items: invoiceItems,
-      };
-
-      // Submit invoice creation request
-      const response = await createInvoiceMutation.mutateAsync(invoiceRequest);
-
-      // If successful, open the invoice dialog
-      if (response && response.id) {
-        toast({
-          title: "Success",
-          description: `Invoice #${invoiceNumber} created successfully`,
-          className: "bg-green-50 border-green-200 text-green-800",
-        });
-
-        // Open the invoice dialog with the newly created invoice ID
-        setCurrentInvoiceId(response.id.toString());
-        setIsInvoiceDialogOpen(true);
-
-        return {
-          invoiceId: response.id,
-          invoiceNumber: invoiceNumber,
-        };
-      }
-      return null;
-    } catch (error) {
-      console.error("Error exporting treatment as invoice:", error);
-      toast({
-        title: "Export Failed",
-        description: "Failed to create invoice from treatment plan",
-        variant: "destructive",
-      });
-      return null;
-    }
-  };
-
   // Handle completing a treatment and exporting as invoice
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   
   // Handle initiating the complete treatment process
   const handleInitiateCompletion = () => {
-    if (!selectedTreatment) {
+    if (!appointmentId) {
       toast({
         title: "Error",
-        description: "No treatment selected",
+        description: "No appointment selected",
         variant: "destructive",
       });
       return;
@@ -1289,14 +868,6 @@ const TreatmentManagement: React.FC = () => {
   
   // Handle completing a treatment and exporting as invoice
   const handleCompleteTreatment = async () => {
-    if (!selectedTreatment) {
-      toast({
-        title: "Error",
-        description: "No treatment selected",
-        variant: "destructive",
-      });
-      return;
-    }
 
     setIsCompleting(true);
     setShowCompletionDialog(false);
@@ -1307,17 +878,13 @@ const TreatmentManagement: React.FC = () => {
         description: "Completing treatment and updating appointment status...",
       });
 
-      // Here you would normally update the treatment status to "Completed" in your API
-      // For example:
-      // await updateTreatmentStatus(selectedTreatment.id, "Completed");
-
       // Also update the appointment status to mark the examination as completed
       if (appointmentId) {
         await updateAppointmentById(parseInt(appointmentId), {
-          state_id: 5, // Completed status
+          state_id: 6, // Completed status
           notes: `Treatment and examination completed by ${appointmentData?.doctor?.doctor_name || 'doctor'} on ${new Date().toLocaleString()}`
         });
-        
+
         toast({
           title: "Examination Completed",
           description: "The appointment has been marked as completed successfully",
@@ -1325,10 +892,6 @@ const TreatmentManagement: React.FC = () => {
           duration: 5000,
         });
       }
-
-      // Then export the treatment as invoice
-      await handleExportTreatment();
-
       // Refetch treatments to update UI
       await refetchTreatments();
 
@@ -1342,7 +905,7 @@ const TreatmentManagement: React.FC = () => {
 
       // Optionally, navigate back to list view
       setActiveView("list");
-      setSelectedTreatmentId(null);
+      // setSelectedTreatmentId(null);
     } catch (error) {
       console.error("Error completing treatment:", error);
       toast({
@@ -1359,6 +922,95 @@ const TreatmentManagement: React.FC = () => {
   const { data: invoiceData, isLoading: isInvoiceLoading } = useInvoiceData(
     currentInvoiceId || ""
   );
+
+  // Add these new state declarations and hooks
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [isUpdatingTreatmentStatus, setIsUpdatingTreatmentStatus] = useState(false);
+  const [isUpdatingPhaseStatus, setIsUpdatingPhaseStatus] = useState(false);
+  
+  // Add the hooks for updating status
+  const updateTreatmentStatusMutation = useUpdateTreatmentStatus();
+  const updateTreatmentPhaseStatusMutation = useUpdateTreatmentPhaseStatus();
+
+  // Add this handler for updating treatment status
+  const handleUpdateTreatmentStatus = async (newStatus: string) => {
+    if (!selectedTreatment?.id) {
+      toast({
+        title: "Error",
+        description: "No treatment selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUpdatingTreatmentStatus(true);
+
+    try {
+      await updateTreatmentStatusMutation.mutateAsync({
+        payload: { status: newStatus },
+        treatment_id: selectedTreatment.id.toString(),
+      });
+
+      toast({
+        title: "Success",
+        description: `Treatment status updated to ${newStatus}`,
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
+
+      // Refetch treatments to update UI
+      await refetchTreatments();
+    } catch (error) {
+      console.error("Error updating treatment status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update treatment status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingTreatmentStatus(false);
+    }
+  };
+
+  // Add this handler for updating phase status
+  const handleUpdatePhaseStatus = async (phaseId: number, newStatus: string) => {
+    if (!selectedTreatment?.id) {
+      toast({
+        title: "Error",
+        description: "No treatment selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUpdatingPhaseStatus(true);
+
+    try {
+      await updateTreatmentPhaseStatusMutation.mutateAsync({
+        payload: { status: newStatus },
+        treatment_id: selectedTreatment.id.toString(),
+        phase_id: phaseId.toString(),
+      });
+
+      toast({
+        title: "Success",
+        description: `Phase status updated to ${newStatus}`,
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
+
+      // Refetch phases to update UI
+      await refetchPhases();
+    } catch (error) {
+      console.error("Error updating phase status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update phase status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingPhaseStatus(false);
+    }
+  };
 
   return (
     <div className="container max-w-screen-xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 md:p-8">
@@ -1412,12 +1064,10 @@ const TreatmentManagement: React.FC = () => {
               variant="outline"
               size="sm"
               className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
-              onClick={() =>
-                openInvoiceDialog(selectedTreatment?.id?.toString() || "")
-              }
+              onClick={handleInitiateCompletion}
             >
               <FileText className="h-4 w-4 mr-1" />
-              <span>Medical Records</span>
+              <span>Complete Appointment</span>
             </Button>
           </div>
         </div>
@@ -1442,7 +1092,7 @@ const TreatmentManagement: React.FC = () => {
                 <Clipboard className="mr-2 h-5 w-5 text-indigo-600" />
                 Treatment Plans
               </h2>
-              <div className="flex items-center gap-2">
+              {/* <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -1452,7 +1102,7 @@ const TreatmentManagement: React.FC = () => {
                   <Download size={14} className="text-gray-600" />
                   <span>Export</span>
                 </Button>
-              </div>
+              </div> */}
             </div>
 
             {/* Treatment Cards */}
@@ -1579,19 +1229,30 @@ const TreatmentManagement: React.FC = () => {
                 </div>
 
                 <div className="flex space-x-2">
-                  <Badge
-                    className={
+                  {/* Treatment status dropdown */}
+                  <Select
+                    defaultValue={selectedTreatment.status}
+                    onValueChange={handleUpdateTreatmentStatus}
+                    disabled={isUpdatingTreatmentStatus}
+                  >
+                    <SelectTrigger className={`h-9 w-40 ${
                       selectedTreatment.status === "Completed"
                         ? "bg-green-100 text-green-800 border-green-200"
                         : selectedTreatment.status === "In Progress"
                         ? "bg-blue-100 text-blue-800 border-blue-200"
                         : selectedTreatment.status === "Not Started"
                         ? "bg-gray-100 text-gray-800 border-gray-200"
-                        : "bg-indigo-100 text-indigo-800 border-indigo-200" // For Ongoing
-                    }
-                  >
-                    {selectedTreatment.status}
-                  </Badge>
+                        : "bg-indigo-100 text-indigo-800 border-indigo-200"
+                    }`}>
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Not Started">Not Started</SelectItem>
+                      <SelectItem value="In Progress">In Progress</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
 
                   <div className="flex space-x-1">
                     <Button
@@ -1712,7 +1373,7 @@ const TreatmentManagement: React.FC = () => {
                   </div>
                 )}
 
-                {/* Add Complete & Export button */}
+                {/* Add Complete & Export button
                 <div className="mt-4 flex justify-end">
                   <div className="w-full">
                     <Button
@@ -1728,7 +1389,7 @@ const TreatmentManagement: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -1765,16 +1426,15 @@ const TreatmentManagement: React.FC = () => {
                       className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all"
                     >
                       <div
-                        className={`px-5 py-3 border-b flex justify-between items-center cursor-pointer ${
+                        className={`px-5 py-3 border-b flex justify-between items-center ${
                           phase.status === "Completed"
                             ? "bg-gradient-to-r from-green-50 to-white"
                             : phase.status === "In Progress"
                             ? "bg-gradient-to-r from-blue-50 to-white"
                             : "bg-gradient-to-r from-gray-50 to-white"
                         }`}
-                        onClick={() => togglePhaseExpansion(phase.id)}
                       >
-                        <div className="flex items-center">
+                        <div className="flex items-center cursor-pointer" onClick={() => togglePhaseExpansion(phase.id)}>
                           <div
                             className={`p-1.5 rounded-lg mr-3 ${
                               phase.status === "Completed"
@@ -1811,29 +1471,40 @@ const TreatmentManagement: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <Badge
-                            className={
+                          {/* Phase status dropdown */}
+                          <Select
+                            defaultValue={phase.status}
+                            onValueChange={(value) => handleUpdatePhaseStatus(phase.id, value)}
+                            disabled={isUpdatingPhaseStatus}
+                          >
+                            <SelectTrigger className={`h-9 w-36 ${
                               phase.status === "Completed"
                                 ? "bg-green-100 text-green-800 border-green-200"
                                 : phase.status === "In Progress"
                                 ? "bg-blue-100 text-blue-800 border-blue-200"
                                 : "bg-gray-100 text-gray-800 border-gray-200"
-                            }
-                          >
-                            {phase.status}
-                          </Badge>
+                            }`}>
+                              <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Not Started">Not Started</SelectItem>
+                              <SelectItem value="In Progress">In Progress</SelectItem>
+                              <SelectItem value="Completed">Completed</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <ChevronDown
                             size={16}
-                            className={`text-gray-400 transition-transform ${
+                            className={`text-gray-400 transition-transform cursor-pointer ${
                               expandedPhases[phase.id] ? "rotate-180" : ""
                             }`}
+                            onClick={() => togglePhaseExpansion(phase.id)}
                           />
                         </div>
                       </div>
 
                       {expandedPhases[phase.id] && (
                         <div className="p-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <div className="grid grid-cols-1 gap-5">
                             {/* Medications Section */}
                             <div className="rounded-lg border border-gray-200">
                               <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b flex justify-between items-center">
@@ -1858,23 +1529,16 @@ const TreatmentManagement: React.FC = () => {
                                 {phase.medications?.length > 0 ? (
                                   <div className="space-y-3">
                                     {phase.medications.map(
-                                      (med: PhaseMedicine) => (
+                                      (med: PhaseMedicine, index: number) => (
                                         <div
-                                          key={med.phase_id}
+                                          key={`${med.medicine_id}-${index}`}
                                           className="p-3 rounded-lg border border-indigo-100 bg-indigo-50/30"
                                         >
                                           <div className="flex justify-between">
                                             <div className="font-medium text-gray-900">
                                               {med.medicine_name}
                                             </div>
-                                            <Badge
-                                              variant="outline"
-                                              className="bg-white border-indigo-200 text-indigo-800"
-                                            >
-                                              {med.dosage}
-                                            </Badge>
-                                          </div>
-                                          <div className="mt-2 text-sm text-gray-600 flex flex-wrap gap-3">
+                                            <div className="mt-2 text-sm text-gray-600 flex flex-wrap gap-3">
                                             <div className="flex items-center gap-1">
                                               <Clock
                                                 size={12}
@@ -1891,6 +1555,13 @@ const TreatmentManagement: React.FC = () => {
                                                 <span>{med.duration}</span>
                                               </div>
                                             )}
+                                            <div className="flex items-center gap-1">
+                                              <Layers
+                                                size={12}
+                                                className="text-gray-400"
+                                              />
+                                              <span>Qty: {med.quantity || 1}</span>
+                                            </div>
                                             {med.notes && (
                                               <div className="flex items-center gap-1">
                                                 <FileText
@@ -1901,6 +1572,14 @@ const TreatmentManagement: React.FC = () => {
                                               </div>
                                             )}
                                           </div>
+                                            <Badge
+                                              variant="outline"
+                                              className="bg-white border-indigo-200 text-indigo-800"
+                                            >
+                                              {med.dosage}
+                                            </Badge>
+                                          </div>
+                                          
                                         </div>
                                       )
                                     )}
@@ -2279,7 +1958,7 @@ const TreatmentManagement: React.FC = () => {
 
       {/* Add New Phase Modal */}
       <Dialog open={isAddPhaseModalOpen} onOpenChange={setIsAddPhaseModalOpen}>
-        <DialogContent className="sm:max-w-[700px] rounded-lg bg-white">
+        <DialogContent className="sm:max-w-[95%] max-h-[95vh] lg:max-w-[1200px] rounded-lg bg-white overflow-hidden">
           <DialogHeader className="border-b pb-4">
             <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center">
               <Layers className="mr-2 h-5 w-5 text-indigo-600" />
@@ -2290,196 +1969,198 @@ const TreatmentManagement: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
-            {/* Phase Creation Form */}
-            <div className="space-y-4">
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
-                  Treatment Phase Information
-                </h3>
+          <div className="py-4 overflow-y-auto max-h-[calc(95vh-200px)]">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4">
+              {/* Phase Creation Form */}
+              <div className="space-y-4">
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
+                    Treatment Phase Information
+                  </h3>
 
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phase-name" className="text-gray-700">
-                      Phase Name <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="phase-name"
-                      placeholder="e.g., Preparation for Surgery"
-                      value={currentPhase.phase_name}
-                      onChange={(e) =>
-                        handlePhaseInputChange("phase_name", e.target.value)
-                      }
-                      className="h-10 border-gray-300 focus:ring-2 focus:ring-indigo-200"
-                    />
-                    {phaseFormErrors.phase_name && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {phaseFormErrors.phase_name}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="phase-description"
-                      className="text-gray-700"
-                    >
-                      Description
-                    </Label>
-                    <Textarea
-                      id="phase-description"
-                      placeholder="e.g., Detailed description of the phase..."
-                      value={currentPhase.description}
-                      onChange={(e) =>
-                        handlePhaseInputChange("description", e.target.value)
-                      }
-                      className="min-h-[100px] border-gray-300 focus:ring-2 focus:ring-indigo-200"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="phase-start-date"
-                        className="text-gray-700"
-                      >
-                        Start Date <span className="text-red-500">*</span>
+                      <Label htmlFor="phase-name" className="text-gray-700">
+                        Phase Name <span className="text-red-500">*</span>
                       </Label>
                       <Input
-                        id="phase-start-date"
-                        type="date"
-                        value={currentPhase.start_date}
+                        id="phase-name"
+                        placeholder="e.g., Preparation for Surgery"
+                        value={currentPhase.phase_name}
                         onChange={(e) =>
-                          handlePhaseInputChange("start_date", e.target.value)
+                          handlePhaseInputChange("phase_name", e.target.value)
                         }
                         className="h-10 border-gray-300 focus:ring-2 focus:ring-indigo-200"
                       />
-                      {phaseFormErrors.start_date && (
+                      {phaseFormErrors.phase_name && (
                         <p className="text-xs text-red-500 mt-1">
-                          {phaseFormErrors.start_date}
+                          {phaseFormErrors.phase_name}
                         </p>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="phase-status" className="text-gray-700">
-                        Status
+                      <Label
+                        htmlFor="phase-description"
+                        className="text-gray-700"
+                      >
+                        Description
                       </Label>
-                      <Select
-                        defaultValue={currentPhase.status}
-                        onValueChange={(value) =>
-                          handlePhaseInputChange("status", value)
+                      <Textarea
+                        id="phase-description"
+                        placeholder="e.g., Detailed description of the phase..."
+                        value={currentPhase.description}
+                        onChange={(e) =>
+                          handlePhaseInputChange("description", e.target.value)
                         }
-                      >
-                        <SelectTrigger className="h-10 border-gray-300 focus:ring-2 focus:ring-indigo-200">
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem
-                            value="Not Started"
-                            className="text-gray-700"
-                          >
-                            <Clock className="mr-2 h-4 w-4 text-gray-400" />
-                            Not Started
-                          </SelectItem>
-                          <SelectItem
-                            value="In Progress"
-                            className="text-blue-600"
-                          >
-                            <Activity className="mr-2 h-4 w-4 text-blue-400" />
-                            In Progress
-                          </SelectItem>
-                          <SelectItem
-                            value="Completed"
-                            className="text-green-600"
-                          >
-                            <CheckCircle className="mr-2 h-4 w-4 text-green-400" />
-                            Completed
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                        className="min-h-[100px] border-gray-300 focus:ring-2 focus:ring-indigo-200"
+                      />
                     </div>
-                  </div>
-                </div>
-              </div>
 
-              <Button
-                onClick={handleAddPhaseToList}
-                className="w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-700 h-11 shadow-sm hover:shadow-md transition-all"
-              >
-                <PlusCircle className="mr-2 h-5 w-5 text-indigo-600" />
-                Add to List
-              </Button>
-            </div>
-
-            {/* Phase Preview Sidebar */}
-            <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 h-[500px] overflow-hidden">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide flex items-center">
-                <List className="mr-2 h-4 w-4 text-gray-500" />
-                Treatment Phase List
-                <Badge className="ml-2 bg-white border-gray-300 text-gray-700">
-                  {phaseList.length}
-                </Badge>
-              </h3>
-
-              <ScrollArea className="h-[calc(100%-40px)] pr-3">
-                {phaseList.length > 0 ? (
-                  <div className="space-y-2">
-                    {phaseList.map((phase, index) => (
-                      <div
-                        key={index}
-                        className="group bg-white rounded-md border border-gray-200 p-3 hover:border-indigo-200 transition-colors"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-900">
-                              {phase.phase_name}
-                            </div>
-                            <div className="flex items-center text-sm text-gray-500 mt-1 space-x-2">
-                              <Calendar className="h-4 w-4 text-gray-400" />
-                              <span>
-                                {new Date(
-                                  phase.start_date
-                                ).toLocaleDateString()}
-                              </span>
-                              <Badge
-                                variant="outline"
-                                className={
-                                  phase.status === "Completed"
-                                    ? "bg-green-50 text-green-700 border-green-100"
-                                    : phase.status === "In Progress"
-                                    ? "bg-blue-50 text-blue-700 border-blue-100"
-                                    : "bg-gray-100 text-gray-700 border-gray-200"
-                                }
-                              >
-                                {phase.status}
-                              </Badge>
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRemovePhase(index)}
-                            className="h-6 w-6 text-gray-400 hover:text-red-500 hover:bg-red-50"
-                          >
-                            <Trash className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                        {phase.description && (
-                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                            {phase.description}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="phase-start-date"
+                          className="text-gray-700"
+                        >
+                          Start Date <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="phase-start-date"
+                          type="date"
+                          value={currentPhase.start_date}
+                          onChange={(e) =>
+                            handlePhaseInputChange("start_date", e.target.value)
+                          }
+                          className="h-10 border-gray-300 focus:ring-2 focus:ring-indigo-200"
+                        />
+                        {phaseFormErrors.start_date && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {phaseFormErrors.start_date}
                           </p>
                         )}
                       </div>
-                    ))}
+
+                      <div className="space-y-2">
+                        <Label htmlFor="phase-status" className="text-gray-700">
+                          Status
+                        </Label>
+                        <Select
+                          defaultValue={currentPhase.status}
+                          onValueChange={(value) =>
+                            handlePhaseInputChange("status", value)
+                          }
+                        >
+                          <SelectTrigger className="h-10 border-gray-300 focus:ring-2 focus:ring-indigo-200">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem
+                              value="Not Started"
+                              className="text-gray-700"
+                            >
+                              <Clock className="mr-2 h-4 w-4 text-gray-400" />
+                              Not Started
+                            </SelectItem>
+                            <SelectItem
+                              value="In Progress"
+                              className="text-blue-600"
+                            >
+                              <Activity className="mr-2 h-4 w-4 text-blue-400" />
+                              In Progress
+                            </SelectItem>
+                            <SelectItem
+                              value="Completed"
+                              className="text-green-600"
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4 text-green-400" />
+                              Completed
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-center p-4">
-                    <Clipboard className="h-8 w-8 text-gray-400 mb-2" />
-                    <p className="text-gray-500 text-sm">No phases added yet</p>
-                  </div>
-                )}
-              </ScrollArea>
+                </div>
+
+                <Button
+                  onClick={handleAddPhaseToList}
+                  className="w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-700 h-11 shadow-sm hover:shadow-md transition-all"
+                >
+                  <PlusCircle className="mr-2 h-5 w-5 text-indigo-600" />
+                  Add to List
+                </Button>
+              </div>
+
+              {/* Phase Preview Sidebar */}
+              <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 h-[600px] overflow-hidden">
+                <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide flex items-center">
+                  <List className="mr-2 h-4 w-4 text-gray-500" />
+                  Treatment Phase List
+                  <Badge className="ml-2 bg-white border-gray-300 text-gray-700">
+                    {phaseList.length}
+                  </Badge>
+                </h3>
+
+                <ScrollArea className="h-[calc(100%-40px)] pr-3">
+                  {phaseList.length > 0 ? (
+                    <div className="space-y-2">
+                      {phaseList.map((phase, index) => (
+                        <div
+                          key={index}
+                          className="group bg-white rounded-md border border-gray-200 p-3 hover:border-indigo-200 transition-colors"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-900">
+                                {phase.phase_name}
+                              </div>
+                              <div className="flex items-center text-sm text-gray-500 mt-1 space-x-2">
+                                <Calendar className="h-4 w-4 text-gray-400" />
+                                <span>
+                                  {new Date(
+                                    phase.start_date
+                                  ).toLocaleDateString()}
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    phase.status === "Completed"
+                                      ? "bg-green-50 text-green-700 border-green-100"
+                                      : phase.status === "In Progress"
+                                      ? "bg-blue-50 text-blue-700 border-blue-100"
+                                      : "bg-gray-100 text-gray-700 border-gray-200"
+                                  }
+                                >
+                                  {phase.status}
+                                </Badge>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRemovePhase(index)}
+                              className="h-6 w-6 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                            >
+                              <Trash className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                          {phase.description && (
+                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                              {phase.description}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                      <Clipboard className="h-8 w-8 text-gray-400 mb-2" />
+                      <p className="text-gray-500 text-sm">No phases added yet</p>
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
             </div>
           </div>
 
@@ -2514,7 +2195,7 @@ const TreatmentManagement: React.FC = () => {
 
       {/* Add Medicine to Phase Modal */}
       <Dialog open={isMedicineModalOpen} onOpenChange={setIsMedicineModalOpen}>
-        <DialogContent className="sm:max-w-[90%] max-h-[90vh] lg:max-w-[1000px] rounded-lg bg-white overflow-hidden">
+        <DialogContent className="sm:max-w-[95%] max-h-[95vh] lg:max-w-[1200px] rounded-lg bg-white overflow-hidden">
           <DialogHeader className="border-b pb-4">
             <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center">
               <Pill className="mr-2 h-5 w-5 text-indigo-600" />
@@ -2525,7 +2206,7 @@ const TreatmentManagement: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-4 overflow-y-auto max-h-[calc(90vh-200px)]">
+          <div className="py-4 overflow-y-auto max-h-[calc(95vh-200px)]">
             {/* Search bar */}
             <div className="flex items-center gap-3 px-4 mb-4">
               <div className="relative flex-1">
@@ -2570,8 +2251,9 @@ const TreatmentManagement: React.FC = () => {
                   <Table>
                     <TableHeader className="bg-white sticky top-0 z-10">
                       <TableRow>
-                        <TableHead className="w-[50%]">Medicine Name</TableHead>
-                        <TableHead className="w-[35%]">Dosage</TableHead>
+                        <TableHead className="w-[40%]">Medicine Name</TableHead>
+                        <TableHead className="w-[30%]">Dosage</TableHead>
+                        <TableHead className="w-[15%]">Quantity</TableHead>
                         <TableHead className="w-[15%] text-right">
                           Action
                         </TableHead>
@@ -2579,7 +2261,7 @@ const TreatmentManagement: React.FC = () => {
                     </TableHeader>
                   </Table>
 
-                  <ScrollArea className="h-[450px]">
+                  <ScrollArea className="h-[600px]">
                     {isMedicineSearchLoading ? (
                       <div className="flex items-center justify-center h-40">
                         <div className="animate-spin h-6 w-6 border-2 border-indigo-600 border-t-transparent rounded-full mr-3"></div>
@@ -2605,6 +2287,9 @@ const TreatmentManagement: React.FC = () => {
                                 </TableCell>
                                 <TableCell className="py-2">
                                   {medicine.dosage}
+                                </TableCell>
+                                <TableCell className="py-2">
+                                  {medicine.quantity}
                                 </TableCell>
                                 <TableCell className="text-right py-2">
                                   <Button
@@ -2649,7 +2334,7 @@ const TreatmentManagement: React.FC = () => {
                           ) : (
                             <TableRow>
                               <TableCell
-                                colSpan={3}
+                                colSpan={4}
                                 className="h-40 text-center text-gray-500"
                               >
                                 {medicineSearchTerm
@@ -2662,13 +2347,6 @@ const TreatmentManagement: React.FC = () => {
                       </Table>
                     )}
                   </ScrollArea>
-                </div>
-
-                {/* Debug info */}
-                <div className="px-4 py-2 text-xs text-gray-500 border-t">
-                  Total medicines: {allMedicines?.length || 0} | Search results:{" "}
-                  {searchResults?.length || 0} | Display count:{" "}
-                  {displayMedicines?.length || 0}
                 </div>
               </div>
 
@@ -2684,7 +2362,7 @@ const TreatmentManagement: React.FC = () => {
                   </Badge>
                 </div>
 
-                <ScrollArea className="h-[450px]">
+                <ScrollArea className="h-[600px]">
                   <div className="p-4">
                     {selectedMedicines.length > 0 ? (
                       <div className="space-y-4">
@@ -2714,7 +2392,7 @@ const TreatmentManagement: React.FC = () => {
                               </Button>
                             </div>
 
-                            <div className="grid grid-cols-3 gap-3 mb-3">
+                            <div className="grid grid-cols-4 gap-3 mb-3">
                               <div className="space-y-2">
                                 <Label
                                   htmlFor={`dosage-${medicine.id}`}
@@ -2742,6 +2420,39 @@ const TreatmentManagement: React.FC = () => {
                                 {medicine.errors?.dosage && (
                                   <p className="text-xs text-red-500">
                                     {medicine.errors.dosage}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor={`quantity-${medicine.id}`}
+                                  className="text-xs text-gray-700"
+                                >
+                                  Quantity <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  id={`quantity-${medicine.id}`}
+                                  type="number"
+                                  min="1"
+                                  placeholder="e.g., 30"
+                                  value={medicine.quantity || ""}
+                                  onChange={(e) =>
+                                    handleMedicineInputChange(
+                                      medicine,
+                                      "quantity",
+                                      e.target.value
+                                    )
+                                  }
+                                  className={`h-8 text-sm border-gray-200 ${
+                                    medicine.errors?.quantity
+                                      ? "border-red-300 focus:ring-red-300"
+                                      : ""
+                                  }`}
+                                />
+                                {medicine.errors?.quantity && (
+                                  <p className="text-xs text-red-500">
+                                    {medicine.errors.quantity}
                                   </p>
                                 )}
                               </div>
@@ -2885,180 +2596,8 @@ const TreatmentManagement: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Medical History Record Creation Dialog */}
-      <Dialog open={isHistoryModalOpen} onOpenChange={setIsHistoryModalOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] rounded-lg bg-white overflow-hidden">
-          <DialogHeader className="border-b pb-4">
-            <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center">
-              <FileText className="mr-2 h-5 w-5 text-indigo-600" />
-              Create Medical History Record
-            </DialogTitle>
-            <DialogDescription className="text-gray-600">
-              Create a medical history record for this treatment's medication
-            </DialogDescription>
-          </DialogHeader>
 
-          <div className="py-4">
-            <div className="space-y-4">
-              <div>
-                <Label
-                  htmlFor="condition"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Condition / Diagnosis <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="condition"
-                  placeholder="Enter medical condition or diagnosis"
-                  value={historyRecord.condition}
-                  onChange={(e) =>
-                    setHistoryRecord({
-                      ...historyRecord,
-                      condition: e.target.value,
-                    })
-                  }
-                  className="mt-1 h-10 border-gray-200"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Specify the medical condition or diagnosis
-                </p>
-              </div>
 
-              <div>
-                <Label
-                  htmlFor="diagnosis-date"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Diagnosis Date <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="diagnosis-date"
-                  type="datetime-local"
-                  value={historyRecord.diagnosis_date.replace(" ", "T")}
-                  onChange={(e) =>
-                    setHistoryRecord({
-                      ...historyRecord,
-                      diagnosis_date: e.target.value.replace("T", " "),
-                    })
-                  }
-                  className="mt-1 h-10 border-gray-200"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  When the condition was diagnosed
-                </p>
-              </div>
-
-              <div>
-                <Label
-                  htmlFor="notes"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Notes
-                </Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Enter detailed notes about the condition, treatment, etc."
-                  value={historyRecord.notes}
-                  onChange={(e) =>
-                    setHistoryRecord({
-                      ...historyRecord,
-                      notes: e.target.value,
-                    })
-                  }
-                  className="mt-1 min-h-[120px] border-gray-200"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Include any important details about the condition, symptoms,
-                  treatments, etc.
-                </p>
-              </div>
-
-              <div className="flex items-center space-x-2 mt-1 pt-4 border-t">
-                <Switch
-                  id="create-prescription"
-                  checked={createPrescriptionAfterHistory}
-                  onCheckedChange={setCreatePrescriptionAfterHistory}
-                  className="data-[state=checked]:bg-indigo-600"
-                />
-                <Label
-                  htmlFor="create-prescription"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Automatically create prescription with assigned medicines
-                </Label>
-                <div className="ml-2 px-2 py-1 bg-emerald-50 text-xs font-medium text-emerald-700 rounded border border-emerald-200">
-                  Recommended
-                </div>
-              </div>
-
-              <div className="bg-blue-50 rounded-lg p-4 mt-2 border border-blue-100">
-                <div className="flex items-start space-x-2">
-                  <Receipt className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-blue-800 font-medium">
-                      Medical Records Workflow
-                    </p>
-                    <p className="text-xs text-blue-700 mt-1">
-                      Creating a medical history record allows you to document
-                      the condition being treated. When enabled, a prescription
-                      will also be created using the medicines you've assigned.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="border-t pt-4 flex justify-between">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsHistoryModalOpen(false);
-                // Toggle phase view to refresh display
-                if (selectedPhaseId) {
-                  setExpandedPhases((prev) => ({
-                    ...prev,
-                    [selectedPhaseId]: true,
-                  }));
-                }
-              }}
-              className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 px-6"
-            >
-              Skip for Now
-            </Button>
-            <Button
-              onClick={handleSubmitMedicalHistory}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white h-11 px-6 shadow-md flex items-center gap-2"
-              disabled={createMedicalHistoryMutation.isPending}
-            >
-              {createMedicalHistoryMutation.isPending ? (
-                <>
-                  <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                  <span>Creating...</span>
-                </>
-              ) : (
-                <>
-                  <FileText className="h-5 w-5" />
-                  <span>Create Medical Record</span>
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add the InvoiceDialog component */}
-      <InvoiceDialog
-        invoice={invoiceData}
-        isLoading={isInvoiceLoading}
-        open={isInvoiceDialogOpen}
-        onOpenChange={setIsInvoiceDialogOpen}
-        onPrint={handlePrintInvoice}
-        onDownload={handleDownloadInvoice}
-        onShare={handleShareInvoice}
-      />
 
       {/* Treatment Completion Confirmation Dialog */}
       <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
@@ -3066,7 +2605,7 @@ const TreatmentManagement: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="text-xl flex items-center gap-2 text-green-700">
               <CheckCircle className="h-5 w-5" />
-              Complete Treatment & Update Appointment
+              Complete Treatment
             </DialogTitle>
             <DialogDescription className="mt-2">
               This action will mark the treatment as completed and update the appointment status 

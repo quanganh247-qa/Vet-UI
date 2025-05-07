@@ -44,7 +44,6 @@ api.interceptors.response.use(
           return axios(originalRequest);
         }
       } catch (refreshError) {
-        console.error('Error refreshing token:', refreshError);
         // Redirect to login on refresh failure
         window.location.href = '/login';
       }

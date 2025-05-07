@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReportsDashboard from "@/components/dashboard/ReportsDashboard";
-import { useNotifications } from "@/context/notification-context";
 import { useAuth } from "@/context/auth-context";
 import { Link, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +30,6 @@ interface DashboardData {
 
 const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const { unreadCount, addNotification } = useNotifications();
   const { doctor, logout } = useAuth();
   const [, navigate] = useLocation();
   
@@ -79,12 +77,7 @@ const Dashboard = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/20">
-                  <Bell className="h-5 w-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center">
-                      {unreadCount}
-                    </span>
-                  )}
+                
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">

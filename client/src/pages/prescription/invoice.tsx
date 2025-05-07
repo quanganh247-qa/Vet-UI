@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import WorkflowNavigation from "@/components/WorkflowNavigation";
-import InvoiceComponent, { InvoiceData } from "@/components/InvoiceComponent";
+import InvoiceComponent, { InvoiceData } from "@/components/invoice/InvoiceComponent";
 import { useToast } from "@/components/ui/use-toast";
 import { usePatientData } from "@/hooks/use-pet";
 import { useAppointmentData } from "@/hooks/use-appointment";

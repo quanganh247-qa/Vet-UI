@@ -3,7 +3,6 @@ import { Link, useLocation } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
-import { useNotifications } from "@/context/notification-context";
 import { Badge } from "@/components/ui/badge";
 import {
   ChevronRight,
@@ -23,6 +22,7 @@ import {
   Clock,
   Bot,
   CalendarRange,
+  Package,
 } from "lucide-react";
 
 const navigation = [
@@ -56,7 +56,11 @@ const navigation = [
     href: "/schedule-management",
     icon: <CalendarRange className="h-5 w-5" />,
   },
-
+  {
+    name: "Inventory",
+    href: "/inventory",
+    icon: <Package className="h-5 w-5" />,
+  },
   {
     name: "Billing",
     href: "/billing",
@@ -68,15 +72,15 @@ const navigation = [
     icon: <LifeBuoy className="h-5 w-5" />,
   },
   {
-    name: "Products  ",
+    name: "Catalog",
     href: "/catalog-management",
     icon: <LifeBuoy className="h-5 w-5" />,
   },
-  {
-    name: "Virtual Assistant",
-    href: "/chatbot",
-    icon: <Bot className="h-5 w-5" />,
-  },
+  // {
+  //   name: "Virtual Assistant",
+  //   href: "/chatbot",
+  //   icon: <Bot className="h-5 w-5" />,
+  // },
 ];
 
 const secondaryNavigation = [
@@ -95,8 +99,9 @@ interface SidebarContentProps {
 const SidebarContent = ({ className }: SidebarContentProps) => {
   const [location] = useLocation();
   const [isExpanded, setIsExpanded] = useState(true);
-  const { doctor, logout } = useAuth();
-  const { unreadCount } = useNotifications();
+  // Safe context access within the component
+  const auth = useAuth();
+  const { doctor, logout, notificationCount } = auth;
 
   // Hàm kiểm tra URL hiện tại có khớp với href không
   const isActive = (href: string) => {
@@ -172,7 +177,11 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
                       )}
                     </AnimatePresence>
                   </div>
-                 
+                  {item.name === "Thông báo" && notificationCount > 0 && (
+                    <Badge className="bg-red-500 text-white">
+                      {notificationCount > 99 ? "99+" : notificationCount}
+                    </Badge>
+                  )}
                 </div>
               </Link>
             );
@@ -209,11 +218,7 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
                       )}
                     </AnimatePresence>
                   </div>
-                  {item.name === "Notifications" && unreadCount > 0 && (
-                    <Badge className="bg-red-500 text-white">
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </Badge>
-                  )}
+                 
                 </div>
               </Link>
             );
@@ -239,7 +244,7 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
                 onClick={logout}
                 className="flex items-center text-xs text-indigo-200 hover:text-white"
               >
-                <LogOut className="h-3 w-3 mr-1" /> Sign Out
+                <LogOut className="h-3 w-3 mr-1" /> Logout
               </button>
             </div>
           </div>
@@ -261,11 +266,24 @@ interface SidebarProps {
   setOpen: Dispatch<SetStateAction<boolean>>;
 }
 
-// Tạo wrapper để cung cấp MessagingProvider khi cần
+// The main Sidebar component that will be exported and used in the app
 const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
-  return (
-      <SidebarContent />
-  );
+  // We'll wrap the SidebarContent with a try-catch to gracefully handle potential auth issues
+  try {
+    return <SidebarContent />;
+  } catch (error) {
+    console.error("Error rendering sidebar:", error);
+    // Return a minimal sidebar that doesn't depend on auth
+    return (
+      <div className="bg-indigo-600 text-white w-20 flex flex-col h-full">
+        <div className="p-4 flex items-center justify-center">
+          <PawPrint className="h-8 w-8 text-white" />
+        </div>
+        {/* Empty space where navigation would be */}
+        <div className="flex-1"></div>
+      </div>
+    );
+  }
 };
 
 export default Sidebar;

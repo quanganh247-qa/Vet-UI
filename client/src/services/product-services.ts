@@ -269,9 +269,6 @@ export const getProductStockMovements = async (
                 pageSize
             }
         });
-
-        console.log("Raw API response:", response.data);
-
         // Transform snake_case to camelCase
         const transformMovement = (movement: any): ProductStockMovementResponse => ({
             id: movement.id,
@@ -355,6 +352,38 @@ export const getProductStockMovements = async (
         };
     } catch (error) {
         console.error('Error fetching products:', error);
+        throw error;
+    }
+}
+
+// authRoute.GET("/movements", petApi.controller.GetAllProductStockMovements)
+
+export const getAllProductStockMovements = async (): Promise<ProductStockMovementResponse[]> => {
+    try {
+        const response = await api.get('/api/v1/products/movements');
+        console.log('All product stock movements API response:', response);
+        
+        // Handle the specific response structure we're getting
+        if (response.data && response.data.code === 'S' && Array.isArray(response.data.data)) {
+            console.log('Successfully extracted stock movements data:', response.data.data);
+            return response.data.data;
+        }
+        
+        // Fallback handling for other potential structures
+        if (response.data && Array.isArray(response.data)) {
+            return response.data;
+        } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+            return response.data.data;
+        } else if (response.data && response.data.movements && Array.isArray(response.data.movements)) {
+            return response.data.movements;
+        } else if (response.data && Array.isArray(response.data.rows)) {
+            return response.data.rows;
+        } else {
+            console.error('Unexpected API response format:', response.data);
+            return [];
+        }
+    } catch (error) {
+        console.error('Error fetching product stock movements:', error);
         throw error;
     }
 }

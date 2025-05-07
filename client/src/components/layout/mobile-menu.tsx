@@ -53,51 +53,23 @@ const NavItem: React.FC<{
   );
 };
 
-const MobileMenu: React.FC<MobileMenuProps> = ({ className }) => {
-  const [isOpen, setIsOpen] = useState(false);
+// Inner component that safely uses the auth context
+const MobileMenuContent: React.FC<MobileMenuProps & { isOpen: boolean; closeMenu: () => void }> = ({ 
+  className, 
+  isOpen, 
+  closeMenu 
+}) => {
   const [location] = useLocation();
+  // Get auth context safely within this component
   const { doctor, logout } = useAuth();
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const menu = document.getElementById("mobile-menu");
-      const toggle = document.getElementById("mobile-menu-toggle");
-      
-      if (
-        menu &&
-        !menu.contains(event.target as Node) &&
-        toggle &&
-        !toggle.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   // Close menu when location changes
   useEffect(() => {
-    setIsOpen(false);
-  }, [location]);
-
-  const closeMenu = () => setIsOpen(false);
+    closeMenu();
+  }, [location, closeMenu]);
 
   return (
     <>
-      <button
-        id="mobile-menu-toggle"
-        className={cn("md:hidden", className)}
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="Toggle menu"
-      >
-        <Menu className="h-6 w-6" />
-      </button>
-
       {/* Overlay */}
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={closeMenu} />
@@ -193,6 +165,63 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ className }) => {
           </Button>
         </div>
       </div>
+    </>
+  );
+};
+
+// Main component that handles the state and error handling
+const MobileMenu: React.FC<MobileMenuProps> = ({ className }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const menu = document.getElementById("mobile-menu");
+      const toggle = document.getElementById("mobile-menu-toggle");
+      
+      if (
+        menu &&
+        !menu.contains(event.target as Node) &&
+        toggle &&
+        !toggle.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const closeMenu = () => setIsOpen(false);
+
+  return (
+    <>
+      <button
+        id="mobile-menu-toggle"
+        className={cn("md:hidden", className)}
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label="Toggle menu"
+      >
+        <Menu className="h-6 w-6" />
+      </button>
+
+      {/* Only render the content component when menu is open to avoid unnecessary auth context errors */}
+      {isOpen && (
+        <React.Suspense fallback={null}>
+          {/* Wrap in try-catch to handle any auth context errors */}
+          {(() => {
+            try {
+              return <MobileMenuContent isOpen={isOpen} closeMenu={closeMenu} className={className} />;
+            } catch (error) {
+              console.error("Error rendering mobile menu:", error);
+              return null;
+            }
+          })()}
+        </React.Suspense>
+      )}
     </>
   );
 };

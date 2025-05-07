@@ -87,3 +87,5 @@ export const updateMedicine = async (medicine: MedicineRequest, medicine_id: num
     throw error;
   }
 };
+
+

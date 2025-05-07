@@ -36,6 +36,7 @@ import {
   Italic,
   List,
   ListOrdered,
+  DollarSign,
 } from "lucide-react";
 
 import { checkInAppointment } from "@/services/appointment-services";
@@ -47,9 +48,10 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import WorkflowNavigation from "@/components/WorkflowNavigation";
-import { useQR } from "@/hooks/use-payment";
+import { useConfirmPayment, useQR } from "@/hooks/use-payment";
 import { QRCodeInformation, QuickLinkRequest } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
+import { CashPaymentDialog } from "@/components/payment";
 
 // RichTextEditor component with preview mode
 const RichTextEditor = ({
@@ -76,8 +78,14 @@ const RichTextEditor = ({
     const selectedText = value.substring(start, end);
 
     // Check if selection is already formatted
-    const beforeSelection = value.substring(Math.max(0, start - prefix.length), start);
-    const afterSelection = value.substring(end, Math.min(value.length, end + suffix.length));
+    const beforeSelection = value.substring(
+      Math.max(0, start - prefix.length),
+      start
+    );
+    const afterSelection = value.substring(
+      end,
+      Math.min(value.length, end + suffix.length)
+    );
 
     if (beforeSelection === prefix && afterSelection === suffix) {
       // Remove formatting
@@ -91,7 +99,10 @@ const RichTextEditor = ({
       setTimeout(() => {
         textarea.focus();
         const newPosition = start - prefix.length;
-        textarea.setSelectionRange(newPosition, newPosition + selectedText.length);
+        textarea.setSelectionRange(
+          newPosition,
+          newPosition + selectedText.length
+        );
       }, 0);
     } else {
       // Add formatting
@@ -140,18 +151,14 @@ const RichTextEditor = ({
       }
 
       const newValue =
-        value.substring(0, start) +
-        formattedText +
-        value.substring(end);
+        value.substring(0, start) + formattedText + value.substring(end);
 
       onChange(newValue);
     } else {
       // If no text is selected, insert list marker at cursor position
       const cursorPos = start;
       const newValue =
-        value.substring(0, cursorPos) +
-        prefix +
-        value.substring(cursorPos);
+        value.substring(0, cursorPos) + prefix + value.substring(cursorPos);
 
       onChange(newValue);
 
@@ -178,7 +185,10 @@ const RichTextEditor = ({
       // Convert numbered lists
       .replace(/^\d+\. (.+)$/gm, "<li>$1</li>")
       // Wrap consecutive list items in ul/ol tags
-      .replace(/((?:<li>.*<\/li>\n?)+)/g, "<ul class='pl-6 list-disc space-y-1'>$1</ul>")
+      .replace(
+        /((?:<li>.*<\/li>\n?)+)/g,
+        "<ul class='pl-6 list-disc space-y-1'>$1</ul>"
+      )
       // Add paragraph tags to text blocks
       .replace(/^([^<\n].+)$/gm, "<p>$1</p>")
       // Fix nested paragraph tags
@@ -280,7 +290,10 @@ const CheckIn = () => {
   const [copied, setCopied] = useState(false);
   const [isQRLoading, setIsQRLoading] = useState(false);
   const [qrImageUrl, setQrImageUrl] = useState("");
+  const [isCashPaymentOpen, setIsCashPaymentOpen] = useState(false);
   const createSoapMutation = useCreateSOAP();
+  const [paymentID, setPaymentID] = useState(0);
+  
   const { toast } = useToast();
 
   const { data: appointment, error: appointmentError } = useAppointmentData(id);
@@ -291,12 +304,16 @@ const CheckIn = () => {
     !!appointment?.service?.service_name
   );
 
+  const { mutate: confirmPayment, isPending: isConfirmingPayment } =
+    useConfirmPayment();
+
   // Use the mutation hook with proper methods
   const qrMutation = useQR();
 
   useEffect(() => {
     if (qrMutation.data) {
       setQrImageUrl(qrMutation.data.url || qrMutation.data.quick_link || "");
+      setPaymentID(qrMutation.data.payment_id);
     }
   }, [qrMutation.data]);
 
@@ -308,6 +325,17 @@ const CheckIn = () => {
       </div>
     );
   }
+
+  const handleConfirmPayment = () => {
+    confirmPayment({
+      appointment_id: parseInt(id || "0"),
+      payment_id: paymentID,
+      payment_status: "successful",
+      notes: "Payment confirmed",
+    });
+    // setLocation("/appointment-flow");
+
+  };
 
   // Format currency for VND
   const formatCurrency = (amount: number) => {
@@ -362,7 +390,7 @@ const CheckIn = () => {
       });
 
       // Redirect to the appointment flowboard rather than examination
-      setLocation("/appointment-flow");
+      // setLocation("/appointment-flow");
     } catch (error) {
       console.error("Error checking in:", error);
       toast({
@@ -381,19 +409,16 @@ const CheckIn = () => {
     account_no: "220220222419",
     template: "compact2",
     amount: total || 0,
-    description: `Payment for ${appointment?.service?.service_name || "appointment"}`,
+    description: `Payment for ${
+      appointment?.service?.service_name || "appointment"
+    }`,
     account_name: "PET CARE CLINIC",
     order_id: 0,
+    appointment_id: parseInt(id || "0"),
   };
 
-  console.log("QR Info:", JSON.stringify(qrCodeInformation, null, 2));
 
   const handleCancel = () => {
-    setLocation("/appointment-flow");
-  };
-
-  const handleCompletePayment = () => {
-    alert("Payment processed successfully!");
     setLocation("/appointment-flow");
   };
 
@@ -401,7 +426,8 @@ const CheckIn = () => {
     setIsQRLoading(true);
 
     // Actually trigger the mutation
-    qrMutation.mutateAsync(qrCodeInformation)
+    qrMutation
+      .mutateAsync(qrCodeInformation)
       .then((data) => {
         toast({
           title: "QR Code Generated",
@@ -413,13 +439,26 @@ const CheckIn = () => {
         console.error("Error generating QR code:", error);
         toast({
           title: "QR Code Generation Failed",
-          description: "There was a problem generating the QR code. Please try again.",
+          description:
+            "There was a problem generating the QR code. Please try again.",
           variant: "destructive",
         });
       })
       .finally(() => {
         setIsQRLoading(false);
       });
+  };
+
+  // Handle cash payment success
+  const handlePaymentSuccess = () => {
+    toast({
+      title: "Payment Successful",
+      description: "Cash payment has been recorded successfully.",
+      className: "bg-green-50 border-green-200 text-green-800",
+    });
+    
+    // Redirect to appointment flow after payment
+    // setLocation("/appointment-flow");
   };
 
   return (
@@ -800,45 +839,57 @@ const CheckIn = () => {
                     Payment Options
                   </h3>
 
-                  {/* Get QR Code button */}
-                  {!qrMutation.data && (
+                  {/* Payment Buttons */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    {/* Get QR Code button */}
+                    {!qrMutation.data && (
+                      <Button
+                        onClick={handleGetQRCode}
+                        disabled={isQRLoading || qrMutation.isPending}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-1.5 shadow-sm"
+                      >
+                        {isQRLoading || qrMutation.isPending ? (
+                          <>
+                            <svg
+                              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                            Generating QR Code...
+                          </>
+                        ) : (
+                          <>
+                            <QrCode className="w-4 h-4" />
+                            QR Code
+                          </>
+                        )}
+                      </Button>
+                    )}
+
+                    {/* Cash Payment button */}
                     <Button
-                      onClick={handleGetQRCode}
-                      disabled={isQRLoading || qrMutation.isPending}
-                      className="mb-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-1.5 shadow-sm"
+                      onClick={() => setIsCashPaymentOpen(true)}
+                      className="bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-1.5 shadow-sm"
                     >
-                      {isQRLoading || qrMutation.isPending ? (
-                        <>
-                          <svg
-                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            ></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                          </svg>
-                          Generating QR Code...
-                        </>
-                      ) : (
-                        <>
-                          <QrCode className="w-4 h-4" />
-                          Generate Payment QR Code
-                        </>
-                      )}
+                      <DollarSign className="w-4 h-4" />
+                      Cash Payment
                     </Button>
-                  )}
+                  </div>
 
                   {/* PayOS Integration - Default QR placeholder */}
                   {!qrMutation.data &&
@@ -898,11 +949,20 @@ const CheckIn = () => {
                   {/* Action Buttons */}
                   <div className="mt-6 flex flex-col gap-3">
                     <Button
-                      onClick={handleCompletePayment}
+                      onClick={handleConfirmPayment}
+                      disabled={isConfirmingPayment}
                       className="bg-green-600 hover:bg-green-700 text-white w-full flex items-center justify-center gap-1.5 shadow-sm"
                     >
-                      <CreditCard className="w-4 h-4" />
-                      Confirm Payment
+                      {isConfirmingPayment ? (
+                        <>
+                          Confirming...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="w-4 h-4" />
+                          Confirm Payment
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -912,6 +972,16 @@ const CheckIn = () => {
         </div>
         <Toaster />
       </div>
+      
+      {/* Cash Payment Dialog */}
+      <CashPaymentDialog
+        open={isCashPaymentOpen}
+        onOpenChange={setIsCashPaymentOpen}
+        invoiceId={id || "0"}
+        amount={total}
+        appointmentId={parseInt(id || "0")}
+        onSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 };

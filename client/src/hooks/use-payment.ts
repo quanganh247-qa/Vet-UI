@@ -1,5 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getQRCode, RevenueAnalytics } from "@/services/payment-services";
+import {
+  CashPaymentRequest,
+  confirmPayment,
+  ConfirmPaymentPayload,
+  createCashPayment,
+  getQRCode,
+  RevenueAnalytics,
+} from "@/services/payment-services";
 import { QRCodeInformation, QuickLinkRequest } from "@/types";
 import { toast, useToast } from "@/components/ui/use-toast";
 
@@ -11,6 +18,7 @@ export const useRevenueAnalytics = () => {
 };
 
 export interface QRCodeResponse {
+  payment_id: number;
   url: string;
   dataUrl?: string;
   quick_link?: string;
@@ -29,7 +37,7 @@ export const useQR = () => {
         return result;
       } catch (error: any) {
         console.error("Error in QR code mutation:", error);
-        
+
         // Enhanced error message with response details if available
         if (error.response) {
           console.error("Response error data:", error.response.data);
@@ -41,33 +49,77 @@ export const useQR = () => {
             }`
           );
         }
-        
+
         throw error;
       }
     },
     onSuccess: (data) => {
       // Invalidate relevant queries if needed
-      queryClient.invalidateQueries({ queryKey: ['qr-codes'] });
-      
+      queryClient.invalidateQueries({ queryKey: ["qr-codes"] });
+
       // Show success feedback
       toast({
-        title: 'QR Code Generated',
-        description: 'QR code was successfully created',
-        className: 'bg-green-500 text-white ',
+        title: "QR Code Generated",
+        description: "QR code was successfully created",
+        className: "bg-green-500 text-white ",
       });
 
       return data;
     },
     onError: (error) => {
-      console.error('Error generating QR code:', error);
+      console.error("Error generating QR code:", error);
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to generate QR code',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to generate QR code",
+        variant: "destructive",
       });
     },
     // Optional: Add retry logic
     retry: 2,
     retryDelay: 1000,
+  });
+};
+
+export const useConfirmPayment = () => {
+  return useMutation<any, Error, ConfirmPaymentPayload>({
+    mutationFn: async (payload) => {
+      return confirmPayment(payload);
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Payment Confirmed",
+        description: "Payment was successfully confirmed",
+        className: "bg-green-500 text-white ",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to confirm payment",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useCreateCashPayment = () => {
+  return useMutation<any, Error, CashPaymentRequest>({
+    mutationFn: async (payload) => {
+      return createCashPayment(payload);
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Cash Payment Created",
+        description: "Cash payment was successfully created",
+        className: "bg-green-500 text-white ",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create cash payment",
+        variant: "destructive",
+      });
+    },
   });
 };

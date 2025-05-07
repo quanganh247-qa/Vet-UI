@@ -36,6 +36,8 @@ import {
   ExternalLink,
   History,
   Loader2,
+  Pill,
+  Search,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { Progress } from "@/components/ui/progress";
@@ -43,6 +45,7 @@ import { useGetAllMedicines } from "@/hooks/use-medicine";
 import api from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useImportMedicine, useExportMedicine } from "@/hooks/use-medicine-transaction";
+import Pagination from "@/components/ui/pagination";
 
 interface Medicine {
   id: number;
@@ -65,28 +68,40 @@ interface MedicineTableProps {
 const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedicine }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [adjustQuantityDialogOpen, setAdjustQuantityDialogOpen] =
-    useState(false);
-  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(
-    null
-  );
+  const [adjustQuantityDialogOpen, setAdjustQuantityDialogOpen] = useState(false);
+  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
   const [totalMedicines, setTotalMedicines] = useState(0);
   const [adjustQuantity, setAdjustQuantity] = useState(0);
   const [adjustmentType, setAdjustmentType] = useState("add");
   const [adjustmentReason, setAdjustmentReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setLocation] = useLocation();
+  const [localSearchTerm, setLocalSearchTerm] = useState("");
+  const pageSize = 10;
 
   // Use the API hook with pagination and search parameters
-  const { data: medicines, isLoading, error } = useGetAllMedicines();
+  const { data: medicinesResponse, isLoading, error } = useGetAllMedicines(currentPage, pageSize, localSearchTerm);
   const importMedicineMutation = useImportMedicine();
   const exportMedicineMutation = useExportMedicine();
 
+  // Extract medicines from response
+  const medicines = medicinesResponse?.data || [];
+
+  // Use the search query from props when it changes
   useEffect(() => {
-    if (medicines?.meta) {
-      setTotalPages(medicines.meta.totalPages);
+    if (searchQuery) {
+      setLocalSearchTerm(searchQuery);
     }
-  }, [medicines]);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (medicinesResponse?.meta) {
+      setTotalPages(medicinesResponse.meta.totalPages || 1);
+      if (medicinesResponse.meta.total) {
+        setTotalMedicines(medicinesResponse.meta.total);
+      }
+    }
+  }, [medicinesResponse]);
 
   const handleViewDetails = (medicineId: number) => {
     setLocation(`/inventory/medicines/${medicineId}`);
@@ -108,6 +123,7 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
     if (!selectedMedicine) return;
 
     try {
+      setIsSubmitting(true);
       const transactionData = {
         medicine_id: selectedMedicine.id,
         quantity: adjustQuantity,
@@ -122,13 +138,30 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
 
       if (adjustmentType === "add") {
         await importMedicineMutation.mutateAsync(transactionData);
+        toast({
+          title: "Stock Updated",
+          description: `Added ${adjustQuantity} units to ${selectedMedicine.medicine_name}`,
+          className: "bg-green-50 text-green-800 border-green-200",
+        });
       } else {
         await exportMedicineMutation.mutateAsync(transactionData);
+        toast({
+          title: "Stock Updated",
+          description: `Removed ${adjustQuantity} units from ${selectedMedicine.medicine_name}`,
+          className: "bg-blue-50 text-blue-800 border-blue-200",
+        });
       }
 
       setAdjustQuantityDialogOpen(false);
     } catch (error) {
       console.error("Error adjusting quantity:", error);
+      toast({
+        title: "Error",
+        description: "Failed to adjust stock quantity",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -140,6 +173,7 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
       toast({
         title: "Success",
         description: "Medicine deleted successfully",
+        className: "bg-green-50 text-green-800 border-green-200",
       });
       queryClient.invalidateQueries({ queryKey: ["medicines"] });
     } catch (error) {
@@ -165,24 +199,55 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
     return Math.min(100, Math.round((current / (reorderLevel * 3)) * 100));
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND"
+    }).format(amount);
+  };
+
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Medicine Inventory</h2>
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-lg font-semibold text-indigo-900 flex items-center">
+          <Pill className="h-5 w-5 mr-2 text-indigo-600" />
+          Medicine Inventory {totalMedicines > 0 && (
+            <Badge className="ml-2 bg-indigo-100 text-indigo-800 border-indigo-200">
+              {totalMedicines} items
+            </Badge>
+          )}
+        </h2>
+        <div className="flex items-center gap-2">
+          <div className="relative w-64 mr-2">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-400" />
+            <Input
+              placeholder="Search medicines..."
+              className="pl-10 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
+              value={localSearchTerm}
+              onChange={(e) => setLocalSearchTerm(e.target.value)}
+            />
+          </div>
+          <Button
+            onClick={() => onEditMedicine({} as Medicine)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Add Medicine
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
         <div className="flex justify-center items-center h-48">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
         </div>
       ) : (
         <>
-          <div className="rounded-md border">
+          <div className="rounded-md border border-indigo-100 overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-indigo-50">
                   <TableHead>Name</TableHead>
-                  {/* <TableHead>Category</TableHead> */}
                   <TableHead>Stock Level</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Expiration</TableHead>
@@ -194,7 +259,7 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
                 {medicines?.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={6}
                       className="text-center py-8 text-gray-500"
                     >
                       No medicines found. Add a new medicine to get started.
@@ -202,20 +267,19 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
                   </TableRow>
                 ) : (
                   medicines?.map((medicine: Medicine) => (
-                    <TableRow key={medicine.id}>
+                    <TableRow key={medicine.id} className="hover:bg-gray-50">
                       <TableCell>
-                        <div>
-                          {/* <div className="font-medium">{medicine.medicine_name}</div> */}
+                        <div className="font-medium text-indigo-900">{medicine.medicine_name}</div>
+                        {medicine.dosage && (
                           <div className="text-sm text-gray-500">
-                            {medicine.medicine_name}
+                            {medicine.dosage}
                           </div>
-                        </div>
+                        )}
                       </TableCell>
-                      {/* <TableCell>{medicine.category}</TableCell> */}
                       <TableCell>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm">
+                            <span className="text-sm font-medium">
                               {medicine.current_stock} units
                             </span>
                             <span className="text-xs text-gray-500">
@@ -234,11 +298,11 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
                           />
                         </div>
                       </TableCell>
-                      <TableCell>${medicine.unit_price.toFixed(2)}</TableCell>
+                      <TableCell>{formatCurrency(medicine.unit_price)}</TableCell>
                       <TableCell>
                         {new Date(
                           medicine.expiration_date
-                        ).toLocaleDateString()}
+                        ).toLocaleDateString("vi-VN")}
                       </TableCell>
                       <TableCell>{medicine.supplier_name}</TableCell>
                       <TableCell>
@@ -252,12 +316,14 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
                           <DropdownMenuContent align="end" className="bg-white">
                             <DropdownMenuItem
                               onSelect={() => handleViewDetails(medicine.id)}
+                              className="cursor-pointer"
                             >
                               <ExternalLink className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onSelect={() => handleOpenAdjustQuantity(medicine)}
+                              className="cursor-pointer"
                             >
                               <PlusCircle className="mr-2 h-4 w-4" />
                               Adjust Quantity
@@ -266,17 +332,22 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
                               onSelect={() =>
                                 handleViewTransactions(medicine.id)
                               }
+                              className="cursor-pointer"
                             >
                               <History className="mr-2 h-4 w-4" />
                               Transaction History
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onSelect={() => onEditMedicine(medicine)}
+                              className="cursor-pointer"
                             >
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600" onSelect={() => handleDeleteMedicine(medicine.id)}>
+                            <DropdownMenuItem 
+                              className="text-red-600 cursor-pointer" 
+                              onSelect={() => handleDeleteMedicine(medicine.id)}
+                            >
                               <Trash className="mr-2 h-4 w-4" />
                               Delete
                             </DropdownMenuItem>
@@ -290,30 +361,14 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
             </Table>
           </div>
 
+          {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-2 mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
-            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              className="mt-4"
+            />
           )}
         </>
       )}
@@ -323,20 +378,22 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
         open={adjustQuantityDialogOpen}
         onOpenChange={setAdjustQuantityDialogOpen}
       >
-        <DialogContent className="sm:max-w-[425px] bg-white">
-          <DialogHeader>
-            <DialogTitle>Adjust Inventory Quantity</DialogTitle>
+        <DialogContent className="sm:max-w-[425px] bg-white border border-indigo-100">
+          <DialogHeader className="border-b border-indigo-100 pb-3">
+            <DialogTitle className="text-indigo-900">Adjust Inventory Quantity</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {selectedMedicine && (
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h3 className="font-medium">{selectedMedicine.medicine_name}</h3>
+                  <h3 className="font-medium text-indigo-900">{selectedMedicine.medicine_name}</h3>
                   <p className="text-sm text-gray-500">
                     {selectedMedicine.dosage}
                   </p>
                 </div>
-                <Badge>Current Stock: {selectedMedicine.current_stock}</Badge>
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  Current Stock: {selectedMedicine.current_stock}
+                </Badge>
               </div>
             )}
 
@@ -377,6 +434,7 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
                 onChange={(e) =>
                   setAdjustQuantity(parseInt(e.target.value) || 0)
                 }
+                className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
               />
             </div>
 
@@ -387,13 +445,15 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
                 value={adjustmentReason}
                 onChange={(e) => setAdjustmentReason(e.target.value)}
                 placeholder="Enter reason for adjustment"
+                className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="border-t border-indigo-100 pt-3">
             <Button
               variant="outline"
               onClick={() => setAdjustQuantityDialogOpen(false)}
+              className="border-indigo-200 text-indigo-600 hover:bg-indigo-50"
             >
               Cancel
             </Button>
@@ -402,6 +462,7 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
               disabled={
                 adjustQuantity <= 0 || !adjustmentReason || isSubmitting
               }
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
             >
               {isSubmitting && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

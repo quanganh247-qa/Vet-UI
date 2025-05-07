@@ -1,12 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
-import { AppointmentNotification, LowStockNotification } from "@/types";
-import { websocketService } from "@/utils/websocket";
+import { LowStockNotification } from "@/types";
 import {
   Bell,
   Calendar,
-  Clock,
-  CheckCircle2,
   ArrowLeft,
   Search,
   Filter,
@@ -16,9 +13,9 @@ import {
   Check,
   ChevronRight,
   ChevronLeft,
-  ThumbsUp,
-  Ban,
   User,
+  LayoutGrid,
+  MessageSquare,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,7 +29,8 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
-import api from "@/lib/api";
+import { toast as reactToastify, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,152 +42,240 @@ import {
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-  SheetClose,
   SheetOverlay,
 } from "@/components/ui/sheet";
 import { useConfirmAppointment, useMarkMessageDelivered } from "@/hooks/use-appointment";
+import { useNotificationsContext } from "@/context/notifications-context";
+import { cn } from "@/lib/utils";
 
-// Define a type for server notification structure
-interface ServerNotification {
+// Define Notification interface based on database schema
+interface Notification {
   id: number;
-  client_id: string;
-  message_type: string;
-  data: AppointmentNotification;
-  status: string;
-  retry_count: number;
   username: string;
-  created_at: string;
-}
-
-// Helper function to parse stored notifications
-const parseStoredNotifications = (
-  storedNotifications: ServerNotification[]
-): ServerNotification[] => {
-  if (!Array.isArray(storedNotifications)) return [];
+  title: string;
+  content?: string;
+  is_read: boolean;
+  related_id?: number;
+  related_type?: string;
+  datetime: string;
+  notify_type?: string;
   
-  return storedNotifications.filter(item => 
-    item.message_type === "appointment_alert" && item.data
-  );
-};
+  // Additional computed/mapped properties used in the UI
+  message: string; // Maps to content
+  appointmentId: number; // Maps to related_id when related_type is 'appointment'
+  date: string; // Formatted from datetime
+  timeSlot?: {
+    startTime: string;
+    endTime: string;
+  };
+  pet?: {
+    petName: string;
+    petId: number;
+  };
+  doctor?: {
+    doctorName: string;
+    doctorId: number;
+  };
+  reason?: string;
+  serviceName?: string;
+}
 
 // Pagination configuration
 const ITEMS_PER_PAGE = 5;
 
 const NotificationsPage = () => {
   const [, navigate] = useLocation();
-  const [notifications, setNotifications] = useState<ServerNotification[]>([]);
+  const { notifications: rawNotifications, markAsRead, clearAll, isLoading: isNotificationsLoading } = useNotificationsContext();
+  const previousNotificationsCount = useRef(0);
+  
+  // Track if this is the first load
+  const isFirstLoad = useRef(true);
+  
+  // Transform notifications to match UI requirements
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [sortOrder, setSortOrder] = useState<string>("unread-first"); // Thêm state cho sắp xếp
+console.log(notifications)
+  useEffect(() => {
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+      previousNotificationsCount.current = rawNotifications?.length || 0;
+      return;
+    }
+    
+    if (rawNotifications && Array.isArray(rawNotifications)) {
+      const unreadCount = rawNotifications.filter(n => !n.is_read).length;
+      
+      if (unreadCount > 0 && unreadCount > previousNotificationsCount.current) {
+        // Show toast for new notifications
+        reactToastify.info(`You have ${unreadCount} new notifications`, {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        
+        // Play notification sound
+        const audio = new Audio('/notification-sound.mp3');
+        audio.play().catch(e => console.log('Error playing notification sound:', e));
+      }
+      
+      // Update previous count
+      previousNotificationsCount.current = unreadCount;
+    }
+  }, [rawNotifications]);
+
+  useEffect(() => {
+    if (rawNotifications && Array.isArray(rawNotifications)) {
+      // Map database fields to UI fields
+      const mappedNotifications = rawNotifications.map((notification: any) => {
+        let appointmentId = notification.related_id;
+        let date = new Date(notification.datetime);
+        
+        // Extract additional info from content if available
+        let petInfo;
+        let doctorInfo;
+        let reason;
+        let timeSlot;
+        
+        try {
+          const contentObj = notification.content ? JSON.parse(notification.content) : {};
+          
+          // Extract data from content JSON
+          timeSlot = contentObj.timeSlot || {
+            startTime: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            endTime: ""
+          };
+          
+          petInfo = contentObj.pet || { 
+            petName: contentObj.pet_name || "Unknown",
+            petId: contentObj.pet_id || 0
+          };
+          
+          doctorInfo = contentObj.doctor || {
+            doctorName: contentObj.doctor_name || "Unassigned",
+            doctorId: contentObj.doctor_id || 0
+          };
+          
+          reason = contentObj.reason || "General Checkup";
+          
+        } catch (e) {
+          // Default values if parsing fails
+          timeSlot = {
+            startTime: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            endTime: ""
+          };
+          petInfo = { petName: "Unknown", petId: 0 };
+          doctorInfo = { doctorName: "Unassigned", doctorId: 0 };
+          reason = "General Checkup";
+        }
+        
+        return {
+          ...notification,
+          message: notification.content || "",
+          appointmentId: appointmentId || 0,
+          date: date.toLocaleDateString(),
+          timeSlot,
+          pet: petInfo,
+          doctor: doctorInfo,
+          reason,
+          serviceName: notification.notify_type || "Appointment",
+        };
+      });
+      
+      setNotifications(mappedNotifications);
+    }
+  }, [rawNotifications]);
+  
   const [lowStockNotifications, setLowStockNotifications] = useState<
     LowStockNotification[]
   >([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [socketStatus, setSocketStatus] = useState<
-    "connecting" | "connected" | "disconnected"
-  >("connecting");
+  const [isLoading, setIsLoading] = useState(false);
   
   const [selectedNotificationID, setSelectedNotificationID] = useState<number>();
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
 
   // Selected notification for detail view
-  const [selectedNotification, setSelectedNotification] =
-    useState<AppointmentNotification | null>(null);
+  const [selectedNotification, setSelectedNotification] = 
+    useState<Notification | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
-  console.log(notifications);
-
-  // Fetch stored notifications from the database on component mount
-  useEffect(() => {
-    const fetchStoredNotifications = async () => {
-      try {
-        setIsLoading(true);
-
-        // Get notifications from the API
-        const response = await api.get(
-          "/api/v1/appointment/notifications/pending"
-        );
-        const result = response.data;
-
-        console.log("API Response:", result);
-
-        if (result.success && result.data) {
-          // Parse and add stored notifications
-          const parsedNotifications = parseStoredNotifications(result.data);
-          // Update state with fetched notifications
-          setNotifications(parsedNotifications);
-        } else {
-          console.error("Failed to fetch notifications:", result);
-        }
-      } catch (error) {
-        console.error("Error fetching stored notifications:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStoredNotifications();
-  }, []);
-
-  // Initialize WebSocket connection
-  useEffect(() => {
-    // Connect to WebSocket when component mounts
-    const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:8088/ws";
-
-    try {
-      websocketService.connect(wsUrl);
-
-      // We'll use setTimeout to check connection status after a moment
-      const connectionTimer = setTimeout(() => {
-        setSocketStatus("connected");
-      }, 1000);
-
-      // Cleanup WebSocket connection when component unmounts
-      return () => {
-        clearTimeout(connectionTimer);
-        websocketService.disconnect();
-      };
-    } catch (error) {
-      console.error("Error initializing WebSocket:", error);
-      setSocketStatus("disconnected");
-    }
-  }, []);
-
-  // Subscribe to WebSocket notifications
-  useEffect(() => {
-    // Subscribe to appointment notifications - adjust to handle the server's message format
-    const unsubscribeAppointment = websocketService.subscribe<ServerNotification>(
-      "appointment_alert", 
-      (message) => {
-        setNotifications(prev => {
-          // Check if notification already exists
-          const exists = prev.some(n => n.id === message.id);
-          if (exists) {
-            // Update the existing notification
-            return prev.map(n => n.id === message.id ? message : n);
-          } else {
-            // Add new notification
-            return [message, ...prev];
+  // Sắp xếp thông báo dựa trên trạng thái đã đọc/chưa đọc và thời gian
+  const sortedNotifications = useMemo(() => {
+    if (!notifications) return [];
+    
+    const notificationsCopy = [...notifications];
+    
+    switch (sortOrder) {
+      case "unread-first":
+        return notificationsCopy.sort((a, b) => {
+          // Ưu tiên sắp xếp theo trạng thái đọc/chưa đọc
+          if (a.is_read !== b.is_read) {
+            return a.is_read ? 1 : -1; // Thông báo chưa đọc lên đầu
           }
+          // Nếu cùng trạng thái thì sắp xếp theo thời gian (mới nhất lên đầu)
+          return new Date(b.datetime).getTime() - new Date(a.datetime).getTime();
         });
-      }
-    );
+        
+      case "newest-first":
+        return notificationsCopy.sort((a, b) => 
+          new Date(b.datetime).getTime() - new Date(a.datetime).getTime()
+        );
+        
+      case "oldest-first":
+        return notificationsCopy.sort((a, b) => 
+          new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
+        );
+        
+      default:
+        return notificationsCopy;
+    }
+  }, [notifications, sortOrder]);
 
-    return () => {
-      unsubscribeAppointment();
-    };
-  }, []);
+  // Filter notifications using the transformed and sorted notifications
+  const filteredNotifications = useMemo(() => {
+    return sortedNotifications.filter((notification: Notification) => {
+      // Apply text search
+      const matchesSearch =
+        searchTerm === "" ||
+        notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        notification.message.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const handleViewAppointment = (notification: ServerNotification) => {
-    setSelectedNotification(notification.data);
+      // Apply status filter - to be implemented based on your status requirements
+      const matchesStatus = filterStatus.length === 0 || 
+        (notification.notify_type && filterStatus.includes(notification.notify_type.toLowerCase()));
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [sortedNotifications, searchTerm, filterStatus]);
+
+  const handleViewAppointment = async (notification: Notification) => {
+    setSelectedNotification(notification);
     setSelectedNotificationID(notification.id);
-    console.log("Selected notification ID:", notification.id);
     setIsSheetOpen(true);
+
+    // Đánh dấu thông báo là đã đọc khi mở xem chi tiết
+    if (!notification.is_read) {
+      try {
+        await markAsRead(notification.id);
+        
+        // Cập nhật UI ngay lập tức để hiển thị thông báo đã đọc
+        setNotifications(prev => 
+          prev.map(item => 
+            item.id === notification.id 
+              ? { ...item, is_read: true } 
+              : item
+          )
+        );
+      } catch (error) {
+        console.error("Error marking notification as read:", error);
+      }
+    }
   };
 
   const navigateToAppointment = (appointmentId: number) => {
@@ -198,7 +284,6 @@ const NotificationsPage = () => {
   };
 
   const { mutateAsync: confirmAppointmentAsync } = useConfirmAppointment();
-  const { mutate: markMessageDelivered } = useMarkMessageDelivered();
 
   const handleConfirmAppointment = async () => {
     if (!selectedNotification || !selectedNotificationID) return;
@@ -206,25 +291,17 @@ const NotificationsPage = () => {
     setIsConfirming(true);
 
     try {
-      const result = await confirmAppointmentAsync(selectedNotification.appointment_id);
+      const result = await confirmAppointmentAsync(selectedNotification.appointmentId);
       
       if (result && result.code !== "E") {
-        await markMessageDelivered(Number(selectedNotificationID));
+        // Mark the notification as read
+        await markAsRead(selectedNotificationID);
         
-        setNotifications(prev =>
-          prev.map(n => {
-            if (n.id === selectedNotificationID) {
-              return {
-                ...n,
-                data: {
-                  ...n.data,
-                  status: "confirmed"
-                }
-              };
-            }
-            return n;
-          })
-        );
+        toast({
+          title: "Đã xác nhận cuộc hẹn",
+          description: `Cuộc hẹn với ${selectedNotification.pet?.petName} đã được xác nhận.`,
+          variant: "default",
+        });
       }
       
       setIsSheetOpen(false);
@@ -244,35 +321,22 @@ const NotificationsPage = () => {
       // Simulate API call to decline appointment
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
+      // Mark the notification as read
+      await markAsRead(selectedNotificationID);
+
       toast({
-        title: "Appointment Declined",
-        description: `The appointment with ${selectedNotification.pet?.pet_name} has been declined.`,
+        title: "Appointment declined",
+        description: `Appointment with ${selectedNotification.pet?.petName} has been declined.`,
         variant: "destructive",
       });
-
-      // Update local state
-      setNotifications(prev =>
-        prev.map(n => {
-          if (n.id === selectedNotificationID) {
-            return {
-              ...n,
-              data: {
-                ...n.data,
-                status: "declined"
-              }
-            };
-          }
-          return n;
-        })
-      );
 
       // Close the sheet after confirmation
       setIsSheetOpen(false);
     } catch (error) {
       console.error("Error declining appointment:", error);
       toast({
-        title: "Operation Failed",
-        description: "Unable to decline the appointment. Please try again.",
+        title: "Operation failed",
+        description: "Cannot decline appointment. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -281,25 +345,9 @@ const NotificationsPage = () => {
   };
 
   const handleClearAll = () => {
-    setNotifications([]);
+    clearAll();
     setLowStockNotifications([]);
   };
-
-  // Filter notifications
-  const filteredNotifications = notifications.filter((notification) => {
-    const data = notification.data;
-    // Apply text search
-    const matchesSearch =
-      searchTerm === "" ||
-      data.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      data.pet?.pet_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      data.date.toLowerCase().includes(searchTerm.toLowerCase());
-
-    // Apply status filter
-    const matchesStatus = filterStatus.length === 0;
-
-    return matchesSearch && matchesStatus;
-  });
 
   // Paginate notifications
   const totalPages = Math.ceil(filteredNotifications.length / ITEMS_PER_PAGE);
@@ -323,31 +371,25 @@ const NotificationsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header with gradient background */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+      
+      {/* Header with status indicator showing if polling is active */}
       <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md mb-6">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-white">Notifications</h1>
             <p className="text-indigo-100 text-sm">
               View and manage all your notifications
-              {socketStatus === "connected" && (
-                <span className="ml-2 inline-flex items-center">
-                  <span className="h-2 w-2 rounded-full bg-green-400 mr-1"></span>
-                  Live
-                </span>
-              )}
-              {socketStatus === "disconnected" && (
-                <span className="ml-2 inline-flex items-center">
-                  <span className="h-2 w-2 rounded-full bg-red-400 mr-1"></span>
-                  Offline
-                </span>
-              )}
-              {socketStatus === "connecting" && (
-                <span className="ml-2 inline-flex items-center">
-                  <span className="h-2 w-2 rounded-full bg-yellow-400 mr-1 animate-pulse"></span>
-                  Connecting
-                </span>
-              )}
             </p>
           </div>
 
@@ -380,6 +422,41 @@ const NotificationsPage = () => {
             </div>
 
             <div className="flex gap-2">
+              {/* Thêm dropdown sắp xếp */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-indigo-200 text-indigo-600"
+                  >
+                    <LayoutGrid className="h-4 w-4 mr-2" />
+                    Sort
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem 
+                    className={cn(sortOrder === "unread-first" && "bg-indigo-50 font-medium")}
+                    onClick={() => setSortOrder("unread-first")}
+                  >
+                    Unread first
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className={cn(sortOrder === "newest-first" && "bg-indigo-50 font-medium")}
+                    onClick={() => setSortOrder("newest-first")}
+                  >
+                    Newest first
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className={cn(sortOrder === "oldest-first" && "bg-indigo-50 font-medium")}
+                    onClick={() => setSortOrder("oldest-first")}
+                  >
+                    Oldest first
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -419,7 +496,7 @@ const NotificationsPage = () => {
                       );
                     }}
                   >
-                    Starting Soon
+                    Starting soon
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={filterStatus.includes("completed")}
@@ -444,7 +521,7 @@ const NotificationsPage = () => {
                   className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
                   onClick={handleClearAll}
                 >
-                  Clear All
+                  Clear all
                 </Button>
               )}
             </div>
@@ -454,16 +531,22 @@ const NotificationsPage = () => {
           <Card className="border border-indigo-100">
             <CardHeader className="pb-3 border-b border-indigo-100">
               <CardTitle className="text-lg text-indigo-900 flex items-center justify-between">
-                All Notifications
-                {socketStatus === "connected" && (
-                  <Badge
-                    variant="outline"
-                    className="bg-green-50 text-green-700 border-green-200"
-                  >
-                    <span className="h-2 w-2 rounded-full bg-green-500 mr-1.5"></span>
-                    Live Updates
-                  </Badge>
-                )}
+                <div className="flex items-center">
+                  All notifications
+                  {/* Hiển thị số lượng thông báo chưa đọc */}
+                  {notifications.filter(n => !n.is_read).length > 0 && (
+                    <Badge className="ml-3 bg-red-100 text-red-700 border-red-200">
+                      {notifications.filter(n => !n.is_read).length} unread
+                    </Badge>
+                  )}
+                </div>
+                {/* <Badge
+                  variant="outline"
+                  className="bg-green-50 text-green-700 border-green-200"
+                >
+                  <span className="h-2 w-2 rounded-full bg-green-500 mr-1.5"></span>
+                  Real-time update
+                </Badge> */}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -481,65 +564,72 @@ const NotificationsPage = () => {
                     No notifications found
                   </p>
                   <p className="text-gray-500 text-sm text-center max-w-md">
-                    There are no notifications matching your criteria or you
-                    have no notifications yet.
-                    {socketStatus === "connected" && (
-                      <span className="block mt-2 text-green-600">
-                        You're connected and will receive real-time updates.
-                      </span>
-                    )}
+                    No notifications match your criteria or you have no notifications
                   </p>
                 </div>
               ) : (
                 <ScrollArea className="h-[500px] min-h-[400px] max-h-[70vh] w-full overflow-y-auto">
                   <div className="divide-y divide-indigo-100">
-                    {paginatedNotifications.map((notification, index) => (
+                    {paginatedNotifications.map((notification: Notification, index: number) => (
                       <div
                         key={`${notification.id}-${index}`}
-                        className="px-6 py-4 hover:bg-indigo-50/50 cursor-pointer transition-colors"
+                        className={cn(
+                          "px-6 py-4 hover:bg-indigo-50/50 cursor-pointer transition-colors",
+                          !notification.is_read && "bg-indigo-50/30 border-l-4 border-indigo-500"
+                        )}
                         onClick={() => handleViewAppointment(notification)}
                       >
                         <div className="flex justify-between items-start mb-1">
                           <div className="flex items-center">
-                            <Calendar className="h-5 w-5 text-indigo-500 mr-3 flex-shrink-0" />
+                            <div className={cn(
+                              "flex items-center justify-center rounded-full mr-3 flex-shrink-0",
+                              !notification.is_read ? "text-indigo-600" : "text-gray-400"
+                            )}>
+                              {notification.notify_type === "appointment" ? (
+                                <Calendar className="h-5 w-5" />
+                              ) : (
+                                <MessageSquare className="h-5 w-5" />
+                              )}
+                            </div>
                             <div>
                               <div className="flex items-center">
-                                <span className="text-sm font-medium text-indigo-900">
-                                  {notification.data?.title}
+                                <span className={cn(
+                                  "text-sm",
+                                  !notification.is_read 
+                                    ? "font-semibold text-indigo-900" 
+                                    : "font-medium text-gray-700"
+                                )}>
+                                  {notification.title}
+                                  {!notification.is_read && (
+                                    <span className="ml-2 inline-flex items-center">
+                                      <span className="h-2 w-2 rounded-full bg-indigo-500"></span>
+                                    </span>
+                                  )}
                                 </span>
                                 <span className="text-indigo-500 mx-2">•</span>
                                 <span className="text-sm text-indigo-600">
-                                  {notification.data.date},{" "}
-                                  {typeof notification.data.time_slot === "object"
-                                    ? (
-                                        notification.data.time_slot as {
-                                          start_time: string;
-                                        }
-                                      ).start_time
-                                    : notification.data.time_slot}
+                                  {new Date(notification.datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                               </div>
-                              <p className="text-sm text-gray-600 mt-1">
-                                {notification.data.pet?.pet_name} -{" "}
-                                {notification.data.reason || "Consultation"}
+                              <p className={cn(
+                                "text-sm mt-1",
+                                !notification.is_read ? "text-gray-700" : "text-gray-500"
+                              )}>
+                                {notification.pet?.petName} -{" "}
+                                  {notification.reason || "General Checkup"}
                               </p>
                             </div>
                           </div>
 
                           <Badge
-                            className={`ml-4 mt-1 ${
-                              notification.data.status === "confirmed"
-                                ? "bg-green-100 text-green-800 border-green-200"
-                                : notification.data.status === "declined"
-                                ? "bg-red-100 text-red-800 border-red-200"
-                                : "bg-indigo-100 text-indigo-800 border-indigo-200"
-                            }`}
+                            className={cn(
+                              "ml-4 mt-1",
+                              !notification.is_read 
+                                ? "bg-indigo-100 text-indigo-800 border-indigo-200 font-medium" 
+                                : "bg-gray-100 text-gray-700 border-gray-200"
+                            )}
                           >
-                            {notification.data.status === "confirmed"
-                              ? "Confirmed"
-                              : notification.data.status === "declined"
-                              ? "Declined"
-                              : notification.data.service_name}
+                            {notification.serviceName}
                           </Badge>
                         </div>
                       </div>
@@ -549,7 +639,7 @@ const NotificationsPage = () => {
                       <>
                         <div className="px-6 py-3 bg-indigo-50">
                           <h3 className="text-xs font-medium text-indigo-800 uppercase tracking-wide">
-                            Inventory Alerts
+                            Low Stock Alert
                           </h3>
                         </div>
 
@@ -570,14 +660,13 @@ const NotificationsPage = () => {
                                   </div>
                                   <p className="text-sm text-gray-600 mt-1">
                                     Current stock: {notification.current_stock}{" "}
-                                    units (below reorder level of{" "}
-                                    {notification.reorder_level})
+                                    units (reorder level: {notification.reorder_level})
                                   </p>
                                 </div>
                               </div>
 
                               <Badge className="bg-amber-100 text-amber-800 border-amber-200 ml-4 mt-1">
-                                Low Stock
+                                Low Stock Alert
                               </Badge>
                             </div>
                           </div>
@@ -593,7 +682,7 @@ const NotificationsPage = () => {
             {totalPages > 1 && (
               <CardFooter className="flex justify-between items-center px-6 py-3 border-t border-indigo-100">
                 <div className="text-sm text-gray-500">
-                  Page {currentPage} of {totalPages}
+                  Trang {currentPage} / {totalPages}
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -603,7 +692,7 @@ const NotificationsPage = () => {
                     disabled={currentPage === 1}
                   >
                     <ChevronLeft className="h-4 w-4 mr-1" />
-                    Prev
+                    Previous
                   </Button>
                   <Button
                     variant="outline"
@@ -629,7 +718,7 @@ const NotificationsPage = () => {
               Appointment Details
             </h2>
             <p className="text-xs text-gray-500 mt-1">
-              Review and confirm the appointment
+              Review and confirm appointment
             </p>
           </div>
 
@@ -638,8 +727,8 @@ const NotificationsPage = () => {
               <div className="space-y-6">
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                   <h3 className="font-semibold text-gray-900 mb-4 text-base">
-                    Appointment for {selectedNotification.pet?.pet_name} - #
-                    {selectedNotification.appointment_id}
+                    Appointment for {selectedNotification.pet?.petName} - #
+                    {selectedNotification.id}
                   </h3>
 
                   <div className="space-y-4">
@@ -647,10 +736,10 @@ const NotificationsPage = () => {
                       <User className="h-4 w-4 text-indigo-600 mr-2 mt-0.5" />
                       <div>
                         <div className="text-sm font-medium text-gray-700">
-                          Patient
+                          Pet
                         </div>
                         <div className="text-sm text-gray-600">
-                          {selectedNotification.pet?.pet_name}
+                          {selectedNotification.pet?.petName}
                         </div>
                       </div>
                     </div>
@@ -662,8 +751,8 @@ const NotificationsPage = () => {
                           Doctor
                         </div>
                         <div className="text-sm text-gray-600">
-                          {selectedNotification.doctor?.doctor_name ||
-                            "Not assigned yet"}
+                          {selectedNotification.doctor?.doctorName ||
+                            "Unassigned"}
                         </div>
                       </div>
                     </div>
@@ -675,7 +764,7 @@ const NotificationsPage = () => {
                           Reason
                         </div>
                         <div className="text-sm text-gray-600">
-                          {selectedNotification.reason || "Not specified"}
+                          {selectedNotification.reason || "Unspecified"}
                         </div>
                       </div>
                     </div>
@@ -685,36 +774,32 @@ const NotificationsPage = () => {
                 <div className="pt-4 space-y-6">
                   <Button
                     onClick={() =>
-                      navigateToAppointment(selectedNotification.appointment_id)
+                      navigateToAppointment(selectedNotification.appointmentId)
                     }
                     className="w-full border-gray-300"
                     variant="outline"
                   >
-                    View Details
+                    View details
                   </Button>
 
                   <div className="grid grid-cols-2 gap-4 pb-4">
-                    {selectedNotification.status !== "confirmed" && (
-                      <Button
-                        onClick={() => handleConfirmAppointment()}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white"
-                        disabled={isConfirming}
-                      >
-                        {isConfirming ? "Processing..." : "Confirm"}
-                        {!isConfirming && <Check className="ml-2 h-4 w-4" />}
-                      </Button>
-                    )}
+                    <Button
+                      onClick={() => handleConfirmAppointment()}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      disabled={isConfirming}
+                    >
+                      {isConfirming ? "Processing..." : "Confirm"}
+                      {!isConfirming && <Check className="ml-2 h-4 w-4" />}
+                    </Button>
 
-                    {selectedNotification.status !== "declined" && (
-                      <Button
-                        onClick={handleDeclineAppointment}
-                        className="w-full bg-red-600 hover:bg-red-700 text-white"
-                        disabled={isConfirming}
-                      >
-                        {isConfirming ? "Processing..." : "Decline"}
-                        {!isConfirming && <X className="ml-2 h-4 w-4" />}
-                      </Button>
-                    )}
+                    <Button
+                      onClick={handleDeclineAppointment}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white"
+                      disabled={isConfirming}
+                    >
+                      {isConfirming ? "Processing..." : "Decline"}
+                      {!isConfirming && <X className="ml-2 h-4 w-4" />}
+                    </Button>
                   </div>
                 </div>
               </div>

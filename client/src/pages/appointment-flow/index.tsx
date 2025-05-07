@@ -11,7 +11,7 @@ import {
   CheckCircle, PlusCircle, PawPrint, AlertCircle
 } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
-import EnhancedAppointmentFlowboard from '@/components/appointment/EnhancedAppointmentFlowboard';
+import EnhancedAppointmentFlowboard from '@/components/appointment/AppointmentFlowboard';
 import { useListAppointmentsQueue } from '@/hooks/use-appointment';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/context/auth-context";
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useDoctors } from '@/hooks/use-doctors';
 
 // Utility function to invalidate related queries
 const invalidateRelatedQueries = async (patterns: string[]) => {
@@ -38,42 +39,7 @@ const invalidateRelatedQueries = async (patterns: string[]) => {
   }
 };
 
-// Format date and time
-const formatDateTime = (dateString: string) => {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric',
-  }).format(date);
-};
 
-// Format time only
-const formatTime = (dateString: string) => {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric',
-    minute: 'numeric',
-  }).format(date);
-};
-
-// Status badge component
-const getStatusBadge = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'completed':
-      return <Badge className="bg-green-100 text-green-800 border-green-200">Completed</Badge>;
-    case 'in progress':
-      return <Badge className="bg-amber-100 text-amber-800 border-amber-200">In Progress</Badge>;
-    case 'scheduled':
-      return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Waiting</Badge>;
-    case 'cancelled':
-      return <Badge className="bg-red-100 text-red-800 border-red-200">Cancelled</Badge>;
-    default:
-      return <Badge className="bg-gray-100 text-gray-800 border-gray-200">{status}</Badge>;
-  }
-};
 
 const AppointmentFlow = () => {
   const { id } = useParams();
@@ -93,42 +59,63 @@ const AppointmentFlow = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
+    const { data: staff} = useDoctors();
+
+  console.log("selectedDate", selectedDate);
+
   // Fetch appointments data
   const { 
     data: appointmentsData, 
     isLoading: isLoadingAppointments,
-    refetch: refetchAppointments 
+    refetch: refetchAppointments,
+    error: appointmentsError 
   } = useQuery({
     queryKey: ['appointments', selectedDate.toISOString().split('T')[0], currentPage, pageSize],
     queryFn: () => getAllAppointments(selectedDate, "false", currentPage, pageSize),
     enabled: true,
   });
-  
+
+  // Debug logs for appointments
+  console.log('Appointments Query State:', {
+    isLoading: isLoadingAppointments,
+    data: appointmentsData,
+    error: appointmentsError,
+    selectedDate: selectedDate.toISOString(),
+    currentPage,
+    pageSize
+  });
+
   // Fetch rooms data
   const { 
     data: roomsData, 
-    isLoading: isLoadingRooms 
+    isLoading: isLoadingRooms,
+    error: roomsError 
   } = useQuery({
     queryKey: ['rooms'],
     queryFn: getRooms,
     enabled: true,
+  });
+
+  // Debug logs for rooms
+  console.log('Rooms Query State:', {
+    isLoading: isLoadingRooms,
+    data: roomsData,
+    error: roomsError
+  });
+
+  // Queue data
+  const { data: queueData, error: queueError } = useListAppointmentsQueue();
+
+  // Debug logs for queue
+  console.log('Queue Data State:', {
+    data: queueData,
+    error: queueError
   });
   
   const appointments = appointmentsData?.data || [];
   const totalAppointments = appointmentsData?.total || 0;
   const totalPages = Math.ceil(totalAppointments / pageSize);
   const rooms = roomsData?.data || [];
-  
-  // Generate queue data based on appointments
-  const { data: queueData } = useListAppointmentsQueue();
-
-  // Mock staff data until connected to backend
-  const staff = [
-    { id: 1, name: 'Dr. Smith', role: 'Veterinarian', status: 'Available', avatar: '' },
-    { id: 2, name: 'Dr. Johnson', role: 'Veterinarian', status: 'Busy', avatar: '' },
-    { id: 3, name: 'Sarah Wilson', role: 'Technician', status: 'Available', avatar: '' },
-    { id: 4, name: 'Mike Brown', role: 'Assistant', status: 'Busy', avatar: '' },
-  ];
   
   // Filter appointments based on search term and status
   const filteredAppointments = appointments.filter((appointment: Appointment) => {
@@ -308,26 +295,8 @@ const AppointmentFlow = () => {
           className="text-sm bg-transparent border-none focus:outline-none w-full"
         />
       </div>
-      
-      <Button 
-        variant="outline" 
-        size="sm" 
-        className="w-full flex items-center justify-center gap-1.5 mb-3"
-        onClick={handleRefreshData}
-        disabled={isRefreshing}
-      >
-        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-        Refresh Data
-      </Button>
-      
-      <Button 
-        size="sm" 
-        className="w-full bg-indigo-600 text-white mb-3" 
-        onClick={handleNewAppointment}
-      >
-        <Plus className="h-4 w-4 mr-1" /> New Appointment
-      </Button>
-      
+    
+
       <div className="border-t border-gray-100 pt-3">
         <Button variant="ghost" size="sm" className="w-full justify-start text-left" asChild>
           <Link href="/dashboard">
@@ -377,7 +346,7 @@ const AppointmentFlow = () => {
                 </Link>
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-white">Appointment Flow</h1>
+                <h1 className="text-2xl font-bold text-white">Flowboard</h1>
                 <p className="text-indigo-100 text-sm">
                   Manage and track appointments through your clinic's workflow
                 </p>
@@ -461,71 +430,15 @@ const AppointmentFlow = () => {
               </Button>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 whitespace-nowrap"
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Advanced Filters
-              </Button>
-            </div>
+    
           </div>
 
-          {/* Appointment Stats */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">Today's Overview</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <Card className="bg-indigo-50 border-indigo-100">
-                <CardContent className="p-4">
-                  <div className="flex flex-col">
-                    <span className="text-indigo-600 text-sm font-medium">Total</span>
-                    <span className="text-2xl font-bold text-indigo-800">{totalAppointments}</span>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-blue-50 border-blue-100">
-                <CardContent className="p-4">
-                  <div className="flex flex-col">
-                    <span className="text-blue-600 text-sm font-medium">Waiting</span>
-                    <span className="text-2xl font-bold text-blue-800">
-                      {appointments.filter((a: Appointment) => a.state === 'Scheduled').length}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-amber-50 border-amber-100">
-                <CardContent className="p-4">
-                  <div className="flex flex-col">
-                    <span className="text-amber-600 text-sm font-medium">In Progress</span>
-                    <span className="text-2xl font-bold text-amber-800">
-                      {appointments.filter((a: Appointment) => a.state === 'In Progress').length}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-green-50 border-green-100">
-                <CardContent className="p-4">
-                  <div className="flex flex-col">
-                    <span className="text-green-600 text-sm font-medium">Completed</span>
-                    <span className="text-2xl font-bold text-green-800">
-                      {appointments.filter((a: Appointment) => a.state === 'Completed').length}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-          
           {/* Flowboard section */}
           <div className="bg-white rounded-lg overflow-hidden mb-6">
             <div className="border-b border-indigo-100 p-4 bg-gradient-to-r from-indigo-50 to-white">
               <h2 className="text-lg font-semibold text-indigo-900 flex items-center">
                 <Stethoscope className="mr-2 h-5 w-5 text-indigo-600" />
-                Appointment Flowboard
+                Flowboard
               </h2>
             </div>
             
@@ -533,7 +446,7 @@ const AppointmentFlow = () => {
               <div className="min-w-[600px]">
                 <EnhancedAppointmentFlowboard
                   appointments={filteredAppointments}
-                  doctors={staff.map(s => ({
+                  doctors={staff?.data?.map((s: any) => ({
                     doctor_id: s.id,
                     doctor_name: s.name,
                     doctor_phone: '',
@@ -545,6 +458,19 @@ const AppointmentFlow = () => {
                   onAppointmentUpdate={(appointment) => handleStatusChange(appointment.id, appointment.state)}
                   onAppointmentCreate={handleNewAppointment}
                   onAppointmentDelete={() => {}} // This is kept but will be ignored in the component
+                  selectedDate={selectedDate}
+                  onDateChange={handleDateChange}
+                  onPreviousDay={() => {
+                    const newDate = new Date(selectedDate);
+                    newDate.setDate(selectedDate.getDate() - 1);
+                    setSelectedDate(newDate);
+                  }}
+                  onNextDay={() => {
+                    const newDate = new Date(selectedDate);
+                    newDate.setDate(selectedDate.getDate() + 1);
+                    setSelectedDate(newDate);
+                  }}
+                  onToday={() => setSelectedDate(new Date())}
                 />
               </div>
             </div>
