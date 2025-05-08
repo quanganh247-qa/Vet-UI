@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createInvoice, getInvoiceById } from "@/services/invoice-services";
+import { createInvoice, getInvoiceById, updateInvoiceStatus, UpdateInvoiceStatusRequest } from "@/services/invoice-services";
 import { CreateInvoiceRequest } from "@/types";
 import { queryClient } from "@/lib/queryClient";
 
@@ -30,3 +30,16 @@ export const useInvoiceData = (invoiceId: string) => {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
+
+export const useUpdateInvoiceStatus = () => {
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateInvoiceStatusRequest }) => updateInvoiceStatus(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    },
+    onError: (error) => {
+      console.error("Error updating invoice status:", error);
+    },
+  });
+};
+

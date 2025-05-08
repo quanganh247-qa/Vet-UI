@@ -20,7 +20,8 @@ export const useRevenueAnalytics = () => {
 export interface QRCodeResponse {
   payment_id: number;
   url: string;
-  dataUrl?: string;
+  data_url?: string;
+  image_url?: string;
   quick_link?: string;
 }
 
@@ -31,9 +32,7 @@ export const useQR = () => {
     mutationFn: async (qrCodeInfo) => {
       try {
         // Log request for debugging purposes
-        console.log("QR code request payload:", qrCodeInfo);
         const result = await getQRCode(qrCodeInfo);
-        console.log("QR code response:", result);
         return result;
       } catch (error: any) {
         console.error("Error in QR code mutation:", error);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   Plus,
   Search,
@@ -26,7 +26,7 @@ import {
   BadgeCheck,
   XCircle,
   CheckCircle,
-  FileText
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,13 +37,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DoctorDetail } from "@/types";
@@ -61,14 +63,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const StaffPage = () => {
   const [location, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
 
@@ -82,7 +93,7 @@ const StaffPage = () => {
     phone_number: "",
     address: "",
     role: "",
-    is_verified_email: false
+    is_verified_email: false,
   });
 
   const { data: staffData, isLoading } = useDoctors();
@@ -90,31 +101,39 @@ const StaffPage = () => {
   // Check if we're on the new staff page
   const isNewStaffPage = location === "/staff/new";
 
-  const filteredStaff = (staffData?.data || []).filter((staff: DoctorDetail) => {
-    // Filter by role
-    if (roleFilter !== "all" && staff.role.toLowerCase() !== roleFilter.toLowerCase()) {
-      return false;
+  const filteredStaff = (staffData?.data || []).filter(
+    (staff: DoctorDetail) => {
+      // Filter by role
+      if (
+        roleFilter !== "all" &&
+        staff.role.toLowerCase() !== roleFilter.toLowerCase()
+      ) {
+        return false;
+      }
+
+      // Filter by search term
+      if (searchTerm) {
+        const searchFields = [
+          staff.doctor_name,
+          staff.role,
+          staff.specialization,
+          staff.email,
+        ].map((field) => field?.toLowerCase() || "");
+
+        return searchFields.some((field) =>
+          field.includes(searchTerm.toLowerCase())
+        );
+      }
+
+      return true;
     }
-
-    // Filter by search term
-    if (searchTerm) {
-      const searchFields = [
-        staff.doctor_name,
-        staff.role,
-        staff.specialization,
-        staff.email,
-      ].map(field => field?.toLowerCase() || "");
-
-      return searchFields.some(field => field.includes(searchTerm.toLowerCase()));
-    }
-
-    return true;
-  });
+  );
 
   // Get unique roles for filter
-  const uniqueRoles = staffData && Array.isArray(staffData.data)
-    ? Array.from(new Set(staffData?.data.map((s: DoctorDetail) => s.role)))
-    : [];
+  const uniqueRoles =
+    staffData && Array.isArray(staffData.data)
+      ? Array.from(new Set(staffData?.data.map((s: DoctorDetail) => s.role)))
+      : [];
 
   const handleStaffClick = (staffId: number) => {
     setLocation(`/staff/${staffId}`);
@@ -123,17 +142,17 @@ const StaffPage = () => {
   // Handle changes in staff form
   const handleStaffChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setNewStaff(prev => ({
+    setNewStaff((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
   // Handle select change for role
   const handleRoleChange = (value: string) => {
-    setNewStaff(prev => ({
+    setNewStaff((prev) => ({
       ...prev,
-      role: value
+      role: value,
     }));
   };
 
@@ -180,8 +199,8 @@ const StaffPage = () => {
       },
       onError: (error) => {
         let errorMessage = "Failed to create staff member";
-        
-        if (error && typeof error === 'object' && 'response' in error) {
+
+        if (error && typeof error === "object" && "response" in error) {
           // Extract message from server response if available
           const responseData = (error as any).response?.data;
           if (responseData?.message) {
@@ -196,7 +215,7 @@ const StaffPage = () => {
           description: errorMessage,
           variant: "destructive",
         });
-      }
+      },
     });
   };
 
@@ -210,20 +229,22 @@ const StaffPage = () => {
 
   if (isNewStaffPage) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="space-y-6">
         {/* Header with gradient background */}
-        <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-6 rounded-xl shadow-md mb-6">
+        <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-white">New Staff Member</h1>
+              <h1 className="text-2xl font-bold text-white">
+                New Staff Member
+              </h1>
               <p className="text-indigo-100 text-sm">
                 Add a new veterinarian or staff member to your clinic
               </p>
             </div>
-            
+
             <div className="flex items-center space-x-3">
-              <Button 
-                onClick={() => setLocation('/staff')}
+              <Button
+                onClick={() => setLocation("/staff")}
                 className="bg-white text-indigo-700 hover:bg-indigo-50"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -257,7 +278,9 @@ const StaffPage = () => {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="username" className="mb-1.5 block">Username *</Label>
+                        <Label htmlFor="username" className="mb-1.5 block">
+                          Username *
+                        </Label>
                         <Input
                           id="username"
                           name="username"
@@ -268,10 +291,14 @@ const StaffPage = () => {
                           placeholder="e.g. johndoe"
                           className="border-indigo-200 focus:border-indigo-500"
                         />
-                        <p className="text-xs text-gray-500 mt-1">This will be used for login.</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          This will be used for login.
+                        </p>
                       </div>
                       <div>
-                        <Label htmlFor="full_name" className="mb-1.5 block">Full Name *</Label>
+                        <Label htmlFor="full_name" className="mb-1.5 block">
+                          Full Name *
+                        </Label>
                         <Input
                           id="full_name"
                           name="full_name"
@@ -293,7 +320,9 @@ const StaffPage = () => {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="password" className="mb-1.5 block">Password *</Label>
+                        <Label htmlFor="password" className="mb-1.5 block">
+                          Password *
+                        </Label>
                         <div className="flex items-center">
                           <Lock className="mr-2 h-4 w-4 text-gray-400" />
                           <Input
@@ -308,7 +337,12 @@ const StaffPage = () => {
                         </div>
                       </div>
                       <div>
-                        <Label htmlFor="passwordConfirm" className="mb-1.5 block">Confirm Password *</Label>
+                        <Label
+                          htmlFor="passwordConfirm"
+                          className="mb-1.5 block"
+                        >
+                          Confirm Password *
+                        </Label>
                         <div className="flex items-center">
                           <Lock className="mr-2 h-4 w-4 text-gray-400" />
                           <Input
@@ -333,7 +367,9 @@ const StaffPage = () => {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="email" className="mb-1.5 block">Email *</Label>
+                        <Label htmlFor="email" className="mb-1.5 block">
+                          Email *
+                        </Label>
                         <div className="flex items-center">
                           <Mail className="mr-2 h-4 w-4 text-gray-400" />
                           <Input
@@ -349,7 +385,9 @@ const StaffPage = () => {
                         </div>
                       </div>
                       <div>
-                        <Label htmlFor="phone_number" className="mb-1.5 block">Phone Number</Label>
+                        <Label htmlFor="phone_number" className="mb-1.5 block">
+                          Phone Number
+                        </Label>
                         <div className="flex items-center">
                           <Phone className="mr-2 h-4 w-4 text-gray-400" />
                           <Input
@@ -364,7 +402,9 @@ const StaffPage = () => {
                       </div>
                     </div>
                     <div className="mt-4">
-                      <Label htmlFor="address" className="mb-1.5 block">Address</Label>
+                      <Label htmlFor="address" className="mb-1.5 block">
+                        Address
+                      </Label>
                       <div className="flex items-center">
                         <Building className="mr-2 h-4 w-4 text-gray-400" />
                         <Input
@@ -387,36 +427,62 @@ const StaffPage = () => {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="role" className="mb-1.5 block">Role *</Label>
+                        <Label htmlFor="role" className="mb-1.5 block">
+                          Role *
+                        </Label>
                         <div className="flex items-center">
                           <UserCog className="mr-2 h-4 w-4 text-gray-400" />
-                          <Select value={newStaff.role} onValueChange={handleRoleChange} required>
+                          <Select
+                            value={newStaff.role}
+                            onValueChange={handleRoleChange}
+                            required
+                          >
                             <SelectTrigger className="w-full border-indigo-200 focus:border-indigo-500">
                               <SelectValue placeholder="Select a role" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Veterinarian">Veterinarian</SelectItem>
-                              <SelectItem value="Technician">Technician</SelectItem>
-                              <SelectItem value="Receptionist">Receptionist</SelectItem>
+                              <SelectItem value="Veterinarian">
+                                Veterinarian
+                              </SelectItem>
+                              <SelectItem value="Technician">
+                                Technician
+                              </SelectItem>
+                              <SelectItem value="Receptionist">
+                                Receptionist
+                              </SelectItem>
                               <SelectItem value="Manager">Manager</SelectItem>
-                              <SelectItem value="Assistant">Assistant</SelectItem>
+                              <SelectItem value="Assistant">
+                                Assistant
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                       </div>
                       <div>
-                        <Label className="mb-1.5 block">Email Verification</Label>
+                        <Label className="mb-1.5 block">
+                          Email Verification
+                        </Label>
                         <div className="flex items-center gap-3 mt-2 bg-indigo-50 p-3 rounded-md">
                           <Switch
                             id="is_verified_email"
                             name="is_verified_email"
                             checked={newStaff.is_verified_email}
-                            onCheckedChange={(checked) => setNewStaff(prev => ({ ...prev, is_verified_email: checked }))}
+                            onCheckedChange={(checked) =>
+                              setNewStaff((prev) => ({
+                                ...prev,
+                                is_verified_email: checked,
+                              }))
+                            }
                           />
-                          <Label htmlFor="is_verified_email" className="text-indigo-700 font-medium text-sm">
+                          <Label
+                            htmlFor="is_verified_email"
+                            className="text-indigo-700 font-medium text-sm"
+                          >
                             Verified Email
                           </Label>
-                          <span className="text-xs text-indigo-500">(Can login immediately if checked)</span>
+                          <span className="text-xs text-indigo-500">
+                            (Can login immediately if checked)
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -441,42 +507,72 @@ const StaffPage = () => {
               <CardContent className="pt-6">
                 <div className="flex flex-col items-center gap-3">
                   <div className="h-20 w-20 rounded-full bg-indigo-100 flex items-center justify-center text-4xl font-bold text-indigo-600">
-                    {newStaff.full_name ? newStaff.full_name.split(' ').map(n => n[0]).join('').toUpperCase() : <UserCircle className="w-10 h-10" />}
+                    {newStaff.full_name ? (
+                      newStaff.full_name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                    ) : (
+                      <UserCircle className="w-10 h-10" />
+                    )}
                   </div>
-                  <div className="text-lg font-semibold text-indigo-900">{newStaff.full_name || 'Full Name'}</div>
+                  <div className="text-lg font-semibold text-indigo-900">
+                    {newStaff.full_name || "Full Name"}
+                  </div>
                   <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200">
-                    {newStaff.role || 'Role'}
+                    {newStaff.role || "Role"}
                   </Badge>
-                  <div className="text-gray-500 text-sm">{newStaff.email || 'Email Address'}</div>
+                  <div className="text-gray-500 text-sm">
+                    {newStaff.email || "Email Address"}
+                  </div>
                   <Separator className="my-3" />
                   <div className="w-full space-y-2">
                     <div className="grid grid-cols-3 text-sm">
-                      <span className="font-medium text-indigo-700">Username:</span>
-                      <span className="col-span-2">{newStaff.username || '-'}</span>
+                      <span className="font-medium text-indigo-700">
+                        Username:
+                      </span>
+                      <span className="col-span-2">
+                        {newStaff.username || "-"}
+                      </span>
                     </div>
                     <div className="grid grid-cols-3 text-sm">
-                      <span className="font-medium text-indigo-700">Phone:</span>
-                      <span className="col-span-2">{newStaff.phone_number || '-'}</span>
+                      <span className="font-medium text-indigo-700">
+                        Phone:
+                      </span>
+                      <span className="col-span-2">
+                        {newStaff.phone_number || "-"}
+                      </span>
                     </div>
                     <div className="grid grid-cols-3 text-sm">
-                      <span className="font-medium text-indigo-700">Address:</span>
-                      <span className="col-span-2">{newStaff.address || '-'}</span>
+                      <span className="font-medium text-indigo-700">
+                        Address:
+                      </span>
+                      <span className="col-span-2">
+                        {newStaff.address || "-"}
+                      </span>
                     </div>
                     <div className="grid grid-cols-3 text-sm">
-                      <span className="font-medium text-indigo-700">Verified:</span>
-                      <span className="col-span-2">{newStaff.is_verified_email ? 'Yes' : 'No'}</span>
+                      <span className="font-medium text-indigo-700">
+                        Verified:
+                      </span>
+                      <span className="col-span-2">
+                        {newStaff.is_verified_email ? "Yes" : "No"}
+                      </span>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* Submit Button Card */}
             <Card className="border-none shadow-lg">
               <CardContent className="p-4">
-                <h3 className="text-sm font-medium mb-3 text-indigo-700">Ready to add this staff member?</h3>
+                <h3 className="text-sm font-medium mb-3 text-indigo-700">
+                  Ready to add this staff member?
+                </h3>
                 <div className="flex flex-col gap-2">
-                  <Button 
+                  <Button
                     onClick={handleCreateStaff}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white w-full"
                     disabled={addNewStaffMutation.isPending}
@@ -493,15 +589,15 @@ const StaffPage = () => {
                       </>
                     )}
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setLocation('/staff')}
+                  <Button
+                    variant="outline"
+                    onClick={() => setLocation("/staff")}
                     className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-full"
                   >
                     Cancel
                   </Button>
                 </div>
-                
+
                 {/* Validation Hints */}
                 <div className="mt-4 bg-amber-50 border border-amber-200 rounded-md p-3">
                   <div className="flex gap-2 text-amber-800">
@@ -527,20 +623,30 @@ const StaffPage = () => {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-6 rounded-xl shadow-md mb-6">
-        <div className="flex justify-between items-center">
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Staff Management</h1>
-            <p className="text-indigo-100 text-sm">
-              Manage veterinarians and staff members
-            </p>
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="mr-2 h-8 w-8 text-white hover:bg-white/20 md:block hidden"
+                asChild
+              >
+                <Link href="/dashboard">
+                  <ArrowLeft className="h-5 w-5" />
+                </Link>
+              </Button>
+              <h1 className="text-2xl font-bold text-white">
+                Staff Management
+              </h1>
+            </div>
           </div>
-
           <div className="flex gap-2">
             <Button
-              onClick={() => setLocation('/staff/new')}
+              onClick={() => setLocation("/staff/new")}
               className="bg-white text-indigo-700 hover:bg-indigo-50 flex items-center gap-1.5 shadow-sm"
             >
               <Plus className="w-4 h-4" />
@@ -586,22 +692,26 @@ const StaffPage = () => {
               <div className="flex bg-gray-100 rounded-md p-1">
                 <Button
                   size="sm"
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  onClick={() => setViewMode('list')}
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  onClick={() => setViewMode("list")}
                   className={cn(
                     "h-8 w-8 p-0",
-                    viewMode === 'list' ? 'bg-white shadow-sm' : 'bg-transparent hover:bg-gray-200'
+                    viewMode === "list"
+                      ? "bg-white shadow-sm"
+                      : "bg-transparent hover:bg-gray-200"
                   )}
                 >
                   <List className="h-4 w-4" />
                 </Button>
                 <Button
                   size="sm"
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  onClick={() => setViewMode('grid')}
+                  variant={viewMode === "grid" ? "default" : "ghost"}
+                  onClick={() => setViewMode("grid")}
                   className={cn(
                     "h-8 w-8 p-0",
-                    viewMode === 'grid' ? 'bg-white shadow-sm' : 'bg-transparent hover:bg-gray-200'
+                    viewMode === "grid"
+                      ? "bg-white shadow-sm"
+                      : "bg-transparent hover:bg-gray-200"
                   )}
                 >
                   <Grid className="h-4 w-4" />
@@ -617,17 +727,19 @@ const StaffPage = () => {
             <div className="rounded-full bg-indigo-100 p-3 mb-4">
               <UserCircle className="h-6 w-6 text-indigo-600" />
             </div>
-            <h3 className="text-lg font-medium mb-2 text-indigo-700">No staff members found</h3>
+            <h3 className="text-lg font-medium mb-2 text-indigo-700">
+              No staff members found
+            </h3>
             <p className="text-sm text-indigo-500 text-center mb-4">
-              {searchTerm || roleFilter !== "all" 
+              {searchTerm || roleFilter !== "all"
                 ? "Try adjusting your search filters"
                 : "Get started by adding your first staff member"}
             </p>
             {!searchTerm && roleFilter === "all" && (
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                onClick={() => setLocation('/staff/new')}
+                onClick={() => setLocation("/staff/new")}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add staff member
@@ -636,7 +748,7 @@ const StaffPage = () => {
           </div>
         ) : (
           <div className="mt-6">
-            {viewMode === 'grid' ? (
+            {viewMode === "grid" ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredStaff.map((staff: DoctorDetail) => (
                   <Card
@@ -646,14 +758,16 @@ const StaffPage = () => {
                   >
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{staff.doctor_name}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {staff.doctor_name}
+                        </CardTitle>
                         <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200">
                           {staff.role}
                         </Badge>
                       </div>
                       <CardDescription className="flex items-center gap-1">
                         <Briefcase className="h-3.5 w-3.5 text-gray-400" />
-                        <span>{staff.specialization || 'Staff Member'}</span>
+                        <span>{staff.specialization || "Staff Member"}</span>
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -674,13 +788,17 @@ const StaffPage = () => {
                             {staff.email && (
                               <div className="flex items-center gap-2">
                                 <Mail className="h-4 w-4 text-indigo-500" />
-                                <span className="text-gray-600">{staff.email}</span>
+                                <span className="text-gray-600">
+                                  {staff.email}
+                                </span>
                               </div>
                             )}
                             {staff.certificate_number && (
                               <div className="flex items-center gap-2">
                                 <Award className="h-4 w-4 text-indigo-500" />
-                                <span className="text-gray-600">{staff.certificate_number}</span>
+                                <span className="text-gray-600">
+                                  {staff.certificate_number}
+                                </span>
                               </div>
                             )}
                           </div>
@@ -749,9 +867,13 @@ const StaffPage = () => {
                                 )}
                               </div>
                               <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">{staff.doctor_name}</div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {staff.doctor_name}
+                                </div>
                                 {staff.specialization && (
-                                  <div className="text-sm text-gray-500">{staff.specialization}</div>
+                                  <div className="text-sm text-gray-500">
+                                    {staff.specialization}
+                                  </div>
                                 )}
                               </div>
                             </div>
@@ -765,11 +887,13 @@ const StaffPage = () => {
                             </Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{staff.email || 'N/A'}</div>
+                            <div className="text-sm text-gray-900">
+                              {staff.email || "N/A"}
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {staff.certificate_number || 'N/A'}
+                              {staff.certificate_number || "N/A"}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -797,23 +921,25 @@ const StaffPage = () => {
       </div>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent className="border border-red-200 bg-white">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-red-600">Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle className="text-red-600">
+              Are you sure?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the selected staff member and their account.
+              This action cannot be undone. This will permanently delete the
+              selected staff member and their account.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel
-              className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-            >
+            <AlertDialogCancel className="border-indigo-200 text-indigo-700 hover:bg-indigo-50">
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-            >
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 focus:ring-red-600">
               <XCircle className="h-4 w-4 mr-2" />
               Delete Staff
             </AlertDialogAction>

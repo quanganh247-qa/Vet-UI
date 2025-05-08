@@ -498,14 +498,6 @@ const CheckIn = () => {
           </div>
         </div>
 
-        {/* Workflow Navigation */}
-        <WorkflowNavigation
-          appointmentId={id}
-          petId={patient?.pet_id?.toString()}
-          currentStep="check-in"
-          isNurseView={true}
-        />
-
         {/* Main Content */}
         <div className="grid grid-cols-1 md:grid-cols-7 gap-4 lg:gap-6">
           {/* Left Column - Patient Details & Check-in Form */}

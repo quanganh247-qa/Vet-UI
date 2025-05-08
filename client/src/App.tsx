@@ -32,7 +32,6 @@ const WorkflowNavigation = lazy(() => import("@/components/WorkflowNavigation"))
 const FollowUp = lazy(() => import("@/pages/follow-up"));
 const Examination = lazy(() => import("@/pages/examination"));
 const Vaccination = lazy(() => import("@/pages/vaccination"));
-const TestOrdersManagement = lazy(() => import("@/pages/test-orders-management"));
 const ShiftAssignment = lazy(() => import("@/pages/shift-assignment"));
 const StaffPage = lazy(() => import("@/pages/staff"));
 const PrescriptionInvoice = lazy(() => import("@/pages/prescription/invoice"));
@@ -88,12 +87,12 @@ function Router() {
         <Route path="/appointment/:id/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} />
 
         <Route path="/patient/:patientId/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
+        <Route path="/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
         <Route path="/notifications" component={NotificationsPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/chatbot" component={Chatbot as React.ComponentType<RouteComponentProps>} />
         <Route path="/patients" component={PatientsPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/billing" component={Billing as React.ComponentType<RouteComponentProps>} />
         <Route path="/catalog-management" component={ProductManagement as React.ComponentType<RouteComponentProps>} />
-        <Route path="/test-orders" component={TestOrdersManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/services-management" component={ServicesManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/schedule-management" component={ScheduleManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/shift-management" component={ShiftManagement as React.ComponentType<RouteComponentProps>} />

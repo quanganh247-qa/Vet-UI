@@ -113,6 +113,8 @@ import { Switch } from "@/components/ui/switch";
 import { useUpdateSOAP, useGetSOAP } from "@/hooks/use-soap";
 import { ReadonlyMarkdownView } from "@/components/ui/readonly-markdown-view";
 import { updateAppointmentById } from "@/services/appointment-services";
+// Import component PrescriptionPDF mới tạo
+import PrescriptionPDF from "@/components/prescription/PrescriptionPDF";
 
 const TreatmentManagement: React.FC = () => {
   const [, navigate] = useLocation();
@@ -1012,69 +1014,218 @@ const TreatmentManagement: React.FC = () => {
     }
   };
 
+  // Thêm state cho medication prescription dialog
+  const [isPrescriptionDialogOpen, setIsPrescriptionDialogOpen] = useState(false);
+  const [currentTreatmentForPrescription, setCurrentTreatmentForPrescription] = useState<Treatment | null>(null);
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
+
+  // Thêm lại hàm generatePDF
+  const generatePDF = async (
+    elementId: string,
+    action: "print" | "download",
+    fileName?: string
+  ) => {
+    const element = document.getElementById(elementId);
+
+    if (!element) {
+      toast({
+        title: "Error",
+        description: `Could not find content to ${
+          action === "print" ? "print" : "export"
+        }.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsPdfGenerating(true);
+
+    // Hide the buttons during capturing
+    const actionButtons = element.querySelector(".print\\:hidden");
+    if (actionButtons) {
+      actionButtons.classList.add("hidden");
+    }
+
+    toast({
+      title: action === "print" ? "Preparing Print" : "Generating PDF",
+      description:
+        action === "print"
+          ? "Preparing your prescription for printing..."
+          : "Please wait while we generate your prescription PDF...",
+    });
+
+    try {
+      // Use html2canvas to capture the prescription element
+      const canvas = await html2canvas(element, {
+        scale: 2, // Higher scale for better quality
+        useCORS: true,
+        logging: false,
+        allowTaint: true,
+        backgroundColor: "#ffffff", // Ensure white background
+      });
+
+      // Create PDF
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+
+      if (action === "print") {
+        // Print the PDF
+        pdf.autoPrint();
+        window.open(pdf.output("bloburl"), "_blank");
+
+        toast({
+          title: "Print Ready",
+          description: "Your prescription has been prepared for printing.",
+          className: "bg-green-50 border-green-200 text-green-800",
+        });
+      } else {
+        // Generate filename with treatment information
+        const outputFileName =
+          fileName ||
+          (currentTreatmentForPrescription
+            ? `Prescription_${currentTreatmentForPrescription.id}_${format(new Date(), "yyyy-MM-dd")}.pdf`
+            : "Prescription.pdf");
+
+        // Save the PDF
+        pdf.save(outputFileName);
+
+        toast({
+          title: "Download Complete",
+          description: "Your prescription has been saved as PDF.",
+          className: "bg-green-50 border-green-200 text-green-800",
+        });
+      }
+    } catch (error) {
+      console.error(`Error generating PDF for ${action}:`, error);
+
+      toast({
+        title: "Error",
+        description: `There was a problem ${
+          action === "print" ? "preparing the print" : "generating the PDF"
+        }. Please try again.`,
+        variant: "destructive",
+      });
+    } finally {
+      // Always show buttons again in case of success or error
+      if (actionButtons) {
+        actionButtons.classList.remove("hidden");
+      }
+      setIsPdfGenerating(false);
+    }
+  };
+
+  // Cập nhật hàm xử lý xuất đơn thuốc thành PDF
+  const handleGeneratePrescription = (treatment: Treatment) => {
+    if (!treatment) {
+      toast({
+        title: "Error",
+        description: "No treatment selected",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Đảm bảo rằng phases đã được tải
+    if (!phases || phases.length === 0) {
+      toast({
+        title: "Warning",
+        description: "This treatment doesn't have any medication phases",
+        className: "bg-yellow-50 border-yellow-200 text-yellow-800",
+      });
+    }
+    
+    setCurrentTreatmentForPrescription(treatment);
+    
+    // Set selected treatment và load phase data nếu cần
+    if (selectedTreatmentId !== treatment.id) {
+      setSelectedTreatmentId(treatment.id);
+      refetchPhases(); // Đảm bảo có dữ liệu phases mới nhất
+    }
+    
+    setIsPrescriptionDialogOpen(true);
+  };
+
+  // Cập nhật hàm xử lý in đơn thuốc
+  const handlePrintPrescription = () => {
+    generatePDF("prescription-pdf-content", "print");
+  };
+
+  // Cập nhật hàm xử lý tải xuống đơn thuốc dưới dạng PDF
+  const handleDownloadPrescription = () => {
+    // Tạo tên file bao gồm ID treatment và ngày hiện tại
+    const fileName = currentTreatmentForPrescription 
+      ? `Prescription_${currentTreatmentForPrescription.id}_${format(new Date(), "yyyy-MM-dd")}.pdf`
+      : `Prescription_${format(new Date(), "yyyy-MM-dd")}.pdf`;
+    
+    generatePDF("prescription-pdf-content", "download", fileName);
+  };
+
   return (
-    <div className="container max-w-screen-xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 md:p-8">
+    <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 -mx-6 -mt-6 md:-mx-8 md:-mt-8 px-6 py-4 md:px-8 md:py-5 mb-4 rounded-br-xl rounded-bl-xl shadow-md">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center">
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 md:px-8 md:py-5 flex items-center justify-between">
+        <div className="flex items-center">
             <Button
               variant="ghost"
-              size="icon"
-              className="mr-2 h-8 w-8 text-white hover:bg-white/20"
+              size="sm"
+              className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
               onClick={() => window.history.back()}
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              <span className="text-sm font-medium">Back to Patient</span>
             </Button>
-            <div>
-              <h1 className="text-xl font-semibold text-white">
-                Treatment Management
-              </h1>
-              {/* <p className="text-indigo-100 text-sm">
-                Manage treatment plans and protocols
-              </p> */}
-            </div>
-          </div>
+            <h1 className="text-white font-semibold text-lg">
+              Treatment Management
+            </h1>
+        </div>
 
-          <div className="flex items-center gap-2">
-            {activeView === "detail" && selectedTreatment && (
-              <Button
-                onClick={handleBackClick}
-                variant="outline"
-                size="sm"
-                className="border-white/20 text-white hover:bg-white/20"
-              >
-                Back to List
-              </Button>
-            )}
-            {activeView === "list" && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
-                onClick={() => setActiveView("new")}
-              >
-                <PlusCircle className="h-4 w-4 mr-1" />
-                <span>New Treatment</span>
-              </Button>
-            )}
-
-            {/* invoice button */}
+        <div className="flex items-center gap-3">
+          {activeView === "detail" && selectedTreatment && (
+            <Button
+              onClick={handleBackClick}
+              variant="outline"
+              size="sm"
+              className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              <span>Back to List</span>
+            </Button>
+          )}
+          {activeView === "list" && (
             <Button
               variant="outline"
               size="sm"
               className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
-              onClick={handleInitiateCompletion}
+              onClick={() => setActiveView("new")}
             >
-              <FileText className="h-4 w-4 mr-1" />
-              <span>Complete Appointment</span>
+              <PlusCircle className="h-4 w-4 mr-1" />
+              <span>New Treatment</span>
             </Button>
-          </div>
+          )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
+            onClick={handleInitiateCompletion}
+          >
+            <CheckSquare className="h-4 w-4 mr-1" />
+            <span>Complete Appointment</span>
+          </Button>
         </div>
       </div>
-
+      
       {/* Workflow Navigation */}
-      <div className="mb-4">
+      <div className="mb-4 pt-3">
         <WorkflowNavigation
           appointmentId={appointmentId || id || undefined}
           petId={petId}
@@ -1083,7 +1234,7 @@ const TreatmentManagement: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="w-full px-6 py-6">
+      <div className="p-4">
         {/* Treatment List View */}
         {activeView === "list" && (
           <div>
@@ -1092,28 +1243,22 @@ const TreatmentManagement: React.FC = () => {
                 <Clipboard className="mr-2 h-5 w-5 text-indigo-600" />
                 Treatment Plans
               </h2>
-              {/* <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-white shadow-sm flex items-center gap-1.5 border-gray-200 hover:bg-gray-50 transition-colors"
-                  onClick={handleExportTreatment}
-                >
-                  <Download size={14} className="text-gray-600" />
-                  <span>Export</span>
-                </Button>
-              </div> */}
             </div>
 
             {/* Treatment Cards */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {treatments === undefined ? (
-                <div>Loading treatments...</div>
-              ) : (
+              {isTreatmentsLoading ? (
+                <div className="col-span-2 py-8 flex justify-center">
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="w-12 h-12 border-4 border-t-indigo-600 border-b-indigo-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
+                    <p className="text-indigo-600 font-medium">Loading treatments...</p>
+                  </div>
+                </div>
+              ) : treatments && treatments.length > 0 ? (
                 treatments.map((treatment: Treatment) => (
                   <div
                     key={treatment.id}
-                    className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all"
+                    className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all cursor-pointer"
                     onClick={() => handleSelectTreatment(treatment.id)}
                   >
                     <div className="px-5 py-4 bg-gradient-to-r from-indigo-50 to-white border-b flex justify-between items-start">
@@ -1151,58 +1296,39 @@ const TreatmentManagement: React.FC = () => {
                           <div className="text-xs text-gray-500 uppercase font-medium">
                             Type
                           </div>
-                          <div className="font-medium text-gray-800 mt-1">
+                          <div className="text-sm font-medium mt-1">
                             {treatment.type}
                           </div>
                         </div>
-
                         <div>
                           <div className="text-xs text-gray-500 uppercase font-medium">
-                            Primary Vet
+                            Disease
                           </div>
-                          <div className="font-medium text-gray-800 mt-1">
-                            {treatment.doctor_name}
+                          <div className="text-sm font-medium mt-1">
+                            {treatment.diseases || "Not specified"}
                           </div>
                         </div>
                       </div>
 
-                      <div className="mb-4">
-                        <div className="text-xs text-gray-500 uppercase font-medium">
-                          Description
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <div className="flex items-center text-sm text-indigo-600">
+                          <Clipboard className="h-4 w-4 mr-1.5" />
+                          {treatment.phases ? treatment.phases.length : "0"} Phase(s)
                         </div>
-                        <div className="text-sm text-gray-700 mt-1">
-                          {treatment.description}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                        <div className="text-sm text-gray-500">
-                          <Badge
-                            className={`mr-2 ${
-                              treatment.status === "Completed"
-                                ? "bg-green-100 text-green-800 border-green-200"
-                                : treatment.status === "In Progress"
-                                ? "bg-blue-100 text-blue-800 border-blue-200"
-                                : treatment.status === "Not Started"
-                                ? "bg-gray-100 text-gray-800 border-gray-200"
-                                : "bg-indigo-100 text-indigo-800 border-indigo-200"
-                            }`}
-                          >
-                            {treatment.status}
-                          </Badge>
-                          <span>{treatment.name}</span>
-                        </div>
-
-                        <Button
-                          className="bg-indigo-600 hover:bg-indigo-700"
-                          size="sm"
-                        >
-                          View Details
-                        </Button>
                       </div>
                     </div>
                   </div>
                 ))
+              ) : (
+                <div className="col-span-2 text-center p-10 border border-dashed border-gray-300 rounded-xl bg-gray-50">
+                  <Clipboard className="h-10 w-10 mx-auto text-gray-400 mb-3" />
+                  <h3 className="font-medium text-gray-700 mb-1">No treatments found</h3>
+                  <p className="text-gray-500 mb-4">There are no active treatments for this patient</p>
+                  <Button onClick={() => setActiveView("new")} variant="outline" className="bg-white">
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Create New Treatment
+                  </Button>
+                </div>
               )}
             </div>
           </div>
@@ -1253,22 +1379,15 @@ const TreatmentManagement: React.FC = () => {
                       <SelectItem value="Completed">Completed</SelectItem>
                     </SelectContent>
                   </Select>
-
-                  <div className="flex space-x-1">
+                  <div className="flex space-x-2">
                     <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 rounded-full bg-white border-gray-200"
+                      onClick={() => handleGeneratePrescription(selectedTreatment)}
+                      variant="outline" 
+                      size="sm"
+                      className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white"
                     >
-                      <Edit size={14} className="text-gray-600" />
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 rounded-full bg-white border-gray-200"
-                    >
-                      <MoreHorizontal size={14} className="text-gray-600" />
+                      <FileText className="h-4 w-4" />
+                      <span>Generate Prescription</span>
                     </Button>
                   </div>
                 </div>
@@ -1373,23 +1492,7 @@ const TreatmentManagement: React.FC = () => {
                   </div>
                 )}
 
-                {/* Add Complete & Export button
-                <div className="mt-4 flex justify-end">
-                  <div className="w-full">
-                    <Button
-                      onClick={handleInitiateCompletion}
-                      className="w-full flex items-center justify-center bg-green-600 hover:bg-green-700 text-white gap-1.5 h-11 shadow-md"
-                    >
-                      <CheckCircle className="h-5 w-5" />
-                      <span className="font-medium">Complete Treatment & Update Appointment</span>
-                    </Button>
-                    <div className="mt-2 text-center">
-                      <p className="text-xs text-gray-500 italic">
-                        This will mark both the treatment and the appointment as completed
-                      </p>
-                    </div>
-                  </div>
-                </div> */}
+
               </div>
             </div>
 
@@ -2651,6 +2754,43 @@ const TreatmentManagement: React.FC = () => {
                   Confirm Completion
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Thêm dialog hiển thị đơn thuốc để xuất PDF */}
+      <Dialog open={isPrescriptionDialogOpen} onOpenChange={setIsPrescriptionDialogOpen}>
+        <DialogContent className="sm:max-w-[850px] max-h-[95vh] overflow-y-auto">
+          <DialogHeader className="border-b pb-4">
+            <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center">
+              <FileText className="mr-2 h-5 w-5 text-indigo-600" />
+              Prescription
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
+              Preview, print, or download the prescription as PDF. Select specific phases to include medications.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <PrescriptionPDF 
+              treatment={currentTreatmentForPrescription}
+              phases={phases || []}
+              patientData={patientData}
+              appointmentData={appointmentData}
+              onPrint={handlePrintPrescription}
+              onDownload={handleDownloadPrescription}
+              isPdfGenerating={isPdfGenerating}
+            />
+          </div>
+
+          <DialogFooter className="border-t pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setIsPrescriptionDialogOpen(false)}
+              className="border-gray-300 text-gray-700"
+            >
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

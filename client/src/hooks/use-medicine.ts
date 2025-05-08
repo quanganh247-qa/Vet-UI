@@ -8,7 +8,7 @@ import {
   updateMedicine,
 } from "../services/medicine-services";
 import { MedicineTransactionRequest } from "@/types";
-import { getAllMedicines } from "@/services/treament-services";
+import { getAllMedicines, getMedicinesByPhaseId } from "@/services/treament-services";
 import { queryClient } from "@/lib/queryClient";
 import { toast } from "./use-toast";
 
@@ -114,4 +114,13 @@ export const useUpdateMedicine = () => {
     }
   });
   return { mutateAsync, isPending, error, data };
+};
+
+
+export const useGetMedicineByPhaseId = (treatment_id: number, phase_id: number) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["medicineByPhaseId", treatment_id, phase_id],
+    queryFn: () => getMedicinesByPhaseId(treatment_id.toString(), phase_id.toString()),
+  });
+  return { data, isLoading, error };
 };

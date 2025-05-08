@@ -162,11 +162,13 @@ const AppointmentCard = memo(({
   appointment,
   onClick,
   onStatusChange,
+  onCheckIn,
   formatTime,
 }: {
   appointment: Appointment;
   onClick: (id: number) => void;
   onStatusChange: (id: number, statusId: number, navigateToDetail?: boolean) => void;
+  onCheckIn: (id: number, statusId: number, navigateToDetail?: boolean) => void;
   formatTime: (date: Date | string) => string;
   getStatusColorClass: (status: string) => string;
   getTypeColorClass: (type: string) => string;
@@ -445,7 +447,8 @@ const EnhancedAppointmentFlowboard: React.FC<
               };
               onAppointmentUpdate(updatedAppointment);
               if (navigateToDetail) {
-                setLocation(`/patient?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`);
+                // setLocation(`/patient?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`);
+                setLocation(`/examination?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`);
               }
             },
           }
@@ -454,6 +457,17 @@ const EnhancedAppointmentFlowboard: React.FC<
     },
     [appointments, onAppointmentUpdate, setLocation, updateStatusMutation]
   );
+
+
+  // Refresh queue when an appointment status changes
+  const handleCheckIn = useCallback(
+    (appointmentId: number) => {
+      setLocation(`/appointment/${appointmentId}/check-in`);
+    },
+    [setLocation]
+  );
+
+
 
   // Handle showing new appointment form
   const handleNewAppointment = useCallback(() => {
@@ -470,6 +484,7 @@ const EnhancedAppointmentFlowboard: React.FC<
         appointment={appointment}
         onClick={handleAppointmentClick}
         onStatusChange={handleStatusChange}
+        onCheckIn={handleCheckIn}
         formatTime={formatTime}
         getStatusColorClass={getStatusColorClass}
         getTypeColorClass={getTypeColorClass}
@@ -1132,7 +1147,7 @@ const EnhancedAppointmentFlowboard: React.FC<
                 <button
                   className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center justify-center"
                   onClick={() => {
-                    handleStatusChange(selectedAppointmentId, 3);
+                    handleCheckIn(selectedAppointmentId);
                     setIsQuickActionsOpen(false);
                   }}
                 >
@@ -1140,16 +1155,7 @@ const EnhancedAppointmentFlowboard: React.FC<
                   Check-in
                 </button>
 
-                {/* <button
-                  className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 flex items-center justify-center"
-                  onClick={() => {
-                    handleStartAppointment(selectedAppointmentId);
-                    setIsQuickActionsOpen(false);
-                  }}
-                >
-                  <Play size={14} className="mr-1" />
-                  Start Exam
-                </button> */}
+    
 
                 <button
                   className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 flex items-center justify-center"
@@ -1620,7 +1626,7 @@ const EnhancedAppointmentFlowboard: React.FC<
                           <button
                             className="px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 flex items-center justify-center shadow-sm"
                             onClick={() =>
-                              handleStatusChange(selectedAppointment.id, 3)
+                              handleCheckIn(selectedAppointment.id)
                             }
                           >
                             <CheckCircle size={14} className="mr-1.5" />

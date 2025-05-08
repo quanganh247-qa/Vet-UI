@@ -210,6 +210,8 @@ export interface Treatment {
   doctor_name: string;
   description: string;
   phases: TreatmentPhase[];
+  diseases?: string;
+  notes?: string;
 }
 
 export interface PatientAlert {
@@ -355,6 +357,10 @@ export interface CreateInvoiceRequest {
   status: string;
   description: string;
   customer_name: string;
+  type: string;
+  test_order_id?: number;
+  order_id?: number;
+  appointment_id?: number;
   items: InvoiceItem[];
 }
 

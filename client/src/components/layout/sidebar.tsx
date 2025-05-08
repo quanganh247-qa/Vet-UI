@@ -23,6 +23,7 @@ import {
   Bot,
   CalendarRange,
   Package,
+  Syringe,
 } from "lucide-react";
 
 const navigation = [
@@ -60,6 +61,11 @@ const navigation = [
     name: "Inventory",
     href: "/inventory",
     icon: <Package className="h-5 w-5" />,
+  },
+  {
+    name: "Vaccinations",
+    href: "/vaccination",
+    icon: <Syringe className="h-5 w-5" />,
   },
   {
     name: "Billing",

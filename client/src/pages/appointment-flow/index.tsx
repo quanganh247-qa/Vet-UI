@@ -331,7 +331,7 @@ const AppointmentFlow = () => {
   return (
     <div className="space-y-6">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md mb-6">
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <div className="flex items-center">
@@ -346,10 +346,7 @@ const AppointmentFlow = () => {
                 </Link>
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-white">Flowboard</h1>
-                <p className="text-indigo-100 text-sm">
-                  Manage and track appointments through your clinic's workflow
-                </p>
+                <h1 className="text-2xl font-bold text-white">Appointment Flowboard</h1>
               </div>
             </div>
           </div>

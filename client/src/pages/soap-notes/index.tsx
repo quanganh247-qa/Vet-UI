@@ -23,6 +23,8 @@ import {
   Italic,
   List,
   ListOrdered,
+  Edit,
+  Eye,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useGetSOAP, useUpdateSOAP } from "@/hooks/use-soap";
@@ -295,10 +297,11 @@ const RichTextEditor = ({
 };
 
 const SoapNotes = () => {
-  // Lấy params từ cả route params và query params
-  const { id: routeId } = useParams<{ id?: string }>();
-  const [, navigate] = useLocation();
+  const [activeTab, setActiveTab] = useState("all");
   const [isRecording, setIsRecording] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(true); // Set preview mode to true by default
+  const { id: appointmentId } = useParams<{ id?: string }>();
+  const [, setLocation] = useLocation();
 
   // Quản lý tham số workflow
   const [workflowParams, setWorkflowParams] = useState<{
@@ -317,7 +320,7 @@ const SoapNotes = () => {
     const urlPetId = searchParams.get("petId");
 
     // Thiết lập appointmentId và petId theo thứ tự ưu tiên
-    const appointmentIdValue = urlAppointmentId || routeId || null;
+    const appointmentIdValue = urlAppointmentId || appointmentId || null;
     const petIdValue = urlPetId || null;
 
     // IMPORTANT: Kiểm tra xem giá trị mới có khác giá trị cũ không
@@ -331,7 +334,7 @@ const SoapNotes = () => {
         petId: petIdValue,
       });
     }
-  }, [routeId]);
+  }, [appointmentId]);
 
   // Sử dụng appointmentId từ workflowParams
   const effectiveAppointmentId = workflowParams.appointmentId || "";
@@ -542,7 +545,7 @@ const SoapNotes = () => {
           appointmentId: effectiveAppointmentId,
           petId: appointment?.pet?.pet_id,
         };
-        navigate(`/lab-management${buildUrlParams(params)}`);
+        setLocation(`/lab-management${buildUrlParams(params)}`);
       }
     } catch (error) {
       console.error("Error saving SOAP notes:", error);
@@ -564,7 +567,7 @@ const SoapNotes = () => {
         appointmentId: effectiveAppointmentId,
         petId: patient.petid,
       };
-      navigate(`/treatment${buildUrlParams(params)}`);
+      setLocation(`/treatment${buildUrlParams(params)}`);
     }
   };
 
@@ -575,9 +578,9 @@ const SoapNotes = () => {
         appointmentId: effectiveAppointmentId,
         petId: appointment?.pet?.pet_id,
       };
-      navigate(`/patient${buildUrlParams(params)}`);
+      setLocation(`/patient${buildUrlParams(params)}`);
     } else {
-      navigate("/appointment-flow");
+      setLocation("/appointment-flow");
     }
   };
 
@@ -588,12 +591,9 @@ const SoapNotes = () => {
         appointmentId: effectiveAppointmentId,
         petId: patient.petid,
       };
-      navigate(`/lab-management${buildUrlParams(params)}`);
+      setLocation(`/lab-management${buildUrlParams(params)}`);
     }
   };
-
-  // Near the top of the component, add a state for preview mode
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   if (isAppointmentLoading || isPatientLoading || !appointment || !patient) {
     return (
@@ -707,9 +707,10 @@ const SoapNotes = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setIsPreviewMode(!isPreviewMode)}
-                    className="text-xs"
+                    className="text-xs flex items-center bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
                   >
-                    {isPreviewMode ? "Edit Mode" : "Preview Mode"}
+                    {isPreviewMode ? <Edit className="h-3.5 w-3.5 mr-1.5" /> : <Eye className="h-3.5 w-3.5 mr-1.5" />}
+                    {isPreviewMode ? "Switch to Edit Mode" : "Switch to Preview Mode"}
                   </Button>
                 </div>
               </div>
@@ -757,6 +758,9 @@ const SoapNotes = () => {
                       <Badge className="ml-2 bg-green-100 text-green-800 border-green-200">
                         Update here
                       </Badge>
+                      <Badge className="ml-2 bg-indigo-100 text-indigo-800 border-indigo-200">
+                        {isPreviewMode ? "Preview Mode" : "Edit Mode"}
+                      </Badge>
                     </label>
                   </div>
                   <RichTextEditor
@@ -792,7 +796,7 @@ const SoapNotes = () => {
               {/* Tab Objective - read-only */}
               <TabsContent value="objective" className="py-4">
                 <div>
-                  <Alert className="mb-4 bg-yellow-50 border-yellow-200">
+                  {/* <Alert className="mb-4 bg-yellow-50 border-yellow-200">
                     <AlertTriangle className="h-4 w-4 text-yellow-600" />
                     <AlertTitle className="text-yellow-800">Note</AlertTitle>
                     <AlertDescription className="text-yellow-700">
@@ -800,7 +804,7 @@ const SoapNotes = () => {
                       the Examination section. Here you can only view the
                       results.
                     </AlertDescription>
-                  </Alert>
+                  </Alert> */}
                   <div className="flex items-center gap-2 mb-2">
                     <Activity className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700">
@@ -819,7 +823,7 @@ const SoapNotes = () => {
               {/* Tab Assessment - Main diagnostic tab */}
               <TabsContent value="assessment" className="py-4">
                 <div>
-                  <Alert className="mb-4 bg-green-50 border-green-200">
+                  {/* <Alert className="mb-4 bg-green-50 border-green-200">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertTitle className="text-green-800">
                       Make Your Diagnosis
@@ -828,12 +832,19 @@ const SoapNotes = () => {
                       Based on the information collected from the client and
                       clinical examination results, record your diagnosis here.
                       This is critical for determining the treatment plan.
+                      <br />
+                      <span className="mt-2 font-medium inline-block">
+                        Note: Preview mode is enabled by default. Use the toggle button at the top to switch to edit mode.
+                      </span>
                     </AlertDescription>
-                  </Alert>
+                  </Alert> */}
                   <div className="flex items-center gap-2 mb-2">
                     <ClipboardEdit className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700">
                       A - Assessment (Diagnosis)
+                      <Badge className="ml-2 bg-indigo-100 text-indigo-800 border-indigo-200">
+                        {isPreviewMode ? "Preview Mode" : "Edit Mode"}
+                      </Badge>
                     </label>
                   </div>
                   <RichTextEditor
@@ -850,7 +861,7 @@ const SoapNotes = () => {
               {/* Tab History - SOAP history for this patient */}
               <TabsContent value="history" className="py-4">
                 <div>
-                  <Alert className="mb-4 bg-blue-50 border-blue-200">
+                  {/* <Alert className="mb-4 bg-blue-50 border-blue-200">
                     <Info className="h-4 w-4 text-blue-600" />
                     <AlertTitle className="text-blue-800">
                       Patient's SOAP History
@@ -858,7 +869,7 @@ const SoapNotes = () => {
                     <AlertDescription className="text-blue-700">
                       View the complete history of SOAP notes for this patient to track their progress over time.
                     </AlertDescription>
-                  </Alert>
+                  </Alert> */}
                   <SOAPHistory petId={patient?.petid?.toString() || ""} />
                 </div>
               </TabsContent>

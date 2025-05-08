@@ -167,9 +167,9 @@ export const PatientsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 px-2 sm:px-4 md:px-6 max-w-[100vw]">
+    <div className="space-y-6">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md mb-6">
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <Button
