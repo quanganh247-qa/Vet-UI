@@ -7,6 +7,3 @@ vite.config.ts.*
 .cursor
 .env
 .vscode
-
-Caddyfile
-Dockerfile

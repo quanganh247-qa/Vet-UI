@@ -20,7 +20,7 @@ WORKDIR /app
 COPY Caddyfile ./
 RUN caddy fmt Caddyfile --overwrite
 
-COPY --from=build /app/dist ./dist
+COPY --from=build /app/dist /app/dist
 
 # Optional: For better debugging in dev
 CMD ["caddy", "run", "--config", "Caddyfile"]
