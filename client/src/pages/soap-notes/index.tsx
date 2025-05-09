@@ -612,9 +612,10 @@ const SoapNotes = () => {
   const formattedObjectiveText = formatObjectiveData(localSoapData.objective);
 
   return (
-    <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
-      {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 md:px-8 md:py-5 flex items-center justify-between">
+    <div className="space-y-6">
+    {/* Header with gradient background */}
+    <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
+
         <div className="flex items-center">
           <Button
             variant="ghost"
@@ -796,15 +797,6 @@ const SoapNotes = () => {
               {/* Tab Objective - read-only */}
               <TabsContent value="objective" className="py-4">
                 <div>
-                  {/* <Alert className="mb-4 bg-yellow-50 border-yellow-200">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                    <AlertTitle className="text-yellow-800">Note</AlertTitle>
-                    <AlertDescription className="text-yellow-700">
-                      Clinical examination information can only be updated in
-                      the Examination section. Here you can only view the
-                      results.
-                    </AlertDescription>
-                  </Alert> */}
                   <div className="flex items-center gap-2 mb-2">
                     <Activity className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700">
@@ -823,21 +815,6 @@ const SoapNotes = () => {
               {/* Tab Assessment - Main diagnostic tab */}
               <TabsContent value="assessment" className="py-4">
                 <div>
-                  {/* <Alert className="mb-4 bg-green-50 border-green-200">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertTitle className="text-green-800">
-                      Make Your Diagnosis
-                    </AlertTitle>
-                    <AlertDescription className="text-green-700">
-                      Based on the information collected from the client and
-                      clinical examination results, record your diagnosis here.
-                      This is critical for determining the treatment plan.
-                      <br />
-                      <span className="mt-2 font-medium inline-block">
-                        Note: Preview mode is enabled by default. Use the toggle button at the top to switch to edit mode.
-                      </span>
-                    </AlertDescription>
-                  </Alert> */}
                   <div className="flex items-center gap-2 mb-2">
                     <ClipboardEdit className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700">

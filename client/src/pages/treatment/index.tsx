@@ -1170,9 +1170,12 @@ const TreatmentManagement: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
+
+    <div className="space-y-6">
+    {/* Header with gradient background */}
+    <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
+
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 md:px-8 md:py-5 flex items-center justify-between">
         <div className="flex items-center">
             <Button
               variant="ghost"

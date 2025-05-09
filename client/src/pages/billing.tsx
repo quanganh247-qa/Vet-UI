@@ -334,7 +334,7 @@ const BillingPage = () => {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="space-y-6">
       {/* Header with gradient background */}
       <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

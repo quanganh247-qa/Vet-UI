@@ -37,14 +37,11 @@ const InventoryPage: React.FC = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-white">Inventory Management</h1>
-            <p className="text-indigo-100 text-sm mt-1">
-              Track and manage medicine inventory, suppliers, and stock levels
-            </p>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto">
+      <div className="bg-white shadow-sm rounded-lg border border-indigo-100 p-5 mb-6">
         <div className="bg-indigo-50 p-3 rounded-md border border-indigo-100 mb-6 flex items-center">
           <Search className="text-indigo-400 w-5 h-5 mr-2" />
           <Input

@@ -385,7 +385,7 @@ const AppointmentFlow = () => {
         </div>
       </div>
 
-      <div className="container mx-auto">
+      <div className="grid grid-cols-1 gap-6">
         <div className="bg-white rounded-lg border border-indigo-100 shadow-sm p-6 mb-6">
           {/* Search and filter section */}
           <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6 bg-indigo-50 p-3 rounded-md border border-indigo-100">

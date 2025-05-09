@@ -209,14 +209,7 @@ const MedicineTable: React.FC<MedicineTableProps> = ({ searchQuery, onEditMedici
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold text-indigo-900 flex items-center">
-          <Pill className="h-5 w-5 mr-2 text-indigo-600" />
-          Medicine Inventory {totalMedicines > 0 && (
-            <Badge className="ml-2 bg-indigo-100 text-indigo-800 border-indigo-200">
-              {totalMedicines} items
-            </Badge>
-          )}
-        </h2>
+       
         <div className="flex items-center gap-2">
           <div className="relative w-64 mr-2">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-400" />

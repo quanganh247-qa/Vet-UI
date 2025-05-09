@@ -111,49 +111,54 @@ const Examination: React.FC = () => {
     petId: string | null;
   }>({
     appointmentId: null,
-    petId: null
+    petId: null,
   });
-  
+
   // Xử lý các tham số từ URL một cách nhất quán
   useEffect(() => {
     // Lấy tất cả các query params từ URL
     const searchParams = new URLSearchParams(window.location.search);
     const urlAppointmentId = searchParams.get("appointmentId");
     const urlPetId = searchParams.get("petId");
-    
-    console.log("Examination URL Params:", { urlAppointmentId, urlPetId, routeId });
-    
+
+    console.log("Examination URL Params:", {
+      urlAppointmentId,
+      urlPetId,
+      routeId,
+    });
+
     // Thiết lập appointmentId và petId theo thứ tự ưu tiên
     let appointmentIdValue = urlAppointmentId || routeId || null;
     let petIdValue = urlPetId || null;
-    
+
     setWorkflowParams({
       appointmentId: appointmentIdValue,
-      petId: petIdValue
+      petId: petIdValue,
     });
-    
   }, [routeId]);
-  
+
   // Sử dụng appointmentId từ workflowParams
   const effectiveAppointmentId = workflowParams.appointmentId || "";
-  
+
   // Utility function to build query parameters
-  const buildUrlParams = (params: Record<string, string | number | null | undefined>) => {
+  const buildUrlParams = (
+    params: Record<string, string | number | null | undefined>
+  ) => {
     const urlParams = new URLSearchParams();
-    
+
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
+      if (value !== null && value !== undefined && value !== "") {
         urlParams.append(key, String(value));
       }
     });
-    
+
     const queryString = urlParams.toString();
-    return queryString ? `?${queryString}` : '';
+    return queryString ? `?${queryString}` : "";
   };
 
   const { data: appointment, isLoading: isAppointmentLoading } =
     useAppointmentData(effectiveAppointmentId);
-    
+
   const { data: patient, isLoading: isPatientLoading } = usePatientData(
     appointment?.pet?.pet_id
   );
@@ -165,20 +170,59 @@ const Examination: React.FC = () => {
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [showShortcutHelp, setShowShortcutHelp] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
-  
+
   // Template management with proper types
   const [templates, setTemplates] = useState<{
     physical: PhysicalTemplate[];
     systems: SystemsTemplate[];
   }>({
     physical: [
-      { id: 1, name: "Normal Dog Vitals", data: { weight: "", temperature: "38.5", heartRate: "100", respiratoryRate: "20", generalNotes: "No abnormalities detected" } },
-      { id: 2, name: "Normal Cat Vitals", data: { weight: "", temperature: "38.0", heartRate: "120", respiratoryRate: "24", generalNotes: "No abnormalities detected" } },
+      {
+        id: 1,
+        name: "Normal Dog Vitals",
+        data: {
+          weight: "",
+          temperature: "38.5",
+          heartRate: "100",
+          respiratoryRate: "20",
+          generalNotes: "No abnormalities detected",
+        },
+      },
+      {
+        id: 2,
+        name: "Normal Cat Vitals",
+        data: {
+          weight: "",
+          temperature: "38.0",
+          heartRate: "120",
+          respiratoryRate: "24",
+          generalNotes: "No abnormalities detected",
+        },
+      },
     ],
     systems: [
-      { id: 1, name: "Normal Physical Exam", data: { cardiovascular: "Normal heart sounds, no murmurs", respiratory: "Normal respiratory sounds, no crackles or wheezes", gastrointestinal: "Normal abdomen on palpation", musculoskeletal: "Normal gait and posture", neurological: "Alert and responsive", skin: "Good coat condition", eyes: "Clear, no discharge", ears: "Clean, no inflammation" } },
-      { id: 2, name: "Dental Check", data: { gastrointestinal: "Dental tartar grade 2/4. Mild gingivitis present." } },
-    ]
+      {
+        id: 1,
+        name: "Normal Physical Exam",
+        data: {
+          cardiovascular: "Normal heart sounds, no murmurs",
+          respiratory: "Normal respiratory sounds, no crackles or wheezes",
+          gastrointestinal: "Normal abdomen on palpation",
+          musculoskeletal: "Normal gait and posture",
+          neurological: "Alert and responsive",
+          skin: "Good coat condition",
+          eyes: "Clear, no discharge",
+          ears: "Clean, no inflammation",
+        },
+      },
+      {
+        id: 2,
+        name: "Dental Check",
+        data: {
+          gastrointestinal: "Dental tartar grade 2/4. Mild gingivitis present.",
+        },
+      },
+    ],
   });
 
   // Form state for physical examination
@@ -204,7 +248,7 @@ const Examination: React.FC = () => {
   // Auto-save functionality
   useEffect(() => {
     if (!autoSaveEnabled) return;
-    
+
     const autoSaveTimer = setTimeout(() => {
       if (unsavedChanges) {
         console.log("Auto-saving examination data...");
@@ -217,72 +261,95 @@ const Examination: React.FC = () => {
         });
       }
     }, 30000); // Auto-save after 30 seconds of inactivity
-    
+
     return () => clearTimeout(autoSaveTimer);
   }, [unsavedChanges, autoSaveEnabled, toast]);
 
   // Function to apply a template with fixed types
-  const applyTemplate = (templateType: 'physical' | 'systems', templateId: number) => {
-    if (templateType === 'physical') {
-      const template = templates.physical.find(t => t.id === templateId);
+  const applyTemplate = (
+    templateType: "physical" | "systems",
+    templateId: number
+  ) => {
+    if (templateType === "physical") {
+      const template = templates.physical.find((t) => t.id === templateId);
       if (!template) return;
-      
+
       if (template.data.weight) setWeight(template.data.weight);
       if (template.data.temperature) setTemperature(template.data.temperature);
       if (template.data.heartRate) setHeartRate(template.data.heartRate);
-      if (template.data.respiratoryRate) setRespiratoryRate(template.data.respiratoryRate);
-      if (template.data.generalNotes) setGeneralNotes(template.data.generalNotes);
+      if (template.data.respiratoryRate)
+        setRespiratoryRate(template.data.respiratoryRate);
+      if (template.data.generalNotes)
+        setGeneralNotes(template.data.generalNotes);
     } else {
-      const template = templates.systems.find(t => t.id === templateId);
+      const template = templates.systems.find((t) => t.id === templateId);
       if (!template) return;
-      
-      if (template.data.cardiovascular) setCardiovascular(template.data.cardiovascular);
+
+      if (template.data.cardiovascular)
+        setCardiovascular(template.data.cardiovascular);
       if (template.data.respiratory) setRespiratory(template.data.respiratory);
-      if (template.data.gastrointestinal) setGastrointestinal(template.data.gastrointestinal);
-      if (template.data.musculoskeletal) setMusculoskeletal(template.data.musculoskeletal);
-      if (template.data.neurological) setNeurological(template.data.neurological);
+      if (template.data.gastrointestinal)
+        setGastrointestinal(template.data.gastrointestinal);
+      if (template.data.musculoskeletal)
+        setMusculoskeletal(template.data.musculoskeletal);
+      if (template.data.neurological)
+        setNeurological(template.data.neurological);
       if (template.data.skin) setSkin(template.data.skin);
       if (template.data.eyes) setEyes(template.data.eyes);
       if (template.data.ears) setEars(template.data.ears);
     }
-    
+
     toast({
       title: "Template Applied",
-      description: `Applied template: ${templateType === 'physical' 
-        ? templates.physical.find(t => t.id === templateId)?.name 
-        : templates.systems.find(t => t.id === templateId)?.name}`,
+      description: `Applied template: ${
+        templateType === "physical"
+          ? templates.physical.find((t) => t.id === templateId)?.name
+          : templates.systems.find((t) => t.id === templateId)?.name
+      }`,
       className: "bg-green-50 border-green-200 text-green-800",
     });
-    
+
     setUnsavedChanges(true);
   };
 
   // Save a new template with fixed types
-  const saveAsTemplate = (templateType: 'physical' | 'systems', name: string) => {
-    if (templateType === 'physical') {
+  const saveAsTemplate = (
+    templateType: "physical" | "systems",
+    name: string
+  ) => {
+    if (templateType === "physical") {
       const newTemplate: PhysicalTemplate = {
-        id: Math.max(0, ...templates.physical.map(t => t.id)) + 1,
+        id: Math.max(0, ...templates.physical.map((t) => t.id)) + 1,
         name,
-        data: { weight, temperature, heartRate, respiratoryRate, generalNotes }
+        data: { weight, temperature, heartRate, respiratoryRate, generalNotes },
       };
-      
+
       setTemplates({
         ...templates,
-        physical: [...templates.physical, newTemplate]
+        physical: [...templates.physical, newTemplate],
       });
     } else {
       const newTemplate: SystemsTemplate = {
-        id: Math.max(0, ...templates.systems.map(t => t.id)) + 1,
+        id: Math.max(0, ...templates.systems.map((t) => t.id)) + 1,
         name,
-        data: { cardiovascular, respiratory, gastrointestinal, musculoskeletal, neurological, skin, eyes, ears }
+        data: {
+          cardiovascular,
+          respiratory,
+          gastrointestinal,
+          musculoskeletal,
+          neurological,
+          skin,
+          eyes,
+          ears,
+        },
       };
-      
+
       setTemplates({
         ...templates,
-        systems: [...templates.systems, newTemplate]
+        systems: [...templates.systems, newTemplate],
       });
     }
-    
+
     toast({
       title: "Template Saved",
       description: `New template "${name}" saved successfully`,
@@ -291,10 +358,12 @@ const Examination: React.FC = () => {
   };
 
   // Function to handle input changes and track unsaved changes
-  const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setter(e.target.value);
-    setUnsavedChanges(true);
-  };
+  const handleInputChange =
+    (setter: React.Dispatch<React.SetStateAction<string>>) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setter(e.target.value);
+      setUnsavedChanges(true);
+    };
 
   // Inside the component, add the SOAP update mutation
   const updateSoapMutation = useUpdateSOAP();
@@ -346,7 +415,7 @@ const Examination: React.FC = () => {
       });
 
       setUnsavedChanges(false);
-      
+
       toast({
         title: "Examination Saved",
         description: "Examination findings saved and transferred to SOAP.",
@@ -356,7 +425,7 @@ const Examination: React.FC = () => {
       // Proceed to SOAP notes
       const params = {
         appointmentId: effectiveAppointmentId,
-        petId: appointment?.pet?.pet_id
+        petId: appointment?.pet?.pet_id,
       };
       navigate(`/soap${buildUrlParams(params)}`);
     } catch (error) {
@@ -379,14 +448,14 @@ const Examination: React.FC = () => {
       });
       return;
     }
-    
+
     // Show saving indicator
     toast({
       title: "Saving",
       description: "Saving examination findings and SOAP notes...",
       className: "bg-blue-50 border-blue-200 text-blue-800",
     });
-    
+
     try {
       // First, create the objective data from examination findings
       const objectiveData: ObjectiveData = {
@@ -409,7 +478,6 @@ const Examination: React.FC = () => {
         },
       };
 
-
       // Save to SOAP notes
       await updateSoapMutation.mutateAsync({
         appointmentID: effectiveAppointmentId,
@@ -418,19 +486,20 @@ const Examination: React.FC = () => {
         assessment: "", // This would be filled in the SOAP screen
         plan: 0, // changed from "" to 0
       });
-      
+
       setUnsavedChanges(false);
-      
+
       toast({
         title: "Examination Saved",
-        description: "Examination findings have been saved successfully to SOAP notes.",
+        description:
+          "Examination findings have been saved successfully to SOAP notes.",
         className: "bg-green-50 border-green-200 text-green-800",
       });
-  
+
       // Proceed to SOAP notes if requested
       const params = {
         appointmentId: effectiveAppointmentId,
-        petId: appointment?.pet?.pet_id
+        petId: appointment?.pet?.pet_id,
       };
       navigate(`/soap${buildUrlParams(params)}`);
     } catch (error) {
@@ -442,7 +511,7 @@ const Examination: React.FC = () => {
       });
     }
   };
-  
+
   // Quick save without navigation
   const quickSave = async () => {
     if (!appointment?.id) {
@@ -453,14 +522,14 @@ const Examination: React.FC = () => {
       });
       return;
     }
-    
+
     try {
       // Here you would typically save the data to your backend
       // For demonstration, we'll just simulate a successful save
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       setUnsavedChanges(false);
-      
+
       toast({
         title: "Saved",
         description: "Examination data saved successfully",
@@ -480,7 +549,7 @@ const Examination: React.FC = () => {
   const navigateToPatient = () => {
     const params = {
       appointmentId: effectiveAppointmentId,
-      petId: appointment?.pet?.pet_id
+      petId: appointment?.pet?.pet_id,
     };
     navigate(`/patient${buildUrlParams(params)}`);
   };
@@ -489,7 +558,7 @@ const Examination: React.FC = () => {
   const navigateToLabManagement = () => {
     const params = {
       appointmentId: effectiveAppointmentId,
-      petId: appointment?.pet?.pet_id
+      petId: appointment?.pet?.pet_id,
     };
     navigate(`/lab-management${buildUrlParams(params)}`);
   };
@@ -498,7 +567,7 @@ const Examination: React.FC = () => {
   const navigateToSOAP = () => {
     const params = {
       appointmentId: effectiveAppointmentId,
-      petId: appointment?.pet?.pet_id
+      petId: appointment?.pet?.pet_id,
     };
     navigate(`/soap${buildUrlParams(params)}`);
   };
@@ -507,32 +576,32 @@ const Examination: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ctrl+S for quick save
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         quickSave();
       }
-      
+
       // Alt+1 for Physical tab
-      if (e.altKey && e.key === '1') {
+      if (e.altKey && e.key === "1") {
         e.preventDefault();
-        setActiveTab('physical');
+        setActiveTab("physical");
       }
-      
+
       // Alt+2 for Systems tab
-      if (e.altKey && e.key === '2') {
+      if (e.altKey && e.key === "2") {
         e.preventDefault();
-        setActiveTab('systems');
+        setActiveTab("systems");
       }
-      
+
       // Alt+Enter for Save & Continue
-      if (e.altKey && e.key === 'Enter') {
+      if (e.altKey && e.key === "Enter") {
         e.preventDefault();
         saveExamination();
       }
     };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [quickSave, saveExamination, setActiveTab]);
 
   // Add a function to handle back navigation
@@ -554,9 +623,9 @@ const Examination: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
-      {/* Enhanced header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 md:px-8 md:py-5 flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
         <div className="flex items-center">
           <Button
             variant="ghost"
@@ -567,110 +636,9 @@ const Examination: React.FC = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             <span className="text-sm font-medium">Back to Patient</span>
           </Button>
-          <h1 className="text-white font-semibold text-lg">Clinical Examination</h1>
-          
-          {/* Quick status indicator */}
-          {unsavedChanges && (
-            <Badge className="ml-3 bg-amber-500 text-white text-xs font-medium px-2 py-0.5">
-              Unsaved Changes
-            </Badge>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {/* Keyboard shortcuts help */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/10 rounded-lg h-8 w-8 p-0"
-                  onClick={() => setShowShortcutHelp(true)}
-                >
-                  <Keyboard className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-xs">Keyboard Shortcuts</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          {/* Quick save button */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/10 rounded-lg h-8 w-8 p-0"
-                  onClick={quickSave}
-                >
-                  <Save className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-xs">Quick Save (Ctrl+S)</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          {/* Templates dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-white hover:bg-white/10 rounded-lg px-3 h-8 flex items-center gap-1.5"
-              >
-                <Clipboard className="h-4 w-4" />
-                <span className="text-xs">Templates</span>
-                <ChevronDown className="h-3 w-3 opacity-70" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              {activeTab === "physical" ? (
-                <>
-                  {templates.physical.map(template => (
-                    <DropdownMenuItem 
-                      key={template.id}
-                      onClick={() => applyTemplate('physical', template.id)}
-                      className="text-xs"
-                    >
-                      <MousePointerClick className="h-3.5 w-3.5 mr-2 text-indigo-500" />
-                      {template.name}
-                    </DropdownMenuItem>
-                  ))}
-                  <DialogTrigger asChild>
-                    <DropdownMenuItem className="text-xs text-indigo-600">
-                      <Plus className="h-3.5 w-3.5 mr-2" />
-                      Save Current as Template
-                    </DropdownMenuItem>
-                  </DialogTrigger>
-                </>
-              ) : (
-                <>
-                  {templates.systems.map(template => (
-                    <DropdownMenuItem 
-                      key={template.id}
-                      onClick={() => applyTemplate('systems', template.id)}
-                      className="text-xs"
-                    >
-                      <MousePointerClick className="h-3.5 w-3.5 mr-2 text-indigo-500" />
-                      {template.name}
-                    </DropdownMenuItem>
-                  ))}
-                  <DialogTrigger asChild>
-                    <DropdownMenuItem className="text-xs text-indigo-600">
-                      <Plus className="h-3.5 w-3.5 mr-2" />
-                      Save Current as Template
-                    </DropdownMenuItem>
-                  </DialogTrigger>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <h1 className="text-white font-semibold text-lg">
+            Clinical Examination
+          </h1>
         </div>
       </div>
 
@@ -683,29 +651,34 @@ const Examination: React.FC = () => {
               Create a reusable template from the current examination values.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="p-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Template Name
             </label>
-            <Input 
-              id="templateName" 
+            <Input
+              id="templateName"
               placeholder="e.g., Normal Adult Cat Examination"
-              className="w-full" 
+              className="w-full"
             />
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" size="sm" className="mr-2">
               Cancel
             </Button>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               onClick={() => {
-                const input = document.getElementById('templateName') as HTMLInputElement;
+                const input = document.getElementById(
+                  "templateName"
+                ) as HTMLInputElement;
                 const templateName = input?.value;
                 if (templateName) {
-                  saveAsTemplate(activeTab === 'physical' ? 'physical' : 'systems', templateName);
+                  saveAsTemplate(
+                    activeTab === "physical" ? "physical" : "systems",
+                    templateName
+                  );
                 }
               }}
             >
@@ -724,36 +697,48 @@ const Examination: React.FC = () => {
               Use these shortcuts to work more efficiently
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="p-4 space-y-3">
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="flex items-center">
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">Ctrl+S</kbd>
+                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">
+                  Ctrl+S
+                </kbd>
                 <span>Quick Save</span>
               </div>
               <div className="flex items-center">
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">Alt+1</kbd>
+                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">
+                  Alt+1
+                </kbd>
                 <span>Physical Exam Tab</span>
               </div>
               <div className="flex items-center">
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">Alt+2</kbd>
+                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">
+                  Alt+2
+                </kbd>
                 <span>Systems Exam Tab</span>
               </div>
               <div className="flex items-center">
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">Alt+T</kbd>
+                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">
+                  Alt+T
+                </kbd>
                 <span>Templates Menu</span>
               </div>
               <div className="flex items-center">
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">Alt+Enter</kbd>
+                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">
+                  Alt+Enter
+                </kbd>
                 <span>Save & Continue</span>
               </div>
               <div className="flex items-center">
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">Esc</kbd>
+                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">
+                  Esc
+                </kbd>
                 <span>Close Popup</span>
               </div>
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button onClick={() => setShowShortcutHelp(false)}>Close</Button>
           </DialogFooter>
@@ -768,7 +753,6 @@ const Examination: React.FC = () => {
           currentStep="examination"
         />
       </div>
-   
 
       {/* Main Content */}
       <div className="px-4 py-3">
@@ -806,9 +790,9 @@ const Examination: React.FC = () => {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="bg-indigo-50 border-indigo-100 text-indigo-700 text-xs h-7"
                             onClick={() => {
                               setWeight("");
@@ -824,18 +808,20 @@ const Examination: React.FC = () => {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="text-xs">Clear all physical exam fields</p>
+                          <p className="text-xs">
+                            Clear all physical exam fields
+                          </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    
+
                     {/* Normal ranges reference button */}
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="bg-green-50 border-green-100 text-green-700 text-xs h-7"
                           >
                             <Table className="h-3 w-3 mr-1" />
@@ -844,11 +830,21 @@ const Examination: React.FC = () => {
                         </TooltipTrigger>
                         <TooltipContent className="w-64">
                           <div className="text-xs">
-                            <p className="font-medium mb-1">Normal Reference Ranges:</p>
+                            <p className="font-medium mb-1">
+                              Normal Reference Ranges:
+                            </p>
                             <ul className="space-y-1">
-                              <li>Temperature: 37.5-39.2°C (dog), 38.0-39.2°C (cat)</li>
-                              <li>Heart Rate: 70-120 bpm (dog), 140-220 bpm (cat)</li>
-                              <li>Respiratory Rate: 10-30 rpm (dog), 20-40 rpm (cat)</li>
+                              <li>
+                                Temperature: 37.5-39.2°C (dog), 38.0-39.2°C
+                                (cat)
+                              </li>
+                              <li>
+                                Heart Rate: 70-120 bpm (dog), 140-220 bpm (cat)
+                              </li>
+                              <li>
+                                Respiratory Rate: 10-30 rpm (dog), 20-40 rpm
+                                (cat)
+                              </li>
                             </ul>
                           </div>
                         </TooltipContent>
@@ -856,7 +852,7 @@ const Examination: React.FC = () => {
                     </TooltipProvider>
                   </div>
                 </div>
-                
+
                 {/* Vital Signs */}
                 <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
                   <div className="flex justify-between items-center px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
@@ -937,7 +933,9 @@ const Examination: React.FC = () => {
                           className="bg-white border-gray-200 text-sm h-8 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                         />
                         <div className="flex justify-between mt-1">
-                          <p className="text-xs text-gray-500">Normal: 37.5-39.2°C</p>
+                          <p className="text-xs text-gray-500">
+                            Normal: 37.5-39.2°C
+                          </p>
                           {temperature && parseFloat(temperature) > 39.2 && (
                             <p className="text-xs text-amber-600 flex items-center">
                               <AlertCircle className="h-3 w-3 mr-1" />
@@ -959,7 +957,10 @@ const Examination: React.FC = () => {
                         />
                         <div className="flex justify-between mt-1">
                           <p className="text-xs text-gray-500">
-                            Normal: {patient?.species?.toLowerCase() === 'cat' ? '140-220 bpm' : '70-120 bpm'}
+                            Normal:{" "}
+                            {patient?.species?.toLowerCase() === "cat"
+                              ? "140-220 bpm"
+                              : "70-120 bpm"}
                           </p>
                         </div>
                       </div>
@@ -976,7 +977,10 @@ const Examination: React.FC = () => {
                         />
                         <div className="flex justify-between mt-1">
                           <p className="text-xs text-gray-500">
-                            Normal: {patient?.species?.toLowerCase() === 'cat' ? '20-40 rpm' : '10-30 rpm'}
+                            Normal:{" "}
+                            {patient?.species?.toLowerCase() === "cat"
+                              ? "20-40 rpm"
+                              : "10-30 rpm"}
                           </p>
                         </div>
                       </div>
@@ -994,7 +998,9 @@ const Examination: React.FC = () => {
                               size="sm"
                               className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
                               onClick={() => {
-                                setGeneralNotes("Alert, responsive, and well-hydrated. No signs of distress.");
+                                setGeneralNotes(
+                                  "Alert, responsive, and well-hydrated. No signs of distress."
+                                );
                                 setUnsavedChanges(true);
                               }}
                             >
@@ -1027,9 +1033,9 @@ const Examination: React.FC = () => {
                       </h3>
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
                           >
                             <span>Quick Edit</span>
@@ -1037,12 +1043,14 @@ const Examination: React.FC = () => {
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-md bg-white border-0 shadow-lg">
                           <DialogHeader className="bg-white">
-                            <DialogTitle className="text-gray-900">Update Patient Information</DialogTitle>
+                            <DialogTitle className="text-gray-900">
+                              Update Patient Information
+                            </DialogTitle>
                             <DialogDescription className="text-gray-600">
                               Make quick updates to this patient's details
                             </DialogDescription>
                           </DialogHeader>
-                          
+
                           <QuickPatientEditForm patient={patient} />
                         </DialogContent>
                       </Dialog>
@@ -1051,35 +1059,55 @@ const Examination: React.FC = () => {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
                           <p className="text-xs text-gray-500">Type</p>
-                          <p className="font-medium">{patient.type || "Unknown"}</p>
+                          <p className="font-medium">
+                            {patient.type || "Unknown"}
+                          </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Breed</p>
-                          <p className="font-medium">{patient.breed || "Unknown"}</p>
+                          <p className="font-medium">
+                            {patient.breed || "Unknown"}
+                          </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Age</p>
-                          <p className="font-medium">{patient.age || "Unknown"}</p>
+                          <p className="font-medium">
+                            {patient.age || "Unknown"}
+                          </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Sex</p>
-                          <p className="font-medium">{patient.gender || "Unknown"}</p>
+                          <p className="font-medium">
+                            {patient.gender || "Unknown"}
+                          </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Weight</p>
-                          <p className="font-medium">{patient.weight ? `${patient.weight} kg` : "Unknown"}</p>
+                          <p className="font-medium">
+                            {patient.weight
+                              ? `${patient.weight} kg`
+                              : "Unknown"}
+                          </p>
                         </div>
                       </div>
-                      
+
                       {patient.medical_alerts && (
                         <div className="mt-3 pt-2 border-t border-gray-100">
-                          <p className="text-xs text-gray-500 mb-1">Medical Alerts</p>
+                          <p className="text-xs text-gray-500 mb-1">
+                            Medical Alerts
+                          </p>
                           <div className="flex flex-wrap gap-1">
-                            {patient.medical_alerts.split(',').map((alert: string, idx: number) => (
-                              <Badge key={idx} variant="outline" className="bg-red-50 border-red-200 text-red-700 text-xs">
-                                {alert.trim()}
-                              </Badge>
-                            ))}
+                            {patient.medical_alerts
+                              .split(",")
+                              .map((alert: string, idx: number) => (
+                                <Badge
+                                  key={idx}
+                                  variant="outline"
+                                  className="bg-red-50 border-red-200 text-red-700 text-xs"
+                                >
+                                  {alert.trim()}
+                                </Badge>
+                              ))}
                           </div>
                         </div>
                       )}
@@ -1148,9 +1176,9 @@ const Examination: React.FC = () => {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="bg-indigo-50 border-indigo-100 text-indigo-700 text-xs h-7"
                             onClick={() => {
                               setCardiovascular("");
@@ -1169,22 +1197,36 @@ const Examination: React.FC = () => {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="text-xs">Clear all system exam fields</p>
+                          <p className="text-xs">
+                            Clear all system exam fields
+                          </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="bg-green-50 border-green-100 text-green-700 text-xs h-7"
                       onClick={() => {
-                        setCardiovascular("Normal heart sounds, no murmurs detected.");
-                        setRespiratory("Normal respiratory sounds, no crackles or wheezes.");
-                        setGastrointestinal("Normal abdomen on palpation, no signs of discomfort.");
-                        setMusculoskeletal("Normal gait and posture, no lameness observed.");
-                        setNeurological("Alert and responsive, no neurological deficits noted.");
-                        setSkin("Good coat condition, no lesions or parasites.");
+                        setCardiovascular(
+                          "Normal heart sounds, no murmurs detected."
+                        );
+                        setRespiratory(
+                          "Normal respiratory sounds, no crackles or wheezes."
+                        );
+                        setGastrointestinal(
+                          "Normal abdomen on palpation, no signs of discomfort."
+                        );
+                        setMusculoskeletal(
+                          "Normal gait and posture, no lameness observed."
+                        );
+                        setNeurological(
+                          "Alert and responsive, no neurological deficits noted."
+                        );
+                        setSkin(
+                          "Good coat condition, no lesions or parasites."
+                        );
                         setEyes("Clear, no discharge or abnormalities.");
                         setEars("Clean, no inflammation or discharge.");
                         setUnsavedChanges(true);
@@ -1195,7 +1237,7 @@ const Examination: React.FC = () => {
                     </Button>
                   </div>
                 </div>
-                
+
                 {/* Cardiovascular and Respiratory */}
                 <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
                   <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
@@ -1216,7 +1258,9 @@ const Examination: React.FC = () => {
                             size="sm"
                             className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
                             onClick={() => {
-                              setCardiovascular("Normal heart sounds, no murmurs detected.");
+                              setCardiovascular(
+                                "Normal heart sounds, no murmurs detected."
+                              );
                               setUnsavedChanges(true);
                             }}
                           >
@@ -1241,7 +1285,9 @@ const Examination: React.FC = () => {
                             size="sm"
                             className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
                             onClick={() => {
-                              setRespiratory("Normal respiratory sounds, no crackles or wheezes.");
+                              setRespiratory(
+                                "Normal respiratory sounds, no crackles or wheezes."
+                              );
                               setUnsavedChanges(true);
                             }}
                           >
@@ -1280,7 +1326,9 @@ const Examination: React.FC = () => {
                             size="sm"
                             className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
                             onClick={() => {
-                              setGastrointestinal("Normal abdomen on palpation, no signs of discomfort.");
+                              setGastrointestinal(
+                                "Normal abdomen on palpation, no signs of discomfort."
+                              );
                               setUnsavedChanges(true);
                             }}
                           >
@@ -1305,7 +1353,9 @@ const Examination: React.FC = () => {
                             size="sm"
                             className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
                             onClick={() => {
-                              setMusculoskeletal("Normal gait and posture, no lameness observed.");
+                              setMusculoskeletal(
+                                "Normal gait and posture, no lameness observed."
+                              );
                               setUnsavedChanges(true);
                             }}
                           >
@@ -1344,7 +1394,9 @@ const Examination: React.FC = () => {
                             size="sm"
                             className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
                             onClick={() => {
-                              setNeurological("Alert and responsive, no neurological deficits noted.");
+                              setNeurological(
+                                "Alert and responsive, no neurological deficits noted."
+                              );
                               setUnsavedChanges(true);
                             }}
                           >
@@ -1369,7 +1421,9 @@ const Examination: React.FC = () => {
                             size="sm"
                             className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
                             onClick={() => {
-                              setSkin("Good coat condition, no lesions or parasites.");
+                              setSkin(
+                                "Good coat condition, no lesions or parasites."
+                              );
                               setUnsavedChanges(true);
                             }}
                           >
@@ -1467,42 +1521,60 @@ const Examination: React.FC = () => {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
                           <p className="text-xs text-gray-500">Species</p>
-                          <p className="font-medium">{patient.type || "Unknown"}</p>
+                          <p className="font-medium">
+                            {patient.type || "Unknown"}
+                          </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Breed</p>
-                          <p className="font-medium">{patient.breed || "Unknown"}</p>
+                          <p className="font-medium">
+                            {patient.breed || "Unknown"}
+                          </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Age</p>
-                          <p className="font-medium">{patient.age || "Unknown"}</p>
+                          <p className="font-medium">
+                            {patient.age || "Unknown"}
+                          </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Gender</p>
-                          <p className="font-medium">{patient.gender || "Unknown"}</p>
+                          <p className="font-medium">
+                            {patient.gender || "Unknown"}
+                          </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Weight (kg)</p>
-                          <p className="font-medium">{patient.weight || "Unknown"}</p>
+                          <p className="font-medium">
+                            {patient.weight || "Unknown"}
+                          </p>
                         </div>
                       </div>
-                      
+
                       {patient.medical_alerts && (
                         <div className="mt-3 pt-2 border-t border-gray-100">
-                          <p className="text-xs text-gray-500 mb-1">Medical Alerts</p>
+                          <p className="text-xs text-gray-500 mb-1">
+                            Medical Alerts
+                          </p>
                           <div className="flex flex-wrap gap-1">
-                            {patient.medical_alerts.split(',').map((alert: string, idx: number) => (
-                              <Badge key={idx} variant="outline" className="bg-red-50 border-red-200 text-red-700 text-xs">
-                                {alert.trim()}
-                              </Badge>
-                            ))}
+                            {patient.medical_alerts
+                              .split(",")
+                              .map((alert: string, idx: number) => (
+                                <Badge
+                                  key={idx}
+                                  variant="outline"
+                                  className="bg-red-50 border-red-200 text-red-700 text-xs"
+                                >
+                                  {alert.trim()}
+                                </Badge>
+                              ))}
                           </div>
                         </div>
                       )}
                     </div>
                   </div>
                 )}
-                
+
                 <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
                   <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
                     <h3 className="font-semibold text-gray-800 flex items-center text-sm">
@@ -1554,24 +1626,6 @@ const Examination: React.FC = () => {
         </Tabs>
       </div>
 
-      {/* Footer buttons - Remove complete examination button and keep only back and save */}
-      <div className="flex justify-between items-center mt-6 mb-8 px-4">
-        <Button
-          variant="outline"
-          onClick={navigateBack}
-          className="flex items-center gap-1"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Button>
-        
-        <Button 
-          variant="default"
-          onClick={saveExamination}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1"
-        >
-          <Save className="h-4 w-4" /> Save Examination
-        </Button>
-      </div>
     </div>
   );
 };
@@ -1585,8 +1639,12 @@ const QuickPatientEditForm: React.FC<{ patient: any }> = ({ patient }) => {
   const [weight, setWeight] = useState(patient.weight?.toString() || "");
   const [sex, setSex] = useState(patient.sex || "");
   const [birthDate, setBirthDate] = useState(patient.birth_date || "");
-  const [microchipNumber, setMicrochipNumber] = useState(patient.microchip_number || "");
-  const [medicalAlerts, setMedicalAlerts] = useState(patient.medical_alerts || "");
+  const [microchipNumber, setMicrochipNumber] = useState(
+    patient.microchip_number || ""
+  );
+  const [medicalAlerts, setMedicalAlerts] = useState(
+    patient.medical_alerts || ""
+  );
 
   const updatePetRequest: updatePetRequest = {
     name: name,
@@ -1598,14 +1656,11 @@ const QuickPatientEditForm: React.FC<{ patient: any }> = ({ patient }) => {
     bod: birthDate,
     microchip_number: microchipNumber,
     healthnotes: medicalAlerts || "",
-  }
+  };
 
   console.log(patient);
   // Set up the mutation
-  const updatePatientMutation = useUpdatePet(
-    patient.petid,
-    updatePetRequest
-  );
+  const updatePatientMutation = useUpdatePet(patient.petid, updatePetRequest);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1613,7 +1668,10 @@ const QuickPatientEditForm: React.FC<{ patient: any }> = ({ patient }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 py-4 bg-white text-gray-900">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 py-4 bg-white text-gray-900"
+    >
       <div className="grid grid-cols-1 gap-4 max-h-96 overflow-y-auto pr-2 bg-white">
         <div className="bg-white">
           <label className="text-sm font-medium text-gray-700 mb-1 block">
@@ -1626,7 +1684,7 @@ const QuickPatientEditForm: React.FC<{ patient: any }> = ({ patient }) => {
             className="w-full bg-white border-gray-300"
           />
         </div>
-        
+
         <div className="grid grid-cols-2 gap-3 bg-white">
           <div className="bg-white">
             <label className="text-sm font-medium text-gray-700 mb-1 block">
@@ -1637,15 +1695,25 @@ const QuickPatientEditForm: React.FC<{ patient: any }> = ({ patient }) => {
                 <SelectValue placeholder="Select species" />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                <SelectItem value="Dog" className="text-gray-900">Dog</SelectItem>
-                <SelectItem value="Cat" className="text-gray-900">Cat</SelectItem>
-                <SelectItem value="Bird" className="text-gray-900">Bird</SelectItem>
-                <SelectItem value="Rabbit" className="text-gray-900">Rabbit</SelectItem>
-                <SelectItem value="Other" className="text-gray-900">Other</SelectItem>
+                <SelectItem value="Dog" className="text-gray-900">
+                  Dog
+                </SelectItem>
+                <SelectItem value="Cat" className="text-gray-900">
+                  Cat
+                </SelectItem>
+                <SelectItem value="Bird" className="text-gray-900">
+                  Bird
+                </SelectItem>
+                <SelectItem value="Rabbit" className="text-gray-900">
+                  Rabbit
+                </SelectItem>
+                <SelectItem value="Other" className="text-gray-900">
+                  Other
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="bg-white">
             <label className="text-sm font-medium text-gray-700 mb-1 block">
               Breed
@@ -1658,7 +1726,7 @@ const QuickPatientEditForm: React.FC<{ patient: any }> = ({ patient }) => {
             />
           </div>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-3 bg-white">
           <div className="bg-white">
             <label className="text-sm font-medium text-gray-700 mb-1 block">
@@ -1672,7 +1740,7 @@ const QuickPatientEditForm: React.FC<{ patient: any }> = ({ patient }) => {
               className="w-full bg-white border-gray-300"
             />
           </div>
-          
+
           <div className="bg-white">
             <label className="text-sm font-medium text-gray-700 mb-1 block">
               Weight (kg)
@@ -1686,7 +1754,7 @@ const QuickPatientEditForm: React.FC<{ patient: any }> = ({ patient }) => {
             />
           </div>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-3 bg-white">
           <div className="bg-white">
             <label className="text-sm font-medium text-gray-700 mb-1 block">
@@ -1697,14 +1765,22 @@ const QuickPatientEditForm: React.FC<{ patient: any }> = ({ patient }) => {
                 <SelectValue placeholder="Select sex" />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                <SelectItem value="Male" className="text-gray-900">Male</SelectItem>
-                <SelectItem value="Female" className="text-gray-900">Female</SelectItem>
-                <SelectItem value="Male (neutered)" className="text-gray-900">Male (neutered)</SelectItem>
-                <SelectItem value="Female (spayed)" className="text-gray-900">Female (spayed)</SelectItem>
+                <SelectItem value="Male" className="text-gray-900">
+                  Male
+                </SelectItem>
+                <SelectItem value="Female" className="text-gray-900">
+                  Female
+                </SelectItem>
+                <SelectItem value="Male (neutered)" className="text-gray-900">
+                  Male (neutered)
+                </SelectItem>
+                <SelectItem value="Female (spayed)" className="text-gray-900">
+                  Female (spayed)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="bg-white">
             <label className="text-sm font-medium text-gray-700 mb-1 block">
               Birth Date
@@ -1717,7 +1793,7 @@ const QuickPatientEditForm: React.FC<{ patient: any }> = ({ patient }) => {
             />
           </div>
         </div>
-        
+
         <div className="bg-white">
           <label className="text-sm font-medium text-gray-700 mb-1 block">
             Microchip Number
@@ -1729,7 +1805,7 @@ const QuickPatientEditForm: React.FC<{ patient: any }> = ({ patient }) => {
             className="w-full bg-white border-gray-300"
           />
         </div>
-        
+
         <div className="bg-white">
           <label className="text-sm font-medium text-gray-700 mb-1 block">
             Health Notes
@@ -1743,10 +1819,10 @@ const QuickPatientEditForm: React.FC<{ patient: any }> = ({ patient }) => {
           />
         </div>
       </div>
-      
+
       <DialogFooter className="bg-white border-t border-gray-100 pt-4">
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           disabled={updatePatientMutation.isPending}
           className="bg-indigo-600 hover:bg-indigo-700 text-white"
         >

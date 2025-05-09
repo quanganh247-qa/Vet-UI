@@ -593,9 +593,10 @@ const LabManagement: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-      {/* Simple Header */}
-      <div className="bg-indigo-600 px-6 py-4 flex items-center justify-between">
+    <div className="space-y-6">
+    {/* Header with gradient background */}
+    <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
+
         <div className="flex items-center">
           <Button
             variant="ghost"

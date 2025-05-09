@@ -207,15 +207,12 @@ const ServicesManagement: React.FC = () => {
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-2xl font-bold text-white">Services Management</h1>
-                        <p className="text-indigo-100 text-sm">
-                            Manage your clinic's services and procedures
-                        </p>
+                
                     </div>
                 </div>
             </div>
 
-            <div className="container mx-auto">
-                <div className="bg-white rounded-lg border border-indigo-100 shadow-sm p-6 mb-6">
+            <div className="bg-white shadow-sm rounded-lg border border-indigo-100 p-5 mb-6">
                     {/* Search and add section */}
                     <div className="flex justify-between items-center mb-6 bg-indigo-50 p-3 rounded-md border border-indigo-100">
                         <div className="relative w-64">
@@ -467,7 +464,6 @@ const ServicesManagement: React.FC = () => {
                     </AlertDialogContent>
                 </AlertDialog>
             </div>
-        </div>
     );
 };
 

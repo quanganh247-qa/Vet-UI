@@ -124,23 +124,7 @@ const AllStockMovements: React.FC = () => {
 
   return (
     <div className="p-6">
-      {/* Title and Export Button */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-indigo-900 flex items-center">
-          <Package className="h-5 w-5 mr-2 text-indigo-600" />
-          Stock Movements
-        </h2>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExport}
-          className="h-9 border-indigo-200 text-indigo-600 hover:bg-indigo-50"
-        >
-          <FileDownIcon className="h-4 w-4 mr-2" />
-          Export
-        </Button>
-      </div>
-      
+
       {/* Search and filters section */}
       <div className="flex flex-wrap gap-3 mb-6 bg-indigo-50 p-3 rounded-md border border-indigo-100">
         <div className="relative w-64">
