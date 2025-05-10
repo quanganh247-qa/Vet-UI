@@ -19,6 +19,13 @@ export const useDoctorProfile = (id?: number) => {
 };
 
 
+export const useGetDoctorById = (id?: number) => {
+    return useQuery({
+        queryKey: ['doctor-profile', id],
+        queryFn: () => getDoctorById(id || 0),
+    });
+};
+
 
 export const useEditDoctorProfile = () => {
     return useMutation({

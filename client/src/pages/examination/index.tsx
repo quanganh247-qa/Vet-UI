@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { useUpdateSOAP } from "@/hooks/use-soap";
+import { useGetSOAP, useUpdateSOAP } from "@/hooks/use-soap";
 import { ObjectiveData } from "@/types";
 import {
   Tooltip,
@@ -170,6 +170,9 @@ const Examination: React.FC = () => {
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [showShortcutHelp, setShowShortcutHelp] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const { data: soap, isLoading: isSoapLoading } = useGetSOAP(
+    effectiveAppointmentId
+  );
 
   // Template management with proper types
   const [templates, setTemplates] = useState<{
@@ -230,9 +233,6 @@ const Examination: React.FC = () => {
   const [temperature, setTemperature] = useState("");
   const [heartRate, setHeartRate] = useState("");
   const [respiratoryRate, setRespiratoryRate] = useState("");
-  const [mucousMembranes, setMucousMembranes] = useState("");
-  const [hydration, setHydration] = useState("");
-  const [lymphNodes, setLymphNodes] = useState("");
   const [generalNotes, setGeneralNotes] = useState("");
 
   // System examination findings
@@ -245,25 +245,6 @@ const Examination: React.FC = () => {
   const [eyes, setEyes] = useState("");
   const [ears, setEars] = useState("");
 
-  // Auto-save functionality
-  useEffect(() => {
-    if (!autoSaveEnabled) return;
-
-    const autoSaveTimer = setTimeout(() => {
-      if (unsavedChanges) {
-        console.log("Auto-saving examination data...");
-        // Here you would call a function to save the data
-        setUnsavedChanges(false);
-        toast({
-          title: "Auto-saved",
-          description: "Examination data auto-saved",
-          className: "bg-blue-50 border-blue-200 text-blue-800",
-        });
-      }
-    }, 30000); // Auto-save after 30 seconds of inactivity
-
-    return () => clearTimeout(autoSaveTimer);
-  }, [unsavedChanges, autoSaveEnabled, toast]);
 
   // Function to apply a template with fixed types
   const applyTemplate = (
@@ -368,75 +349,7 @@ const Examination: React.FC = () => {
   // Inside the component, add the SOAP update mutation
   const updateSoapMutation = useUpdateSOAP();
 
-  const transferToSOAP = async () => {
-    if (!appointment?.id) {
-      toast({
-        title: "Error",
-        description: "Appointment not found",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    // Show saving indicator
-    toast({
-      title: "Transferring Data",
-      description: "Saving examination data to SOAP...",
-      className: "bg-blue-50 border-blue-200 text-blue-800",
-    });
-
-    const objectiveData: ObjectiveData = {
-      vital_signs: {
-        weight: weight || "",
-        temperature: temperature || "",
-        heart_rate: heartRate || "",
-        respiratory_rate: respiratoryRate || "",
-        general_notes: generalNotes || "",
-      },
-      systems: {
-        cardiovascular: cardiovascular || "",
-        respiratory: respiratory || "",
-        gastrointestinal: gastrointestinal || "",
-        musculoskeletal: musculoskeletal || "",
-        neurological: neurological || "",
-        skin: skin || "",
-        eyes: eyes || "",
-        ears: ears || "",
-      },
-    };
-
-    try {
-      await updateSoapMutation.mutateAsync({
-        appointmentID: appointment.id,
-        subjective: "",
-        objective: objectiveData,
-        assessment: "",
-        plan: 0, // changed from "" to 0
-      });
-
-      setUnsavedChanges(false);
-
-      toast({
-        title: "Examination Saved",
-        description: "Examination findings saved and transferred to SOAP.",
-        className: "bg-green-50 border-green-200 text-green-800",
-      });
-
-      // Proceed to SOAP notes
-      const params = {
-        appointmentId: effectiveAppointmentId,
-        petId: appointment?.pet?.pet_id,
-      };
-      navigate(`/soap${buildUrlParams(params)}`);
-    } catch (error) {
-      console.error("Error saving examination:", error);
-      toast({
-        title: "Save Failed",
-        description: "An error occurred while saving examination data.",
-        variant: "destructive",
-      });
-    }
-  };
 
   // Save examination findings with enhanced feedback and SOAP transfer
   const saveExamination = async () => {
@@ -478,13 +391,20 @@ const Examination: React.FC = () => {
         },
       };
 
+      // Create a properly structured assessment object
+      const assessmentData = {
+        primary: soap?.assessment || "",
+        differentials: [],
+        notes: ""
+      };
+
       // Save to SOAP notes
       await updateSoapMutation.mutateAsync({
         appointmentID: effectiveAppointmentId,
-        subjective: "", // This would be filled in the SOAP screen
+        subjective: soap?.subjective || "", // This would be filled in the SOAP screen
         objective: objectiveData,
-        assessment: "", // This would be filled in the SOAP screen
-        plan: 0, // changed from "" to 0
+        assessment: assessmentData, // Now sending properly structured assessment data
+        plan: soap?.plan || "", // changed from "" to 0
       });
 
       setUnsavedChanges(false);
@@ -524,8 +444,6 @@ const Examination: React.FC = () => {
     }
 
     try {
-      // Here you would typically save the data to your backend
-      // For demonstration, we'll just simulate a successful save
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       setUnsavedChanges(false);

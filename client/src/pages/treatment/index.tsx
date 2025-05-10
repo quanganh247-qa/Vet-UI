@@ -252,7 +252,6 @@ const TreatmentManagement: React.FC = () => {
     return queryString ? `?${queryString}` : "";
   };
 
- 
   // Handle sharing the invoice
   const handleShareInvoice = () => {
     // In a real implementation, you would open a share dialog
@@ -640,7 +639,6 @@ const TreatmentManagement: React.FC = () => {
     usage?: string;
   }>({});
 
-
   const [isMedicineAssignmentSuccess, setIsMedicineAssignmentSuccess] =
     useState(false);
   const [assignedMedicinesForHistory, setAssignedMedicinesForHistory] =
@@ -698,11 +696,11 @@ const TreatmentManagement: React.FC = () => {
     if (!alreadySelected) {
       // Initialize with quantity = 1 when adding a medicine
       setSelectedMedicines([
-        ...selectedMedicines, 
+        ...selectedMedicines,
         {
-          ...medicine, 
-          quantity: "1" // Always initialize as a string "1" for consistency with form input
-        }
+          ...medicine,
+          quantity: "1", // Always initialize as a string "1" for consistency with form input
+        },
       ]);
       setMedicineSearchTerm("");
     }
@@ -804,7 +802,7 @@ const TreatmentManagement: React.FC = () => {
         medicine_id: medicine.id,
         dosage: medicine.dosage,
         appointment_id: parseInt(appointmentId || "0", 10),
-        quantity: parseInt(medicine.quantity || "1", 10),  // Convert to number
+        quantity: parseInt(medicine.quantity || "1", 10), // Convert to number
         frequency: medicine.frequency,
         notes: medicine.notes || "",
         duration: medicine.duration || "",
@@ -832,7 +830,7 @@ const TreatmentManagement: React.FC = () => {
 
       // Close medicine modal
       setIsMedicineModalOpen(false);
-      
+
       // Toggle phase view to refresh display
       if (selectedPhaseId) {
         setExpandedPhases((prev) => ({
@@ -853,7 +851,7 @@ const TreatmentManagement: React.FC = () => {
   // Handle completing a treatment and exporting as invoice
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
-  
+
   // Handle initiating the complete treatment process
   const handleInitiateCompletion = () => {
     if (!appointmentId) {
@@ -864,13 +862,12 @@ const TreatmentManagement: React.FC = () => {
       });
       return;
     }
-    
+
     setShowCompletionDialog(true);
   };
-  
+
   // Handle completing a treatment and exporting as invoice
   const handleCompleteTreatment = async () => {
-
     setIsCompleting(true);
     setShowCompletionDialog(false);
 
@@ -884,12 +881,15 @@ const TreatmentManagement: React.FC = () => {
       if (appointmentId) {
         await updateAppointmentById(parseInt(appointmentId), {
           state_id: 6, // Completed status
-          notes: `Treatment and examination completed by ${appointmentData?.doctor?.doctor_name || 'doctor'} on ${new Date().toLocaleString()}`
+          notes: `Treatment and examination completed by ${
+            appointmentData?.doctor?.doctor_name || "doctor"
+          } on ${new Date().toLocaleString()}`,
         });
 
         toast({
           title: "Examination Completed",
-          description: "The appointment has been marked as completed successfully",
+          description:
+            "The appointment has been marked as completed successfully",
           className: "bg-green-50 border-green-200 text-green-800",
           duration: 5000,
         });
@@ -900,7 +900,8 @@ const TreatmentManagement: React.FC = () => {
       // Show a final success message
       toast({
         title: "Process Completed",
-        description: "Treatment completed and appointment status updated successfully.",
+        description:
+          "Treatment completed and appointment status updated successfully.",
         className: "bg-green-50 border-green-200 text-green-800",
         duration: 5000,
       });
@@ -928,9 +929,10 @@ const TreatmentManagement: React.FC = () => {
   // Add these new state declarations and hooks
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("");
-  const [isUpdatingTreatmentStatus, setIsUpdatingTreatmentStatus] = useState(false);
+  const [isUpdatingTreatmentStatus, setIsUpdatingTreatmentStatus] =
+    useState(false);
   const [isUpdatingPhaseStatus, setIsUpdatingPhaseStatus] = useState(false);
-  
+
   // Add the hooks for updating status
   const updateTreatmentStatusMutation = useUpdateTreatmentStatus();
   const updateTreatmentPhaseStatusMutation = useUpdateTreatmentPhaseStatus();
@@ -975,7 +977,10 @@ const TreatmentManagement: React.FC = () => {
   };
 
   // Add this handler for updating phase status
-  const handleUpdatePhaseStatus = async (phaseId: number, newStatus: string) => {
+  const handleUpdatePhaseStatus = async (
+    phaseId: number,
+    newStatus: string
+  ) => {
     if (!selectedTreatment?.id) {
       toast({
         title: "Error",
@@ -1015,8 +1020,10 @@ const TreatmentManagement: React.FC = () => {
   };
 
   // Thêm state cho medication prescription dialog
-  const [isPrescriptionDialogOpen, setIsPrescriptionDialogOpen] = useState(false);
-  const [currentTreatmentForPrescription, setCurrentTreatmentForPrescription] = useState<Treatment | null>(null);
+  const [isPrescriptionDialogOpen, setIsPrescriptionDialogOpen] =
+    useState(false);
+  const [currentTreatmentForPrescription, setCurrentTreatmentForPrescription] =
+    useState<Treatment | null>(null);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
 
   // Thêm lại hàm generatePDF
@@ -1092,7 +1099,10 @@ const TreatmentManagement: React.FC = () => {
         const outputFileName =
           fileName ||
           (currentTreatmentForPrescription
-            ? `Prescription_${currentTreatmentForPrescription.id}_${format(new Date(), "yyyy-MM-dd")}.pdf`
+            ? `Prescription_${currentTreatmentForPrescription.id}_${format(
+                new Date(),
+                "yyyy-MM-dd"
+              )}.pdf`
             : "Prescription.pdf");
 
         // Save the PDF
@@ -1133,7 +1143,7 @@ const TreatmentManagement: React.FC = () => {
       });
       return;
     }
-    
+
     // Đảm bảo rằng phases đã được tải
     if (!phases || phases.length === 0) {
       toast({
@@ -1142,15 +1152,15 @@ const TreatmentManagement: React.FC = () => {
         className: "bg-yellow-50 border-yellow-200 text-yellow-800",
       });
     }
-    
+
     setCurrentTreatmentForPrescription(treatment);
-    
+
     // Set selected treatment và load phase data nếu cần
     if (selectedTreatmentId !== treatment.id) {
       setSelectedTreatmentId(treatment.id);
       refetchPhases(); // Đảm bảo có dữ liệu phases mới nhất
     }
-    
+
     setIsPrescriptionDialogOpen(true);
   };
 
@@ -1162,33 +1172,34 @@ const TreatmentManagement: React.FC = () => {
   // Cập nhật hàm xử lý tải xuống đơn thuốc dưới dạng PDF
   const handleDownloadPrescription = () => {
     // Tạo tên file bao gồm ID treatment và ngày hiện tại
-    const fileName = currentTreatmentForPrescription 
-      ? `Prescription_${currentTreatmentForPrescription.id}_${format(new Date(), "yyyy-MM-dd")}.pdf`
+    const fileName = currentTreatmentForPrescription
+      ? `Prescription_${currentTreatmentForPrescription.id}_${format(
+          new Date(),
+          "yyyy-MM-dd"
+        )}.pdf`
       : `Prescription_${format(new Date(), "yyyy-MM-dd")}.pdf`;
-    
+
     generatePDF("prescription-pdf-content", "download", fileName);
   };
 
   return (
-
     <div className="space-y-6">
-    {/* Header with gradient background */}
-    <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
-
-      {/* Header */}
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
+        {/* Header */}
         <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
-              onClick={() => window.history.back()}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              <span className="text-sm font-medium">Back to Patient</span>
-            </Button>
-            <h1 className="text-white font-semibold text-lg">
-              Treatment Management
-            </h1>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
+            onClick={() => window.history.back()}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            <span className="text-sm font-medium">Back to Patient</span>
+          </Button>
+          <h1 className="text-white font-semibold text-lg">
+            Treatment Management
+          </h1>
         </div>
 
         <div className="flex items-center gap-3">
@@ -1226,7 +1237,7 @@ const TreatmentManagement: React.FC = () => {
           </Button>
         </div>
       </div>
-      
+
       {/* Workflow Navigation */}
       <div className="mb-4 pt-3">
         <WorkflowNavigation
@@ -1254,7 +1265,9 @@ const TreatmentManagement: React.FC = () => {
                 <div className="col-span-2 py-8 flex justify-center">
                   <div className="flex flex-col items-center space-y-4">
                     <div className="w-12 h-12 border-4 border-t-indigo-600 border-b-indigo-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
-                    <p className="text-indigo-600 font-medium">Loading treatments...</p>
+                    <p className="text-indigo-600 font-medium">
+                      Loading treatments...
+                    </p>
                   </div>
                 </div>
               ) : treatments && treatments.length > 0 ? (
@@ -1316,7 +1329,10 @@ const TreatmentManagement: React.FC = () => {
                       <div className="mt-4 pt-4 border-t border-gray-100">
                         <div className="flex items-center text-sm text-indigo-600">
                           <Clipboard className="h-4 w-4 mr-1.5" />
-                          {treatment.phases ? treatment.phases.length : "0"} Phase(s)
+                          {treatment.phases
+                            ? treatment.phases.length
+                            : "0"}{" "}
+                          Phase(s)
                         </div>
                       </div>
                     </div>
@@ -1325,9 +1341,17 @@ const TreatmentManagement: React.FC = () => {
               ) : (
                 <div className="col-span-2 text-center p-10 border border-dashed border-gray-300 rounded-xl bg-gray-50">
                   <Clipboard className="h-10 w-10 mx-auto text-gray-400 mb-3" />
-                  <h3 className="font-medium text-gray-700 mb-1">No treatments found</h3>
-                  <p className="text-gray-500 mb-4">There are no active treatments for this patient</p>
-                  <Button onClick={() => setActiveView("new")} variant="outline" className="bg-white">
+                  <h3 className="font-medium text-gray-700 mb-1">
+                    No treatments found
+                  </h3>
+                  <p className="text-gray-500 mb-4">
+                    There are no active treatments for this patient
+                  </p>
+                  <Button
+                    onClick={() => setActiveView("new")}
+                    variant="outline"
+                    className="bg-white"
+                  >
                     <PlusCircle className="h-4 w-4 mr-2" />
                     Create New Treatment
                   </Button>
@@ -1364,15 +1388,17 @@ const TreatmentManagement: React.FC = () => {
                     onValueChange={handleUpdateTreatmentStatus}
                     disabled={isUpdatingTreatmentStatus}
                   >
-                    <SelectTrigger className={`h-9 w-40 ${
-                      selectedTreatment.status === "Completed"
-                        ? "bg-green-100 text-green-800 border-green-200"
-                        : selectedTreatment.status === "In Progress"
-                        ? "bg-blue-100 text-blue-800 border-blue-200"
-                        : selectedTreatment.status === "Not Started"
-                        ? "bg-gray-100 text-gray-800 border-gray-200"
-                        : "bg-indigo-100 text-indigo-800 border-indigo-200"
-                    }`}>
+                    <SelectTrigger
+                      className={`h-9 w-40 ${
+                        selectedTreatment.status === "Completed"
+                          ? "bg-green-100 text-green-800 border-green-200"
+                          : selectedTreatment.status === "In Progress"
+                          ? "bg-blue-100 text-blue-800 border-blue-200"
+                          : selectedTreatment.status === "Not Started"
+                          ? "bg-gray-100 text-gray-800 border-gray-200"
+                          : "bg-indigo-100 text-indigo-800 border-indigo-200"
+                      }`}
+                    >
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1384,8 +1410,10 @@ const TreatmentManagement: React.FC = () => {
                   </Select>
                   <div className="flex space-x-2">
                     <Button
-                      onClick={() => handleGeneratePrescription(selectedTreatment)}
-                      variant="outline" 
+                      onClick={() =>
+                        handleGeneratePrescription(selectedTreatment)
+                      }
+                      variant="outline"
                       size="sm"
                       className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white"
                     >
@@ -1397,50 +1425,6 @@ const TreatmentManagement: React.FC = () => {
               </div>
 
               <div className="p-5">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                    <div className="text-xs text-gray-500 uppercase font-medium">
-                      Type
-                    </div>
-                    <div className="font-medium text-gray-800 mt-1">
-                      {selectedTreatment.type}
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                    <div className="text-xs text-gray-500 uppercase font-medium">
-                      Primary Veterinarian
-                    </div>
-                    <div className="font-medium text-gray-800 mt-1">
-                      {selectedTreatment.doctor_name}
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                    <div className="text-xs text-gray-500 uppercase font-medium">
-                      Status
-                    </div>
-                    <div className="font-medium text-gray-800 mt-1 flex items-center">
-                      {selectedTreatment.status === "Completed" && (
-                        <CheckCircle
-                          size={14}
-                          className="mr-1.5 text-green-600"
-                        />
-                      )}
-                      {selectedTreatment.status === "In Progress" && (
-                        <Activity size={14} className="mr-1.5 text-blue-600" />
-                      )}
-                      {selectedTreatment.status === "Not Started" && (
-                        <Clock size={14} className="mr-1.5 text-gray-600" />
-                      )}
-                      {selectedTreatment.status === "Ongoing" && (
-                        <Zap size={14} className="mr-1.5 text-indigo-600" />
-                      )}
-                      {selectedTreatment.status}
-                    </div>
-                  </div>
-                </div>
-
                 <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <div className="text-xs text-gray-500 uppercase font-medium">
                     Description
@@ -1453,49 +1437,56 @@ const TreatmentManagement: React.FC = () => {
                 {/* SOAP Notes Section */}
                 {soapData && (
                   <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                    <div className="text-xs text-gray-500 uppercase font-medium mb-2">
-                      SOAP Notes
-                    </div>
+                     {/* Primary Diagnosis */}
+                     <div className="bg-indigo-50 p-2 rounded-md border border-indigo-100">
+                          <h5 className="text-xs font-medium text-indigo-700 mb-1 flex items-center">
+                            <CheckCircle className="h-3.5 w-3.5 mr-1 text-indigo-600" />
+                            Primary Diagnosis
+                          </h5>
+                          <p className="text-gray-800 text-sm pl-5 font-medium">
+                            {soapData.assessment.primary}
+                          </p>
+                        </div>
 
-                    {soapData.subjective && (
-                      <div className="mb-3">
-                        <h4 className="text-xs font-medium text-gray-700">
-                          Subjective
-                        </h4>
-                        <ReadonlyMarkdownView
-                          content={soapData.subjective}
-                          className="text-sm text-gray-700 mt-1"
-                        />
-                      </div>
-                    )}
+                        {/* Differential Diagnoses */}
+                        {soapData.assessment.differentials &&
+                          Array.isArray(soapData.assessment.differentials) &&
+                          soapData.assessment.differentials.length > 0 && (
+                            <div className="bg-blue-50 p-2 rounded-md border border-blue-100">
+                              <h5 className="text-xs font-medium text-blue-700 mb-1 flex items-center">
+                                <List className="h-3.5 w-3.5 mr-1 text-blue-600" />
+                                Differential Diagnoses
+                              </h5>
+                              <ul className="space-y-1 pl-5">
+                                {soapData.assessment.differentials.map(
+                                  (diff: string, index: number) => (
+                                    <li
+                                      key={index}
+                                      className="text-sm text-gray-800 flex items-start"
+                                    >
+                                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 mr-2 mt-1.5"></span>
+                                      <span>{diff}</span>
+                                    </li>
+                                  )
+                                )}
+                              </ul>
+                            </div>
+                          )}
 
-                    {soapData.assessment && (
-                      <div className="mb-3">
-                        <h4 className="text-xs font-medium text-gray-700">
-                          Assessment
-                        </h4>
-                        <ReadonlyMarkdownView
-                          content={soapData.assessment}
-                          className="text-sm text-gray-700 mt-1"
-                        />
-                      </div>
-                    )}
-
-                    {soapData.plan && (
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-700">
-                          Plan
-                        </h4>
-                        <ReadonlyMarkdownView
-                          content={soapData.plan}
-                          className="text-sm text-gray-700 mt-1"
-                        />
-                      </div>
-                    )}
+                        {/* Notes */}
+                        {soapData.assessment.notes && (
+                          <div className="bg-amber-50 p-2 rounded-md border border-amber-100">
+                            <h5 className="text-xs font-medium text-amber-700 mb-1 flex items-center">
+                              <FileText className="h-3.5 w-3.5 mr-1 text-amber-600" />
+                              Clinical Notes
+                            </h5>
+                            <p className="text-gray-800 text-sm pl-5">
+                              {soapData.assessment.notes}
+                            </p>
+                          </div>
+                        )}
                   </div>
                 )}
-
-
               </div>
             </div>
 
@@ -1540,7 +1531,10 @@ const TreatmentManagement: React.FC = () => {
                             : "bg-gradient-to-r from-gray-50 to-white"
                         }`}
                       >
-                        <div className="flex items-center cursor-pointer" onClick={() => togglePhaseExpansion(phase.id)}>
+                        <div
+                          className="flex items-center cursor-pointer"
+                          onClick={() => togglePhaseExpansion(phase.id)}
+                        >
                           <div
                             className={`p-1.5 rounded-lg mr-3 ${
                               phase.status === "Completed"
@@ -1580,22 +1574,32 @@ const TreatmentManagement: React.FC = () => {
                           {/* Phase status dropdown */}
                           <Select
                             defaultValue={phase.status}
-                            onValueChange={(value) => handleUpdatePhaseStatus(phase.id, value)}
+                            onValueChange={(value) =>
+                              handleUpdatePhaseStatus(phase.id, value)
+                            }
                             disabled={isUpdatingPhaseStatus}
                           >
-                            <SelectTrigger className={`h-9 w-36 ${
-                              phase.status === "Completed"
-                                ? "bg-green-100 text-green-800 border-green-200"
-                                : phase.status === "In Progress"
-                                ? "bg-blue-100 text-blue-800 border-blue-200"
-                                : "bg-gray-100 text-gray-800 border-gray-200"
-                            }`}>
+                            <SelectTrigger
+                              className={`h-9 w-36 ${
+                                phase.status === "Completed"
+                                  ? "bg-green-100 text-green-800 border-green-200"
+                                  : phase.status === "In Progress"
+                                  ? "bg-blue-100 text-blue-800 border-blue-200"
+                                  : "bg-gray-100 text-gray-800 border-gray-200"
+                              }`}
+                            >
                               <SelectValue placeholder="Status" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Not Started">Not Started</SelectItem>
-                              <SelectItem value="In Progress">In Progress</SelectItem>
-                              <SelectItem value="Completed">Completed</SelectItem>
+                              <SelectItem value="Not Started">
+                                Not Started
+                              </SelectItem>
+                              <SelectItem value="In Progress">
+                                In Progress
+                              </SelectItem>
+                              <SelectItem value="Completed">
+                                Completed
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <ChevronDown
@@ -1645,39 +1649,41 @@ const TreatmentManagement: React.FC = () => {
                                               {med.medicine_name}
                                             </div>
                                             <div className="mt-2 text-sm text-gray-600 flex flex-wrap gap-3">
-                                            <div className="flex items-center gap-1">
-                                              <Clock
-                                                size={12}
-                                                className="text-gray-400"
-                                              />
-                                              <span>{med.frequency}</span>
-                                            </div>
-                                            {med.duration && (
                                               <div className="flex items-center gap-1">
-                                                <Calendar
+                                                <Clock
                                                   size={12}
                                                   className="text-gray-400"
                                                 />
-                                                <span>{med.duration}</span>
+                                                <span>{med.frequency}</span>
                                               </div>
-                                            )}
-                                            <div className="flex items-center gap-1">
-                                              <Layers
-                                                size={12}
-                                                className="text-gray-400"
-                                              />
-                                              <span>Qty: {med.quantity || 1}</span>
-                                            </div>
-                                            {med.notes && (
+                                              {med.duration && (
+                                                <div className="flex items-center gap-1">
+                                                  <Calendar
+                                                    size={12}
+                                                    className="text-gray-400"
+                                                  />
+                                                  <span>{med.duration}</span>
+                                                </div>
+                                              )}
                                               <div className="flex items-center gap-1">
-                                                <FileText
+                                                <Layers
                                                   size={12}
                                                   className="text-gray-400"
                                                 />
-                                                <span>{med.notes}</span>
+                                                <span>
+                                                  Qty: {med.quantity || 1}
+                                                </span>
                                               </div>
-                                            )}
-                                          </div>
+                                              {med.notes && (
+                                                <div className="flex items-center gap-1">
+                                                  <FileText
+                                                    size={12}
+                                                    className="text-gray-400"
+                                                  />
+                                                  <span>{med.notes}</span>
+                                                </div>
+                                              )}
+                                            </div>
                                             <Badge
                                               variant="outline"
                                               className="bg-white border-indigo-200 text-indigo-800"
@@ -1685,7 +1691,6 @@ const TreatmentManagement: React.FC = () => {
                                               {med.dosage}
                                             </Badge>
                                           </div>
-                                          
                                         </div>
                                       )
                                     )}
@@ -2262,7 +2267,9 @@ const TreatmentManagement: React.FC = () => {
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center p-4">
                       <Clipboard className="h-8 w-8 text-gray-400 mb-2" />
-                      <p className="text-gray-500 text-sm">No phases added yet</p>
+                      <p className="text-gray-500 text-sm">
+                        No phases added yet
+                      </p>
                     </div>
                   )}
                 </ScrollArea>
@@ -2535,7 +2542,8 @@ const TreatmentManagement: React.FC = () => {
                                   htmlFor={`quantity-${medicine.id}`}
                                   className="text-xs text-gray-700"
                                 >
-                                  Quantity <span className="text-red-500">*</span>
+                                  Quantity{" "}
+                                  <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                   id={`quantity-${medicine.id}`}
@@ -2702,11 +2710,11 @@ const TreatmentManagement: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-
-
-
       {/* Treatment Completion Confirmation Dialog */}
-      <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+      <Dialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl flex items-center gap-2 text-green-700">
@@ -2714,24 +2722,28 @@ const TreatmentManagement: React.FC = () => {
               Complete Treatment
             </DialogTitle>
             <DialogDescription className="mt-2">
-              This action will mark the treatment as completed and update the appointment status 
-              to "Completed". This is the final step in the patient's current examination process.
+              This action will mark the treatment as completed and update the
+              appointment status to "Completed". This is the final step in the
+              patient's current examination process.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="my-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
             <div className="flex items-start gap-2">
               <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-amber-800">Important Information</p>
+                <p className="text-sm font-medium text-amber-800">
+                  Important Information
+                </p>
                 <p className="text-xs text-amber-700 mt-1">
-                  Once completed, the appointment status will be updated, and the patient's medical records will be finalized.
-                  This action cannot be undone.
+                  Once completed, the appointment status will be updated, and
+                  the patient's medical records will be finalized. This action
+                  cannot be undone.
                 </p>
               </div>
             </div>
           </div>
-          
+
           <DialogFooter className="sm:justify-end">
             <Button
               type="button"
@@ -2763,7 +2775,10 @@ const TreatmentManagement: React.FC = () => {
       </Dialog>
 
       {/* Thêm dialog hiển thị đơn thuốc để xuất PDF */}
-      <Dialog open={isPrescriptionDialogOpen} onOpenChange={setIsPrescriptionDialogOpen}>
+      <Dialog
+        open={isPrescriptionDialogOpen}
+        onOpenChange={setIsPrescriptionDialogOpen}
+      >
         <DialogContent className="sm:max-w-[850px] max-h-[95vh] overflow-y-auto">
           <DialogHeader className="border-b pb-4">
             <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center">
@@ -2771,12 +2786,13 @@ const TreatmentManagement: React.FC = () => {
               Prescription
             </DialogTitle>
             <DialogDescription className="text-gray-600">
-              Preview, print, or download the prescription as PDF. Select specific phases to include medications.
+              Preview, print, or download the prescription as PDF. Select
+              specific phases to include medications.
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
-            <PrescriptionPDF 
+            <PrescriptionPDF
               treatment={currentTreatmentForPrescription}
               phases={phases || []}
               patientData={patientData}

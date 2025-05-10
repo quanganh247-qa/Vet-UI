@@ -25,273 +25,365 @@ import {
   ListOrdered,
   Edit,
   Eye,
+  X
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { useGetSOAP, useUpdateSOAP } from "@/hooks/use-soap";
 import { useAppointmentData } from "@/hooks/use-appointment";
 import { usePatientData } from "@/hooks/use-pet";
 import WorkflowNavigation from "@/components/WorkflowNavigation";
 import { toast } from "@/components/ui/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ObjectiveData } from "@/types";
-import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
-import { SOAPHistory } from "@/components/soap/SOAPHistory";
-import { cn } from "@/lib/utils";
+import { SOAPHistory } from "../soap-history/SOAPHistory";
 
-type InputChangeEvent = React.ChangeEvent<HTMLTextAreaElement>;
 
-// Enhanced rich text editor with preview capability
-const RichTextEditor = ({ 
-  value, 
-  onChange, 
-  placeholder, 
-  className,
-  minHeight = "150px",
-  externalPreviewMode
-}: { 
-  value: string; 
-  onChange: (value: string) => void;
-  placeholder?: string;
-  className?: string;
-  minHeight?: string;
-  externalPreviewMode?: boolean;
-}) => {
-  const [internalPreviewMode, setInternalPreviewMode] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
-  // Use external preview mode if provided, otherwise use internal state
-  const isPreviewMode = externalPreviewMode !== undefined ? externalPreviewMode : internalPreviewMode;
 
-  // Function to insert formatting around selected text
-  const insertFormatting = (prefix: string, suffix: string = prefix) => {
-    if (!textareaRef.current) return;
 
-    const textarea = textareaRef.current;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = value.substring(start, end);
+// Define the SubjectiveEntry interface
+interface SubjectiveEntry {
+  id: string;
+  key: string;
+  value: string;
+}
 
-    // Check if selection is already formatted
-    const beforeSelection = value.substring(
-      Math.max(0, start - prefix.length),
-      start
-    );
-    const afterSelection = value.substring(
-      end,
-      Math.min(value.length, end + suffix.length)
-    );
+interface AssessmentEntry {
+  primary: string;
+  differentials: string[];
+  notes: string;
+}
 
-    if (beforeSelection === prefix && afterSelection === suffix) {
-      // Remove formatting
-      const newValue =
-        value.substring(0, start - prefix.length) +
-        selectedText +
-        value.substring(end + suffix.length);
-      onChange(newValue);
-
-      // Adjust cursor position
-      setTimeout(() => {
-        textarea.focus();
-        const newPosition = start - prefix.length;
-        textarea.setSelectionRange(
-          newPosition,
-          newPosition + selectedText.length
-        );
-      }, 0);
-    } else {
-      // Add formatting
-      const newValue =
-        value.substring(0, start) +
-        prefix +
-        selectedText +
-        suffix +
-        value.substring(end);
-      onChange(newValue);
-
-      // Put cursor inside formatting marks if no text was selected
-      setTimeout(() => {
-        textarea.focus();
-        const newPosition = start + prefix.length;
-        const selectionLength = selectedText.length || 0;
-        textarea.setSelectionRange(newPosition, newPosition + selectionLength);
-      }, 0);
+// Component to display subjective data in key-value format
+const SubjectiveKeyValueDisplay = ({ data }: { data: string | SubjectiveEntry[] | null | undefined }) => {
+  const parseSubjectiveData = (value: string | SubjectiveEntry[] | null | undefined): SubjectiveEntry[] => {
+    // Handle null or undefined
+    if (!value) return [];
+    
+    // If already an array, return it directly
+    if (Array.isArray(value)) {
+      return value;
     }
-  };
-
-  // Function to apply list formatting
-  const insertList = (prefix: string) => {
-    if (!textareaRef.current) return;
-
-    const textarea = textareaRef.current;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = value.substring(start, end);
-
-    if (selectedText) {
-      // Format each line of the selected text
-      const lines = selectedText.split("\n");
-      let formattedText: string;
-
-      if (prefix === "1. ") {
-        // For numbered lists
-        formattedText = lines
-          .map((line, i) => (line.trim() ? `${i + 1}. ${line}` : line))
-          .join("\n");
-      } else {
-        // For bullet lists
-        formattedText = lines
-          .map((line) => (line.trim() ? `${prefix}${line}` : line))
-          .join("\n");
+    
+    // Otherwise handle as string
+    if (typeof value !== 'string' || !value.trim()) return [];
+  
+    try {
+      // Try to parse as JSON first
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      } else if (typeof parsed === 'object' && parsed !== null) {
+        return Object.entries(parsed).map(([key, value]) => ({
+          id: crypto.randomUUID(),
+          key,
+          value: String(value)
+        }));
       }
-
-      const newValue =
-        value.substring(0, start) + formattedText + value.substring(end);
-
-      onChange(newValue);
-    } else {
-      // If no text is selected, insert list marker at cursor position
-      const cursorPos = start;
-      const newValue =
-        value.substring(0, cursorPos) + prefix + value.substring(cursorPos);
-
-      onChange(newValue);
-
-      // Place cursor after the list marker
-      setTimeout(() => {
-        textarea.focus();
-        const newPosition = cursorPos + prefix.length;
-        textarea.setSelectionRange(newPosition, newPosition);
-      }, 0);
+    } catch (e) {
+      // If not JSON, try to parse as text with key: value format
+      const lines = value.split('\n').filter(line => line.trim());
+      const entries: SubjectiveEntry[] = [];
+      
+      for (const line of lines) {
+        const colonIndex = line.indexOf(':');
+        if (colonIndex > 0) {
+          entries.push({
+            id: crypto.randomUUID(),
+            key: line.substring(0, colonIndex).trim(),
+            value: line.substring(colonIndex + 1).trim()
+          });
+        } else {
+          entries.push({
+            id: crypto.randomUUID(),
+            key: "Note",
+            value: line.trim()
+          });
+        }
+      }
+      
+      return entries;
     }
+    
+    return [];
   };
 
-  const handleToolbarAction = (action: string) => {
-    switch (action) {
-      case "bold":
-        insertFormatting("**");
-        break;
-      case "italic":
-        insertFormatting("*");
-        break;
-      case "bulletList":
-        insertList("• ");
-        break;
-      case "numberedList":
-        insertList("1. ");
-        break;
-      default:
-        break;
-    }
-  };
+  const entries = parseSubjectiveData(data);
 
-  // Get HTML preview from markdown
-  const getPreviewHtml = () => {
-    if (!value) return placeholder || "";
+  if (!data || entries.length === 0) {
+    return (
+      <div className="p-4 text-gray-500 italic">
+        No subjective data available.
+      </div>
+    );
+  }
 
-    let html = value
-      // Convert bold
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      // Convert italic
-      .replace(/\*(.*?)\*/g, "<em>$1</em>")
-      // Convert bullet lists (match across multiple lines)
-      .replace(/^[•●] (.+)$/gm, "<li>$1</li>")
-      // Convert numbered lists
-      .replace(/^\d+\. (.+)$/gm, "<li>$1</li>")
-      // Wrap consecutive list items in ul/ol tags
-      .replace(
-        /((?:<li>.*<\/li>\n?)+)/g,
-        "<ul class='pl-6 list-disc space-y-1'>$1</ul>"
-      )
-      // Add paragraph tags to text blocks
-      .replace(/^([^<\n].+)$/gm, "<p>$1</p>")
-      // Fix nested paragraph tags
-      .replace(/<p><li>/g, "<li>")
-      .replace(/<\/li><\/p>/g, "</li>")
-      // Remove empty paragraphs
-      .replace(/<p><\/p>/g, "");
+  console.log("entries: ", entries);
 
-    return html;
-  };
-  
   return (
-    <div className={`border rounded overflow-hidden ${className || ''}`}>
-      <div className="flex items-center justify-between gap-2 p-2 bg-gray-50 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => handleToolbarAction("bold")}
-            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
-            disabled={isPreviewMode}
-          >
-            <Bold className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => handleToolbarAction("italic")}
-            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
-            disabled={isPreviewMode}
-          >
-            <Italic className="h-4 w-4" />
-          </Button>
-          <div className="w-px h-6 bg-gray-200" />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => handleToolbarAction("bulletList")}
-            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
-            disabled={isPreviewMode}
-          >
-            <List className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => handleToolbarAction("numberedList")}
-            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
-            disabled={isPreviewMode}
-          >
-            <ListOrdered className="h-4 w-4" />
-          </Button>
+    <div className="p-3 space-y-3 bg-white rounded-md">
+      {entries.map((entry, index) => (
+        <div key={entry.id || index} className="grid grid-cols-12 gap-3 items-start bg-gray-50 p-3 rounded-md border border-gray-100">
+          <div className="col-span-3 text-gray-700 font-medium">
+            {entry.key}:
+          </div>
+          <div className="col-span-9 text-gray-800">
+            {entry.value || <span className="text-gray-400 italic">No data</span>}
+          </div>
         </div>
-        {externalPreviewMode === undefined && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setInternalPreviewMode(!internalPreviewMode)}
-            className={cn(
-              "text-xs px-2 py-1 h-7",
-              isPreviewMode ? "bg-indigo-50 text-indigo-700" : "hover:bg-gray-100"
-            )}
-          >
-            {isPreviewMode ? "Edit" : "Preview"}
-          </Button>
+      ))}
+    </div>
+  );
+};
+
+// Component to display objective data in key-value format
+const ObjectiveDataDisplay = ({ data }: { data: any }) => {
+  if (!data || Object.keys(data).length === 0) {
+    return (
+      <div className="p-4 text-gray-500 italic">
+        No examination data available.
+      </div>
+    );
+  }
+
+  const renderVitalSigns = () => {
+    if (!data.vital_signs) return null;
+    
+    const vitalSigns = [
+      { name: "Weight", value: data.vital_signs.weight, unit: "kg", icon: "⚖️" },
+      { name: "Temperature", value: data.vital_signs.temperature, unit: "°C", icon: "🌡️" },
+      { name: "Heart Rate", value: data.vital_signs.heart_rate, unit: "bpm", icon: "❤️" },
+      { name: "Respiratory Rate", value: data.vital_signs.respiratory_rate, unit: "rpm", icon: "🫁" },
+    ];
+
+    return (
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-indigo-100">
+          <span className="text-indigo-600 text-lg">🔍</span>
+          <h3 className="font-medium text-indigo-700">VITAL SIGNS</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {vitalSigns.map((sign, index) => (
+            sign.value ? (
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{sign.icon}</span>
+                  <span className="text-gray-700 font-medium">{sign.name}</span>
+                </div>
+                <span className="font-mono text-indigo-600 font-semibold">
+                  {sign.value} {sign.unit}
+                </span>
+              </div>
+            ) : null
+          ))}
+        </div>
+
+        {data.vital_signs.general_notes && (
+          <div className="mt-3 p-3 bg-yellow-50 rounded-md border border-yellow-100">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-amber-600 text-lg">📝</span>
+              <h4 className="font-medium text-amber-700">General Notes</h4>
+            </div>
+            <p className="text-amber-800 whitespace-pre-line text-sm">{data.vital_signs.general_notes}</p>
+          </div>
         )}
       </div>
+    );
+  };
 
-      {isPreviewMode ? (
-        <div
-          className="p-3"
-          style={{ minHeight }}
-        >
-          <MarkdownRenderer markdown={value || placeholder || ""} />
+  const renderSystemsExamination = () => {
+    if (!data.systems) return null;
+
+    const systemPairs = [
+      { name: "Cardiovascular", value: data.systems.cardiovascular, icon: "❤️" },
+      { name: "Respiratory", value: data.systems.respiratory, icon: "🫁" },
+      { name: "Gastrointestinal", value: data.systems.gastrointestinal, icon: "🧠" },
+      { name: "Musculoskeletal", value: data.systems.musculoskeletal, icon: "🦴" },
+      { name: "Neurological", value: data.systems.neurological, icon: "🧠" },
+      { name: "Skin/Coat", value: data.systems.skin, icon: "🧥" },
+      { name: "Eyes", value: data.systems.eyes, icon: "👁️" },
+      { name: "Ears", value: data.systems.ears, icon: "👂" },
+    ];
+
+    // Check if there's at least one system with data
+    const hasSystemData = systemPairs.some(system => system.value);
+
+    if (!hasSystemData) return null;
+
+    return (
+      <div>
+        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-indigo-100">
+          <span className="text-indigo-600 text-lg">🩺</span>
+          <h3 className="font-medium text-indigo-700">SYSTEMS EXAMINATION</h3>
         </div>
-      ) : (
+        <div className="grid gap-3">
+          {systemPairs.map((system, index) => (
+            system.value ? (
+              <div key={index} className="flex p-3 bg-gray-50 rounded-md flex-col">
+                <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-200">
+                  <span className="text-lg">{system.icon}</span>
+                  <span className="text-gray-700 font-medium">{system.name}</span>
+                </div>
+                <p className="text-gray-600 whitespace-pre-line">{system.value}</p>
+              </div>
+            ) : null
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const currentDate = new Date().toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  return (
+    <div className="p-4 space-y-6 bg-white rounded-md">
+      <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
+        <div className="flex items-center gap-2">
+          <span className="text-indigo-600 text-lg">📋</span>
+          <h2 className="font-semibold text-gray-800">CLINICAL EXAMINATION RESULTS</h2>
+        </div>
+        <div className="text-sm text-gray-500">
+          <span className="text-indigo-600 mr-1">📅</span>
+          {currentDate}
+        </div>
+      </div>
+      
+      {renderVitalSigns()}
+      {renderSystemsExamination()}
+    </div>
+  );
+};
+
+// Component for editing assessment data
+const AssessmentEditor = ({ 
+  value, 
+  onChange 
+}: { 
+  value: AssessmentEntry | string | undefined; 
+  onChange: (value: AssessmentEntry) => void;
+}) => {
+  // Convert string or undefined to AssessmentEntry structure
+  const [assessment, setAssessment] = useState<AssessmentEntry>(() => {
+    if (!value) {
+      return { primary: "", differentials: [], notes: "" };
+    }
+    
+    if (typeof value === 'string') {
+      return { 
+        primary: value,
+        differentials: [],
+        notes: ""
+      };
+    }
+    
+    return value as AssessmentEntry;
+  });
+  
+  // Handle input changes
+  const handleInputChange = (field: keyof AssessmentEntry, value: string | string[]) => {
+    const newAssessment = { 
+      ...assessment,
+      [field]: value 
+    };
+    setAssessment(newAssessment);
+    onChange(newAssessment);
+  };
+  
+  // Handle adding a new differential diagnosis
+  const addDifferential = () => {
+    const differentials = [...assessment.differentials, ""];
+    handleInputChange("differentials", differentials);
+  };
+  
+  // Handle changing a differential diagnosis
+  const changeDifferential = (index: number, value: string) => {
+    const differentials = [...assessment.differentials];
+    differentials[index] = value;
+    handleInputChange("differentials", differentials);
+  };
+  
+  // Handle removing a differential diagnosis
+  const removeDifferential = (index: number) => {
+    const differentials = assessment.differentials.filter((_, i) => i !== index);
+    handleInputChange("differentials", differentials);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Primary Diagnosis
+        </label>
         <Textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="border-0 rounded-none resize-none p-3"
-          style={{ minHeight }}
+          value={assessment.primary}
+          onChange={(e) => handleInputChange("primary", e.target.value)}
+          placeholder="Enter primary diagnosis"
+          className="resize-none min-h-[100px] bg-white"
         />
-      )}
+      </div>
+      
+      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+        <div className="flex justify-between items-center mb-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Differential Diagnoses
+          </label>
+          <Button 
+            onClick={addDifferential}
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs bg-indigo-50 text-indigo-700 border-indigo-200"
+          >
+            Add Differential
+          </Button>
+        </div>
+        
+        {assessment.differentials.length === 0 ? (
+          <div className="text-gray-500 italic text-sm p-2">
+            No differential diagnoses added yet.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {assessment.differentials.map((diff, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <div className="flex-1">
+                  <div className="flex items-center">
+                    <div className="bg-indigo-100 text-indigo-800 rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">
+                      {index + 1}
+                    </div>
+                    <Textarea
+                      value={diff}
+                      onChange={(e) => changeDifferential(index, e.target.value)}
+                      placeholder={`Differential diagnosis ${index + 1}`}
+                      className="resize-none bg-white h-10 py-2"
+                    />
+                  </div>
+                </div>
+                <Button
+                  onClick={() => removeDifferential(index)}
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      
+      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Additional Notes
+        </label>
+        <Textarea
+          value={assessment.notes}
+          onChange={(e) => handleInputChange("notes", e.target.value)}
+          placeholder="Enter additional notes about the diagnosis"
+          className="resize-none min-h-[100px] bg-white"
+        />
+      </div>
     </div>
   );
 };
@@ -303,6 +395,21 @@ const SoapNotes = () => {
   const { id: appointmentId } = useParams<{ id?: string }>();
   const [, setLocation] = useLocation();
 
+  // Add state for assessment data
+  const [assessmentData, setAssessmentData] = useState<AssessmentEntry>({ 
+    primary: "", 
+    differentials: [], 
+    notes: "" 
+  });
+
+  // Debug information
+  console.log("Initial route params appointmentId:", appointmentId);
+  
+  // Get the query params from URL
+  const searchParams = new URLSearchParams(window.location.search);
+  const urlAppointmentId = searchParams.get("appointmentId");
+  console.log("URL query param appointmentId:", urlAppointmentId);
+
   // Quản lý tham số workflow
   const [workflowParams, setWorkflowParams] = useState<{
     appointmentId: string | null;
@@ -311,6 +418,7 @@ const SoapNotes = () => {
     appointmentId: null,
     petId: null,
   });
+
 
   // Xử lý các tham số từ URL một cách nhất quán
   useEffect(() => {
@@ -322,6 +430,8 @@ const SoapNotes = () => {
     // Thiết lập appointmentId và petId theo thứ tự ưu tiên
     const appointmentIdValue = urlAppointmentId || appointmentId || null;
     const petIdValue = urlPetId || null;
+
+    console.log("Setting workflowParams:", { appointmentIdValue, petIdValue });
 
     // IMPORTANT: Kiểm tra xem giá trị mới có khác giá trị cũ không
     // để tránh vòng lặp vô hạn của setState
@@ -336,8 +446,27 @@ const SoapNotes = () => {
     }
   }, [appointmentId]);
 
-  // Sử dụng appointmentId từ workflowParams
-  const effectiveAppointmentId = workflowParams.appointmentId || "";
+  // Try to get appointmentId from different sources
+  const effectiveAppointmentId = workflowParams.appointmentId || appointmentId || urlAppointmentId || "";
+
+  const { data: soap } = useGetSOAP(effectiveAppointmentId);
+
+  // Initialize assessment data when soap data is loaded
+  useEffect(() => {
+    if (soap?.assessment) {
+      // If assessment is an object with the right structure
+      if (typeof soap.assessment === 'object' && 'primary' in soap.assessment) {
+        setAssessmentData(soap.assessment as AssessmentEntry);
+      } else {
+        // If assessment is a string, convert it
+        setAssessmentData({
+          primary: String(soap.assessment || ""),
+          differentials: [],
+          notes: ""
+        });
+      }
+    }
+  }, [soap]);
 
   // Utility function to build query parameters
   const buildUrlParams = (params: Record<string, string | number | null | undefined>) => {
@@ -377,46 +506,6 @@ const SoapNotes = () => {
   } = usePatientData(appointment?.pet?.pet_id);
 
   const updateSoapMutation = useUpdateSOAP();
-
-  const [localSoapData, setLocalSoapData] = useState({
-    subjective: "",
-    objective: {},
-    assessment: "",
-    plan: "",
-  });
-
-  // Initialize local state when remote data loads
-  useEffect(() => {
-    if (soapData) {
-      // Use explicit checks for individual fields instead of comparing entire objects
-      const shouldUpdate =
-        soapData.subjective !== localSoapData.subjective ||
-        soapData.assessment !== localSoapData.assessment ||
-        soapData.plan !== localSoapData.plan ||
-        // For objective, just check if it exists and is different than current
-        JSON.stringify(soapData.objective || {}) !==
-          JSON.stringify(localSoapData.objective || {});
-
-      if (shouldUpdate) {
-        setLocalSoapData({
-          subjective: soapData.subjective || "",
-          objective: soapData.objective || {},
-          assessment: soapData.assessment || "",
-          plan: soapData.plan || "",
-        });
-      }
-    }
-  }, [soapData]); // Only depend on soapData, not localSoapData
-
-  const handleInputChange = (
-    field: keyof typeof localSoapData,
-    value: string
-  ) => {
-    setLocalSoapData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
 
   // Format objective data into a readable format
   const formatObjectiveData = (data: any): string => {
@@ -489,64 +578,64 @@ const SoapNotes = () => {
     return formattedText;
   };
 
-  const toggleRecording = () => {
-    setIsRecording(!isRecording);
-    // Implement speech-to-text functionality here
-  };
-
   const handleSave = async () => {
-    if (!appointment?.id) return;
-
-    const defaultObjective: ObjectiveData = {
-      vital_signs: {
-        weight: "",
-        temperature: "",
-        heart_rate: "",
-        respiratory_rate: "",
-        general_notes: "",
-      },
-      systems: {
-        cardiovascular: "",
-        respiratory: "",
-        gastrointestinal: "",
-        musculoskeletal: "",
-        neurological: "",
-        skin: "",
-        eyes: "",
-        ears: "",
-      },
-    };
+    if (!appointment?.id) {
+      toast({
+        title: "Error",
+        description: "Appointment not found",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      // Ensure we don't overwrite the objective data
-      const currentData = soapData || {
-        subjective: "",
-        objective: defaultObjective,
-        assessment: "",
-        plan: "",
+      // Get current objective data or use default if not available
+      const defaultObjective: ObjectiveData = {
+        vital_signs: {
+          weight: "",
+          temperature: "",
+          heart_rate: "",
+          respiratory_rate: "",
+          general_notes: "",
+        },
+        systems: {
+          cardiovascular: "",
+          respiratory: "",
+          gastrointestinal: "",
+          musculoskeletal: "",
+          neurological: "",
+          skin: "",
+          eyes: "",
+          ears: "",
+        },
       };
 
+      // Prepare subjective data
+      let subjectiveData = soap?.subjective || "";
+
+      console.log("Saving assessment data:", assessmentData);
+
+      // Save SOAP note
       await updateSoapMutation.mutateAsync({
         appointmentID: appointment.id,
-        subjective: localSoapData.subjective,
-        objective: currentData.objective, // Keep the original objective data
-        assessment: localSoapData.assessment,
-        plan: Number(localSoapData.plan) || 0,
+        subjective: subjectiveData,
+        objective: soap?.objective || defaultObjective,
+        assessment: assessmentData, // Use the local state for assessment
+        plan: typeof soap?.plan === "number" ? soap.plan : 0
       });
-      if (updateSoapMutation.isSuccess) {
-        toast({
-          title: "Save Success",
-          description: "SOAP notes saved successfully.",
-          className: "bg-green-50 border-green-200 text-green-800",
-        });
 
-        // Điều hướng đến lab-management với query params
-        const params = {
-          appointmentId: effectiveAppointmentId,
-          petId: appointment?.pet?.pet_id,
-        };
-        setLocation(`/lab-management${buildUrlParams(params)}`);
-      }
+      toast({
+        title: "Save Success",
+        description: "SOAP notes saved successfully.",
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
+
+      // Navigate to lab-management
+      const params = {
+        appointmentId: effectiveAppointmentId,
+        petId: appointment?.pet?.pet_id,
+      };
+      setLocation(`/lab-management${buildUrlParams(params)}`);
     } catch (error) {
       console.error("Error saving SOAP notes:", error);
       toast({
@@ -608,8 +697,8 @@ const SoapNotes = () => {
     );
   }
 
-  // Format the objective data
-  const formattedObjectiveText = formatObjectiveData(localSoapData.objective);
+  // Format the objective data - KEEP FOR BACKWARD COMPATIBILITY
+  const formattedObjectiveText = soap?.objective ? formatObjectiveData(soap.objective) : "";
 
   return (
     <div className="space-y-6">
@@ -702,35 +791,19 @@ const SoapNotes = () => {
                     History
                   </TabsTrigger>
                 </TabsList>
-                <div className="flex justify-end mb-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsPreviewMode(!isPreviewMode)}
-                    className="text-xs flex items-center bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
-                  >
-                    {isPreviewMode ? <Edit className="h-3.5 w-3.5 mr-1.5" /> : <Eye className="h-3.5 w-3.5 mr-1.5" />}
-                    {isPreviewMode ? "Switch to Edit Mode" : "Switch to Preview Mode"}
-                  </Button>
-                </div>
+           
               </div>
 
               <TabsContent value="all" className="space-y-6 py-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <FileText className="h-4 w-4 text-indigo-600" />
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-sm font-medium text-gray-700 flex items-center">
                       S - Subjective (Owner's Report)
+                      
                     </label>
                   </div>
-                  <RichTextEditor
-                    value={localSoapData.subjective}
-                    onChange={(value) => handleInputChange("subjective", value)}
-                    placeholder="Enter owner's description of the problem..."
-                    minHeight="150px"
-                    externalPreviewMode={isPreviewMode}
-                  />
+                    <SubjectiveKeyValueDisplay data={soap?.subjective} />
                 </div>
 
                 <div>
@@ -738,17 +811,12 @@ const SoapNotes = () => {
                     <Activity className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700 flex items-center">
                       O - Objective (Clinical Findings)
-                      <Badge className="ml-2 bg-yellow-100 text-yellow-800 border-yellow-200">
-                        Read-only
-                      </Badge>
+                      
                     </label>
                   </div>
-                  <Textarea
-                    placeholder="Physical examination findings, vital signs, test results..."
-                    className="min-h-[200px] resize-none bg-gray-50 border-gray-200 font-mono whitespace-pre-wrap"
-                    value={formattedObjectiveText}
-                    readOnly
-                  />
+                  <div className="border rounded-md overflow-hidden">
+                    <ObjectiveDataDisplay data={soap?.objective} />
+                  </div>
                 </div>
 
                 <div>
@@ -756,21 +824,11 @@ const SoapNotes = () => {
                     <ClipboardEdit className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700 flex items-center">
                       A - Assessment (Diagnosis)
-                      <Badge className="ml-2 bg-green-100 text-green-800 border-green-200">
-                        Update here
-                      </Badge>
-                      <Badge className="ml-2 bg-indigo-100 text-indigo-800 border-indigo-200">
-                        {isPreviewMode ? "Preview Mode" : "Edit Mode"}
-                      </Badge>
                     </label>
                   </div>
-                  <RichTextEditor
-                    value={localSoapData.assessment}
-                    onChange={(value) => handleInputChange("assessment", value)}
-                    placeholder="Enter diagnosis or assessment of the condition..."
-                    className="bg-indigo-50"
-                    minHeight="200px"
-                    externalPreviewMode={isPreviewMode}
+                  <AssessmentEditor
+                    value={assessmentData}
+                    onChange={setAssessmentData}
                   />
                 </div>
               </TabsContent>
@@ -780,17 +838,12 @@ const SoapNotes = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <FileText className="h-4 w-4 text-indigo-600" />
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-sm font-medium text-gray-700 flex items-center">
                       S - Subjective (Owner's Report)
+            
                     </label>
                   </div>
-                  <RichTextEditor
-                    value={localSoapData.subjective}
-                    onChange={(value) => handleInputChange("subjective", value)}
-                    placeholder="Enter owner's description of the problem..."
-                    minHeight="400px"
-                    externalPreviewMode={isPreviewMode}
-                  />
+                  <SubjectiveKeyValueDisplay data={soap?.subjective} />
                 </div>
               </TabsContent>
 
@@ -803,12 +856,9 @@ const SoapNotes = () => {
                       O - Objective (Clinical Findings)
                     </label>
                   </div>
-                  <Textarea
-                    placeholder="Physical examination findings, vital signs, test results..."
-                    className="min-h-[400px] resize-none bg-gray-50 border-gray-200 font-mono whitespace-pre-wrap"
-                    value={formattedObjectiveText}
-                    readOnly
-                  />
+                  <div className="border rounded-md overflow-hidden">
+                    <ObjectiveDataDisplay data={soap?.objective} />
+                  </div>
                 </div>
               </TabsContent>
 
@@ -819,18 +869,11 @@ const SoapNotes = () => {
                     <ClipboardEdit className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700">
                       A - Assessment (Diagnosis)
-                      <Badge className="ml-2 bg-indigo-100 text-indigo-800 border-indigo-200">
-                        {isPreviewMode ? "Preview Mode" : "Edit Mode"}
-                      </Badge>
                     </label>
                   </div>
-                  <RichTextEditor
-                    value={localSoapData.assessment}
-                    onChange={(value) => handleInputChange("assessment", value)}
-                    placeholder="Enter diagnosis or assessment of the condition..."
-                    className="bg-indigo-50"
-                    minHeight="400px"
-                    externalPreviewMode={isPreviewMode}
+                  <AssessmentEditor
+                    value={assessmentData}
+                    onChange={setAssessmentData}
                   />
                 </div>
               </TabsContent>
@@ -838,15 +881,7 @@ const SoapNotes = () => {
               {/* Tab History - SOAP history for this patient */}
               <TabsContent value="history" className="py-4">
                 <div>
-                  {/* <Alert className="mb-4 bg-blue-50 border-blue-200">
-                    <Info className="h-4 w-4 text-blue-600" />
-                    <AlertTitle className="text-blue-800">
-                      Patient's SOAP History
-                    </AlertTitle>
-                    <AlertDescription className="text-blue-700">
-                      View the complete history of SOAP notes for this patient to track their progress over time.
-                    </AlertDescription>
-                  </Alert> */}
+                  
                   <SOAPHistory petId={patient?.petid?.toString() || ""} />
                 </div>
               </TabsContent>

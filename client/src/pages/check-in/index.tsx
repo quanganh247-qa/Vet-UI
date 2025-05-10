@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import {
   Check,
   X,
@@ -37,6 +38,8 @@ import {
   List,
   ListOrdered,
   DollarSign,
+  Plus,
+  Trash2,
 } from "lucide-react";
 
 import { checkInAppointment } from "@/services/appointment-services";
@@ -53,232 +56,238 @@ import { QRCodeInformation, QuickLinkRequest } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
 import { CashPaymentDialog } from "@/components/payment";
 
-// RichTextEditor component with preview mode
-const RichTextEditor = ({
-  value,
-  onChange,
-  placeholder,
-  minHeight = "150px",
-}: {
+// Common pre-defined keys for subjective data
+const COMMON_SUBJECTIVE_KEYS = [
+  "Chief Complaint",
+  "Duration",
+  "Onset",
+  "Previous Treatment",
+  "Diet Changes",
+  "Behavior Changes",
+  "Environmental Changes",
+  "Vaccination Status",
+  "Current Medications",
+  "Allergies",
+];
+
+// Interface for subjective key-value pairs
+interface SubjectiveEntry {
+  id: string;
+  key: string;
+  value: string;
+}
+
+// Component for key-value style subjective data entry
+const SubjectiveKeyValueEditor = ({ 
+  value, 
+  onChange 
+}: { 
   value: string;
   onChange: (value: string) => void;
-  placeholder?: string;
-  minHeight?: string;
 }) => {
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Parse existing data if in key-value format, otherwise start fresh
+  const parseInitialData = (): SubjectiveEntry[] => {
+    if (!value) return [];
 
-  // Function to insert formatting around selected text
-  const insertFormatting = (prefix: string, suffix: string = prefix) => {
-    if (!textareaRef.current) return;
-
-    const textarea = textareaRef.current;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = value.substring(start, end);
-
-    // Check if selection is already formatted
-    const beforeSelection = value.substring(
-      Math.max(0, start - prefix.length),
-      start
-    );
-    const afterSelection = value.substring(
-      end,
-      Math.min(value.length, end + suffix.length)
-    );
-
-    if (beforeSelection === prefix && afterSelection === suffix) {
-      // Remove formatting
-      const newValue =
-        value.substring(0, start - prefix.length) +
-        selectedText +
-        value.substring(end + suffix.length);
-      onChange(newValue);
-
-      // Adjust cursor position
-      setTimeout(() => {
-        textarea.focus();
-        const newPosition = start - prefix.length;
-        textarea.setSelectionRange(
-          newPosition,
-          newPosition + selectedText.length
-        );
-      }, 0);
-    } else {
-      // Add formatting
-      const newValue =
-        value.substring(0, start) +
-        prefix +
-        selectedText +
-        suffix +
-        value.substring(end);
-      onChange(newValue);
-
-      // Put cursor inside formatting marks if no text was selected
-      setTimeout(() => {
-        textarea.focus();
-        const newPosition = start + prefix.length;
-        const selectionLength = selectedText.length || 0;
-        textarea.setSelectionRange(newPosition, newPosition + selectionLength);
-      }, 0);
-    }
-  };
-
-  // Function to apply list formatting
-  const insertList = (prefix: string) => {
-    if (!textareaRef.current) return;
-
-    const textarea = textareaRef.current;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = value.substring(start, end);
-
-    if (selectedText) {
-      // Format each line of the selected text
-      const lines = selectedText.split("\n");
-      let formattedText: string;
-
-      if (prefix === "1. ") {
-        // For numbered lists
-        formattedText = lines
-          .map((line, i) => (line.trim() ? `${i + 1}. ${line}` : line))
-          .join("\n");
-      } else {
-        // For bullet lists
-        formattedText = lines
-          .map((line) => (line.trim() ? `${prefix}${line}` : line))
-          .join("\n");
+    try {
+      // Try to parse as JSON first
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed;
       }
-
-      const newValue =
-        value.substring(0, start) + formattedText + value.substring(end);
-
-      onChange(newValue);
-    } else {
-      // If no text is selected, insert list marker at cursor position
-      const cursorPos = start;
-      const newValue =
-        value.substring(0, cursorPos) + prefix + value.substring(cursorPos);
-
-      onChange(newValue);
-
-      // Place cursor after the list marker
-      setTimeout(() => {
-        textarea.focus();
-        const newPosition = cursorPos + prefix.length;
-        textarea.setSelectionRange(newPosition, newPosition);
-      }, 0);
+    } catch (e) {
+      // If not JSON, try to parse as text with key: value format
+      const lines = value.split('\n').filter(line => line.trim());
+      const entries: SubjectiveEntry[] = [];
+      
+      for (const line of lines) {
+        const colonIndex = line.indexOf(':');
+        if (colonIndex > 0) {
+          entries.push({
+            id: crypto.randomUUID(),
+            key: line.substring(0, colonIndex).trim(),
+            value: line.substring(colonIndex + 1).trim()
+          });
+        } else {
+          // If no colon found, add as a note
+          entries.push({
+            id: crypto.randomUUID(),
+            key: "Note",
+            value: line.trim()
+          });
+        }
+      }
+      
+      return entries;
     }
+    
+    // Default to empty array if parsing fails
+    return [];
   };
 
-  // Update getPreviewHtml to handle markdown more comprehensively
-  const getPreviewHtml = () => {
-    if (!value) return placeholder || "";
+  const [entries, setEntries] = useState<SubjectiveEntry[]>(parseInitialData());
+  const [newKeyInput, setNewKeyInput] = useState("");
+  const [isAddingCustomKey, setIsAddingCustomKey] = useState(false);
 
-    let html = value
-      // Convert bold
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      // Convert italic
-      .replace(/\*(.*?)\*/g, "<em>$1</em>")
-      // Convert bullet lists (match across multiple lines)
-      .replace(/^[•●] (.+)$/gm, "<li>$1</li>")
-      // Convert numbered lists
-      .replace(/^\d+\. (.+)$/gm, "<li>$1</li>")
-      // Wrap consecutive list items in ul/ol tags
-      .replace(
-        /((?:<li>.*<\/li>\n?)+)/g,
-        "<ul class='pl-6 list-disc space-y-1'>$1</ul>"
-      )
-      // Add paragraph tags to text blocks
-      .replace(/^([^<\n].+)$/gm, "<p>$1</p>")
-      // Fix nested paragraph tags
-      .replace(/<p><li>/g, "<li>")
-      .replace(/<\/li><\/p>/g, "</li>")
-      // Remove empty paragraphs
-      .replace(/<p><\/p>/g, "");
+  // Update parent component when entries change
+  useEffect(() => {
+    // Convert entries to JSON string, maintaining the structured data
+    const jsonData = JSON.stringify(entries);
+    
+    // Update the parent component with the JSON string
+    onChange(jsonData);
+  }, [entries, onChange]);
 
-    return html;
+  const addEntry = (key: string = "") => {
+    const newEntry: SubjectiveEntry = {
+      id: crypto.randomUUID(),
+      key: key || "Note",
+      value: ""
+    };
+    
+    setEntries([...entries, newEntry]);
+    setIsAddingCustomKey(false);
+    setNewKeyInput("");
+  };
+
+  const updateEntry = (id: string, field: 'key' | 'value', newValue: string) => {
+    setEntries(entries.map(entry => 
+      entry.id === id ? { ...entry, [field]: newValue } : entry
+    ));
+  };
+
+  const removeEntry = (id: string) => {
+    setEntries(entries.filter(entry => entry.id !== id));
+  };
+
+  // Format entries for display in the UI (for debugging or previewing)
+  const getFormattedText = () => {
+    return entries
+      .map(entry => `${entry.key}: ${entry.value}`)
+      .join('\n\n');
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between gap-2 p-2 bg-gray-50 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => insertFormatting("**")}
-            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
-            disabled={isPreviewMode}
-          >
-            <Bold className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => insertFormatting("*")}
-            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
-            disabled={isPreviewMode}
-          >
-            <Italic className="h-4 w-4" />
-          </Button>
-          <div className="w-px h-6 bg-gray-200" />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => insertList("• ")}
-            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
-            disabled={isPreviewMode}
-          >
-            <List className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => insertList("1. ")}
-            className={cn("h-8 w-8 p-0", !isPreviewMode && "hover:bg-gray-100")}
-            disabled={isPreviewMode}
-          >
-            <ListOrdered className="h-4 w-4" />
-          </Button>
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsPreviewMode(!isPreviewMode)}
-          className={cn(
-            "text-xs px-2 py-1 h-7",
-            isPreviewMode ? "bg-indigo-50 text-indigo-700" : "hover:bg-gray-100"
-          )}
-        >
-          {isPreviewMode ? "Edit" : "Preview"}
-        </Button>
-      </div>
+    <div className="border rounded-lg overflow-hidden bg-white">
+      <div className="p-4 space-y-4">
+        {entries.length === 0 ? (
+          <div className="text-center py-6 text-gray-500">
+            <p>No subjective data added yet. Use the buttons below to add information.</p>
+          </div>
+        ) : (
+          entries.map((entry) => (
+            <div key={entry.id} className="grid grid-cols-12 gap-3 items-start group border border-gray-100 rounded-md p-3 bg-gray-50">
+              <div className="col-span-4 lg:col-span-3">
+                <Input
+                  value={entry.key}
+                  onChange={(e) => updateEntry(entry.id, 'key', e.target.value)}
+                  className="font-medium text-gray-700"
+                  placeholder="Category"
+                />
+              </div>
+              <div className="col-span-7 lg:col-span-8">
+                <Textarea
+                  value={entry.value}
+                  onChange={(e) => updateEntry(entry.id, 'value', e.target.value)}
+                  placeholder="Enter details here..."
+                  className="resize-none min-h-[80px] bg-white"
+                />
+              </div>
+              <div className="col-span-1 flex justify-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeEntry(entry.id)}
+                  className="h-9 w-9 opacity-70 hover:opacity-100 text-red-500 hover:text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
 
-      {isPreviewMode ? (
-        <div
-          className="p-3 prose prose-sm max-w-none min-h-[150px]"
-          style={{ minHeight }}
-          dangerouslySetInnerHTML={{ __html: getPreviewHtml() }}
-        />
-      ) : (
-        <Textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="border-0 rounded-none resize-none p-3"
-          style={{ minHeight }}
-        />
-      )}
+        {/* UI for adding a new custom key */}
+        {isAddingCustomKey ? (
+          <div className="flex items-center mt-2 space-x-2 p-3 border border-dashed border-indigo-200 rounded-md bg-indigo-50">
+            <Input
+              value={newKeyInput}
+              onChange={(e) => setNewKeyInput(e.target.value)}
+              placeholder="Enter custom category..."
+              className="flex-1"
+              autoFocus
+            />
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm"
+              onClick={() => addEntry(newKeyInput)}
+              className="whitespace-nowrap bg-white"
+              disabled={!newKeyInput.trim()}
+            >
+              Add
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsAddingCustomKey(false)}
+              className="h-9 w-9"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAddingCustomKey(true)}
+              className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 mb-2"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Custom Field
+            </Button>
+            
+            <div className="flex flex-wrap gap-2">
+              {COMMON_SUBJECTIVE_KEYS.map((key) => (
+                <Button
+                  key={key}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addEntry(key)}
+                  className="bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                >
+                  {key}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        <div className="text-xs text-gray-500 flex items-center justify-between border-t border-gray-100 pt-2 mt-4">
+          <span>Fields added: {entries.length}</span>
+          <span className="text-gray-400">
+            Storing as JSON format
+          </span>
+        </div>
+
+        {/* Optional data preview (for debugging) */}
+        {entries.length > 0 && (
+          <div className="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200 text-xs font-mono text-gray-500 overflow-x-auto">
+            <div className="mb-1 text-xs font-medium text-gray-700">JSON Preview:</div>
+            <pre>{JSON.stringify(entries, null, 2)}</pre>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
+
+
 
 const CheckIn = () => {
   const { id } = useParams<{ id?: string }>();
@@ -717,27 +726,22 @@ const CheckIn = () => {
                   </div>
                 </div>
 
-                {/* Subjective Notes */}
+                {/* Subjective Notes - Replace RichTextEditor with SubjectiveKeyValueEditor */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                   <div className="px-5 py-3 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
-                    <h3 className="text-sm font-medium text-gray-800 flex items-center">
-                      <Stethoscope className="mr-2 h-4 w-4 text-indigo-500" />
-                      Subjective Notes
+                    <h3 className="text-sm font-medium text-gray-800 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Stethoscope className="mr-2 h-4 w-4 text-indigo-500" />
+                        Subjective Notes
+                      </div>
+                      
                     </h3>
                   </div>
                   <div className="p-5">
-                    <RichTextEditor
+                    <SubjectiveKeyValueEditor
                       value={subjective}
                       onChange={setSubjective}
-                      placeholder="Enter subjective information about the patient..."
-                      minHeight="150px"
                     />
-                    <div className="mt-2 text-xs text-gray-500 flex items-center justify-between">
-                      <span>Characters: {subjective.length}</span>
-                      <span className="text-gray-400">
-                        Use ** for bold, * for italic
-                      </span>
-                    </div>
                   </div>
                 </div>
 

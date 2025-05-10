@@ -85,6 +85,23 @@ export interface Pet {
   pet_id: number;
   pet_name: string;
   pet_breed: string;
+  species: string;
+  breed: string;
+  age: number;
+  gender: string;
+  weight: number;
+  color: string;
+  microchip_number?: string;
+  owner_name: string;
+  owner_phone: string;
+  owner_email?: string;
+  owner_address?: string;
+  status: "active" | "inactive";
+  data_image?: string;
+  last_visit?: string;
+  allergies?: string;
+  chronic_conditions?: string;
+  medications?: string;
 }
 
 export interface Owner {
@@ -105,17 +122,25 @@ export interface Alert {
 }
 
 export interface Patient {
-  petid: number;
-  username: string;
-  name: string;
-  type: string;
+  pet_id: string;
+  pet_name: string;
+  species: string;
   breed: string;
-  age: string;
+  age: number;
   gender: string;
-  birth_date: string;
-  data_image: string;
-  original_name: string;
-  alerts: PatientAlert[];
+  weight: number;
+  color: string;
+  microchip_number?: string;
+  owner_name: string;
+  owner_phone: string;
+  owner_email?: string;
+  owner_address?: string;
+  status: "active" | "inactive";
+  data_image?: string;
+  last_visit?: string;
+  allergies?: string;
+  chronic_conditions?: string;
+  medications?: string;
 }
 
 export interface QueueItem {
@@ -215,8 +240,10 @@ export interface Treatment {
 }
 
 export interface PatientAlert {
-  type: string;
-  detail: string;
+  type: "critical" | "warning" | "info";
+  title: string;
+  message: string;
+  icon: React.ReactNode;
 }
 
 export interface AIMedication {
@@ -310,6 +337,18 @@ export interface GenerateQRData {
 export interface ObjectiveData {
   vital_signs: VitalSigns;
   systems: Systems;
+}
+
+export interface SubjectiveData {
+  id: string;
+  key: string;
+  value: string;
+}
+
+export interface AssessmentData {
+  primary: string;
+  differentials: string[];
+  notes: string;
 }
 
 export interface VitalSigns {
@@ -611,8 +650,8 @@ export interface AppointmentNotification {
 }
 
 export interface SOAPData {
-  subjective: string;
+  subjective: string | SubjectiveData[];
   objective: ObjectiveData;
-  assessment: string;
+  assessment: AssessmentData;
   plan: string; // Change from number to string for rich text support
 }

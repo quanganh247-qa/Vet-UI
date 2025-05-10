@@ -23,6 +23,7 @@ export const createShift = async (data: { start_time: Date; end_time: Date; doct
 export const getShiftByDoctorId = async (doctor_id: number) => {
     try {
         const response = await api.get(`/api/v1/doctor/${doctor_id}/shifts`);
+        console.log("response", response);
         return response.data;
     } catch (error) {
         console.error("Error fetching shifts by doctor ID:", error);

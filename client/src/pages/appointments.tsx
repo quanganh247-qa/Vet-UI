@@ -11,9 +11,9 @@ import {
   Printer,
   Clock,
   ArrowLeft,
-  UserCog, 
+  UserCog,
   LogOut,
-  User, 
+  User,
   Settings,
   Bell,
 } from "lucide-react";
@@ -33,11 +33,11 @@ import { useLocation } from "wouter";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { usePatientList } from "@/hooks/use-pet";
-import { 
-  useListAppointments, 
-  useMarkNotificationAsRead, 
+import {
+  useListAppointments,
+  useMarkNotificationAsRead,
   useMarkAllNotificationsAsRead,
-  useGetNotificationsFromDB 
+  useGetNotificationsFromDB,
 } from "@/hooks/use-appointment";
 import { WalkInDialog } from "@/components/appointment/WalkInDialog";
 import { NotificationDialog } from "@/components/ui/notification-dialog";
@@ -65,16 +65,19 @@ const Appointments = () => {
   const { data: patientsData, isLoading: patientsLoading } = usePatientList();
   const { doctor, logout } = useAuth();
 
-  const { data: notifications, refetch: refetchNotifications } = useGetNotificationsFromDB();
+  const { data: notifications, refetch: refetchNotifications } =
+    useGetNotificationsFromDB();
 
   console.log("Notifications:", notifications);
   const markNotificationAsRead = useMarkNotificationAsRead();
   const markAllNotificationsAsRead = useMarkAllNotificationsAsRead();
 
   // Safe time formatting helper
-  const formatAppointmentTime = (timeSlot: { start_time?: string } | undefined): string => {
+  const formatAppointmentTime = (
+    timeSlot: { start_time?: string } | undefined
+  ): string => {
     if (!timeSlot || !timeSlot.start_time) return "No time";
-    
+
     try {
       return format(
         parse(timeSlot.start_time, "HH:mm:ss", new Date()),
@@ -101,26 +104,26 @@ const Appointments = () => {
     if (!appointmentsData || !Array.isArray(appointmentsData.data)) {
       return [];
     }
-    
+
     return appointmentsData.data.filter((appointment: Appointment) => {
       // Apply status filter if not set to "all"
       if (statusFilter !== "all") {
         // Check if state is directly available as a string
-        if (typeof appointment.state === 'string') {
+        if (typeof appointment.state === "string") {
           const appointmentState = appointment.state.trim().toLowerCase();
           const filterValue = statusFilter.trim().toLowerCase();
-          
+
           if (appointmentState !== filterValue) {
             return false;
           }
-        } 
+        }
         // Check if state is available via state.state_name (common API pattern)
-        else if (appointment.state && typeof appointment.state === 'object') {
+        else if (appointment.state && typeof appointment.state === "object") {
           const stateObj = appointment.state as { state_name?: string };
           if (stateObj.state_name) {
             const stateName = stateObj.state_name.trim().toLowerCase();
             const filterValue = statusFilter.trim().toLowerCase();
-            
+
             if (stateName !== filterValue) {
               return false;
             }
@@ -173,7 +176,7 @@ const Appointments = () => {
 
   const handleLogout = () => {
     logout();
-    setLocation('/login');
+    setLocation("/login");
   };
 
   const handleMarkNotificationAsRead = (notificationId: string) => {
@@ -195,7 +198,7 @@ const Appointments = () => {
   const handleNotificationClick = (notification: any) => {
     setSelectedNotification(notification);
     setNotificationDialogOpen(true);
-    
+
     // Mark as read when opened
     if (notification.id && !notification.read) {
       markNotificationAsRead.mutate(notification.id, {
@@ -205,7 +208,7 @@ const Appointments = () => {
       });
     }
   };
-  
+
   const handleCloseNotificationDialog = () => {
     setNotificationDialogOpen(false);
   };
@@ -237,7 +240,7 @@ const Appointments = () => {
               <Calendar className="h-4 w-4 text-white/70 mr-2" />
               <input
                 type="date"
-                value={format(selectedDate, 'yyyy-MM-dd')}
+                value={format(selectedDate, "yyyy-MM-dd")}
                 onChange={handleDateChange}
                 className="text-sm bg-transparent border-none focus:outline-none text-white"
               />
@@ -245,11 +248,16 @@ const Appointments = () => {
             <WalkInDialog />
             <DropdownMenu>
               <DropdownMenuTrigger>
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 relative">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-white hover:bg-white/20 relative"
+                >
                   <Bell className="h-5 w-5" />
-                  {notifications && notifications.filter((n: any) => !n.read).length > 0 && (
-                    <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-                  )}
+                  {notifications &&
+                    notifications.filter((n: any) => !n.read).length > 0 && (
+                      <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+                    )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-64">
@@ -262,7 +270,9 @@ const Appointments = () => {
                       onClick={() => handleNotificationClick(notification)}
                       className={cn(
                         "cursor-pointer",
-                        notification.read ? "text-gray-500" : "text-black font-semibold"
+                        notification.read
+                          ? "text-gray-500"
+                          : "text-black font-semibold"
                       )}
                     >
                       {notification.message}
@@ -288,12 +298,6 @@ const Appointments = () => {
 
       {/* Filters */}
       <Card className="border-none shadow-md overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-3 border-b">
-          <CardTitle className="text-lg font-semibold text-indigo-900 flex items-center">
-            <Filter className="h-5 w-5 mr-2 text-indigo-600" />
-            Filters & Search
-          </CardTitle>
-        </CardHeader>
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row md:items-center gap-4">
             <div className="relative flex-grow md:max-w-md">
@@ -414,7 +418,7 @@ const Appointments = () => {
 
                     // Thay vì truy cập trực tiếp vào patientsData, cần truy cập vào mảng data bên trong
                     const patient = patientsData?.data?.find(
-                      (p: Patient) => p.petid === pet.pet_id
+                      (p: Patient) => Number(p.pet_id) === Number(pet.pet_id)
                     );
                     const statusColors = getStatusColor(state);
 
@@ -425,17 +429,18 @@ const Appointments = () => {
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center space-x-3">
-                            <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                              <img
-                                src={
-                                  patient?.data_image
-                                    ? `data:image/png;base64,${patient.data_image}`
-                                    : "/fallback-image.png"
-                                }
-                                alt={patient?.name}
-                                className="w-10 h-10 rounded-lg"
-                              />
-                            </div>
+                            
+                          <div className="h-16 w-16 rounded-full overflow-hidden bg-indigo-100 flex-shrink-0 flex items-center justify-center mr-3">
+                          {patient?.data_image ? (
+                            <img
+                              src={`data:image/png;base64,${patient.data_image}`}
+                              alt={patient.pet_name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <PawPrint className="h-8 w-8 text-indigo-600" />
+                          )}
+                        </div>
                             <div>
                               <div className="font-medium text-gray-900">
                                 {patient?.pet_name}
@@ -538,14 +543,23 @@ const Appointments = () => {
               <CardContent className="px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-500">
-                    Showing {filteredAppointments.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} to{" "}
-                    {Math.min(currentPage * pageSize, filteredAppointments.length)}{" "}
+                    Showing{" "}
+                    {filteredAppointments.length === 0
+                      ? 0
+                      : (currentPage - 1) * pageSize + 1}{" "}
+                    to{" "}
+                    {Math.min(
+                      currentPage * pageSize,
+                      filteredAppointments.length
+                    )}{" "}
                     of {filteredAppointments.length}{" "}
                     {statusFilter !== "all" ? `filtered` : ``} entries
                   </span>
                   <select
                     value={pageSize.toString()}
-                    onChange={(e) => handlePageSizeChange(parseInt(e.target.value))}
+                    onChange={(e) =>
+                      handlePageSizeChange(parseInt(e.target.value))
+                    }
                     className="rounded-md border border-gray-200 bg-white text-sm p-1"
                   >
                     <option value="5">5</option>
@@ -565,20 +579,31 @@ const Appointments = () => {
                   >
                     Previous
                   </Button>
-                  
+
                   {filteredAppointments.length > 0 && (
                     <div className="flex items-center gap-1">
-                      {Math.ceil(filteredAppointments.length / pageSize) <= 7 ? (
+                      {Math.ceil(filteredAppointments.length / pageSize) <=
+                      7 ? (
                         // Show all page numbers if there are 7 or fewer pages
-                        Array.from({ length: Math.ceil(filteredAppointments.length / pageSize) }, (_, i) => i + 1).map((page) => (
+                        Array.from(
+                          {
+                            length: Math.ceil(
+                              filteredAppointments.length / pageSize
+                            ),
+                          },
+                          (_, i) => i + 1
+                        ).map((page) => (
                           <Button
                             key={page}
-                            variant={currentPage === page ? 'default' : 'outline'}
+                            variant={
+                              currentPage === page ? "default" : "outline"
+                            }
                             size="sm"
                             onClick={() => handlePageChange(page)}
                             className={cn(
-                              'px-3',
-                              currentPage === page && 'bg-indigo-600 text-white hover:bg-indigo-700'
+                              "px-3",
+                              currentPage === page &&
+                                "bg-indigo-600 text-white hover:bg-indigo-700"
                             )}
                           >
                             {page}
@@ -589,40 +614,59 @@ const Appointments = () => {
                         <>
                           {/* First page */}
                           <Button
-                            variant={currentPage === 1 ? 'default' : 'outline'}
+                            variant={currentPage === 1 ? "default" : "outline"}
                             size="sm"
                             onClick={() => handlePageChange(1)}
                             className={cn(
-                              'px-3',
-                              currentPage === 1 && 'bg-indigo-600 text-white hover:bg-indigo-700'
+                              "px-3",
+                              currentPage === 1 &&
+                                "bg-indigo-600 text-white hover:bg-indigo-700"
                             )}
                           >
                             1
                           </Button>
-                          
+
                           {/* Ellipsis if needed */}
                           {currentPage > 3 && (
                             <span className="px-2 text-gray-500">...</span>
                           )}
-                          
+
                           {/* Pages around current page */}
                           {Array.from(
-                            { length: Math.min(3, Math.ceil(filteredAppointments.length / pageSize)) },
+                            {
+                              length: Math.min(
+                                3,
+                                Math.ceil(
+                                  filteredAppointments.length / pageSize
+                                )
+                              ),
+                            },
                             (_, i) => {
                               const pageNum = Math.max(
                                 2,
                                 currentPage - 1 + i - (currentPage > 2 ? 1 : 0)
                               );
-                              if (pageNum >= 2 && pageNum < Math.ceil(filteredAppointments.length / pageSize)) {
+                              if (
+                                pageNum >= 2 &&
+                                pageNum <
+                                  Math.ceil(
+                                    filteredAppointments.length / pageSize
+                                  )
+                              ) {
                                 return (
                                   <Button
                                     key={pageNum}
-                                    variant={currentPage === pageNum ? 'default' : 'outline'}
+                                    variant={
+                                      currentPage === pageNum
+                                        ? "default"
+                                        : "outline"
+                                    }
                                     size="sm"
                                     onClick={() => handlePageChange(pageNum)}
                                     className={cn(
-                                      'px-3',
-                                      currentPage === pageNum && 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                      "px-3",
+                                      currentPage === pageNum &&
+                                        "bg-indigo-600 text-white hover:bg-indigo-700"
                                     )}
                                   >
                                     {pageNum}
@@ -632,24 +676,46 @@ const Appointments = () => {
                               return null;
                             }
                           )}
-                          
+
                           {/* Ellipsis if needed */}
-                          {currentPage < Math.ceil(filteredAppointments.length / pageSize) - 2 && (
+                          {currentPage <
+                            Math.ceil(filteredAppointments.length / pageSize) -
+                              2 && (
                             <span className="px-2 text-gray-500">...</span>
                           )}
-                          
+
                           {/* Last page */}
-                          {Math.ceil(filteredAppointments.length / pageSize) > 1 && (
+                          {Math.ceil(filteredAppointments.length / pageSize) >
+                            1 && (
                             <Button
-                              variant={currentPage === Math.ceil(filteredAppointments.length / pageSize) ? 'default' : 'outline'}
+                              variant={
+                                currentPage ===
+                                Math.ceil(
+                                  filteredAppointments.length / pageSize
+                                )
+                                  ? "default"
+                                  : "outline"
+                              }
                               size="sm"
-                              onClick={() => handlePageChange(Math.ceil(filteredAppointments.length / pageSize))}
+                              onClick={() =>
+                                handlePageChange(
+                                  Math.ceil(
+                                    filteredAppointments.length / pageSize
+                                  )
+                                )
+                              }
                               className={cn(
-                                'px-3',
-                                currentPage === Math.ceil(filteredAppointments.length / pageSize) && 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                "px-3",
+                                currentPage ===
+                                  Math.ceil(
+                                    filteredAppointments.length / pageSize
+                                  ) &&
+                                  "bg-indigo-600 text-white hover:bg-indigo-700"
                               )}
                             >
-                              {Math.ceil(filteredAppointments.length / pageSize)}
+                              {Math.ceil(
+                                filteredAppointments.length / pageSize
+                              )}
                             </Button>
                           )}
                         </>
@@ -663,7 +729,8 @@ const Appointments = () => {
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={
                       currentPage >=
-                      Math.ceil(filteredAppointments.length / pageSize) || filteredAppointments.length === 0
+                        Math.ceil(filteredAppointments.length / pageSize) ||
+                      filteredAppointments.length === 0
                     }
                     className="bg-white shadow-sm border-gray-200 hover:bg-gray-50"
                   >
@@ -677,8 +744,8 @@ const Appointments = () => {
       </Card>
 
       {/* Add notification dialog */}
-      <NotificationDialog 
-        notification={selectedNotification} 
+      <NotificationDialog
+        notification={selectedNotification}
         open={notificationDialogOpen}
         onClose={handleCloseNotificationDialog}
       />

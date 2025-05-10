@@ -1,18 +1,18 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createSOAP, getAllSOAPs, getSOAP, updateSOAP } from "@/services/soap-services";
-import { ObjectiveData } from "@/types";
+import { AssessmentData, ObjectiveData, SubjectiveData } from "@/types";
 
 interface UpdateSOAPParams {
   appointmentID: string;
-  subjective: string;
+  subjective: string | SubjectiveData[];
   objective: ObjectiveData;
-  assessment: string;
+  assessment: AssessmentData;
   plan: number;
 }
 
 export const useCreateSOAP = () => {
     return useMutation({
-      mutationFn: ({ appointmentID, subjective }: { appointmentID: string; subjective: string }) => createSOAP(appointmentID, subjective),
+      mutationFn: ({ appointmentID, subjective }: { appointmentID: string; subjective: string | SubjectiveData[] }) => createSOAP(appointmentID, subjective),
       onSuccess: (data) => {
         console.log("SOAP note created successfully:", data);
       },

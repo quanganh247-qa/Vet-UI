@@ -96,21 +96,11 @@ const AppointmentFlow = () => {
     enabled: true,
   });
 
-  // Debug logs for rooms
-  console.log('Rooms Query State:', {
-    isLoading: isLoadingRooms,
-    data: roomsData,
-    error: roomsError
-  });
-
+  
   // Queue data
   const { data: queueData, error: queueError } = useListAppointmentsQueue();
 
-  // Debug logs for queue
-  console.log('Queue Data State:', {
-    data: queueData,
-    error: queueError
-  });
+
   
   const appointments = appointmentsData?.data || [];
   const totalAppointments = appointmentsData?.total || 0;
@@ -266,9 +256,9 @@ const AppointmentFlow = () => {
   // Show loading state
   if (isLoadingAppointments || isLoadingRooms) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mb-4" />
-        <p className="text-indigo-600 font-medium">Loading appointment data...</p>
+      <div className="h-screen flex flex-col items-center justify-center bg-[#f6fcfe]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#23b3c7] mb-4" />
+        <p className="text-[#23b3c7] font-medium">Loading appointment data...</p>
       </div>
     );
   }
@@ -276,9 +266,9 @@ const AppointmentFlow = () => {
   // Rendering the mobile menu
   const renderMobileMenu = () => (
     <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-3">
+      <div className="flex items-center justify-between border-b border-[#b6e6f2] pb-3 mb-3">
         <div className="flex items-center">
-          <UserCog className="h-5 w-5 mr-2 text-indigo-600" />
+          <UserCog className="h-5 w-5 mr-2 text-[#23b3c7]" />
           <span className="font-medium">Dr. {doctor?.username || 'User'}</span>
         </div>
         <Button variant="ghost" size="sm" onClick={() => setIsMobileMenuOpen(false)}>
@@ -286,8 +276,8 @@ const AppointmentFlow = () => {
         </Button>
       </div>
       
-      <div className="flex items-center bg-indigo-50 rounded-md p-3 mb-3">
-        <Calendar className="h-4 w-4 text-indigo-600 mr-2" />
+      <div className="flex items-center bg-[#eaf7fa] rounded-md p-3 mb-3">
+        <Calendar className="h-4 w-4 text-[#23b3c7] mr-2" />
         <input
           type="date"
           value={format(selectedDate, 'yyyy-MM-dd')}
@@ -297,7 +287,7 @@ const AppointmentFlow = () => {
       </div>
     
 
-      <div className="border-t border-gray-100 pt-3">
+      <div className="border-t border-[#b6e6f2] pt-3">
         <Button variant="ghost" size="sm" className="w-full justify-start text-left" asChild>
           <Link href="/dashboard">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -318,7 +308,7 @@ const AppointmentFlow = () => {
         <Button 
           variant="ghost" 
           size="sm" 
-          className="w-full justify-start text-left text-red-500 mt-1"
+          className="w-full justify-start text-left text-[#ff5a5f] mt-1"
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4 mr-2" />
@@ -331,7 +321,7 @@ const AppointmentFlow = () => {
   return (
     <div className="space-y-6">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md">
+      <div className="bg-[#23b3c7] px-6 py-4 rounded-xl shadow-md">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <div className="flex items-center">
@@ -373,35 +363,27 @@ const AppointmentFlow = () => {
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
-            
-            <Button 
-              onClick={handleNewAppointment}
-              className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              New Appointment
-            </Button>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        <div className="bg-white rounded-lg border border-indigo-100 shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-lg border border-[#b6e6f2] shadow-sm p-6 mb-6">
           {/* Search and filter section */}
-          <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6 bg-indigo-50 p-3 rounded-md border border-indigo-100">
+          <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6 bg-[#eaf7fa] p-3 rounded-md border border-[#b6e6f2]">
             <div className="flex flex-1 gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#b6e6f2]" />
                 <Input
                   placeholder="Search appointments..."
-                  className="pl-10 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
+                  className="pl-10 border-[#b6e6f2] focus:border-[#23b3c7] focus:ring-[#23b3c7]"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
               
               <Select value={statusFilter || "all"} onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}>
-                <SelectTrigger className="w-[180px] border-indigo-200">
+                <SelectTrigger className="w-[180px] border-[#b6e6f2]">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -418,23 +400,21 @@ const AppointmentFlow = () => {
                   type="date"
                   value={format(selectedDate, 'yyyy-MM-dd')}
                   onChange={handleDateChange}
-                  className="border-indigo-200 h-10"
+                  className="border-[#b6e6f2] h-10"
                 />
               </div>
               
-              <Button variant="outline" size="icon" onClick={clearFilters} className="border-indigo-200">
-                <RotateCcw className="h-4 w-4 text-indigo-600" />
+              <Button variant="outline" size="icon" onClick={clearFilters} className="border-[#b6e6f2]">
+                <RotateCcw className="h-4 w-4 text-[#23b3c7]" />
               </Button>
             </div>
-            
-    
           </div>
 
           {/* Flowboard section */}
           <div className="bg-white rounded-lg overflow-hidden mb-6">
-            <div className="border-b border-indigo-100 p-4 bg-gradient-to-r from-indigo-50 to-white">
-              <h2 className="text-lg font-semibold text-indigo-900 flex items-center">
-                <Stethoscope className="mr-2 h-5 w-5 text-indigo-600" />
+            <div className="border-b border-[#b6e6f2] p-4 bg-[#eaf7fa]">
+              <h2 className="text-lg font-semibold text-[#1e293b] flex items-center">
+                <Stethoscope className="mr-2 h-5 w-5 text-[#23b3c7]" />
                 Flowboard
               </h2>
             </div>
@@ -475,9 +455,9 @@ const AppointmentFlow = () => {
 
           {/* Pagination controls */}
           {totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 border-t border-gray-200 pt-4">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 border-t border-[#b6e6f2] pt-4">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-[#888]">
                   Showing {Math.min((currentPage - 1) * pageSize + 1, totalAppointments)} to{" "}
                   {Math.min(currentPage * pageSize, totalAppointments)} of {totalAppointments} appointments
                 </span>
@@ -485,7 +465,7 @@ const AppointmentFlow = () => {
                   value={pageSize.toString()}
                   onValueChange={handlePageSizeChange}
                 >
-                  <SelectTrigger className="w-20 h-8 text-xs border-indigo-200">
+                  <SelectTrigger className="w-20 h-8 text-xs border-[#b6e6f2]">
                     <SelectValue placeholder="10" />
                   </SelectTrigger>
                   <SelectContent>
@@ -503,7 +483,7 @@ const AppointmentFlow = () => {
                   size="sm"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage <= 1}
-                  className="h-8 w-8 p-0 flex items-center justify-center border-indigo-200"
+                  className="h-8 w-8 p-0 flex items-center justify-center border-[#b6e6f2]"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -528,8 +508,8 @@ const AppointmentFlow = () => {
                         onClick={() => handlePageChange(pageNum)}
                         className={`h-8 w-8 p-0 ${
                           currentPage === pageNum 
-                            ? "bg-indigo-600 text-white hover:bg-indigo-700" 
-                            : "border-indigo-200"
+                            ? "bg-[#23b3c7] text-white hover:bg-[#23b3c7]" 
+                            : "border-[#b6e6f2]"
                         }`}
                       >
                         {pageNum}
@@ -543,7 +523,7 @@ const AppointmentFlow = () => {
                   size="sm"
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage >= totalPages}
-                  className="h-8 w-8 p-0 flex items-center justify-center border-indigo-200"
+                  className="h-8 w-8 p-0 flex items-center justify-center border-[#b6e6f2]"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
