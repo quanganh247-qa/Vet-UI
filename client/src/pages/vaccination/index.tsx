@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import {
   Card,
@@ -47,6 +47,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
+import WorkflowNavigation from "@/components/WorkflowNavigation";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -55,13 +56,36 @@ const VaccinationPage: React.FC = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
-  const petId = petIdParam ? parseInt(petIdParam, 10) : 0;
+  // Extract query parameters
+  const [workflowParams, setWorkflowParams] = useState<{
+    appointmentId: string | null;
+    petId: string | null;
+  }>({
+    appointmentId: null,
+    petId: null,
+  });
+
+  // Extract URL parameters
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlAppointmentId = searchParams.get("appointmentId");
+    const urlPetId = searchParams.get("petId");
+
+    setWorkflowParams({
+      appointmentId: urlAppointmentId || null,
+      petId: urlPetId || petIdParam || null,
+    });
+  }, [petIdParam]);
+
+  // Determine pet ID from either workflow or direct URL
+  const effectivePetId = workflowParams.petId || petIdParam || "0";
+  const petId = parseInt(effectivePetId, 10);
   const isValidPetId = petId > 0;
   const isStandaloneMode = !isValidPetId;
 
   // Patient data (if in patient-specific mode)
   const { data: patient, isLoading: isPatientLoading } = usePatientData(
-    isValidPetId ? petId.toString() : undefined
+    isValidPetId ? effectivePetId : undefined
   );
 
   // Vaccination history for the selected patient
@@ -143,36 +167,51 @@ const VaccinationPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md mb-6">
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
+        {/* Header Row */}
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-white">
-              Vaccination Management {patient ? `- ${patient.name}` : ""}
-            </h1>
-            <p className="text-indigo-100 text-sm">
-              {isStandaloneMode
-                ? "View and manage vaccination records for all patients"
-                : `View history and administer new vaccinations for ${
-                    patient?.name || "this patient"
-                  }`}
-            </p>
-          </div>
-          <div className="flex items-center space-x-3">
+          {/* Left Section: Back Button + Title */}
+          <div className="flex items-center">
             <Button
               variant="ghost"
               size="sm"
-              className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all"
-              onClick={() =>
-                navigate(isValidPetId ? `/patient/${petId}` : "/patients")
-              }
+              className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
+              onClick={() => window.history.back()}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              {isValidPetId ? "Back to Patient" : "Back to Patients"}
+              <span className="text-sm font-medium">Back</span>
             </Button>
+            <div>
+              <h1 className="text-white font-semibold text-lg">
+                Vaccination Management {patient ? `- ${patient.name}` : ""}
+              </h1>
+            </div>
           </div>
+          {/* Right Section: Back Button (only if no appointmentId) */}
+          {!workflowParams.appointmentId && (
+            <div className="flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all"
+                onClick={() =>
+                  navigate(isValidPetId ? `/patient/${petId}` : "/patients")
+                }
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                {isValidPetId ? "Back to Patient" : "Back to Patients"}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
+      
+      {/* Workflow Navigation */}
+      <WorkflowNavigation
+        appointmentId={workflowParams.appointmentId || undefined}
+        petId={workflowParams.petId || petIdParam}
+        currentStep="vaccination"
+      />
 
       <Tabs
         defaultValue="vaccinations"
@@ -185,9 +224,9 @@ const VaccinationPage: React.FC = () => {
             <Syringe className="h-4 w-4" />
             Vaccination Records
           </TabsTrigger>
-          <TabsTrigger value="inventory" className="flex items-center gap-2">
-            <FlaskConical className="h-4 w-4" />
-            Vaccine Inventory
+          <TabsTrigger value="administer" className="flex items-center gap-2">
+            <PlusCircle className="h-4 w-4" />
+            Administer Vaccine
           </TabsTrigger>
         </TabsList>
 
@@ -220,183 +259,108 @@ const VaccinationPage: React.FC = () => {
                       className="pl-8 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                     />
                   </div>
-                  <Dialog
-                    open={isAdministrationDialogOpen}
-                    onOpenChange={setIsAdministrationDialogOpen}
-                  >
-                    <DialogTrigger asChild>
-                      <Button
-                        className="bg-indigo-600 text-white hover:bg-indigo-700 w-full sm:w-auto"
-                        size="sm"
-                      >
-                        <PlusCircle className="h-4 w-4 mr-2" />
-                        Administer New Vaccine
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[900px] md:max-w-[1000px] lg:max-w-[85%] max-h-[90vh] overflow-y-auto border border-indigo-200 bg-white">
-                      <DialogHeader className="border-b border-indigo-100 pb-4">
-                        <DialogTitle className="text-xl font-semibold text-indigo-900 flex items-center">
-                          <Syringe className="h-5 w-5 mr-2 text-indigo-600" />
-                          Administer New Vaccination
-                        </DialogTitle>
-                      </DialogHeader>
-                      <VaccinationAdministration
-                        petId={isValidPetId ? petId.toString() : undefined}
-                        onComplete={handleVaccinationComplete}
-                        onCancel={handleCancelAdministration}
-                      />
-                    </DialogContent>
-                  </Dialog>
                 </div>
               </div>
             </CardHeader>
+
+            {/* Vaccination Records Table */}
             <CardContent className="p-0">
-              {Array.isArray(filteredHistory) && filteredHistory.length > 0 ? (
-                <div>
-                  <Table>
-                    <TableHeader className="bg-gray-50/80">
-                      <TableRow>
-                        {isStandaloneMode && (
-                          <TableHead className="font-semibold">
-                            Patient
-                          </TableHead>
-                        )}
-                        <TableHead className="font-semibold">Date</TableHead>
-                        <TableHead className="font-semibold">
-                          Vaccine Name
-                        </TableHead>
-                        <TableHead className="font-semibold">
-                          Batch Number
-                        </TableHead>
-                        <TableHead className="font-semibold">
-                          Administered By
-                        </TableHead>
-                        <TableHead className="font-semibold">
-                          Next Due
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedHistory.map((record: any, index: number) => (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-gray-50">
+                    <TableRow>
+                      <TableHead className="font-medium">Vaccine</TableHead>
+                      <TableHead className="font-medium">Batch #</TableHead>
+                      <TableHead className="font-medium">Date</TableHead>
+                      <TableHead className="font-medium">Next Due</TableHead>
+                      <TableHead className="font-medium">Status</TableHead>
+                      <TableHead className="font-medium">Provider</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedHistory.length > 0 ? (
+                      paginatedHistory.map((vaccine) => (
                         <TableRow
-                          key={
-                            record.vaccination_record_id || record.id || index
-                          }
-                          className="hover:bg-gray-50 transition-colors"
+                          key={vaccine.vaccination_id}
+                          className="hover:bg-gray-50"
                         >
-                          {isStandaloneMode && (
-                            <TableCell>
-                              <div className="flex items-center">
-                                <PawPrint className="h-4 w-4 mr-2 text-indigo-500" />
-                                <span className="font-medium">
-                                  {record.pet?.name || "Unknown"}
-                                </span>
-                              </div>
-                            </TableCell>
-                          )}
                           <TableCell className="font-medium">
-                            {record.administration_date
+                            {vaccine.vaccine_name}
+                          </TableCell>
+                          <TableCell>{vaccine.batch_number}</TableCell>
+                          <TableCell>
+                            {vaccine.date_administered
                               ? format(
-                                  new Date(record.administration_date),
-                                  "PP"
+                                  new Date(vaccine.date_administered),
+                                  "MMM d, yyyy"
                                 )
                               : "N/A"}
                           </TableCell>
                           <TableCell>
-                            {record.vaccine_name ||
-                              record.vaccine?.name ||
-                              "N/A"}
-                          </TableCell>
-                          <TableCell>{record.batch_number || "N/A"}</TableCell>
-                          <TableCell>
-                            {record.administered_by_name ||
-                              record.doctor?.name ||
-                              "N/A"}
+                            {vaccine.next_due_date
+                              ? format(
+                                  new Date(vaccine.next_due_date),
+                                  "MMM d, yyyy"
+                                )
+                              : "N/A"}
                           </TableCell>
                           <TableCell>
-                            {record.next_due_date ? (
-                              <Badge
-                                variant="outline"
-                                className="bg-blue-50 text-blue-700 border-blue-200"
-                              >
-                                {format(new Date(record.next_due_date), "PP")}
-                              </Badge>
-                            ) : (
-                              <Badge
-                                variant="outline"
-                                className="bg-gray-50 text-gray-600 border-gray-200"
-                              >
-                                None
-                              </Badge>
-                            )}
+                            {getVaccineStatusBadge(vaccine)}
+                          </TableCell>
+                          <TableCell>
+                            {vaccine.vaccine_provider || "Unknown"}
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={6}
+                          className="h-24 text-center text-gray-500"
+                        >
+                          No vaccination records found
+                          {searchQuery && " matching your search"}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
 
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between p-4 border-t border-gray-200">
-                      <div className="text-sm text-gray-500">
-                        Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-                        {Math.min(
-                          currentPage * ITEMS_PER_PAGE,
-                          filteredHistory.length
-                        )}{" "}
-                        of {filteredHistory.length} results
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handlePreviousPage}
-                          disabled={currentPage === 1}
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                          <span className="sr-only">Previous Page</span>
-                        </Button>
-                        <span className="text-sm text-gray-600">
-                          Page {currentPage} of {totalPages}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleNextPage}
-                          disabled={currentPage === totalPages}
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                          <span className="sr-only">Next Page</span>
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <CardFooter className="flex justify-between items-center border-t p-4">
+                <div className="text-sm text-gray-500">
+                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
+                  {Math.min(
+                    currentPage * ITEMS_PER_PAGE,
+                    filteredHistory.length
+                  )}{" "}
+                  of {filteredHistory.length} records
                 </div>
-              ) : (
-                <div className="py-12 flex flex-col items-center justify-center text-gray-500">
-                  <Syringe className="h-12 w-12 text-gray-300 mb-4" />
-                  <h3 className="text-lg font-medium mb-2">
-                    No Vaccination Records Found
-                  </h3>
-                  <p className="text-sm text-center max-w-md">
-                    {searchQuery
-                      ? "No records match your search criteria. Try using different keywords."
-                      : isStandaloneMode
-                      ? "There are no vaccination records in the system yet."
-                      : `${
-                          patient?.name || "This patient"
-                        } has no vaccination records yet.`}
-                  </p>
+                <div className="flex items-center space-x-2">
                   <Button
-                    className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white"
+                    variant="outline"
                     size="sm"
-                    onClick={() => setIsAdministrationDialogOpen(true)}
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1}
                   >
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Administer New Vaccine
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>
-              )}
-            </CardContent>
+              </CardFooter>
+            )}
           </Card>
 
           {isValidPetId && filteredHistory.length > 0 && (
@@ -418,81 +382,15 @@ const VaccinationPage: React.FC = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="inventory" className="space-y-4">
+        <TabsContent value="administer" className="space-y-4">
           <Card className="border-none shadow-lg overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-indigo-50 to-white border-b pb-4">
-              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                <div>
-                  <CardTitle className="text-lg font-semibold text-indigo-900 flex items-center">
-                    <FlaskConical className="h-5 w-5 mr-2 text-indigo-600" />
-                    Vaccine Inventory
-                  </CardTitle>
-                  <CardDescription>
-                    Manage available vaccines and stock levels
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
             <CardContent className="p-0">
-              {Array.isArray(allVaccines) && allVaccines.length > 0 ? (
-                <Table>
-                  <TableHeader className="bg-gray-50/80">
-                    <TableRow>
-                      <TableHead className="font-semibold">
-                        Vaccine Name
-                      </TableHead>
-                      <TableHead className="font-semibold">
-                        Available Doses
-                      </TableHead>
-                      <TableHead className="font-semibold">
-                        Batch Number
-                      </TableHead>
-                      <TableHead className="font-semibold">
-                        Expiration Date
-                      </TableHead>
-                      <TableHead className="font-semibold">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {allVaccines.map((vaccine: any, index: number) => (
-                      <TableRow
-                        key={vaccine.id || index}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <TableCell className="font-medium">
-                          {vaccine.name}
-                        </TableCell>
-                        <TableCell>{vaccine.available_doses || 0}</TableCell>
-                        <TableCell>{vaccine.batch_number || "N/A"}</TableCell>
-                        <TableCell>
-                          {vaccine.expiration_date
-                            ? format(new Date(vaccine.expiration_date), "PP")
-                            : "N/A"}
-                        </TableCell>
-                        <TableCell>{getVaccineStatusBadge(vaccine)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="py-12 flex flex-col items-center justify-center text-gray-500">
-                  <FlaskConical className="h-12 w-12 text-gray-300 mb-4" />
-                  <h3 className="text-lg font-medium mb-2">
-                    No Vaccines in Inventory
-                  </h3>
-                  <p className="text-sm text-center max-w-md">
-                    There are no vaccines in inventory or the inventory data
-                    couldn't be loaded.
-                  </p>
-                  <Button
-                    className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white"
-                    size="sm"
-                  >
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Add New Vaccine
-                  </Button>
-                </div>
-              )}
+              <VaccinationAdministration
+                petId={isValidPetId ? effectivePetId.toString() : undefined}
+                appointmentId={workflowParams.appointmentId || undefined}
+                onComplete={handleVaccinationComplete}
+                onCancel={handleCancelAdministration}
+              />
             </CardContent>
           </Card>
         </TabsContent>

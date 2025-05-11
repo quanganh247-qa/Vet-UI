@@ -38,6 +38,7 @@ import {
   Play,
   ArrowUpRight,
   Receipt,
+  Syringe,
 } from "lucide-react";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -188,15 +189,11 @@ const TreatmentManagement: React.FC = () => {
     refetch: refetchTreatments,
   } = useTreatmentsData(petId || "");
 
-  console.log(treatments);
-
   const { data: patientData, isLoading: isPatientLoading } = usePatientData(
     petId || ""
   );
 
-  const { data: alergies, isLoading: isAlertsLoading } = useAllergiesData(
-    petId || ""
-  );
+
 
   const selectedTreatment =
     treatments &&
@@ -238,31 +235,6 @@ const TreatmentManagement: React.FC = () => {
     }
   };
 
-  // Utility function to build query parameters
-  const buildUrlParams = (
-    params: Record<string, string | number | null | undefined>
-  ) => {
-    const urlParams = new URLSearchParams();
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== "") {
-        urlParams.append(key, String(value));
-      }
-    });
-
-    const queryString = urlParams.toString();
-    return queryString ? `?${queryString}` : "";
-  };
-
-  // Handle sharing the invoice
-  const handleShareInvoice = () => {
-    // In a real implementation, you would open a share dialog
-    toast({
-      title: "Share Options",
-      description: "Invoice sharing options are being prepared.",
-      className: "bg-blue-50 border-blue-200 text-blue-800",
-    });
-  };
 
   // State for new treatment
   const [newTreatment, setNewTreatment] = useState<
@@ -1171,9 +1143,9 @@ const TreatmentManagement: React.FC = () => {
     generatePDF("prescription-pdf-content", "print");
   };
 
-  const handleUploadPrescription = () => {
-    generatePDF("prescription-pdf-content", "upload");
-  };
+  // const handleUploadPrescription = () => {
+  //   generatePDF("prescription-pdf-content", "upload");
+  // };
 
   // Cập nhật hàm xử lý tải xuống đơn thuốc dưới dạng PDF
   const handleDownloadPrescription = () => {
@@ -1190,68 +1162,85 @@ const TreatmentManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header with gradient background */}
       <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
-        {/* Header */}
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
-            onClick={() => window.history.back()}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            <span className="text-sm font-medium">Back to Patient</span>
-          </Button>
-          <h1 className="text-white font-semibold text-lg">
-            Treatment Management
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {activeView === "detail" && selectedTreatment && (
+        {/* Header Row */}
+        <div className="flex justify-between items-center">
+          {/* Left Section: Back Button + Title */}
+          <div className="flex items-center">
             <Button
-              onClick={handleBackClick}
+              variant="ghost"
+              size="sm"
+              className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
+              onClick={() => window.history.back()}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              <span className="text-sm font-medium">Back</span>
+            </Button>
+            <h1 className="text-white font-semibold text-lg">
+              Treatment Management
+            </h1>
+          </div>
+
+          {/* Right Section: Action Buttons */}
+          <div className="flex items-center gap-2">
+            {activeView === "detail" && selectedTreatment && (
+              <Button
+                onClick={handleBackClick}
+                variant="outline"
+                size="sm"
+                className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                <span>Back to List</span>
+              </Button>
+            )}
+            {activeView === "list" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
+                onClick={() => setActiveView("new")}
+              >
+                <PlusCircle className="h-4 w-4 mr-1" />
+                <span>New Treatment</span>
+              </Button>
+            )}
+
+            <Button
               variant="outline"
               size="sm"
               className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
+              onClick={handleInitiateCompletion}
             >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              <span>Back to List</span>
+              <CheckSquare className="h-4 w-4 mr-1" />
+              <span>Complete Appointment</span>
             </Button>
-          )}
-          {activeView === "list" && (
+
             <Button
               variant="outline"
               size="sm"
               className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
-              onClick={() => setActiveView("new")}
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (appointmentId || id)
+                  params.append("appointmentId", appointmentId || id || "");
+                if (petId) params.append("petId", petId.toString());
+                navigate(`/vaccination?${params.toString()}`);
+              }}
             >
-              <PlusCircle className="h-4 w-4 mr-1" />
-              <span>New Treatment</span>
+              <Syringe className="h-4 w-4 mr-1" />
+              <span>Go to Vaccination</span>
             </Button>
-          )}
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
-            onClick={handleInitiateCompletion}
-          >
-            <CheckSquare className="h-4 w-4 mr-1" />
-            <span>Complete Appointment</span>
-          </Button>
+          </div>
         </div>
       </div>
 
       {/* Workflow Navigation */}
-      <div className="mb-4 pt-3">
-        <WorkflowNavigation
-          appointmentId={appointmentId || id || undefined}
-          petId={petId}
-          currentStep="treatment"
-        />
-      </div>
+      <WorkflowNavigation
+        appointmentId={appointmentId || id || undefined}
+        petId={petId}
+        currentStep="treatment"
+      />
 
       {/* Main Content */}
       <div className="p-4">
@@ -1327,7 +1316,7 @@ const TreatmentManagement: React.FC = () => {
                             Disease
                           </div>
                           <div className="text-sm font-medium mt-1">
-                            {treatment.disease|| "Not specified"}
+                            {treatment.disease || "Not specified"}
                           </div>
                         </div>
                       </div>
@@ -1443,54 +1432,54 @@ const TreatmentManagement: React.FC = () => {
                 {/* SOAP Notes Section */}
                 {soapData && (
                   <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                     {/* Primary Diagnosis */}
-                     <div className="bg-indigo-50 p-2 rounded-md border border-indigo-100">
-                          <h5 className="text-xs font-medium text-indigo-700 mb-1 flex items-center">
-                            <CheckCircle className="h-3.5 w-3.5 mr-1 text-indigo-600" />
-                            Primary Diagnosis
+                    {/* Primary Diagnosis */}
+                    <div className="bg-indigo-50 p-2 rounded-md border border-indigo-100">
+                      <h5 className="text-xs font-medium text-indigo-700 mb-1 flex items-center">
+                        <CheckCircle className="h-3.5 w-3.5 mr-1 text-indigo-600" />
+                        Primary Diagnosis
+                      </h5>
+                      <p className="text-gray-800 text-sm pl-5 font-medium">
+                        {soapData.assessment.primary}
+                      </p>
+                    </div>
+
+                    {/* Differential Diagnoses */}
+                    {soapData.assessment.differentials &&
+                      Array.isArray(soapData.assessment.differentials) &&
+                      soapData.assessment.differentials.length > 0 && (
+                        <div className="bg-blue-50 p-2 rounded-md border border-blue-100">
+                          <h5 className="text-xs font-medium text-blue-700 mb-1 flex items-center">
+                            <List className="h-3.5 w-3.5 mr-1 text-blue-600" />
+                            Differential Diagnoses
                           </h5>
-                          <p className="text-gray-800 text-sm pl-5 font-medium">
-                            {soapData.assessment.primary}
-                          </p>
+                          <ul className="space-y-1 pl-5">
+                            {soapData.assessment.differentials.map(
+                              (diff: string, index: number) => (
+                                <li
+                                  key={index}
+                                  className="text-sm text-gray-800 flex items-start"
+                                >
+                                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 mr-2 mt-1.5"></span>
+                                  <span>{diff}</span>
+                                </li>
+                              )
+                            )}
+                          </ul>
                         </div>
+                      )}
 
-                        {/* Differential Diagnoses */}
-                        {soapData.assessment.differentials &&
-                          Array.isArray(soapData.assessment.differentials) &&
-                          soapData.assessment.differentials.length > 0 && (
-                            <div className="bg-blue-50 p-2 rounded-md border border-blue-100">
-                              <h5 className="text-xs font-medium text-blue-700 mb-1 flex items-center">
-                                <List className="h-3.5 w-3.5 mr-1 text-blue-600" />
-                                Differential Diagnoses
-                              </h5>
-                              <ul className="space-y-1 pl-5">
-                                {soapData.assessment.differentials.map(
-                                  (diff: string, index: number) => (
-                                    <li
-                                      key={index}
-                                      className="text-sm text-gray-800 flex items-start"
-                                    >
-                                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 mr-2 mt-1.5"></span>
-                                      <span>{diff}</span>
-                                    </li>
-                                  )
-                                )}
-                              </ul>
-                            </div>
-                          )}
-
-                        {/* Notes */}
-                        {soapData.assessment.notes && (
-                          <div className="bg-amber-50 p-2 rounded-md border border-amber-100">
-                            <h5 className="text-xs font-medium text-amber-700 mb-1 flex items-center">
-                              <FileText className="h-3.5 w-3.5 mr-1 text-amber-600" />
-                              Clinical Notes
-                            </h5>
-                            <p className="text-gray-800 text-sm pl-5">
-                              {soapData.assessment.notes}
-                            </p>
-                          </div>
-                        )}
+                    {/* Notes */}
+                    {soapData.assessment.notes && (
+                      <div className="bg-amber-50 p-2 rounded-md border border-amber-100">
+                        <h5 className="text-xs font-medium text-amber-700 mb-1 flex items-center">
+                          <FileText className="h-3.5 w-3.5 mr-1 text-amber-600" />
+                          Clinical Notes
+                        </h5>
+                        <p className="text-gray-800 text-sm pl-5">
+                          {soapData.assessment.notes}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

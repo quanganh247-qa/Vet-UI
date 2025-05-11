@@ -447,8 +447,12 @@ const EnhancedAppointmentFlowboard: React.FC<
               };
               onAppointmentUpdate(updatedAppointment);
               if (navigateToDetail) {
-                // setLocation(`/patient?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`);
-                setLocation(`/examination?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`);
+                console.log("Navigating to health card with params:", {
+                  appointmentId: appointment.id,
+                  petId: appointment.pet?.pet_id
+                });
+                setLocation(`/patient/health-card?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`);
+                // setLocation(`/examination?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`);
               }
             },
           }
@@ -567,15 +571,6 @@ const EnhancedAppointmentFlowboard: React.FC<
     }
   };
 
-  // Thêm các hàm xử lý sự kiện cho các nút
-  const handleStartAppointment = (appointmentId: number) => {
-    // Cập nhật trạng thái thành "In Progress" và chuyển hướng đến trang chi tiết bệnh nhân
-    handleStatusChange(appointmentId, 5, true);
-
-    const { data: appointment } = useAppointmentData(appointmentId.toString());
-    setLocation(`/patient?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`);
-    
-  };
 
   const handleCompleteAppointment = (appointmentId: number) => {
     // Cập nhật trạng thái thành "Completed"

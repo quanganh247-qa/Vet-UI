@@ -245,7 +245,6 @@ const Examination: React.FC = () => {
   const [eyes, setEyes] = useState("");
   const [ears, setEars] = useState("");
 
-
   // Function to apply a template with fixed types
   const applyTemplate = (
     templateType: "physical" | "systems",
@@ -349,8 +348,6 @@ const Examination: React.FC = () => {
   // Inside the component, add the SOAP update mutation
   const updateSoapMutation = useUpdateSOAP();
 
-
-
   // Save examination findings with enhanced feedback and SOAP transfer
   const saveExamination = async () => {
     if (!appointment?.id) {
@@ -395,7 +392,7 @@ const Examination: React.FC = () => {
       const assessmentData = {
         primary: "",
         differentials: [],
-        notes: ""
+        notes: "",
       };
 
       // Save to SOAP notes
@@ -490,6 +487,15 @@ const Examination: React.FC = () => {
     navigate(`/soap${buildUrlParams(params)}`);
   };
 
+  // Navigate to health card
+  const navigateToHealthCard = () => {
+    const params = {
+      appointmentId: effectiveAppointmentId,
+      petId: appointment?.pet?.pet_id,
+    };
+    navigate(`/patient/health-card${buildUrlParams(params)}`);
+  };
+
   // Keyboard shortcut handler - placed after all function declarations
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -542,10 +548,10 @@ const Examination: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header with gradient background */}
       <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
+      {/* Header Row */}
         <div className="flex items-center">
-          <Button
+          {/* <Button
             variant="ghost"
             size="sm"
             className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
@@ -553,12 +559,19 @@ const Examination: React.FC = () => {
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             <span className="text-sm font-medium">Back to Patient</span>
-          </Button>
+          </Button> */}
           <h1 className="text-white font-semibold text-lg">
             Clinical Examination
           </h1>
         </div>
       </div>
+
+      {/* Workflow Navigation */}
+      <WorkflowNavigation
+        appointmentId={effectiveAppointmentId}
+        petId={patient?.pet_id?.toString()}
+        currentStep="examination"
+      />
 
       {/* Template Dialog */}
       <Dialog>
@@ -662,15 +675,6 @@ const Examination: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Workflow Navigation */}
-      <div className="px-4 pt-3">
-        <WorkflowNavigation
-          appointmentId={effectiveAppointmentId}
-          petId={patient?.pet_id?.toString()}
-          currentStep="examination"
-        />
-      </div>
 
       {/* Main Content */}
       <div className="px-4 py-3">
@@ -1047,6 +1051,15 @@ const Examination: React.FC = () => {
                         Quick Actions
                       </h4>
                       <div className="grid grid-cols-1 gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="justify-start text-xs h-8"
+                          onClick={navigateToHealthCard}
+                        >
+                          <Heart className="mr-1.5 h-3.5 w-3.5 text-pink-500" />
+                          View Health Card
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -1510,6 +1523,15 @@ const Examination: React.FC = () => {
                           variant="outline"
                           size="sm"
                           className="justify-start text-xs h-8"
+                          onClick={navigateToHealthCard}
+                        >
+                          <Heart className="mr-1.5 h-3.5 w-3.5 text-pink-500" />
+                          View Health Card
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="justify-start text-xs h-8"
                           onClick={navigateToLabManagement}
                         >
                           <FlaskConical className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />
@@ -1543,7 +1565,6 @@ const Examination: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
-
     </div>
   );
 };

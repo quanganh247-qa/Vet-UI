@@ -3,26 +3,22 @@ import { useParams, useLocation } from "wouter";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardDescription,
+  CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/components/ui/use-toast";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
   ArrowLeft,
+  FileText,
+  ShoppingCart,
+  Check,
+  Calendar,
+  MoreHorizontal,
+  Search,
+  SearchX,
+  Syringe,
   FlaskConical,
   Beaker,
   Tablet,
@@ -30,28 +26,55 @@ import {
   Microscope,
   ClipboardList,
   X,
-  Check,
   Info,
   Clock,
-  Calendar,
-  FileText,
   Stethoscope,
   ArrowUpRight,
   Save,
-  ShoppingCart,
   AlertTriangle,
-  Syringe,
   Receipt,
-  Search,
-  SearchX,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
-import { usePatientData } from "@/hooks/use-pet";
-import { useAppointmentData } from "@/hooks/use-appointment";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import WorkflowNavigation from "@/components/WorkflowNavigation";
+import { cn } from "@/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from "date-fns";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormControl,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   useCreateTest,
   useListTests,
@@ -59,9 +82,10 @@ import {
 } from "@/hooks/use-test";
 import { createInvoice } from "@/services/invoice-services";
 import { CreateInvoiceRequest, InvoiceItem } from "@/types";
-import { format } from "date-fns";
-import WorkflowNavigation from "@/components/WorkflowNavigation";
-import { cn } from "@/lib/utils";
+import { usePatientData } from "@/hooks/use-pet";
+import { useAppointmentData } from "@/hooks/use-appointment";
+import { useGetTestByAppointmentID } from "@/hooks/use-test";
+import { Textarea } from "@/components/ui/textarea";
 
 interface TestCategory {
   id: string;
@@ -509,7 +533,7 @@ const LabManagement: React.FC = () => {
     }
   };
 
-  const handleBackToExamination= () => {
+  const handleBackToExamination = () => {
     // Navigate to patient page with query params
     const params = {
       appointmentId: effectiveAppointmentId,
@@ -557,7 +581,7 @@ const LabManagement: React.FC = () => {
       <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
         {/* Header with gradient background */}
         <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 md:px-8 md:py-5 flex items-center justify-between">
-        <div className="flex items-center">
+          <div className="flex items-center">
             <Button
               variant="ghost"
               size="sm"
@@ -594,40 +618,60 @@ const LabManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-    {/* Header with gradient background */}
-    <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
+        <div className="flex justify-between items-center">
+          {/* Left Section: Back Button + Title */}
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white flex items-center hover:bg-white/10 rounded-lg mr-4"
+              onClick={handleBackToExamination}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              <span>Back</span>
+            </Button>
+            <h1 className="text-white font-semibold text-lg">Lab Tests</h1>
+          </div>
 
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-white flex items-center hover:bg-white/10 rounded-lg mr-4"
-            onClick={handleBackToExamination}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            <span>Back to Examination</span>
-          </Button>
-          <h1 className="text-white font-semibold text-lg">Lab Tests</h1>
+          {/* Right Section: Buttons Aligned to Right */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={selectedTestsCount === 0}
+              className="bg-white text-indigo-600 hover:bg-white/90 flex items-center"
+              onClick={() => setShowConfirmDialog(true)}
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              <span>Order ({selectedTestsCount})</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white text-indigo-600 hover:bg-white/90 flex items-center"
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (effectiveAppointmentId)
+                  params.append("appointmentId", effectiveAppointmentId);
+                if (patient?.petid)
+                  params.append("petId", patient.petid.toString());
+                navigate(`/vaccination?${params.toString()}`);
+              }}
+            >
+              <Syringe className="h-4 w-4 mr-2" />
+              <span>Go to Vaccination</span>
+            </Button>
+          </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={selectedTestsCount === 0}
-          className="bg-white text-indigo-600 hover:bg-white/90 flex items-center"
-          onClick={() => setShowConfirmDialog(true)}
-        >
-          <ShoppingCart className="h-4 w-4 mr-2" />
-          <span>Order ({selectedTestsCount})</span>
-        </Button>
       </div>
-
-      <div className="px-4 pt-3">
-        <WorkflowNavigation
-          appointmentId={effectiveAppointmentId}
-          petId={patient?.pet_id?.toString()}
-          currentStep="diagnostic"
-        />
-      </div>
+      <WorkflowNavigation
+        appointmentId={effectiveAppointmentId}
+        petId={patient?.pet_id?.toString()}
+        currentStep="diagnostic"
+      />
 
       {/* Search Bar */}
       <div className="p-4 border-b">
@@ -640,8 +684,8 @@ const LabManagement: React.FC = () => {
             className="pl-10 w-full pr-4 py-2 border-gray-300 rounded-md"
           />
           {searchQuery && (
-            <button 
-              onClick={() => setSearchQuery('')}
+            <button
+              onClick={() => setSearchQuery("")}
               className="absolute right-3 top-1/2 -translate-y-1/2"
             >
               <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
@@ -655,14 +699,14 @@ const LabManagement: React.FC = () => {
         {(() => {
           // Collect all tests from all categories with category info
           const allTests: Array<any> = [];
-          
+
           allCategories.forEach((category: any) => {
             const filteredTests = filterTestsBySearch(category.tests);
             filteredTests.forEach((test: any) => {
               allTests.push({
                 ...test,
                 category: category.name,
-                categoryIcon: category.icon
+                categoryIcon: category.icon,
               });
             });
           });
@@ -672,8 +716,12 @@ const LabManagement: React.FC = () => {
             return (
               <div className="py-12 text-center">
                 <SearchX className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                <h3 className="text-gray-700 font-medium mb-1">No matching tests found</h3>
-                <p className="text-gray-500">Try different keywords or browse by category</p>
+                <h3 className="text-gray-700 font-medium mb-1">
+                  No matching tests found
+                </h3>
+                <p className="text-gray-500">
+                  Try different keywords or browse by category
+                </p>
               </div>
             );
           }
@@ -683,8 +731,9 @@ const LabManagement: React.FC = () => {
               {/* Test Counter */}
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-500">
-                  {allTests.length} test{allTests.length !== 1 ? 's' : ''} available
-                  {searchQuery ? ` for "${searchQuery}"` : ''}
+                  {allTests.length} test{allTests.length !== 1 ? "s" : ""}{" "}
+                  available
+                  {searchQuery ? ` for "${searchQuery}"` : ""}
                 </span>
                 {selectedTestsCount > 0 && (
                   <Badge className="bg-indigo-100 text-indigo-800 hover:bg-indigo-200">
@@ -695,19 +744,19 @@ const LabManagement: React.FC = () => {
 
               {/* Simple List */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {allTests.map(test => (
-                  <div 
+                {allTests.map((test) => (
+                  <div
                     key={test.id}
                     className={cn(
                       "border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md",
-                      selectedTests[test.id] 
-                        ? "border-indigo-500 bg-indigo-50" 
+                      selectedTests[test.id]
+                        ? "border-indigo-500 bg-indigo-50"
                         : "border-gray-200 hover:border-indigo-300"
                     )}
                     onClick={() => toggleTest(test.id)}
                   >
                     <div className="flex items-start space-x-3">
-                      <Checkbox 
+                      <Checkbox
                         checked={selectedTests[test.id] || false}
                         onCheckedChange={() => toggleTest(test.id)}
                         className="mt-1"
@@ -715,11 +764,17 @@ const LabManagement: React.FC = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           {test.categoryIcon}
-                          <span className="text-xs font-medium text-gray-500">{test.category}</span>
+                          <span className="text-xs font-medium text-gray-500">
+                            {test.category}
+                          </span>
                         </div>
-                        <h3 className="font-medium text-gray-900">{test.name}</h3>
+                        <h3 className="font-medium text-gray-900">
+                          {test.name}
+                        </h3>
                         {test.description && (
-                          <p className="text-sm text-gray-500 mt-1 line-clamp-2">{test.description}</p>
+                          <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                            {test.description}
+                          </p>
                         )}
                         <div className="flex items-center gap-3 mt-2">
                           {test.price && (
@@ -750,9 +805,12 @@ const LabManagement: React.FC = () => {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div>
               <p className="font-medium text-gray-900">
-                {selectedTestsCount} test{selectedTestsCount !== 1 ? 's' : ''} selected
+                {selectedTestsCount} test{selectedTestsCount !== 1 ? "s" : ""}{" "}
+                selected
               </p>
-              <p className="text-sm text-gray-600">Total: {getTotalPrice().formatted}</p>
+              <p className="text-sm text-gray-600">
+                Total: {getTotalPrice().formatted}
+              </p>
             </div>
             <Button
               onClick={() => setShowConfirmDialog(true)}
@@ -773,7 +831,8 @@ const LabManagement: React.FC = () => {
               Confirm Test Order
             </DialogTitle>
             <DialogDescription>
-              You're ordering {selectedTestsCount} test{selectedTestsCount !== 1 ? 's' : ''} for {patient.name}
+              You're ordering {selectedTestsCount} test
+              {selectedTestsCount !== 1 ? "s" : ""} for {patient.name}
             </DialogDescription>
           </DialogHeader>
 
@@ -788,15 +847,22 @@ const LabManagement: React.FC = () => {
             <div className="max-h-[250px] overflow-y-auto border rounded-lg">
               <ul className="divide-y divide-gray-100">
                 {getSelectedTestObjects().map((test) => (
-                  <li key={test.id} className="p-3 flex justify-between items-center">
+                  <li
+                    key={test.id}
+                    className="p-3 flex justify-between items-center"
+                  >
                     <div>
-                      <span className="font-medium text-gray-900">{test.name}</span>
+                      <span className="font-medium text-gray-900">
+                        {test.name}
+                      </span>
                       {test.price && (
-                        <span className="block text-sm text-gray-500">{test.price}</span>
+                        <span className="block text-sm text-gray-500">
+                          {test.price}
+                        </span>
                       )}
                     </div>
                     <Button
-                      variant="ghost" 
+                      variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 rounded-full text-gray-500 hover:text-red-500 hover:bg-red-50"
                       onClick={() => toggleTest(test.id)}
@@ -809,7 +875,9 @@ const LabManagement: React.FC = () => {
             </div>
 
             <div className="mt-4">
-              <Label htmlFor="notes" className="text-sm font-medium">Lab Notes (optional)</Label>
+              <Label htmlFor="notes" className="text-sm font-medium">
+                Lab Notes (optional)
+              </Label>
               <Textarea
                 id="notes"
                 placeholder="Add any special instructions..."

@@ -13,13 +13,14 @@ import {
   FlaskConical,
   CalendarClock,
   ClipboardList,
-  Syringe
+  Syringe,
+  Heart
 } from 'lucide-react';
 
 interface WorkflowNavigationProps {
   appointmentId?: string;
   petId?: string | number;
-  currentStep: 'check-in' | 'examination' | 'soap' | 'diagnostic' | 'treatment' | 'prescription' | 'follow-up' | 'patient-details' | 'pending-lab' | 'records' | 'vaccination' | 'invoice';
+  currentStep: 'check-in' | 'examination' | 'soap' | 'diagnostic' | 'treatment' | 'prescription' | 'follow-up' | 'patient-details' | 'pending-lab' | 'records' | 'vaccination' | 'invoice' | 'health-card';
   isNurseView?: boolean;
 }
 
@@ -41,10 +42,12 @@ const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, 
   // Doctor workflow - starts with patient-management and continues with examination
   const workflowSteps = [
     // { id: 'patient-details', label: 'Patient', icon: ClipboardList, path: `/patient${buildUrlParams()}` },
+    { id: 'health-card', label: 'Health Card', icon: Heart, path: `/patient/health-card${buildUrlParams()}` },
     { id: 'examination', label: 'Exam', icon: Stethoscope, path: `/examination${buildUrlParams()}` },
     { id: 'soap', label: 'SOAP', icon: FileText, path: `/soap${buildUrlParams()}` },
     { id: 'diagnostic', label: 'Tests', icon: FlaskConical, path: `/lab-management${buildUrlParams()}` },
     { id: 'treatment', label: 'Treatment', icon: Tablets, path: `/treatment${buildUrlParams()}` },
+    { id: 'vaccination', label: 'Vaccine', icon: Syringe, path: `/vaccination${buildUrlParams()}` },
   ];
 
   const handleNavigation = (path: string) => {
@@ -62,7 +65,7 @@ const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, 
           {workflowSteps.map((step, index) => {
             const isCurrent = step.id === currentStep;
             const isPast = index < activeIndex;
-            const isDisabled = !appointmentId && (step.id !== 'patient-details');
+            const isDisabled = !appointmentId && (step.id !== 'patient-details' && step.id !== 'health-card');
             const IconComponent = step.icon;
             
             return (

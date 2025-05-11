@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getPatientById, getAllPatients, updatePet, updatePetRequest } from "@/services/pet-services";
+import { getPatientById, getAllPatients, updatePet, updatePetRequest, getPetWeightHistory } from "@/services/pet-services";
 import { useQueryClient } from "@tanstack/react-query";
 import { PaginatedResponse } from "@/types";
 import { getPetOwnerByPetId } from "@/services/user-services";
@@ -63,5 +63,13 @@ export const useUpdatePet = (pet_id: number, updatePetRequest: updatePetRequest)
         variant: "destructive",
       });
     },
+  });
+};
+
+
+export const usePetWeightHistory = (pet_id: number, page: number, pageSize: number) => {
+  return useQuery({
+    queryKey: ["petWeightHistory", pet_id, page, pageSize],
+    queryFn: () => getPetWeightHistory(pet_id, page, pageSize),
   });
 };

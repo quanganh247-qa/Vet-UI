@@ -153,7 +153,7 @@ const SOAPHistoryPage: React.FC = () => {
             onClick={handleBackToPatient}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            <span className="text-sm font-medium">Back to Patient</span>
+            <span className="text-sm font-medium">Back</span>
           </Button>
           <div>
             <h1 className="text-white font-semibold text-lg">SOAP History</h1>

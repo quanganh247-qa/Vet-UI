@@ -25,7 +25,7 @@ import {
   ListOrdered,
   Edit,
   Eye,
-  X
+  X,
 } from "lucide-react";
 import { useGetSOAP, useUpdateSOAP } from "@/hooks/use-soap";
 import { useAppointmentData } from "@/hooks/use-appointment";
@@ -34,9 +34,6 @@ import WorkflowNavigation from "@/components/WorkflowNavigation";
 import { toast } from "@/components/ui/use-toast";
 import { ObjectiveData } from "@/types";
 import { SOAPHistory } from "../soap-history/SOAPHistory";
-
-
-
 
 // Define the SubjectiveEntry interface
 interface SubjectiveEntry {
@@ -52,56 +49,62 @@ interface AssessmentEntry {
 }
 
 // Component to display subjective data in key-value format
-const SubjectiveKeyValueDisplay = ({ data }: { data: string | SubjectiveEntry[] | null | undefined }) => {
-  const parseSubjectiveData = (value: string | SubjectiveEntry[] | null | undefined): SubjectiveEntry[] => {
+const SubjectiveKeyValueDisplay = ({
+  data,
+}: {
+  data: string | SubjectiveEntry[] | null | undefined;
+}) => {
+  const parseSubjectiveData = (
+    value: string | SubjectiveEntry[] | null | undefined
+  ): SubjectiveEntry[] => {
     // Handle null or undefined
     if (!value) return [];
-    
+
     // If already an array, return it directly
     if (Array.isArray(value)) {
       return value;
     }
-    
+
     // Otherwise handle as string
-    if (typeof value !== 'string' || !value.trim()) return [];
-  
+    if (typeof value !== "string" || !value.trim()) return [];
+
     try {
       // Try to parse as JSON first
       const parsed = JSON.parse(value);
       if (Array.isArray(parsed)) {
         return parsed;
-      } else if (typeof parsed === 'object' && parsed !== null) {
+      } else if (typeof parsed === "object" && parsed !== null) {
         return Object.entries(parsed).map(([key, value]) => ({
           id: crypto.randomUUID(),
           key,
-          value: String(value)
+          value: String(value),
         }));
       }
     } catch (e) {
       // If not JSON, try to parse as text with key: value format
-      const lines = value.split('\n').filter(line => line.trim());
+      const lines = value.split("\n").filter((line) => line.trim());
       const entries: SubjectiveEntry[] = [];
-      
+
       for (const line of lines) {
-        const colonIndex = line.indexOf(':');
+        const colonIndex = line.indexOf(":");
         if (colonIndex > 0) {
           entries.push({
             id: crypto.randomUUID(),
             key: line.substring(0, colonIndex).trim(),
-            value: line.substring(colonIndex + 1).trim()
+            value: line.substring(colonIndex + 1).trim(),
           });
         } else {
           entries.push({
             id: crypto.randomUUID(),
             key: "Note",
-            value: line.trim()
+            value: line.trim(),
           });
         }
       }
-      
+
       return entries;
     }
-    
+
     return [];
   };
 
@@ -120,12 +123,17 @@ const SubjectiveKeyValueDisplay = ({ data }: { data: string | SubjectiveEntry[] 
   return (
     <div className="p-3 space-y-3 bg-white rounded-md">
       {entries.map((entry, index) => (
-        <div key={entry.id || index} className="grid grid-cols-12 gap-3 items-start bg-gray-50 p-3 rounded-md border border-gray-100">
+        <div
+          key={entry.id || index}
+          className="grid grid-cols-12 gap-3 items-start bg-gray-50 p-3 rounded-md border border-gray-100"
+        >
           <div className="col-span-3 text-gray-700 font-medium">
             {entry.key}:
           </div>
           <div className="col-span-9 text-gray-800">
-            {entry.value || <span className="text-gray-400 italic">No data</span>}
+            {entry.value || (
+              <span className="text-gray-400 italic">No data</span>
+            )}
           </div>
         </div>
       ))}
@@ -145,12 +153,32 @@ const ObjectiveDataDisplay = ({ data }: { data: any }) => {
 
   const renderVitalSigns = () => {
     if (!data.vital_signs) return null;
-    
+
     const vitalSigns = [
-      { name: "Weight", value: data.vital_signs.weight, unit: "kg", icon: "⚖️" },
-      { name: "Temperature", value: data.vital_signs.temperature, unit: "°C", icon: "🌡️" },
-      { name: "Heart Rate", value: data.vital_signs.heart_rate, unit: "bpm", icon: "❤️" },
-      { name: "Respiratory Rate", value: data.vital_signs.respiratory_rate, unit: "rpm", icon: "🫁" },
+      {
+        name: "Weight",
+        value: data.vital_signs.weight,
+        unit: "kg",
+        icon: "⚖️",
+      },
+      {
+        name: "Temperature",
+        value: data.vital_signs.temperature,
+        unit: "°C",
+        icon: "🌡️",
+      },
+      {
+        name: "Heart Rate",
+        value: data.vital_signs.heart_rate,
+        unit: "bpm",
+        icon: "❤️",
+      },
+      {
+        name: "Respiratory Rate",
+        value: data.vital_signs.respiratory_rate,
+        unit: "rpm",
+        icon: "🫁",
+      },
     ];
 
     return (
@@ -160,9 +188,12 @@ const ObjectiveDataDisplay = ({ data }: { data: any }) => {
           <h3 className="font-medium text-indigo-700">VITAL SIGNS</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {vitalSigns.map((sign, index) => (
+          {vitalSigns.map((sign, index) =>
             sign.value ? (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+              >
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{sign.icon}</span>
                   <span className="text-gray-700 font-medium">{sign.name}</span>
@@ -172,7 +203,7 @@ const ObjectiveDataDisplay = ({ data }: { data: any }) => {
                 </span>
               </div>
             ) : null
-          ))}
+          )}
         </div>
       </div>
     );
@@ -182,10 +213,22 @@ const ObjectiveDataDisplay = ({ data }: { data: any }) => {
     if (!data.systems) return null;
 
     const systemPairs = [
-      { name: "Cardiovascular", value: data.systems.cardiovascular, icon: "❤️" },
+      {
+        name: "Cardiovascular",
+        value: data.systems.cardiovascular,
+        icon: "❤️",
+      },
       { name: "Respiratory", value: data.systems.respiratory, icon: "🫁" },
-      { name: "Gastrointestinal", value: data.systems.gastrointestinal, icon: "🧠" },
-      { name: "Musculoskeletal", value: data.systems.musculoskeletal, icon: "🦴" },
+      {
+        name: "Gastrointestinal",
+        value: data.systems.gastrointestinal,
+        icon: "🧠",
+      },
+      {
+        name: "Musculoskeletal",
+        value: data.systems.musculoskeletal,
+        icon: "🦴",
+      },
       { name: "Neurological", value: data.systems.neurological, icon: "🧠" },
       { name: "Skin/Coat", value: data.systems.skin, icon: "🧥" },
       { name: "Eyes", value: data.systems.eyes, icon: "👁️" },
@@ -193,7 +236,7 @@ const ObjectiveDataDisplay = ({ data }: { data: any }) => {
     ];
 
     // Check if there's at least one system with data
-    const hasSystemData = systemPairs.some(system => system.value);
+    const hasSystemData = systemPairs.some((system) => system.value);
 
     if (!hasSystemData) return null;
 
@@ -204,26 +247,33 @@ const ObjectiveDataDisplay = ({ data }: { data: any }) => {
           <h3 className="font-medium text-indigo-700">SYSTEMS EXAMINATION</h3>
         </div>
         <div className="grid gap-3">
-          {systemPairs.map((system, index) => (
+          {systemPairs.map((system, index) =>
             system.value ? (
-              <div key={index} className="flex p-3 bg-gray-50 rounded-md flex-col">
+              <div
+                key={index}
+                className="flex p-3 bg-gray-50 rounded-md flex-col"
+              >
                 <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-200">
                   <span className="text-lg">{system.icon}</span>
-                  <span className="text-gray-700 font-medium">{system.name}</span>
+                  <span className="text-gray-700 font-medium">
+                    {system.name}
+                  </span>
                 </div>
-                <p className="text-gray-600 whitespace-pre-line">{system.value}</p>
+                <p className="text-gray-600 whitespace-pre-line">
+                  {system.value}
+                </p>
               </div>
             ) : null
-          ))}
+          )}
         </div>
       </div>
     );
   };
 
   const currentDate = new Date().toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 
   return (
@@ -231,14 +281,16 @@ const ObjectiveDataDisplay = ({ data }: { data: any }) => {
       <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
         <div className="flex items-center gap-2">
           <span className="text-indigo-600 text-lg">📋</span>
-          <h2 className="font-semibold text-gray-800">CLINICAL EXAMINATION RESULTS</h2>
+          <h2 className="font-semibold text-gray-800">
+            CLINICAL EXAMINATION RESULTS
+          </h2>
         </div>
         <div className="text-sm text-gray-500">
           <span className="text-indigo-600 mr-1">📅</span>
           {currentDate}
         </div>
       </div>
-      
+
       {renderVitalSigns()}
       {renderSystemsExamination()}
     </div>
@@ -246,11 +298,11 @@ const ObjectiveDataDisplay = ({ data }: { data: any }) => {
 };
 
 // Component for editing assessment data
-const AssessmentEditor = ({ 
-  value, 
-  onChange 
-}: { 
-  value: AssessmentEntry | string | undefined; 
+const AssessmentEditor = ({
+  value,
+  onChange,
+}: {
+  value: AssessmentEntry | string | undefined;
   onChange: (value: AssessmentEntry) => void;
 }) => {
   // Convert string or undefined to AssessmentEntry structure
@@ -258,44 +310,49 @@ const AssessmentEditor = ({
     if (!value) {
       return { primary: "", differentials: [], notes: "" };
     }
-    
-    if (typeof value === 'string') {
-      return { 
+
+    if (typeof value === "string") {
+      return {
         primary: value,
         differentials: [],
-        notes: ""
+        notes: "",
       };
     }
-    
+
     return value as AssessmentEntry;
   });
-  
+
   // Handle input changes
-  const handleInputChange = (field: keyof AssessmentEntry, value: string | string[]) => {
-    const newAssessment = { 
+  const handleInputChange = (
+    field: keyof AssessmentEntry,
+    value: string | string[]
+  ) => {
+    const newAssessment = {
       ...assessment,
-      [field]: value 
+      [field]: value,
     };
     setAssessment(newAssessment);
     onChange(newAssessment);
   };
-  
+
   // Handle adding a new differential diagnosis
   const addDifferential = () => {
     const differentials = [...assessment.differentials, ""];
     handleInputChange("differentials", differentials);
   };
-  
+
   // Handle changing a differential diagnosis
   const changeDifferential = (index: number, value: string) => {
     const differentials = [...assessment.differentials];
     differentials[index] = value;
     handleInputChange("differentials", differentials);
   };
-  
+
   // Handle removing a differential diagnosis
   const removeDifferential = (index: number) => {
-    const differentials = assessment.differentials.filter((_, i) => i !== index);
+    const differentials = assessment.differentials.filter(
+      (_, i) => i !== index
+    );
     handleInputChange("differentials", differentials);
   };
 
@@ -312,13 +369,13 @@ const AssessmentEditor = ({
           className="resize-none min-h-[100px] bg-white"
         />
       </div>
-      
+
       <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
         <div className="flex justify-between items-center mb-2">
           <label className="block text-sm font-medium text-gray-700">
             Differential Diagnoses
           </label>
-          <Button 
+          <Button
             onClick={addDifferential}
             size="sm"
             variant="outline"
@@ -327,7 +384,7 @@ const AssessmentEditor = ({
             Add Differential
           </Button>
         </div>
-        
+
         {assessment.differentials.length === 0 ? (
           <div className="text-gray-500 italic text-sm p-2">
             No differential diagnoses added yet.
@@ -343,7 +400,9 @@ const AssessmentEditor = ({
                     </div>
                     <Textarea
                       value={diff}
-                      onChange={(e) => changeDifferential(index, e.target.value)}
+                      onChange={(e) =>
+                        changeDifferential(index, e.target.value)
+                      }
                       placeholder={`Differential diagnosis ${index + 1}`}
                       className="resize-none bg-white h-10 py-2"
                     />
@@ -362,7 +421,7 @@ const AssessmentEditor = ({
           </div>
         )}
       </div>
-      
+
       <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Additional Notes
@@ -386,15 +445,15 @@ const SoapNotes = () => {
   const [, setLocation] = useLocation();
 
   // Add state for assessment data
-  const [assessmentData, setAssessmentData] = useState<AssessmentEntry>({ 
-    primary: "", 
-    differentials: [], 
-    notes: "" 
+  const [assessmentData, setAssessmentData] = useState<AssessmentEntry>({
+    primary: "",
+    differentials: [],
+    notes: "",
   });
 
   // Debug information
   console.log("Initial route params appointmentId:", appointmentId);
-  
+
   // Get the query params from URL
   const searchParams = new URLSearchParams(window.location.search);
   const urlAppointmentId = searchParams.get("appointmentId");
@@ -408,7 +467,6 @@ const SoapNotes = () => {
     appointmentId: null,
     petId: null,
   });
-
 
   // Xử lý các tham số từ URL một cách nhất quán
   useEffect(() => {
@@ -437,30 +495,35 @@ const SoapNotes = () => {
   }, [appointmentId]);
 
   // Try to get appointmentId from different sources
-  const effectiveAppointmentId = workflowParams.appointmentId || appointmentId || urlAppointmentId || "";
+  const effectiveAppointmentId =
+    workflowParams.appointmentId || appointmentId || urlAppointmentId || "";
 
-  const { data: soap, isLoading: isSoapLoading1 } = useGetSOAP(effectiveAppointmentId);
+  const { data: soap, isLoading: isSoapLoading1 } = useGetSOAP(
+    effectiveAppointmentId
+  );
   console.log("soap", soap);
 
   // Initialize assessment data when soap data is loaded
   useEffect(() => {
     if (soap?.assessment) {
       // If assessment is an object with the right structure
-      if (typeof soap.assessment === 'object' && 'primary' in soap.assessment) {
+      if (typeof soap.assessment === "object" && "primary" in soap.assessment) {
         setAssessmentData(soap.assessment as AssessmentEntry);
       } else {
         // If assessment is a string, convert it
         setAssessmentData({
           primary: String(soap.assessment || ""),
           differentials: [],
-          notes: ""
+          notes: "",
         });
       }
     }
   }, [soap]);
 
   // Utility function to build query parameters
-  const buildUrlParams = (params: Record<string, string | number | null | undefined>) => {
+  const buildUrlParams = (
+    params: Record<string, string | number | null | undefined>
+  ) => {
     const urlParams = new URLSearchParams();
 
     Object.entries(params).forEach(([key, value]) => {
@@ -501,10 +564,30 @@ const SoapNotes = () => {
       formattedText += `🔍 VITAL SIGNS\n${"─".repeat(30)}\n`;
 
       const vitalSigns = [
-        { name: "Weight", value: data.vital_signs.weight, unit: "kg", icon: "⚖️" },
-        { name: "Temperature", value: data.vital_signs.temperature, unit: "°C", icon: "🌡️" },
-        { name: "Heart Rate", value: data.vital_signs.heart_rate, unit: "bpm", icon: "❤️" },
-        { name: "Respiratory Rate", value: data.vital_signs.respiratory_rate, unit: "rpm", icon: "🫁" },
+        {
+          name: "Weight",
+          value: data.vital_signs.weight,
+          unit: "kg",
+          icon: "⚖️",
+        },
+        {
+          name: "Temperature",
+          value: data.vital_signs.temperature,
+          unit: "°C",
+          icon: "🌡️",
+        },
+        {
+          name: "Heart Rate",
+          value: data.vital_signs.heart_rate,
+          unit: "bpm",
+          icon: "❤️",
+        },
+        {
+          name: "Respiratory Rate",
+          value: data.vital_signs.respiratory_rate,
+          unit: "rpm",
+          icon: "🫁",
+        },
       ];
 
       vitalSigns.forEach((sign) => {
@@ -520,10 +603,22 @@ const SoapNotes = () => {
       formattedText += `🩺 SYSTEMS EXAMINATION\n${"─".repeat(30)}\n`;
 
       const systemPairs = [
-        { name: "Cardiovascular", value: data.systems.cardiovascular, icon: "❤️" },
+        {
+          name: "Cardiovascular",
+          value: data.systems.cardiovascular,
+          icon: "❤️",
+        },
         { name: "Respiratory", value: data.systems.respiratory, icon: "🫁" },
-        { name: "Gastrointestinal", value: data.systems.gastrointestinal, icon: "🧠" },
-        { name: "Musculoskeletal", value: data.systems.musculoskeletal, icon: "🦴" },
+        {
+          name: "Gastrointestinal",
+          value: data.systems.gastrointestinal,
+          icon: "🧠",
+        },
+        {
+          name: "Musculoskeletal",
+          value: data.systems.musculoskeletal,
+          icon: "🦴",
+        },
         { name: "Neurological", value: data.systems.neurological, icon: "🧠" },
         { name: "Skin/Coat", value: data.systems.skin, icon: "🧥" },
         { name: "Eyes", value: data.systems.eyes, icon: "👁️" },
@@ -596,7 +691,7 @@ const SoapNotes = () => {
         subjective: subjectiveData,
         objective: soap?.objective || defaultObjective,
         assessment: assessmentData, // Use the local state for assessment
-        plan: typeof soap?.plan === "number" ? soap.plan : 0
+        plan: typeof soap?.plan === "number" ? soap.plan : 0,
       });
 
       toast({
@@ -673,13 +768,14 @@ const SoapNotes = () => {
   }
 
   // Format the objective data - KEEP FOR BACKWARD COMPATIBILITY
-  const formattedObjectiveText = soap?.objective ? formatObjectiveData(soap.objective) : "";
+  const formattedObjectiveText = soap?.objective
+    ? formatObjectiveData(soap.objective)
+    : "";
 
   return (
     <div className="space-y-6">
-    {/* Header with gradient background */}
-    <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
-
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
         <div className="flex items-center">
           <Button
             variant="ghost"
@@ -688,7 +784,7 @@ const SoapNotes = () => {
             onClick={handleBackToPatient}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            <span className="text-sm font-medium">Back to Patient</span>
+            <span className="text-sm font-medium">Back</span>
           </Button>
           <div>
             <h1 className="text-white font-semibold text-lg">SOAP Notes</h1>
@@ -697,13 +793,11 @@ const SoapNotes = () => {
       </div>
 
       {/* Workflow Navigation */}
-      <div className="px-4 pt-3">
-        <WorkflowNavigation
-          appointmentId={effectiveAppointmentId}
-          petId={patient?.petid?.toString()}
-          currentStep="soap"
-        />
-      </div>
+      <WorkflowNavigation
+        appointmentId={effectiveAppointmentId}
+        petId={patient?.petid?.toString()}
+        currentStep="soap"
+      />
 
       {/* Main content */}
       <div className="p-6">
@@ -751,7 +845,6 @@ const SoapNotes = () => {
                     History
                   </TabsTrigger>
                 </TabsList>
-           
               </div>
 
               <TabsContent value="all" className="space-y-6 py-4">
@@ -760,10 +853,9 @@ const SoapNotes = () => {
                     <FileText className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700 flex items-center">
                       S - Subjective (Owner's Report)
-                      
                     </label>
                   </div>
-                    <SubjectiveKeyValueDisplay data={soap?.subjective} />
+                  <SubjectiveKeyValueDisplay data={soap?.subjective} />
                 </div>
 
                 <div>
@@ -771,7 +863,6 @@ const SoapNotes = () => {
                     <Activity className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700 flex items-center">
                       O - Objective (Clinical Findings)
-                      
                     </label>
                   </div>
                   <div className="border rounded-md overflow-hidden">
@@ -800,7 +891,6 @@ const SoapNotes = () => {
                     <FileText className="h-4 w-4 text-indigo-600" />
                     <label className="text-sm font-medium text-gray-700 flex items-center">
                       S - Subjective (Owner's Report)
-            
                     </label>
                   </div>
                   <SubjectiveKeyValueDisplay data={soap?.subjective} />
@@ -841,7 +931,6 @@ const SoapNotes = () => {
               {/* Tab History - SOAP history for this patient */}
               <TabsContent value="history" className="py-4">
                 <div>
-                  
                   <SOAPHistory petId={patient?.petid?.toString() || ""} />
                 </div>
               </TabsContent>

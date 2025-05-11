@@ -1,5 +1,6 @@
 import { PaginatedResponse } from "@/types";
 import api from "@/lib/api";
+import { time } from "console";
 
 export const getPatientById = async (pet_id: number) => {
     const response = await api.get(`/api/v1/pet/${pet_id}`, {
@@ -91,4 +92,33 @@ export const updatePet = async (pet_id: number, updatePetRequest: updatePetReque
 
     const response = await api.put(`/api/v1/pet/${pet_id}`, updatePetRequest);
     return response.data;
+}
+
+export type WeightRecordResponse = {
+	id: number;
+	pet_id: number;
+	weight_kg: number;
+	weight_lb: number;
+	recorded_at: Date;
+	notes: string;
+	created_at: Date;
+}
+
+export type PetWeightHistoryResponse = {
+	pet_id: number;
+	pet_name: string;
+	current_weight: WeightRecordResponse;
+	weight_history: WeightRecordResponse[];
+	total_records: number;
+	default_unit_type: string; // "kg" or "lb"
+}
+
+export const getPetWeightHistory = async (pet_id: number, page: number, pageSize: number ) => {
+    try {
+        const response = await api.get<PetWeightHistoryResponse>(`/api/v1/pet/${pet_id}/weights?page=${page}&pageSize=${pageSize}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching pet weight history:', error);
+        return null;
+    }
 }
