@@ -21,7 +21,6 @@ interface PrescriptionPDFProps {
   appointmentData: any;
   onPrint: () => void;
   onDownload: () => void;
-  onUpload: () => void;
   isPdfGenerating: boolean;
 }
 
