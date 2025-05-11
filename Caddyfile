@@ -17,15 +17,23 @@
         format json
     }
 
+    # Health check endpoint
     handle /health {
         respond "OK" 200
     }
 
+    # Proxy /api/* to backend service
     handle /api/* {
         uri strip_prefix /api
-        reverse_proxy https://go-pet-care-production.up.railway.app 
+        reverse_proxy https://go-pet-care-production.up.railway.app  {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
     }
 
+    # Serve static files
     handle /* {
         root * /app/dist
         encode gzip
@@ -33,5 +41,16 @@
             precompressed gzip
         }
         try_files {path} /index.html
+    }
+
+    # Optional: Handle CORS preflight (OPTIONS) if needed
+    handle OPTIONS {
+        respond "" 204 {
+            headers {
+                Access-Control-Allow-Origin "*"
+                Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+                Access-Control-Allow-Headers "*"
+            }
+        }
     }
 }
