@@ -19,16 +19,18 @@
 
     rewrite /health /*
 
-    
-    # Proxy /api/* to backend service
-    handle /api/* {
-        reverse_proxy https://go-pet-care-production.up.railway.app {
-            header_up Host {host}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-        }
+
+   route {
+    # Proxy API requests
+    handle_path /api/* {
+      reverse_proxy https://go-pet-care-production.up.railway.app {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+      }
     }
+
 
     # Serve static files
     handle /* {
