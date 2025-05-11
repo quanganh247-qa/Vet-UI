@@ -21,7 +21,7 @@
         respond "OK" 200
     }
 
-    handle /api/* {
+    handle /* {
         reverse_proxy https://go-pet-care-production.up.railway.app {
             header_up Host {http.request.host}
             header_up X-Forwarded-Host {http.request.host}
