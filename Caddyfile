@@ -22,7 +22,7 @@
     }
 
     handle /api/* {
-        reverse_proxy http://go-pet-care-production.up.railway.app
+        reverse_proxy https://go-pet-care-production.up.railway.app
     }
 
     handle /* {
