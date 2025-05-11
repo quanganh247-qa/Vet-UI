@@ -21,11 +21,6 @@
         respond "OK" 200
     }
 
-    // handle /api/* {
-    //     uri strip_prefix /api
-    //     reverse_proxy https://go-pet-care-production.up.railway.app 
-    // }
-
     handle /* {
         root * /app/dist
         encode gzip
