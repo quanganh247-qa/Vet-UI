@@ -24,11 +24,27 @@
 
     # Proxy /api/* to backend service
     handle /api/* {
+        # Add detailed debug logging
+        log {
+            output stderr
+            format console
+            level DEBUG
+        }
+        
+        # Print debug information about the request
+        request_header X-Debug-Info "Forwarding to backend"
+        
         reverse_proxy https://go-pet-care-production.up.railway.app {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-For {remote_host}
             header_up X-Forwarded-Proto {scheme}
+            
+            # Add timeouts to prevent long waiting periods
+            transport http {
+                timeout 10s
+                keepalive 10s
+            }
         }
     }
 
