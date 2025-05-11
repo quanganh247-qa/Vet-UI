@@ -12,7 +12,7 @@
     }
 }
 
-:{$PORT} {
+:{$PORT:3000} {
     log {
         format json
     }
@@ -21,16 +21,11 @@
         respond "OK" 200
     }
 
-    handle /api/* {
-        uri strip_prefix /api
+    // handle /api/* {
+    //     uri strip_prefix /api
+    //     reverse_proxy https://go-pet-care-production.up.railway.app 
+    // }
 
-        reverse_proxy https://go-pet-care-production.up.railway.app  {
-            transport http {
-                tls_insecure_skip_verify # Temporarily bypass cert issues
-                timeout 15s
-            }
-        }
-    }
     handle /* {
         root * /app/dist
         encode gzip
