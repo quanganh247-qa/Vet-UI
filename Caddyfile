@@ -43,8 +43,9 @@
         try_files {path} /index.html
     }
 
-    # Optional: Handle CORS preflight (OPTIONS) if needed
-    handle OPTIONS {
+    # Optional: Handle CORS preflight (OPTIONS) requests
+    @cors_preflight method OPTIONS
+    handle @cors_preflight {
         respond "" 204 {
             headers {
                 Access-Control-Allow-Origin "*"
@@ -52,5 +53,5 @@
                 Access-Control-Allow-Headers "*"
             }
         }
-    }
+    }   
 }
