@@ -42,8 +42,10 @@
             
             # Add timeouts to prevent long waiting periods
             transport http {
-                timeout 10s
-                keepalive 10s
+                tls_timeout 10s
+                dial_timeout 10s
+                response_header_timeout 10s
+                keepalive_idle_conns 10
             }
         }
     }
