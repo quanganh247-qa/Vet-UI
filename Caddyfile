@@ -12,16 +12,14 @@
     }
 }
 
-:{$PORT:8080} {
+:{$PORT:3000} {
     log {
         format json
     }
 
-    # Health check endpoint
-    handle /health {
-        respond "OK" 200
-    }
+    rewrite /health /*
 
+    
     # Proxy /api/* to backend service
     handle /api/* {
         reverse_proxy https://go-pet-care-production.up.railway.app {
