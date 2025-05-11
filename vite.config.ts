@@ -13,7 +13,7 @@ export default defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
   // Use API_URL from environment variables or fall back to localhost
-  const apiUrl = env.API_URL || env.VITE_API_URL || 'http://localhost:8088';
+  const apiUrl = env.API_URL || env.VITE_API_URL || 'https://go-pet-care-production.up.railway.app';
   console.log(`Using API URL: ${apiUrl} in ${mode} mode`);
 
   return {
