@@ -40,6 +40,7 @@ const ServicesManagement = lazy(() => import("@/pages/services-management"));
 const PatientDetailsPage = lazy(() => import("@/pages/patient/patient-details"));
 const ProductManagement = lazy(() => import("@/pages/catalog-management/product-management"));
 const InventoryPage = lazy(() => import("@/pages/inventory"));
+const HealthCard = lazy(() => import("@/pages/patient/health-card"));
 
 // Create LoginPage component that uses LoginForm
 const LoginPage = () => {
@@ -65,8 +66,9 @@ function Router() {
 
         {/* Workflow routes - updated to use query params instead of route params */}
         <Route path="/check-in" component={CheckIn as React.ComponentType<RouteComponentProps>} />
-        <Route path="/patient" component={PatientManagement as React.ComponentType<RouteComponentProps>} />
+        <Route path="/patient/health-card" component={HealthCard as React.ComponentType<RouteComponentProps>} />
         <Route path="/patient/:id" component={PatientDetailsPage as React.ComponentType<RouteComponentProps>} />
+        <Route path="/patient" component={PatientManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/soap" component={SoapNotes as React.ComponentType<RouteComponentProps>} />
         <Route path="/treatment" component={TreatmentManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/invoice" component={PrescriptionInvoice as React.ComponentType<RouteComponentProps>} />
@@ -85,8 +87,10 @@ function Router() {
         <Route path="/appointment/:id/examination" component={Examination as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/lab-management" component={LabManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} />
+        <Route path="/appointment/:id/health-card" component={HealthCard as React.ComponentType<RouteComponentProps>} />
 
         <Route path="/patient/:patientId/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
+        <Route path="/patient/:patientId/health-card" component={HealthCard as React.ComponentType<RouteComponentProps>} />
         <Route path="/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
         <Route path="/notifications" component={NotificationsPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/chatbot" component={Chatbot as React.ComponentType<RouteComponentProps>} />
