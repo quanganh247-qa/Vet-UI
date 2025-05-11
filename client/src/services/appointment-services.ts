@@ -357,31 +357,16 @@ export const waitForNotifications = async (signal?: AbortSignal) => {
       signal,
       timeout: 25000, // 25 second timeout (shorter than the server's expected 30s)
     });
-    console.log('Notifications received:', response.data);
     return response.data;
   } catch (error: any) {
     // Handle timeout errors specifically
     if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-      console.log('Long polling timeout - this is normal, will retry');
       return []; // Return empty array to continue polling
     }
     
     // Don't treat cancellation as an error that needs to be logged
     if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
-      console.log('Long polling request canceled - component likely unmounted');
       throw error; // Re-throw but it will be handled properly in the hook
-    }
-    
-    console.error('Error in long polling:', error);
-    // Log more information about the error
-    if (error.response) {
-      console.error('Error response:', {
-        status: error.response.status,
-        headers: error.response.headers,
-        data: error.response.data
-      });
-    } else if (error.request) {
-      console.error('No response received:', error.request);
     }
     throw error;
   }

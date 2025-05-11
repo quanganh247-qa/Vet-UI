@@ -62,11 +62,11 @@ const navigation = [
     href: "/inventory",
     icon: <Package className="h-5 w-5" />,
   },
-  {
-    name: "Vaccinations",
-    href: "/vaccination",
-    icon: <Syringe className="h-5 w-5" />,
-  },
+  // {
+  //   name: "Vaccinations",
+  //   href: "/vaccination",
+  //   icon: <Syringe className="h-5 w-5" />,
+  // },
   {
     name: "Billing",
     href: "/billing",

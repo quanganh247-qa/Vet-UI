@@ -83,13 +83,6 @@ const InventoryPage: React.FC = () => {
                 <Users className="w-4 h-4 mr-2" />
                 Suppliers
               </TabsTrigger>
-              <TabsTrigger 
-                value="alerts" 
-                className="rounded-none data-[state=active]:bg-white data-[state=active]:text-indigo-800 flex items-center justify-center py-3"
-              >
-                <AlertTriangle className="w-4 h-4 mr-2" />
-                Alerts
-              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="transactions" className="p-0">

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+
 import { useCreateWalkInAppointment } from "@/hooks/use-appointment";
 import { useServices } from "@/hooks/use-services";
-import { useDoctors } from "@/hooks/use-doctors";
+import { useDoctors } from "@/hooks/use-doctor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +38,7 @@ import {
 } from "@/hooks/use-pet";
 import { Patient } from "@/types";
 import { AppointmentRequest } from "@/services/appointment-services";
+import { useEffect } from "react";
 
 // Form validation schema
 const formSchema = z.object({

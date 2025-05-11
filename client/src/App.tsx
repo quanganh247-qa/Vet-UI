@@ -103,7 +103,7 @@ function Router() {
         <Route path="/shift-assignment" component={ShiftAssignment as React.ComponentType<RouteComponentProps>} />
         <Route path="/staff/new" component={StaffPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/staff" component={StaffPage as React.ComponentType<RouteComponentProps>} />
-        <Route path="/staff/:id" component={StaffDetailPage as React.ComponentType<RouteComponentProps>} />
+        <Route path="/staff/:staffId" component={StaffDetailPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/settings" component={Settings as React.ComponentType<RouteComponentProps>} />
         <Route path="/profile" component={EditProfilePage as React.ComponentType<RouteComponentProps>} />
         <Route component={NotFound as React.ComponentType<RouteComponentProps>} />

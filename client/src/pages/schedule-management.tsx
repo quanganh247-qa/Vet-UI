@@ -54,7 +54,7 @@ import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
-import { useDoctors } from "@/hooks/use-doctors";
+import { useDoctors } from "@/hooks/use-doctor";
 import { useGetAllShifts, useShiftMutations } from "@/hooks/use-shifts";
 import { cn } from "@/lib/utils";
 

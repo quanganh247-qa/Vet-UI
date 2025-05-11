@@ -211,11 +211,18 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
     
     setIsSubmitting(true);
     try {
+      // Format dates properly with time component to match expected format
+      const formatDateForAPI = (dateString: string | undefined): string => {
+        if (!dateString) return '';
+        // Add time component to make it a valid ISO 8601 date-time string
+        return `${dateString}T00:00:00Z`;
+      };
+      
       const result = await saveVaccinationRecord({
         pet_id: vaccinationData.pet_id as number,
         vaccine_name: vaccinationData.vaccine_name as string,
-        date_administered: vaccinationData.date_administered as string,
-        next_due_date: vaccinationData.next_due_date as string,
+        date_administered: formatDateForAPI(vaccinationData.date_administered),
+        next_due_date: formatDateForAPI(vaccinationData.next_due_date),
         vaccine_provider: vaccinationData.vaccine_provider as string,
         batch_number: vaccinationData.batch_number as string,
         notes: vaccinationData.notes as string,
@@ -303,7 +310,7 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
               </div>
             </div>
           </CardContent>
-          <CardFooter className="flex justify-center py-4 bg-gray-50 border-t">
+          {/* <CardFooter className="flex justify-center py-4 bg-gray-50 border-t">
             <Button
               onClick={handleComplete}
               className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-2"
@@ -311,7 +318,7 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
               <span>Continue to Next Step</span>
               <ArrowRight className="h-4 w-4" />
             </Button>
-          </CardFooter>
+          </CardFooter> */}
         </Card>
       ) : (
         <form className="space-y-6">

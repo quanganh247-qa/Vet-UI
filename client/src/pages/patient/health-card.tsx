@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, Link, useParams } from "wouter";
 import {
   ChevronLeft,
@@ -21,6 +21,12 @@ import {
   Archive,
   Bell,
   Users,
+  Syringe,
+  X,
+  Download,
+  ExternalLink,
+  Image as ImageIcon,
+  FileType,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -47,7 +53,24 @@ import {
   Legend,
   ChartOptions,
 } from "chart.js";
-import { PetWeightHistoryResponse, WeightRecordResponse } from "@/services/pet-services";
+import {
+  PetWeightHistoryResponse,
+  WeightRecordResponse,
+} from "@/services/pet-services";
+import { Vaccination } from "@/types";
+import { useFiles } from "@/hooks/use-file";
+import { useTreatmentsData } from "@/hooks/use-treatment";
+import { useAppointmentData } from "@/hooks/use-appointment";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { useUploadFile } from "@/hooks/use-file";
+import { toast } from "@/components/ui/use-toast";
+import { FileResponse, FileData } from "@/services/file-services";
 
 // Register ChartJS components
 ChartJS.register(
@@ -65,24 +88,14 @@ interface HealthCardProps {
   appointmentId?: string;
 }
 
-// Define InternalNote interface
-interface InternalNote {
-  id: number;
-  note: string;
-  author: string;
-  date: string;
-}
-
-
-
-// Define interface for preventive care item
-interface PreventiveCareItem {
+// Define interface for treatment data
+interface Treatment {
   id: number;
   name: string;
   status: string;
-  dueDate?: string;
+  created_at: string;
+  updated_at?: string;
 }
-
 
 const HealthCard: React.FC<HealthCardProps> = ({
   petId: propsPetId,
@@ -91,10 +104,10 @@ const HealthCard: React.FC<HealthCardProps> = ({
   const [location, navigate] = useLocation();
   const params = useParams();
   const [weightUnit, setWeightUnit] = useState<"lbs" | "kg">("lbs");
-  const [weightFilter, setWeightFilter] = useState<"client" | "clinic" | "all">(
-    "all"
-  );
-  const [preventiveFilter, setPreventiveFilter] = useState<"all" | "upcoming" | "due-soon" | "overdue">("all");
+
+  const [preventiveFilter, setPreventiveFilter] = useState<
+    "all" | "upcoming" | "due-soon" | "overdue"
+  >("all");
   const [showDebug, setShowDebug] = useState(false);
   const [workflowParams, setWorkflowParams] = useState<{
     appointmentId: string | null;
@@ -103,6 +116,11 @@ const HealthCard: React.FC<HealthCardProps> = ({
     appointmentId: null,
     petId: null,
   });
+
+  const [selectedFile, setSelectedFile] = useState<any>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get params from URL or props
   useEffect(() => {
@@ -130,9 +148,6 @@ const HealthCard: React.FC<HealthCardProps> = ({
         // Pattern: /appointment/:id/health-card
         // Here we don't get petId from path but we might have appointmentId
         const pathAppointmentId = pathnameParams[1];
-        if (!urlAppointmentId && pathAppointmentId) {
-          console.log("Found appointment ID in path:", pathAppointmentId);
-        }
       }
     }
 
@@ -155,13 +170,11 @@ const HealthCard: React.FC<HealthCardProps> = ({
 
   // Use effective IDs for routing
   const effectiveAppointmentId = workflowParams.appointmentId || "";
-  const effectivePetId = workflowParams.petId || "";
+
+  const { data: appointmentData } = useAppointmentData(effectiveAppointmentId);
 
   // Fetch patient details only if we have a valid petId
-  const validPetId =
-    effectivePetId && !isNaN(Number(effectivePetId))
-      ? Number(effectivePetId)
-      : 0;
+  const validPetId = appointmentData?.pet?.pet_id;
   const { pet: patientInfo, isLoading, error } = usePatientDetails(validPetId);
 
   // Default mock data to use when no patient data is available
@@ -184,78 +197,92 @@ const HealthCard: React.FC<HealthCardProps> = ({
     const params = new URLSearchParams();
     if (effectiveAppointmentId)
       params.append("appointmentId", effectiveAppointmentId);
-    if (effectivePetId) params.append("petId", effectivePetId);
+    if (validPetId) params.append("petId", validPetId);
     return params.toString() ? `?${params.toString()}` : "";
   };
 
   const [weightHistoryPage, setWeightHistoryPage] = useState(1);
   const [weightHistoryPageSize, setWeightHistoryPageSize] = useState(10);
 
-  const { data: weightHistoryData, isLoading: weightHistoryLoading, error: weightHistoryError } = usePetWeightHistory(validPetId, weightHistoryPage, weightHistoryPageSize);
+  const {
+    data: weightHistoryData,
+    isLoading: weightHistoryLoading,
+    error: weightHistoryError,
+  } = usePetWeightHistory(validPetId, weightHistoryPage, weightHistoryPageSize);
 
   // Transform weight history for display
-  const transformWeightHistoryForDisplay = (weightHistory: PetWeightHistoryResponse | null | undefined) => {
+  const transformWeightHistoryForDisplay = (
+    weightHistory: PetWeightHistoryResponse | null | undefined
+  ) => {
     if (!weightHistory || !weightHistory.weight_history) {
       return [];
     }
 
     // Sort by date (newest to oldest)
     return [...weightHistory.weight_history]
-      .sort((a, b) => 
-        new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
+      .sort(
+        (a, b) =>
+          new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
       )
-      .map(record => ({
+      .map((record) => ({
         id: record.id,
-        weight: weightUnit === 'kg' ? record.weight_kg : record.weight_lb,
+        weight: weightUnit === "kg" ? record.weight_kg : record.weight_lb,
         date: new Date(record.recorded_at).toLocaleDateString(),
-        source: record.notes?.toLowerCase().includes('client') ? 'client' : 'clinic'
+        source: record.notes?.toLowerCase().includes("client")
+          ? "client"
+          : "clinic",
       }));
   };
 
   // Format weight history data for chart
-  const formatWeightHistoryForChart = (weightHistory: PetWeightHistoryResponse | null | undefined) => {
+  const formatWeightHistoryForChart = (
+    weightHistory: PetWeightHistoryResponse | null | undefined
+  ) => {
     if (!weightHistory || !weightHistory.weight_history) {
       return {
         labels: [],
         datasets: [
           {
-            label: 'Weight',
+            label: "Weight",
             data: [],
-            borderColor: '#6366f1',
-            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+            borderColor: "#6366f1",
+            backgroundColor: "rgba(99, 102, 241, 0.2)",
             tension: 0.3,
-          }
-        ]
+          },
+        ],
       };
     }
 
     // Sort by date (oldest to newest)
-    const sortedHistory = [...weightHistory.weight_history].sort((a, b) => 
-      new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
+    const sortedHistory = [...weightHistory.weight_history].sort(
+      (a, b) =>
+        new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
     );
 
     return {
-      labels: sortedHistory.map(entry => {
+      labels: sortedHistory.map((entry) => {
         const date = new Date(entry.recorded_at);
         return date.toLocaleDateString();
       }),
       datasets: [
         {
           label: `Weight (${weightUnit})`,
-          data: sortedHistory.map(entry => weightUnit === 'kg' ? entry.weight_kg : entry.weight_lb),
-          borderColor: '#6366f1',
-          backgroundColor: 'rgba(99, 102, 241, 0.2)',
+          data: sortedHistory.map((entry) =>
+            weightUnit === "kg" ? entry.weight_kg : entry.weight_lb
+          ),
+          borderColor: "#6366f1",
+          backgroundColor: "rgba(99, 102, 241, 0.2)",
           tension: 0.3,
           pointRadius: 4,
-          pointBackgroundColor: '#6366f1',
+          pointBackgroundColor: "#6366f1",
           fill: true,
-        }
-      ]
+        },
+      ],
     };
   };
 
   // Chart options
-  const chartOptions: ChartOptions<'line'> = {
+  const chartOptions: ChartOptions<"line"> = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
@@ -271,7 +298,7 @@ const HealthCard: React.FC<HealthCardProps> = ({
       y: {
         beginAtZero: false,
         grid: {
-          color: 'rgba(0, 0, 0, 0.05)',
+          color: "rgba(0, 0, 0, 0.05)",
         },
         ticks: {
           precision: 1,
@@ -283,7 +310,7 @@ const HealthCard: React.FC<HealthCardProps> = ({
         display: false,
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: "rgba(0, 0, 0, 0.7)",
         padding: 12,
         titleFont: {
           size: 14,
@@ -296,53 +323,31 @@ const HealthCard: React.FC<HealthCardProps> = ({
     },
   };
 
-  const { data: preventiveData, isLoading: preventiveHistoryLoading, error: preventiveHistoryError } = useVaccineData(validPetId);
-  
+  const {
+    data: preventiveData,
+    isLoading: preventiveHistoryLoading,
+    error: preventiveHistoryError,
+  } = useVaccineData(validPetId);
+
   // Format preventive data or use sample data if none available
-  const preventiveHistory: PreventiveCareItem[] = preventiveData?.length ? 
-    preventiveData.map((item: any) => ({
-      id: item.id || Math.random(),
-      name: item.name || item.vaccine_name || "Unknown treatment",
-      status: item.status || "upcoming",
-      dueDate: item.due_date || item.administration_date || undefined
-    }))
-  : [];
+  const preventiveHistory: Vaccination[] = preventiveData?.length
+    ? preventiveData
+    : [];
 
-  const medications = [
-    {
-      id: 1,
-      name: "Heartgard Plus",
-      dosage: "1 tablet monthly",
-      refills: 2,
-      status: "active",
-      doctor: "Dr. Smith",
-    },
-    {
-      id: 2,
-      name: "Apoquel",
-      dosage: "1 tablet daily",
-      refills: 0,
-      status: "inactive",
-      doctor: "Dr. Johnson",
-    },
-  ];
+  const {
+    data: filesData,
+    isLoading: filesLoading,
+    error: filesError,
+  } = useFiles(validPetId > 0 ? validPetId : 0);
 
+  console.log("filesData", filesData);
+  const {
+    data: treatmentData,
+    isLoading: treatmentLoading,
+    error: treatmentError,
+  } = useTreatmentsData(validPetId > 0 ? validPetId.toString() : "");
 
-
-  const diagnoses = [
-    {
-      id: 1,
-      name: "Seasonal Allergies",
-      date: "2023-05-15",
-      doctor: "Dr. Smith",
-    },
-    {
-      id: 2,
-      name: "Mild Dermatitis",
-      date: "2023-09-01",
-      doctor: "Dr. Johnson",
-    },
-  ];
+  const uploadFileMutation = useUploadFile();
 
   const handleBack = () => {
     // Check referrer to determine where to navigate back to
@@ -351,8 +356,8 @@ const HealthCard: React.FC<HealthCardProps> = ({
 
     if (referrer && referrer.includes("/examination")) {
       navigate(`/examination${queryParams}`);
-    } else if (effectivePetId) {
-      navigate(`/patient/${effectivePetId}${queryParams}`);
+    } else if (validPetId) {
+      navigate(`/patient/${validPetId}${queryParams}`);
     } else {
       navigate(`/patients${queryParams}`);
     }
@@ -360,7 +365,67 @@ const HealthCard: React.FC<HealthCardProps> = ({
 
   const handleButtonClick = (action: string, item?: any) => {
     console.log(`Action: ${action}`, item);
-    // Implement your action logic here
+
+    if (action === "upload-file") {
+      setUploadDialogOpen(true);
+    } else if (action === "delete-file" && item) {
+      // Handle file deletion (to be implemented)
+      console.log("Deleting file:", item);
+      toast({
+        title: "File deletion",
+        description: "File deletion is not implemented yet.",
+        variant: "destructive",
+      });
+    } else {
+      // Handle other actions
+      console.log(`Action: ${action}`, item);
+    }
+  };
+
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = event.target.files;
+    if (!files || files.length === 0 || !validPetId) return;
+
+    try {
+      const file = files[0];
+      uploadFileMutation.mutate(
+        {
+          file,
+          pet_id: Number(validPetId),
+        },
+        {
+          onSuccess: () => {
+            toast({
+              title: "Success",
+              description: "File uploaded successfully",
+              variant: "default",
+            });
+            setUploadDialogOpen(false);
+            // Reset the file input
+            if (fileInputRef.current) {
+              fileInputRef.current.value = "";
+            }
+          },
+          onError: (error) => {
+            console.error("Upload error:", error);
+            toast({
+              title: "Upload failed",
+              description: "There was an error uploading your file",
+              variant: "destructive",
+            });
+          },
+        }
+      );
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Upload failed",
+        description: "There was an error uploading your file",
+        variant: "destructive",
+      });
+    }
   };
 
   // Get status color for preventive care
@@ -412,6 +477,95 @@ const HealthCard: React.FC<HealthCardProps> = ({
     navigate(`/vaccination${buildUrlParams()}`);
   };
 
+  const handleFilePreview = (file: FileData) => {
+    setSelectedFile(file);
+    setPreviewOpen(true);
+  };
+
+  // Function to render the appropriate file preview based on file type
+  const renderFilePreview = () => {
+    if (!selectedFile) return null;
+    
+    const fileName = selectedFile.path.split("/").pop() || "";
+    const fileExt = fileName.split(".").pop()?.toLowerCase();
+    const isImage = ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(
+      fileExt || ""
+    );
+    const isPdf = fileExt === "pdf";
+    const isViewableInBrowser = isPdf || isImage;
+    
+    if (isImage) {
+      return (
+        <div className="flex items-center justify-center h-full max-h-[70vh]">
+          <img 
+            src={selectedFile.url} 
+            alt={fileName}
+            className="max-w-full max-h-full object-contain rounded-md" 
+          />
+        </div>
+      );
+    } else if (isPdf) {
+      return (
+        <div className="h-[70vh] w-full">
+          <iframe 
+            src={`${selectedFile.url}#view=FitH`} 
+            title={fileName}
+            className="w-full h-full border-0 rounded-md"
+          />
+        </div>
+      );
+    } else {
+      // For other file types, show a preview card with options
+      return (
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="bg-gray-100 p-8 rounded-full mb-4">
+            <FileType className="h-16 w-16 text-indigo-500" />
+          </div>
+          <h3 className="text-xl font-medium mb-2">{fileName}</h3>
+          <p className="text-gray-500 mb-6">
+            This file type cannot be previewed directly
+          </p>
+          <div className="flex space-x-4">
+            <Button
+              onClick={() => window.open(selectedFile.url, "_blank")}
+              className="flex items-center"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Open in new tab
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const link = document.createElement("a");
+                link.href = selectedFile.url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+              className="flex items-center"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </Button>
+          </div>
+        </div>
+      );
+    }
+  };
+
+  // Get file type icon based on extension
+  const getFileIcon = (fileName: string) => {
+    const fileExt = fileName.split(".").pop()?.toLowerCase();
+    if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(fileExt || "")) {
+      return <ImageIcon className="h-4 w-4" />;
+    } else if (fileExt === "pdf") {
+      return <FileText className="h-4 w-4" />;
+    } else {
+      return <FileText className="h-4 w-4" />;
+    }
+  };
+
   return (
     <div className="flex flex-col h-full min-h-screen bg-gray-50">
       {/* Header with gradient background */}
@@ -447,7 +601,7 @@ const HealthCard: React.FC<HealthCardProps> = ({
 
       <WorkflowNavigation
         appointmentId={effectiveAppointmentId}
-        petId={effectivePetId}
+        petId={validPetId}
         currentStep="health-card"
       />
 
@@ -490,7 +644,7 @@ const HealthCard: React.FC<HealthCardProps> = ({
                   effectiveAppointmentId:{" "}
                   {effectiveAppointmentId || "undefined"}
                 </p>
-                <p>effectivePetId: {effectivePetId || "undefined"}</p>
+                <p>effectivePetId: {validPetId || "undefined"}</p>
                 <p>
                   <strong>Patient Data:</strong>
                 </p>
@@ -671,7 +825,7 @@ const HealthCard: React.FC<HealthCardProps> = ({
                       Date of Birth
                     </span>
                     <span className="font-medium">
-                      {displayPatientInfo.bod || "Unknown"}
+                      {displayPatientInfo.birth_date || "Unknown"}
                     </span>
                   </div>
                 </div>
@@ -683,48 +837,6 @@ const HealthCard: React.FC<HealthCardProps> = ({
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-xl">Weight Tracker</CardTitle>
                 <div className="flex space-x-2">
-                  <div className="flex rounded-md border overflow-hidden">
-                    <Button
-                      variant={
-                        weightFilter === "client" ? "default" : "outline"
-                      }
-                      size="sm"
-                      className={`rounded-none ${
-                        weightFilter === "client"
-                          ? "bg-pink-500 hover:bg-pink-600"
-                          : ""
-                      }`}
-                      onClick={() => setWeightFilter("client")}
-                    >
-                      Client
-                    </Button>
-                    <Button
-                      variant={
-                        weightFilter === "clinic" ? "default" : "outline"
-                      }
-                      size="sm"
-                      className={`rounded-none ${
-                        weightFilter === "clinic"
-                          ? "bg-teal-500 hover:bg-teal-600"
-                          : ""
-                      }`}
-                      onClick={() => setWeightFilter("clinic")}
-                    >
-                      Clinic
-                    </Button>
-                    <Button
-                      variant={weightFilter === "all" ? "default" : "outline"}
-                      size="sm"
-                      className={`rounded-none ${
-                        weightFilter === "all"
-                          ? "bg-purple-500 hover:bg-purple-600"
-                          : ""
-                      }`}
-                      onClick={() => setWeightFilter("all")}
-                    >
-                      All
-                    </Button>
-                  </div>
                   <div className="flex rounded-md border overflow-hidden">
                     <Button
                       variant={weightUnit === "lbs" ? "default" : "outline"}
@@ -757,24 +869,35 @@ const HealthCard: React.FC<HealthCardProps> = ({
                   {weightHistoryLoading ? (
                     <div className="flex flex-col items-center justify-center">
                       <div className="w-8 h-8 border-4 border-t-indigo-600 border-b-indigo-600 border-l-transparent border-r-transparent rounded-full animate-spin mb-2"></div>
-                      <p className="text-gray-500 text-sm">Loading weight history...</p>
+                      <p className="text-gray-500 text-sm">
+                        Loading weight history...
+                      </p>
                     </div>
                   ) : weightHistoryError ? (
                     <div className="flex items-center justify-center text-center p-4">
                       <div>
                         <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
-                        <p className="text-red-500 font-medium">Error loading weight history</p>
-                        <p className="text-sm text-gray-500 mt-1">Please try again later</p>
+                        <p className="text-red-500 font-medium">
+                          Error loading weight history
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Please try again later
+                        </p>
                       </div>
                     </div>
-                  ) : !weightHistoryData || !weightHistoryData.weight_history || weightHistoryData.weight_history.length === 0 ? (
+                  ) : !weightHistoryData ||
+                    !weightHistoryData.weight_history ||
+                    weightHistoryData.weight_history.length === 0 ? (
                     <div className="flex flex-col items-center justify-center text-center p-4">
                       <TrendingUp className="h-12 w-12 text-gray-300 mb-3" />
-                      <p className="text-gray-500 mb-1">No weight records available</p>
-                      <p className="text-xs text-gray-400 max-w-xs">
-                        Add weight records to track this patient's weight over time.
+                      <p className="text-gray-500 mb-1">
+                        No weight records available
                       </p>
-                      <Button 
+                      <p className="text-xs text-gray-400 max-w-xs">
+                        Add weight records to track this patient's weight over
+                        time.
+                      </p>
+                      <Button
                         className="mt-4 bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
                         variant="outline"
                         size="sm"
@@ -785,11 +908,6 @@ const HealthCard: React.FC<HealthCardProps> = ({
                     </div>
                   ) : (
                     <div className="w-full h-full p-3">
-                      <div className="absolute right-8 top-4 flex space-x-2 z-10">
-                        <div className="text-xs font-medium px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full">
-                          {`${weightHistoryData.weight_history.length} records`}
-                        </div>
-                      </div>
                       <Line
                         data={formatWeightHistoryForChart(weightHistoryData)}
                         options={chartOptions}
@@ -800,11 +918,14 @@ const HealthCard: React.FC<HealthCardProps> = ({
                 <div className="mt-4">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium">Weight History</h4>
-                    {transformWeightHistoryForDisplay(weightHistoryData).length > 5 && (
+                    {transformWeightHistoryForDisplay(weightHistoryData)
+                      .length > 5 && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setWeightHistoryPage(prev => Math.max(1, prev - 1))}
+                        onClick={() =>
+                          setWeightHistoryPage((prev) => Math.max(1, prev - 1))
+                        }
                         disabled={weightHistoryPage === 1}
                         className="text-xs"
                       >
@@ -818,40 +939,39 @@ const HealthCard: React.FC<HealthCardProps> = ({
                         <div className="w-5 h-5 border-2 border-t-indigo-600 border-l-transparent border-r-transparent border-b-indigo-600 rounded-full animate-spin"></div>
                       </div>
                     ) : weightHistoryError ? (
-                      <p className="text-sm text-red-500 py-2 text-center">Could not load weight records</p>
-                    ) : transformWeightHistoryForDisplay(weightHistoryData).length === 0 ? (
+                      <p className="text-sm text-red-500 py-2 text-center">
+                        Could not load weight records
+                      </p>
+                    ) : transformWeightHistoryForDisplay(weightHistoryData)
+                        .length === 0 ? (
                       <div className="text-center py-4 border border-dashed border-gray-200 rounded-md bg-gray-50">
-                        <p className="text-sm text-gray-500">No weight records found</p>
+                        <p className="text-sm text-gray-500">
+                          No weight records found
+                        </p>
                       </div>
                     ) : (
-                      transformWeightHistoryForDisplay(weightHistoryData)
-                        .filter(entry => 
-                          weightFilter === "all" || 
-                          entry.source === weightFilter
-                        )
-                        .map((entry, index) => (
+                      transformWeightHistoryForDisplay(weightHistoryData).map(
+                        (entry, index) => (
                           <div
                             key={`weight-entry-${entry.id || index}`}
                             className="flex justify-between items-center p-2 bg-gray-50 hover:bg-gray-100 transition-colors rounded-md border border-gray-100"
                           >
                             <div>
                               <span className="font-medium">
-                                {entry.weight} {weightUnit}
+                                {weightUnit === "lbs"
+                                  ? parseFloat(entry.weight.toString()).toFixed(
+                                      3
+                                    )
+                                  : parseFloat(entry.weight.toString()).toFixed(
+                                      1
+                                    )}{" "}
+                                {weightUnit}
                               </span>
                               <span className="text-sm text-gray-500 ml-2">
                                 {entry.date}
                               </span>
                             </div>
                             <div className="flex space-x-2">
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs ${
-                                  entry.source === "clinic"
-                                    ? "bg-teal-100 text-teal-800"
-                                    : "bg-pink-100 text-pink-800"
-                                }`}
-                              >
-                                {entry.source === "clinic" ? "Clinic" : "Client"}
-                              </span>
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -874,13 +994,13 @@ const HealthCard: React.FC<HealthCardProps> = ({
                               </Button>
                             </div>
                           </div>
-                        ))
+                        )
+                      )
                     )}
                   </div>
                 </div>
               </CardContent>
             </Card>
-
 
             {/* Medical History Tabs */}
             <Card>
@@ -891,13 +1011,10 @@ const HealthCard: React.FC<HealthCardProps> = ({
                       Preventive
                     </TabsTrigger>
                     <TabsTrigger value="medications" className="flex-1">
-                      Medications
+                      File Medications
                     </TabsTrigger>
-                    <TabsTrigger value="diagnostics" className="flex-1">
-                      Diagnostics
-                    </TabsTrigger>
-                    <TabsTrigger value="diagnoses" className="flex-1">
-                      Diagnoses
+                    <TabsTrigger value="treatments" className="flex-1">
+                      Treatments
                     </TabsTrigger>
                   </TabsList>
                 </CardHeader>
@@ -906,62 +1023,62 @@ const HealthCard: React.FC<HealthCardProps> = ({
                   {/* Preventive Tab Content */}
                   <TabsContent value="preventive">
                     <div className="flex justify-between mb-4">
+                      <h3 className="font-medium">Vaccination History</h3>
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" className="flex items-center">
-                          <span>Filter</span>
-                          <ChevronDown className="h-4 w-4 ml-1" />
-                        </Button>
-                        <div className="hidden md:flex space-x-1">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className={`px-3 ${preventiveFilter === 'all' ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : ''}`}
-                            onClick={() => setPreventiveFilter('all')}
+                        <div className="flex rounded-md border overflow-hidden">
+                          <Button
+                            variant={
+                              preventiveFilter === "all" ? "default" : "outline"
+                            }
+                            size="sm"
+                            className="rounded-none"
+                            onClick={() => setPreventiveFilter("all")}
                           >
                             All
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant={
+                              preventiveFilter === "upcoming"
+                                ? "default"
+                                : "outline"
+                            }
                             size="sm"
-                            className={`px-3 ${preventiveFilter === 'upcoming' ? 'bg-green-50 text-green-600 border-green-200' : ''}`}
-                            onClick={() => setPreventiveFilter('upcoming')}
+                            className="rounded-none"
+                            onClick={() => setPreventiveFilter("upcoming")}
                           >
                             Upcoming
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant={
+                              preventiveFilter === "due-soon"
+                                ? "default"
+                                : "outline"
+                            }
                             size="sm"
-                            className={`px-3 ${preventiveFilter === 'due-soon' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' : ''}`}
-                            onClick={() => setPreventiveFilter('due-soon')}
+                            className="rounded-none"
+                            onClick={() => setPreventiveFilter("due-soon")}
                           >
                             Due Soon
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant={
+                              preventiveFilter === "overdue"
+                                ? "default"
+                                : "outline"
+                            }
                             size="sm"
-                            className={`px-3 ${preventiveFilter === 'overdue' ? 'bg-red-50 text-red-600 border-red-200' : ''}`}
-                            onClick={() => setPreventiveFilter('overdue')}
+                            className="rounded-none"
+                            onClick={() => setPreventiveFilter("overdue")}
                           >
                             Overdue
                           </Button>
                         </div>
-                      </div>
-                      <div className="flex space-x-2">
                         <Button
                           size="sm"
-                          onClick={() =>
-                            handleButtonClick("add-historical-treatment")
-                          }
+                          onClick={() => navigateToVaccination()}
                         >
                           <Plus className="h-4 w-4 mr-1" />
-                          Add Treatment
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleButtonClick("download-history")}
-                        >
-                          Download History
+                          Add Vaccination
                         </Button>
                       </div>
                     </div>
@@ -971,85 +1088,132 @@ const HealthCard: React.FC<HealthCardProps> = ({
                         <div className="w-8 h-8 border-4 border-t-indigo-600 border-b-indigo-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
                       </div>
                     ) : preventiveHistoryError ? (
-                      <div className="bg-red-50 border border-red-200 rounded-md p-4 text-center my-4">
-                        <AlertTriangle className="h-6 w-6 text-red-500 mx-auto mb-2" />
-                        <p className="text-red-600 font-medium">Error loading preventive care records</p>
-                        <p className="text-sm text-red-500 mt-1">Please try again later</p>
+                      <div className="text-center py-6 bg-red-50 rounded-md border border-red-100">
+                        <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                        <p className="text-red-600 font-medium">
+                          Error loading vaccination history
+                        </p>
+                        <p className="text-sm text-red-500 mt-1">
+                          Please try again later
+                        </p>
                       </div>
-                    ) : preventiveHistory.length === 0 ? (
-                      <div className="bg-gray-50 border border-dashed border-gray-200 rounded-md p-8 text-center my-4">
-                        <Stethoscope className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                        <p className="text-gray-600 font-medium">No preventive care records</p>
-                        <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
-                          Add vaccinations, wellness visits, and other preventive care to keep track of this patient's health maintenance.
+                    ) : !preventiveHistory || preventiveHistory.length === 0 ? (
+                      <div className="text-center py-8 border border-dashed border-gray-200 rounded-md bg-gray-50">
+                        <Syringe className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500 mb-1">
+                          No vaccination records found
+                        </p>
+                        <p className="text-xs text-gray-400 max-w-xs mx-auto">
+                          Add vaccination records to keep track of this
+                          patient's preventive care.
                         </p>
                         <Button
-                          className="mt-4"
+                          className="mt-4 bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
+                          variant="outline"
                           size="sm"
-                          onClick={() => handleButtonClick("add-treatment")}
+                          onClick={() => navigateToVaccination()}
                         >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add Preventive Care
+                          <Plus className="h-3.5 w-3.5 mr-1" /> Add vaccination
                         </Button>
                       </div>
                     ) : (
-                      <div className="space-y-3 mt-1">
-                        {preventiveHistory
-                          .filter(item => preventiveFilter === 'all' || item.status === preventiveFilter)
-                          .map((item) => (
+                      <div className="space-y-3 mt-2">
+                        {preventiveHistory.map((item, index) => {
+                          // Determine status based on due date
+                          let status = "upcoming";
+                          let statusLabel = "Upcoming";
+                          const now = new Date();
+                          const dueDate = item.next_due_date
+                            ? new Date(item.next_due_date)
+                            : null;
+
+                          if (dueDate) {
+                            const diffTime = dueDate.getTime() - now.getTime();
+                            const diffDays = Math.ceil(
+                              diffTime / (1000 * 60 * 60 * 24)
+                            );
+
+                            if (diffDays < 0) {
+                              status = "overdue";
+                              statusLabel = "Overdue";
+                            } else if (diffDays < 14) {
+                              status = "due-soon";
+                              statusLabel = "Due Soon";
+                            }
+                          }
+
+                          // Skip if filtered
+                          if (
+                            preventiveFilter !== "all" &&
+                            status !== preventiveFilter
+                          ) {
+                            return null;
+                          }
+
+                          return (
                             <div
-                              key={item.id}
-                              className="p-3 rounded-md border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 transition-colors flex justify-between items-center"
+                              key={`preventive-${index}`}
+                              className="flex justify-between items-center p-3 bg-white hover:bg-gray-50 transition-colors rounded-md border border-gray-100 shadow-sm"
                             >
                               <div className="flex items-center">
                                 <div
-                                  className={`p-1.5 rounded-full mr-3 ${getStatusColor(
-                                    item.status
+                                  className={`p-2 rounded-full mr-3 ${getStatusColor(
+                                    status
                                   )}`}
                                 >
-                                  {getStatusIcon(item.status)}
+                                  {getStatusIcon(status)}
                                 </div>
                                 <div>
-                                  <h4 className="font-medium">{item.name}</h4>
-                                  <span className="text-sm text-gray-500">
-                                    {item.dueDate
-                                      ? `Due: ${item.dueDate}`
-                                      : "No due date"}
-                                  </span>
+                                  <p className="font-medium">
+                                    {item.vaccine_name}
+                                  </p>
+                                  <div className="flex text-sm text-gray-500 mt-0.5">
+                                    {item.date_administered && (
+                                      <span className="mr-3">
+                                        Administered:{" "}
+                                        {new Date(
+                                          item.date_administered
+                                        ).toLocaleDateString()}
+                                      </span>
+                                    )}
+                                    {item.next_due_date && (
+                                      <span>
+                                        Due:{" "}
+                                        {new Date(
+                                          item.next_due_date
+                                        ).toLocaleDateString()}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                              <div className="flex space-x-2">
+                              <div className="flex items-center">
+                                <span
+                                  className={`px-2 py-1 rounded-full text-xs mr-3 ${getStatusColor(
+                                    status
+                                  )}`}
+                                >
+                                  {statusLabel}
+                                </span>
                                 <Button
                                   variant="ghost"
-                                  size="sm"
-                                  className="text-gray-600 hover:text-indigo-600 hover:bg-indigo-50"
+                                  size="icon"
+                                  className="h-7 w-7 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50"
                                   onClick={() =>
-                                    handleButtonClick("edit-treatment", item)
+                                    handleButtonClick("edit-vaccination", item)
                                   }
                                 >
-                                  <Edit3 className="h-3 w-3 mr-1" />
-                                  Edit
+                                  <Edit3 className="h-3.5 w-3.5" />
                                 </Button>
-                                {item.status !== "inactive" && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-gray-600 hover:text-amber-600 hover:bg-amber-50"
-                                    onClick={() =>
-                                      handleButtonClick("mark-inactive", item)
-                                    }
-                                  >
-                                    Mark Inactive
-                                  </Button>
-                                )}
                               </div>
                             </div>
-                          ))}
+                          );
+                        })}
                       </div>
                     )}
                   </TabsContent>
 
-                  {/* Medications Tab Content */}
+                  {/* File medicines from minio  Tab Content */}
                   <TabsContent value="medications">
                     <div className="flex justify-between mb-4">
                       <h3 className="font-medium">
@@ -1057,136 +1221,205 @@ const HealthCard: React.FC<HealthCardProps> = ({
                       </h3>
                       <Button
                         size="sm"
-                        onClick={() => handleButtonClick("add-medication")}
+                        onClick={() => handleButtonClick("upload-file")}
                       >
                         <Plus className="h-4 w-4 mr-1" />
-                        Add Medication
+                        Upload File
                       </Button>
                     </div>
 
-                    <div className="space-y-3">
-                      {medications.map((med) => (
-                        <div
-                          key={med.id}
-                          className="p-3 rounded-md border flex justify-between items-center"
+                    {filesLoading ? (
+                      <div className="flex justify-center py-8">
+                        <div className="w-8 h-8 border-4 border-t-indigo-600 border-b-indigo-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
+                      </div>
+                    ) : filesError ? (
+                      <div className="text-center py-6 bg-red-50 rounded-md border border-red-100">
+                        <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                        <p className="text-red-600 font-medium">
+                          Error loading files
+                        </p>
+                        <p className="text-sm text-red-500 mt-1">
+                          Please try again later
+                        </p>
+                      </div>
+                    ) : !filesData ||
+                      !filesData.files ||
+                      !Array.isArray(filesData.files) ||
+                      filesData.files.length === 0 ? (
+                      <div className="text-center py-8 border border-dashed border-gray-200 rounded-md bg-gray-50">
+                        <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500 mb-1">No files uploaded</p>
+                        <p className="text-xs text-gray-400 max-w-xs mx-auto">
+                          Upload files such as prescriptions, medical documents,
+                          or other important records.
+                        </p>
+                        <Button
+                          className="mt-4 bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleButtonClick("upload-file")}
                         >
-                          <div>
-                            <div className="flex items-center mb-1">
-                              <h4 className="font-medium">{med.name}</h4>
-                              <span
-                                className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                                  med.status === "active"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-gray-100 text-gray-800"
-                                }`}
+                          <Plus className="h-3.5 w-3.5 mr-1" /> Upload file
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 mt-2">
+                        {filesData.files.map(
+                          (file: FileData, index: number) => {
+                            const fileName =
+                              file.path.split("/").pop() || "File";
+                            const fileExt =
+                              fileName.split(".").pop()?.toLowerCase() || "";
+                            const isPdf = fileExt === "pdf";
+                            
+                            return (
+                              <div 
+                                key={`file-${index}`} 
+                                className="flex justify-between items-center p-3 bg-white hover:bg-gray-50 transition-colors rounded-md border border-gray-100 shadow-sm"
+                                onClick={() => handleFilePreview(file)}
                               >
-                                {med.status === "active"
-                                  ? "Active"
-                                  : "Inactive"}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              {med.dosage}
-                            </p>
-                            <div className="flex text-xs text-gray-500 mt-1">
-                              <span className="mr-3">
-                                Refills: {med.refills}
-                              </span>
-                              <span>Prescribing doctor: {med.doctor}</span>
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              handleButtonClick("view-prescription", med)
-                            }
-                          >
-                            View Details
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
+                                <div className="flex items-center">
+                                  <div className="p-2 rounded-full mr-3 bg-blue-100 text-blue-600">
+                                    {getFileIcon(fileName)}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{fileName}</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                      Uploaded on:{" "}
+                                      {new Date().toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-indigo-600 hover:bg-indigo-50"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleFilePreview(file);
+                                    }}
+                                  >
+                                    View
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleButtonClick("delete-file", file);
+                                    }}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          }
+                        )}
+                      </div>
+                    )}
                   </TabsContent>
 
-                  {/* Diagnostics Tab Content */}
-                  {/* <TabsContent value="diagnostics">
+                  {/* Treatment Tab Content */}
+                  <TabsContent value="treatments">
                     <div className="flex justify-between mb-4">
-                      <h3 className="font-medium">Lab & Imaging Results</h3>
-                      <Button
-                        size="sm"
-                        onClick={() => handleButtonClick("add-diagnostic")}
-                      >
+                      <h3 className="font-medium">Treatments History</h3>
+                      <Button size="sm" onClick={() => navigateToTreatment()}>
                         <Plus className="h-4 w-4 mr-1" />
-                        Add Result
+                        Add Treatment
                       </Button>
                     </div>
 
-                    <div className="space-y-3">
-                      {diagnostics.map((diag) => (
-                        <div
-                          key={diag.id}
-                          className="p-3 rounded-md border flex justify-between items-center"
+                    {treatmentLoading ? (
+                      <div className="flex justify-center py-8">
+                        <div className="w-8 h-8 border-4 border-t-indigo-600 border-b-indigo-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
+                      </div>
+                    ) : treatmentError ? (
+                      <div className="text-center py-6 bg-red-50 rounded-md border border-red-100">
+                        <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                        <p className="text-red-600 font-medium">
+                          Error loading treatments
+                        </p>
+                        <p className="text-sm text-red-500 mt-1">
+                          Please try again later
+                        </p>
+                      </div>
+                    ) : !treatmentData || treatmentData.length === 0 ? (
+                      <div className="text-center py-8 border border-dashed border-gray-200 rounded-md bg-gray-50">
+                        <Stethoscope className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500 mb-1">
+                          No treatments found
+                        </p>
+                        <p className="text-xs text-gray-400 max-w-xs mx-auto">
+                          Add treatments to keep track of this patient's medical
+                          history.
+                        </p>
+                        <Button
+                          className="mt-4 bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigateToTreatment()}
                         >
-                          <div>
-                            <h4 className="font-medium">{diag.name}</h4>
-                            <div className="flex text-sm text-gray-500">
-                              <span className="mr-3">Date: {diag.date}</span>
-                              <span>Result: {diag.result}</span>
+                          <Plus className="h-3.5 w-3.5 mr-1" /> Add treatment
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 mt-2">
+                        {treatmentData.map(
+                          (treatment: Treatment, index: number) => (
+                            <div
+                              key={`treatment-${treatment.id || index}`}
+                              className="flex justify-between items-center p-3 bg-white hover:bg-gray-50 transition-colors rounded-md border border-gray-100 shadow-sm"
+                            >
+                              <div className="flex items-center">
+                                <div className="p-2 rounded-full mr-3 bg-purple-100 text-purple-600">
+                                  <Stethoscope className="h-4 w-4" />
+                                </div>
+                                <div>
+                                  <p className="font-medium">
+                                    {treatment.name}
+                                  </p>
+                                  <div className="flex text-sm text-gray-500 mt-0.5">
+                                    <span className="mr-3">
+                                      Started:{" "}
+                                      {new Date(
+                                        treatment.created_at
+                                      ).toLocaleDateString()}
+                                    </span>
+                                    <span
+                                      className={`px-2 py-0.5 rounded-full text-xs ${
+                                        treatment.status === "active"
+                                          ? "bg-green-100 text-green-800"
+                                          : treatment.status === "completed"
+                                          ? "bg-blue-100 text-blue-800"
+                                          : "bg-amber-100 text-amber-800"
+                                      }`}
+                                    >
+                                      {treatment.status
+                                        .charAt(0)
+                                        .toUpperCase() +
+                                        treatment.status.slice(1)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-indigo-600 hover:bg-indigo-50"
+                                  onClick={() => navigateToTreatment()}
+                                >
+                                  View Details
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              handleButtonClick("view-result", diag)
-                            }
-                          >
-                            View Details
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </TabsContent> */}
-
-                  {/* Diagnoses Tab Content */}
-                  <TabsContent value="diagnoses">
-                    <div className="flex justify-between mb-4">
-                      <h3 className="font-medium">Diagnoses History</h3>
-                      <Button
-                        size="sm"
-                        onClick={() => handleButtonClick("add-diagnosis")}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Diagnosis
-                      </Button>
-                    </div>
-
-                    <div className="space-y-3">
-                      {diagnoses.map((diag) => (
-                        <div
-                          key={diag.id}
-                          className="p-3 rounded-md border flex justify-between items-center"
-                        >
-                          <div>
-                            <h4 className="font-medium">{diag.name}</h4>
-                            <div className="flex text-sm text-gray-500">
-                              <span className="mr-3">Date: {diag.date}</span>
-                              <span>Doctor: {diag.doctor}</span>
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              handleButtonClick("view-record", diag)
-                            }
-                          >
-                            View Record
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
+                          )
+                        )}
+                      </div>
+                    )}
                   </TabsContent>
                 </CardContent>
               </Tabs>
@@ -1194,6 +1427,118 @@ const HealthCard: React.FC<HealthCardProps> = ({
           </>
         )}
       </div>
+
+      {/* File Upload Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload File</DialogTitle>
+          </DialogHeader>
+          <div className="p-6">
+            <div className="flex flex-col gap-4">
+              <div className="grid w-full max-w-sm items-center gap-1.5">
+                <input
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                />
+                <div
+                  className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-12 cursor-pointer hover:border-indigo-500 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="p-3 mb-3 bg-indigo-100 rounded-full">
+                    <FileText className="h-6 w-6 text-indigo-600" />
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Click to select a file or drag and drop
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    PDF, Images, and Documents
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setUploadDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  disabled={uploadFileMutation.isPending}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {uploadFileMutation.isPending ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>Select File</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* File Preview Modal */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-5xl w-full p-0 overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b">
+            <div className="flex items-center justify-between w-full">
+              <DialogTitle className="flex items-center">
+                {selectedFile &&
+                  getFileIcon(selectedFile.path.split("/").pop() || "")}
+                <span className="ml-2 truncate">
+                  {selectedFile?.path.split("/").pop()}
+                </span>
+              </DialogTitle>
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    if (selectedFile) {
+                      window.open(selectedFile.url, "_blank");
+                    }
+                  }}
+                >
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  Open in Browser
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    if (selectedFile) {
+                      const fileName = selectedFile.path.split("/").pop() || "";
+                      const link = document.createElement("a");
+                      link.href = selectedFile.url;
+                      link.download = fileName;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  Download
+                </Button>
+                <DialogClose asChild>
+                  <Button variant="ghost" size="icon" className="text-gray-500">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DialogClose>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="p-0 h-[75vh]">{renderFilePreview()}</div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

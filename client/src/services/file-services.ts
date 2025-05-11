@@ -4,16 +4,20 @@
 
 import api from "@/lib/api";
 
-export type FileResponse = {
+export type FileData = {
   id: number;
   url: string;
   path: string;
 };
 
+export type FileResponse = {
+  files: FileData[];
+};
+
 export const uploadFile = async (
   file: File,
   pet_id: number
-): Promise<FileResponse> => {
+): Promise<FileData> => {
   try {
     const formData = new FormData();
     formData.append("file", file);
@@ -32,7 +36,7 @@ export const uploadFile = async (
   }
 };
 
-export const getFile = async (file_id: number): Promise<FileResponse> => {
+export const getFile = async (file_id: number): Promise<FileData> => {
   try {
     const response = await api.get(`/api/v1/file/${file_id}`);
     return response.data;
@@ -42,7 +46,7 @@ export const getFile = async (file_id: number): Promise<FileResponse> => {
   }
 };
 
-export const getFiles = async (pet_id: number): Promise<FileResponse[]> => {
+export const getFiles = async (pet_id: number): Promise<FileResponse> => {
   try {
     const response = await api.get("/api/v1/files?pet_id=" + pet_id);
     return response.data;

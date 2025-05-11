@@ -22,7 +22,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import debounce from "lodash/debounce";
 
-export const useTreatmentsData = (pet_id: string, enabled = true) => {
+export const useTreatmentsData = (pet_id: string) => {
   return useQuery({
     queryKey: ["treatments"],
     queryFn: () => getPatientTreatments(pet_id),
