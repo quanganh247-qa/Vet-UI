@@ -188,6 +188,8 @@ const TreatmentManagement: React.FC = () => {
     refetch: refetchTreatments,
   } = useTreatmentsData(petId || "");
 
+  console.log(treatments);
+
   const { data: patientData, isLoading: isPatientLoading } = usePatientData(
     petId || ""
   );
@@ -1169,6 +1171,10 @@ const TreatmentManagement: React.FC = () => {
     generatePDF("prescription-pdf-content", "print");
   };
 
+  const handleUploadPrescription = () => {
+    generatePDF("prescription-pdf-content", "upload");
+  };
+
   // Cập nhật hàm xử lý tải xuống đơn thuốc dưới dạng PDF
   const handleDownloadPrescription = () => {
     // Tạo tên file bao gồm ID treatment và ngày hiện tại
@@ -1321,7 +1327,7 @@ const TreatmentManagement: React.FC = () => {
                             Disease
                           </div>
                           <div className="text-sm font-medium mt-1">
-                            {treatment.diseases || "Not specified"}
+                            {treatment.disease|| "Not specified"}
                           </div>
                         </div>
                       </div>
@@ -2799,6 +2805,7 @@ const TreatmentManagement: React.FC = () => {
               appointmentData={appointmentData}
               onPrint={handlePrintPrescription}
               onDownload={handleDownloadPrescription}
+              // onUpload={handleUploadPrescription}
               isPdfGenerating={isPdfGenerating}
             />
           </div>

@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Printer, Download, FileText, Calendar, Clock, Layers, Filter, Check, Pill } from "lucide-react";
+import { Printer, Download, FileText, Calendar, Clock, Layers, Filter, Check, Pill, Upload, FileUp, AlertCircle } from "lucide-react";
 import { Treatment, TreatmentPhase, PhaseMedicine } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useGetMedicineByPhaseId } from "@/hooks/use-medicine";
+import { useUploadFile } from "@/hooks/use-file";
+import { toast } from "@/components/ui/use-toast";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
+import { format } from "date-fns";
 
 interface PrescriptionPDFProps {
   treatment: Treatment | null;
@@ -16,6 +21,7 @@ interface PrescriptionPDFProps {
   appointmentData: any;
   onPrint: () => void;
   onDownload: () => void;
+  onUpload: () => void;
   isPdfGenerating: boolean;
 }
 
@@ -31,6 +37,8 @@ const PrescriptionPDF: React.FC<PrescriptionPDFProps> = ({
   const [viewMode, setViewMode] = useState<"all" | "byPhase">("all");
   const [selectedPhases, setSelectedPhases] = useState<number[]>([]);
   const [selectedSinglePhase, setSelectedSinglePhase] = useState<TreatmentPhase | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const uploadFileMutation = useUploadFile();
   
   // Initialize selected phases with all phases on component mount
   useEffect(() => {
@@ -92,9 +100,6 @@ const PrescriptionPDF: React.FC<PrescriptionPDFProps> = ({
         return [];
       }
       
-      // Log the raw medicines data for debugging
-      console.log("Raw medicines data structure:", JSON.stringify(medicines));
-      
       // First try to filter by phase_id if the data is an array
       if (Array.isArray(medicines.data)) {
         return medicines.data.filter((medicine: PhaseMedicine) => 
@@ -104,6 +109,102 @@ const PrescriptionPDF: React.FC<PrescriptionPDFProps> = ({
       
       // If it's not an array but data exists, try to use it directly
       return Array.isArray(medicines.data) ? medicines.data : [];
+    }
+  };
+  
+  // Function to handle file upload
+  const handleUploadPrescription = async () => {
+    if (!patientData?.petid) {
+      toast({
+        title: "Error",
+        description: "Patient information not available for upload",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Get the prescription content element
+      const prescriptionElement = document.getElementById('prescription-pdf-content');
+      
+      if (!prescriptionElement) {
+        throw new Error('Prescription content not found');
+      }
+
+      // Hide the buttons during capturing
+      const actionButtons = prescriptionElement.querySelector(".print\\:hidden");
+      if (actionButtons) {
+        actionButtons.classList.add("hidden");
+      }
+      
+      toast({
+        title: "Generating PDF",
+        description: "Please wait while we prepare your prescription for upload...",
+      });
+
+      // Use html2canvas to capture the prescription element - same as download
+      const canvas = await html2canvas(prescriptionElement, {
+        scale: 2, // Higher scale for better quality
+        useCORS: true,
+        logging: false,
+        allowTaint: true,
+        backgroundColor: "#ffffff", // Ensure white background
+      });
+      
+      // Create PDF
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+
+      // Generate filename with treatment information
+      const fileName = `Prescription_${treatment?.id || 'Unknown'}_${format(new Date(), "yyyy-MM-dd")}`;
+      
+      // Convert PDF to blob to upload
+      const pdfBlob = pdf.output('blob');
+      
+      // Create a File object from the Blob
+      const file = new File([pdfBlob], `${fileName}.pdf`, { 
+        type: 'application/pdf' 
+      });
+
+      // Upload the file using the mutation
+      await uploadFileMutation.mutateAsync({
+        file,
+        pet_id: Number(patientData.petid)
+      });
+
+      toast({
+        title: "Upload Success",
+        description: "Prescription has been uploaded to patient records",
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
+
+      
+    } catch (error) {
+      console.error("Error uploading prescription:", error);
+      toast({
+        title: "Upload Failed",
+        description: "An error occurred while uploading the prescription",
+        variant: "destructive",
+      });
+    } finally {
+      // Show buttons again
+      const prescriptionElement = document.getElementById('prescription-pdf-content');
+      const actionButtons = prescriptionElement?.querySelector(".print\\:hidden");
+      if (actionButtons) {
+        actionButtons.classList.remove("hidden");
+      }
+      setIsUploading(false);
     }
   };
   
@@ -398,7 +499,7 @@ const PrescriptionPDF: React.FC<PrescriptionPDFProps> = ({
             size="sm"
             className="border-gray-200"
             onClick={onPrint}
-            disabled={isPdfGenerating}
+            disabled={isPdfGenerating || isUploading}
           >
             <Printer className="mr-2 h-4 w-4" />
             Print
@@ -408,12 +509,39 @@ const PrescriptionPDF: React.FC<PrescriptionPDFProps> = ({
             size="sm"
             className="border-gray-200"
             onClick={onDownload}
-            disabled={isPdfGenerating}
+            disabled={isPdfGenerating || isUploading}
           >
             <Download className="mr-2 h-4 w-4" />
-            Download PDF
+            Download
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-gray-200"
+            onClick={handleUploadPrescription}
+            disabled={isPdfGenerating || isUploading}
+          >
+            {isUploading ? (
+              <>
+                <div className="h-4 w-4 border-2 border-indigo-600 border-opacity-50 border-t-transparent rounded-full animate-spin mr-2"></div>
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="mr-2 h-4 w-4" />
+                Upload
+              </>
+            )}
           </Button>
         </div>
+        
+        {!patientData?.petid && (
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-center text-amber-700 text-sm">
+            <AlertCircle className="h-4 w-4 mr-2 text-amber-500" />
+            Patient information is incomplete. Upload feature may not work properly.
+          </div>
+        )}
       </div>
     </div>
   );

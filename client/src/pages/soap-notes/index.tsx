@@ -174,16 +174,6 @@ const ObjectiveDataDisplay = ({ data }: { data: any }) => {
             ) : null
           ))}
         </div>
-
-        {data.vital_signs.general_notes && (
-          <div className="mt-3 p-3 bg-yellow-50 rounded-md border border-yellow-100">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-amber-600 text-lg">📝</span>
-              <h4 className="font-medium text-amber-700">General Notes</h4>
-            </div>
-            <p className="text-amber-800 whitespace-pre-line text-sm">{data.vital_signs.general_notes}</p>
-          </div>
-        )}
       </div>
     );
   };
@@ -449,7 +439,8 @@ const SoapNotes = () => {
   // Try to get appointmentId from different sources
   const effectiveAppointmentId = workflowParams.appointmentId || appointmentId || urlAppointmentId || "";
 
-  const { data: soap } = useGetSOAP(effectiveAppointmentId);
+  const { data: soap, isLoading: isSoapLoading1 } = useGetSOAP(effectiveAppointmentId);
+  console.log("soap", soap);
 
   // Initialize assessment data when soap data is loaded
   useEffect(() => {
@@ -487,18 +478,6 @@ const SoapNotes = () => {
     isLoading: isAppointmentLoading,
     error: appointmentError,
   } = useAppointmentData(effectiveAppointmentId);
-
-  const {
-    data: soapData = {
-      subjective: "",
-      objective: {},
-      assessment: "",
-      plan: "",
-    },
-    isLoading: isSoapLoading,
-    error: soapError,
-  } = useGetSOAP(appointment?.id);
-
   const {
     data: patient,
     isLoading: isPatientLoading,
@@ -533,10 +512,6 @@ const SoapNotes = () => {
           formattedText += `${sign.icon} ${sign.name}: ${sign.value} ${sign.unit}\n`;
         }
       });
-
-      if (data.vital_signs.general_notes) {
-        formattedText += `\n📝 General Notes:\n${data.vital_signs.general_notes}\n`;
-      }
       formattedText += "\n";
     }
 
@@ -741,21 +716,6 @@ const SoapNotes = () => {
               </h2>
             </div>
           </div>
-
-          {/* Guidance alert */}
-          <div className="p-4 mx-6 my-4 bg-blue-50 border border-blue-200 rounded-md">
-            <div className="flex items-center gap-2">
-              <Info className="h-5 w-5 text-blue-500" />
-              <h3 className="font-medium text-blue-700">Diagnostic Guidance</h3>
-            </div>
-            <p className="text-blue-600 text-sm mt-1">
-              The "Subjective" and "Objective" sections have been updated from
-              previous information gathering. Please focus on the "Assessment"
-              section to provide your professional diagnosis based on the
-              symptoms and examination results.
-            </p>
-          </div>
-
           <div className="p-6">
             <Tabs defaultValue="all" className="w-full">
               <div className="mb-4">

@@ -1265,15 +1265,7 @@ const EnhancedAppointmentFlowboard: React.FC<
                                   }`}
                               >
                                 <div className="flex items-center">
-                                  <div className="bg-white p-1.5 rounded-full mr-3 shadow-sm">
-                                    <img
-                                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                        appointment.pet.pet_name
-                                      )}&background=f0f9ff&color=3b82f6`}
-                                      alt={appointment.pet.pet_name}
-                                      className="h-8 w-8 rounded-full"
-                                    />
-                                  </div>
+                                  
                                   <div>
                                     <div className="font-medium text-sm">
                                       {appointment.pet.pet_name}

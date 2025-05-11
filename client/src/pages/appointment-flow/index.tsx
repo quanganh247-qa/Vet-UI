@@ -101,7 +101,7 @@ const AppointmentFlow = () => {
   const { data: queueData, error: queueError } = useListAppointmentsQueue();
 
 
-  
+  console.log("Test queueData", queueData);
   const appointments = appointmentsData?.data || [];
   const totalAppointments = appointmentsData?.total || 0;
   const totalPages = Math.ceil(totalAppointments / pageSize);

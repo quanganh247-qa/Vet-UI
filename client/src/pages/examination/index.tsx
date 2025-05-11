@@ -393,7 +393,7 @@ const Examination: React.FC = () => {
 
       // Create a properly structured assessment object
       const assessmentData = {
-        primary: soap?.assessment || "",
+        primary: "",
         differentials: [],
         notes: ""
       };
