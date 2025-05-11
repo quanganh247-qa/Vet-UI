@@ -24,8 +24,7 @@
 
     # Proxy /api/* to backend service
     handle /api/* {
-        uri strip_prefix /api
-        reverse_proxy https://go-pet-care-production.up.railway.app  {
+        reverse_proxy https://go-pet-care-production.up.railway.app {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-For {remote_host}
