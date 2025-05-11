@@ -21,6 +21,10 @@
         respond "OK" 200
     }
 
+    handle /api/* {
+        reverse_proxy http://go-pet-care-production.up.railway.app
+    }
+
     handle /* {
         root * /app/dist
         encode gzip
