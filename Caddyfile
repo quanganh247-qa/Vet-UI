@@ -21,7 +21,8 @@
         respond "OK" 200
     }
 
-    handle /* {
+    handle /api/* {
+        uri strip_prefix /api
         reverse_proxy https://go-pet-care-production.up.railway.app {
             header_up Host {http.request.host}
             header_up X-Forwarded-Host {http.request.host}
@@ -29,13 +30,18 @@
             header_up X-Forwarded-Proto {http.request.scheme}
             header_up X-Real-IP {http.request.remote}
             header_up X-Forwarded-For {http.request.remote}
+            transport http {
+                tls_insecure_skip_verify
+            }
         }
     }
 
     handle /* {
         root * /app/dist
         encode gzip
-        file_server
+        file_server {
+            precompressed gzip
+        }
         try_files {path} /index.html
     }
 }
