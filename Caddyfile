@@ -17,37 +17,46 @@
         format json
     }
 
-    rewrite /health /*
-
-
-   route {
-    # Proxy API requests
-    handle_path /api/* {
-      reverse_proxy https://go-pet-care-production.up.railway.app {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-For {remote_host}
-        header_up X-Forwarded-Proto {scheme}
-      }
+    handle /health {
+        respond "OK" 200
     }
 
-
-    # Serve static files
-    handle /* {
-        root * /app/dist
-        encode gzip
-        file_server {
-            precompressed gzip
+    route {
+        # Proxy API requests
+        handle_path /api/* {
+            reverse_proxy https://go-pet-care-production.up.railway.app {
+                header_up Host {host}
+                header_up X-Real-IP {remote_host}
+                header_up X-Forwarded-For {remote_host}
+                header_up X-Forwarded-Proto {scheme}
+                
+                # Add timeout settings to prevent 502 errors
+                transport http {
+                    tls
+                    tls_insecure_skip_verify
+                    dial_timeout 30s
+                    response_header_timeout 30s
+                }
+            }
         }
-        try_files {path} /index.html
-    }
 
-    # Optional: Handle CORS preflight (OPTIONS) requests
-    @cors_preflight method OPTIONS
-    handle @cors_preflight {
-        header Access-Control-Allow-Origin "*"
-        header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-        header Access-Control-Allow-Headers "*"
-        respond "" 204
-    }   
+        # Serve static files
+        handle /* {
+            root * /app/dist
+            encode gzip
+            file_server {
+                precompressed gzip
+            }
+            try_files {path} /index.html
+        }
+
+        # Handle CORS preflight (OPTIONS) requests
+        @cors_preflight method OPTIONS
+        handle @cors_preflight {
+            header Access-Control-Allow-Origin "*"
+            header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+            header Access-Control-Allow-Headers "*"
+            respond "" 204
+        }   
+    }
 }
