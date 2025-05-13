@@ -7,7 +7,7 @@ ENV NPM_CONFIG_FUND=false
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm install --legacy-peer-deps --production
 
 COPY . ./
 RUN npm run build
