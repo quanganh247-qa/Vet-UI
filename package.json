@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "serve -s dist -l $PORT"
+    "start": "serve -s dist -l $PORT",
+    "install": "npm install --legacy-peer-deps"
+
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^41.4.2",
