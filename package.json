@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "serve -s dist",
-    "install": "npm install --legacy-peer-deps"
+    "setup": "npm install --legacy-peer-deps"
 
   },
   "dependencies": {
