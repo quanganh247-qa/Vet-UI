@@ -85,6 +85,7 @@ export interface Pet {
   pet_id: number;
   pet_name: string;
   pet_breed: string;
+  birth_date: string;
   species: string;
   breed: string;
   age: number;
@@ -99,8 +100,6 @@ export interface Pet {
   status: "active" | "inactive";
   data_image?: string;
   last_visit?: string;
-  allergies?: string;
-  chronic_conditions?: string;
   medications?: string;
 }
 
@@ -122,7 +121,7 @@ export interface Alert {
 }
 
 export interface Patient {
-  pet_id: string;
+  pet_id: number;
   pet_name: string;
   species: string;
   breed: string;
@@ -136,11 +135,6 @@ export interface Patient {
   owner_email?: string;
   owner_address?: string;
   status: "active" | "inactive";
-  data_image?: string;
-  last_visit?: string;
-  allergies?: string;
-  chronic_conditions?: string;
-  medications?: string;
 }
 
 export interface QueueItem {

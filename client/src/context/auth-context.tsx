@@ -38,9 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Process notifications when they arrive
   useEffect(() => {
-    if (notifications && Array.isArray(notifications)) {
-      console.log('Auth context received notifications:', notifications);
-      
+    if (notifications && Array.isArray(notifications)) {      
       // Filter unread notifications
       const unreadCount = notifications.filter(n => !n.is_read).length;
       setNotificationCount(unreadCount);

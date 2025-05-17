@@ -68,7 +68,6 @@ const Appointments = () => {
   const { data: notifications, refetch: refetchNotifications } =
     useGetNotificationsFromDB();
 
-  console.log("Notifications:", notifications);
   const markNotificationAsRead = useMarkNotificationAsRead();
   const markAllNotificationsAsRead = useMarkAllNotificationsAsRead();
 
@@ -152,8 +151,6 @@ const Appointments = () => {
   }, [appointmentsData, statusFilter, searchTerm]);
 
   // Debug output
-  console.log("Filtered appointments:", filteredAppointments.length);
-
   // Thêm hàm xử lý thay đổi kích thước trang
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);

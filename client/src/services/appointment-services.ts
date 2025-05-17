@@ -230,6 +230,8 @@ export interface AppointmentRequest {
   doctor_id: number;
   service_id: number;
   reason: string;
+  create_pet?: boolean;
+  create_owner?: boolean;
   owner?: {
     owner_name: string;
     owner_email: string;
@@ -248,11 +250,6 @@ export interface AppointmentRequest {
 export const createWalkInAppointment = async (
   appointmentData: AppointmentRequest
 ): Promise<any> => {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    throw new Error("No access token found");
-  }
-
   try {
     const response = await api.post(
       "/api/v1/appointments/walk-in",
@@ -265,14 +262,46 @@ export const createWalkInAppointment = async (
     );
     return response.data;
   } catch (error) {
-    throw new Error("An unexpected error occurred");
+    // Log the detailed error for debugging
+    console.error("Walk-in appointment creation error:", {
+      error,
+      response: error instanceof AxiosError ? error.response?.data : null,
+      status: error instanceof AxiosError ? error.response?.status : null,
+    });
+
+    // Handle Axios errors with a response
+    if (error instanceof AxiosError && error.response) {
+      const statusCode = error.response.status;
+      const errorMessage = error.response.data?.message || error.response.data || error.message;
+      console.log(errorMessage);
+      // Specific handling for duplicate email (409 Conflict)
+      if (errorMessage.includes("users_email_key")) {
+        throw new Error("This email is already registered. Please use a different email or log in.");
+      }
+
+      // Other known status codes
+      switch (statusCode) {
+        case 400:
+          throw new Error("Invalid appointment data provided. Please check your input.");
+        case 401:
+          throw new Error("Unauthorized. Please log in to create an appointment.");
+        case 403:
+          throw new Error("You do not have permission to create this appointment.");
+        case 500:
+          throw new Error("Server error. Please try again later.");
+        default:
+          throw new Error(`Server error (${statusCode}): ${errorMessage}`);
+      }
+    }
+
+    // Handle non-Axios errors (e.g., network errors or unexpected issues)
+    throw new Error(
+      error instanceof Error
+        ? `Failed to create appointment: ${error.message}`
+        : "An unexpected error occurred during appointment creation."
+    );
   }
 };
-
-// {
-//   "code": "E",
-//   "message": "time slot is fully booked"
-// }
 
 export type ConfirmAppointmentResponse = {
   code: string;
@@ -311,13 +340,6 @@ export const getAppointmentByState = async (state: string) => {
   }
 };
 
-
-
-
-// // Database notification routes
-// authRoute.GET("/appointment/notifications/db", appointmentApi.controller.getNotificationsFromDB)
-// authRoute.PUT("/appointment/notifications/read/:id", appointmentApi.controller.markNotificationAsRead)
-// authRoute.PUT("/appointment/notifications/read-all", appointmentApi.controller.markAllNotificationsAsRead)
 
 export const getNotificationsFromDB = async () => {
   try {
