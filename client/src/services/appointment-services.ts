@@ -26,14 +26,19 @@ export const getAllAppointments = async (
 
 
   try {
+    const formattedDate = date.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
+    console.log("Ngày trong params:", formattedDate);
+
+    
     const response = await api.get(`/api/v1/appointments`, {
       params: {
-        date: date.toISOString().split("T")[0],
+        date: formattedDate,
         option: option,
         page: page,
         pageSize: pageSize,
       },
     });
+    
 
     // Handle the nested structure from your API
     if (response.data && response.data.data && response.data.data.rows) {

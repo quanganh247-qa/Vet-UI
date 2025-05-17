@@ -256,9 +256,9 @@ const AppointmentCard = memo(({
             }
           }}
         >
-          {appointment.state === "Checked In" || appointment.state === "Waiting" 
-            ? "Start Exam" 
-            : appointment.state === "In Progress" 
+          {appointment.state === "Checked In" || appointment.state === "Waiting"
+            ? appointment.service?.service_name?.toString() === "Body Grooming" ? "Start Service" : "Start Exam"
+            : appointment.state === "In Progress"
               ? "In Progress"
               : "Check out"}
         </button>
@@ -495,7 +495,7 @@ const EnhancedAppointmentFlowboard: React.FC<
         getPriorityColorClass={getPriorityColorClass}
       />
     ),
-    [handleAppointmentClick, handleStatusChange, formatTime, getStatusColorClass, getTypeColorClass, getPriorityColorClass]
+    [handleAppointmentClick, handleStatusChange, handleCheckIn, formatTime]
   );
 
   // Thêm hàm để xác định bước workflow hiện tại của cuộc hẹn
@@ -1554,59 +1554,63 @@ const EnhancedAppointmentFlowboard: React.FC<
                       Quick Actions
                     </h4>
                     <div className="grid grid-cols-1 gap-2">
-                      {selectedAppointment.state === "In Progress" && (
-                        <button
-                          className="w-full px-3 py-2.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 flex items-center justify-center shadow-sm"
-                          onClick={() => {
-                            const currentStep =
-                              getCurrentWorkflowStep(selectedAppointment);
-                            // Điều hướng đến trang workflow thích hợp
-                            if (currentStep === "patient-details") {
-                              setLocation(
-                                `/appointment/${selectedAppointment.id}/patient/${selectedAppointment.pet?.pet_id}`
-                              );
-                            } else if (currentStep === "examination") {
-                              setLocation(
-                                `/appointment/${selectedAppointment.id}/lab-management`
-                              );
-                            } else if (currentStep === "soap") {
-                              setLocation(
-                                `/appointment/${selectedAppointment.id}/soap`
-                              );
-                            } else if (currentStep === "diagnostic") {
-                              setLocation(
-                                `/appointment/${selectedAppointment.id}/lab-management`
-                              );
-                            } else if (currentStep === "treatment") {
-                              setLocation(
-                                `/appointment/${selectedAppointment.id}/patient/${selectedAppointment.pet?.pet_id}/treatment`
-                              );
-                            } else if (currentStep === "prescription") {
-                              setLocation(
-                                `/appointment/${selectedAppointment.id}/prescription`
-                              );
-                            } else if (currentStep === "follow-up") {
-                              setLocation(
-                                `/appointment/${selectedAppointment.id}/follow-up`
-                              );
-                            } else {
-                              setLocation(
-                                `/appointment/${selectedAppointment.id}`
-                              );
-                            }
-                          }}
-                        >
-                          {getWorkflowStepIcon(
-                            getCurrentWorkflowStep(selectedAppointment)
-                          )}
-                          <span className="mx-1">
-                            {getWorkflowStepLabel(
+                      {selectedAppointment.state === "In Progress" &&
+                        !(
+                          selectedAppointment.service?.service_name?.toLowerCase() === "body grooming" &&
+                          getCurrentWorkflowStep(selectedAppointment) === "examination"
+                        ) && (
+                          <button
+                            className="w-full px-3 py-2.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 flex items-center justify-center shadow-sm"
+                            onClick={() => {
+                              const currentStep =
+                                getCurrentWorkflowStep(selectedAppointment);
+                              // Điều hướng đến trang workflow thích hợp
+                              if (currentStep === "patient-details") {
+                                setLocation(
+                                  `/appointment/${selectedAppointment.id}/patient/${selectedAppointment.pet?.pet_id}`
+                                );
+                              } else if (currentStep === "examination") {
+                                setLocation(
+                                  `/appointment/${selectedAppointment.id}/lab-management`
+                                );
+                              } else if (currentStep === "soap") {
+                                setLocation(
+                                  `/appointment/${selectedAppointment.id}/soap`
+                                );
+                              } else if (currentStep === "diagnostic") {
+                                setLocation(
+                                  `/appointment/${selectedAppointment.id}/lab-management`
+                                );
+                              } else if (currentStep === "treatment") {
+                                setLocation(
+                                  `/appointment/${selectedAppointment.id}/patient/${selectedAppointment.pet?.pet_id}/treatment`
+                                );
+                              } else if (currentStep === "prescription") {
+                                setLocation(
+                                  `/appointment/${selectedAppointment.id}/prescription`
+                                );
+                              } else if (currentStep === "follow-up") {
+                                setLocation(
+                                  `/appointment/${selectedAppointment.id}/follow-up`
+                                );
+                              } else {
+                                setLocation(
+                                  `/appointment/${selectedAppointment.id}`
+                                );
+                              }
+                            }}
+                          >
+                            {getWorkflowStepIcon(
                               getCurrentWorkflowStep(selectedAppointment)
                             )}
-                          </span>
-                          <ArrowRightCircle className="ml-1 h-4 w-4" />
-                        </button>
-                      )}
+                            <span className="mx-1">
+                              {getWorkflowStepLabel(
+                                getCurrentWorkflowStep(selectedAppointment)
+                              )}
+                            </span>
+                            <ArrowRightCircle className="ml-1 h-4 w-4" />
+                          </button>
+                        )}
 
                       <div className="grid grid-cols-2 gap-2 mt-2">
                         {selectedAppointment.state === "Scheduled" && (
@@ -1629,7 +1633,9 @@ const EnhancedAppointmentFlowboard: React.FC<
                             }
                           >
                             <Play size={14} className="mr-1.5" />
-                            Start Exam
+                            {selectedAppointment.service?.service_name?.toLowerCase() === "body grooming"
+                              ? "Start Service"
+                              : "Start Exam"}
                           </button>
                         )}
 

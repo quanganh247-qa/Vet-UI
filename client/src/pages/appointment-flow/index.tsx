@@ -67,6 +67,7 @@ const AppointmentFlow = () => {
   const { id } = useParams();
   const [, navigate] = useLocation();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  console.log("selectedDate1", selectedDate);
   const [, setShowSidebar] = useState(true);
   const [, setSidebarContent] = useState("queue");
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<
@@ -92,7 +93,7 @@ const AppointmentFlow = () => {
   } = useQuery({
     queryKey: [
       "appointments",
-      selectedDate.toISOString().split("T")[0],
+      selectedDate.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }),
       currentPage,
       pageSize,
     ],

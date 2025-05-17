@@ -55,6 +55,7 @@ import { useConfirmPayment, useQR } from "@/hooks/use-payment";
 import { QRCodeInformation, QuickLinkRequest } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
 import { CashPaymentDialog } from "@/components/payment";
+import { set } from "lodash";
 
 // Common pre-defined keys for subjective data
 const COMMON_SUBJECTIVE_KEYS = [
@@ -396,10 +397,11 @@ const CheckIn = () => {
         title: "Patient Checked In",
         description: `Successfully checked in to ${selectedRoom}`,
         className: "bg-green-50 border-green-200 text-green-800",
+        
       });
+      setLocation("/appointment-flow");
 
       // Redirect to the appointment flowboard rather than examination
-      // setLocation("/appointment-flow");
     } catch (error) {
       console.error("Error checking in:", error);
       toast({
