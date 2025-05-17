@@ -37,8 +37,17 @@ export const useShiftMutations = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { start_time: Date; end_time: Date; doctor_id: number } }) => 
-      updateShift(id, data),
+    mutationFn: ({ id, data }: { 
+      id: number; 
+      data: { 
+        start_time: Date | string; 
+        end_time: Date | string; 
+        doctor_id: number;
+        title?: string;
+        description?: string;
+        status?: string;
+      } 
+    }) => updateShift(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
       queryClient.invalidateQueries({ queryKey: ['all-shifts'] });
@@ -92,8 +101,17 @@ export const useCreateShift = () => {
 
 export const useUpdateShift = () => {
   return useMutation({
-      mutationFn: ({ shiftId, data }: { shiftId: number, data: { start_time: Date; end_time: Date; doctor_id: number } }) => 
-          updateShift(shiftId, data),
+      mutationFn: ({ shiftId, data }: { 
+        shiftId: number, 
+        data: { 
+          start_time: Date | string; 
+          end_time: Date | string; 
+          doctor_id: number;
+          title?: string;
+          description?: string;
+          status?: string;
+        } 
+      }) => updateShift(shiftId, data),
       onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ['doctor-shifts'] });
       },

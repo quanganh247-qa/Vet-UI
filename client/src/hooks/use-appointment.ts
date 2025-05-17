@@ -215,13 +215,6 @@ export const useLongPollingNotifications = ({
   const activeRequestRef = useRef<boolean>(false);
 
   // Debug logging
-  useEffect(() => {
-    console.log('useLongPollingNotifications enabled:', enabled);
-    return () => {
-      console.log('useLongPollingNotifications unmounting');
-    };
-  }, [enabled]);
-
   const poll = useCallback(async () => {
     if (!enabled || isPolling.current || !isMountedRef.current || activeRequestRef.current) {
       console.log('Skipping poll: enabled=', enabled, 
@@ -237,21 +230,14 @@ export const useLongPollingNotifications = ({
     const signal = abortControllerRef.current.signal;
 
     try {
-      console.log('Starting long polling request...');
       const notifications = await waitForNotifications(signal);
       
-      // Only proceed if the component is still mounted and the request wasn't aborted
-      if (!isMountedRef.current || signal.aborted) {
-        console.log("Long poll request canceled or component unmounted.");
-        return;
-      }
 
       // Reset error counters since we got a successful response
       consecutiveErrorsRef.current = 0;
       currentPollInterval.current = initialPollInterval;
 
       if (notifications) {
-        console.log('Setting notifications data:', notifications);
         setData(notifications);
         setError(null);
         setIsLoading(false);
@@ -270,8 +256,6 @@ export const useLongPollingNotifications = ({
               );
             }
           );
-
-          console.log('New notifications detected:', newNotifications.length);
           
           // Show toast for each new notification
           newNotifications.forEach((notification: any) => {
@@ -304,11 +288,6 @@ export const useLongPollingNotifications = ({
       isPolling.current = false;
       activeRequestRef.current = false;
       
-      // Only schedule next poll if component is still mounted
-      if (isMountedRef.current) {
-        console.log('Scheduling next poll');
-        setTimeout(poll, 500); // Small delay between polls
-      }
 
     } catch (err: any) {
       // Don't log or handle AbortError and cancellation errors as actual errors
@@ -367,7 +346,6 @@ export const useLongPollingNotifications = ({
       
       isPolling.current = false;
       activeRequestRef.current = false;
-      console.log('Starting initial poll');
       poll();
     } else {
       if (abortControllerRef.current) {
@@ -378,7 +356,6 @@ export const useLongPollingNotifications = ({
     }
 
     return () => {
-      console.log('Cleaning up long polling');
       isMountedRef.current = false; // Mark component as unmounted
       if (abortControllerRef.current) {
         console.log('Aborting any in-flight request');

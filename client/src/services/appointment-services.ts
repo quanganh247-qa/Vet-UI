@@ -344,13 +344,11 @@ export const registerUserRole = async (role: string) => {
     const response = await api.post('/api/v1/appointment/register-role', { role });
     return response.data;
   } catch (error) {
-    console.error('Error registering user role:', error);
     throw error;
   }
 };
 
 export const waitForNotifications = async (signal?: AbortSignal) => {
-  console.log('Starting waitForNotifications polling request...');
   try {
     // Use a slightly shorter timeout to ensure client timeout happens before server timeout
     const response = await api.get('/api/v1/appointment/notifications/wait', {

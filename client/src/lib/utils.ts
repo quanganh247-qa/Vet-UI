@@ -34,6 +34,24 @@ export const getRelativeTime = (date: Date | string): string => {
   return formatDistance(parsedDate, now, { addSuffix: true });
 };
 
+/**
+ * Formats a Date object to the format expected by the backend API: YYYY-MM-DD HH:MM:SS
+ * This format is particularly important for shift start_time and end_time fields
+ */
+export const formatDateForBackend = (date: Date | string): string => {
+  if (typeof date === 'string') {
+    // If already a string, check if it matches expected format
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(date)) {
+      return date; // Already in correct format
+    }
+    // Convert to Date to ensure proper formatting
+    date = new Date(date);
+  }
+  
+  const pad = (num: number): string => String(num).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+};
+
 export const getStatusColor = (status: string): { 
   bgColor: string, 
   textColor: string,

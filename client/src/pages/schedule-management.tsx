@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { format, addDays, isAfter, isBefore } from "date-fns";
 import {
   Plus,
@@ -56,11 +56,23 @@ import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { useDoctors } from "@/hooks/use-doctor";
 import { useGetAllShifts, useShiftMutations } from "@/hooks/use-shifts";
-import { cn } from "@/lib/utils";
+import { cn, formatDateForBackend } from "@/lib/utils";
 
 const ScheduleManagement = () => {
   const [userRole, setUserRole] = useState<"doctor" | "admin">("admin");
   const [currentDoctorId, setCurrentDoctorId] = useState<string>("1");
+
+  // Add shift with direct payload
+  const addShiftWithPayload = useCallback((payload: {
+    start_time: string,
+    end_time: string,
+    doctor_id: number,
+    title?: string,
+    description?: string,
+    status?: string
+  }) => {
+    handleCreateShift(payload);
+  }, []);
 
   // State for UI
   const [view, setView] = useState<"calendar" | "list">("calendar");
@@ -107,7 +119,7 @@ const ScheduleManagement = () => {
         (shift) =>
           isAfter(new Date(shift.start_time), startDate) ||
           format(new Date(shift.start_time), "yyyy-MM-dd") ===
-            format(startDate, "yyyy-MM-dd")
+          format(startDate, "yyyy-MM-dd")
       );
     }
 
@@ -118,7 +130,7 @@ const ScheduleManagement = () => {
         (shift) =>
           isBefore(new Date(shift.start_time), endDate) ||
           format(new Date(shift.start_time), "yyyy-MM-dd") ===
-            format(endDate, "yyyy-MM-dd")
+          format(endDate, "yyyy-MM-dd")
       );
     }
 
@@ -176,6 +188,14 @@ const ScheduleManagement = () => {
     setIsEditShiftOpen(true);
   };
 
+
+  // Format dates as "YYYY-MM-DD HH:MM:SS" for backend compatibility
+  const formatDateForBackend = (date: Date) => {
+    const pad = (num: number) => String(num).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  };
+
+
   const handleDeleteShift = () => {
     if (selectedShift) {
       deleteMutation.mutate(Number(selectedShift.id), {
@@ -201,6 +221,44 @@ const ScheduleManagement = () => {
   };
 
   const handleCreateShift = (data: any) => {
+    // Check if data is in direct payload format (with start_time and end_time)
+    if (data.start_time && data.end_time && data.doctor_id) {
+      // Format dates for backend API
+      const shiftData = {
+        title: data.title || "Scheduled Shift",
+        doctor_id: Number(data.doctor_id),
+        start_time: formatDateForBackend(data.start_time),
+        end_time: formatDateForBackend(data.end_time),
+        description: data.description || "",
+        status: data.status || "scheduled",
+      };
+
+      // Log detailed time information for debugging
+      console.log("Creating shift with payload:", shiftData);
+      console.log(JSON.stringify(shiftData, null, 2));
+      createMutation.mutate(shiftData, {
+        onSuccess: () => {
+          toast({
+            title: "Shift created successfully",
+            description: `New shift "${shiftData.title}" has been added to the schedule.`,
+            className: "bg-green-50 text-green-800 border-green-200",
+          });
+          setIsAddShiftOpen(false);
+        },
+        onError: (error) => {
+          toast({
+            title: "Failed to create shift",
+            description: "An error occurred while creating the shift.",
+            variant: "destructive",
+          });
+          console.error("Error creating shift:", error);
+        },
+      });
+
+      return;
+    }
+
+    // Form data format (original implementation)
     // Ensure we have valid data
     if (!data.title || !data.doctorId || !data.date) {
       console.error("Missing required shift data");
@@ -230,8 +288,8 @@ const ScheduleManagement = () => {
     const shiftData = {
       title: data.title,
       doctor_id: Number(data.doctorId),
-      start_time: startDate,
-      end_time: endDate,
+      start_time: formatDateForBackend(startDate),
+      end_time: formatDateForBackend(endDate),
       description: data.description || "",
       status: data.status || "scheduled",
     };
@@ -407,14 +465,39 @@ const ScheduleManagement = () => {
             </Button>
 
             {userRole === "admin" && (
-              <Button
-                onClick={() => setIsAddShiftOpen(true)}
-                size="sm"
-                className="bg-white hover:bg-white/90 text-indigo-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Shift
-              </Button>
+              <>
+                <Button
+                  onClick={() => setIsAddShiftOpen(true)}
+                  size="sm"
+                  className="bg-white hover:bg-white/90 text-indigo-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Shift
+                </Button>
+                <Button
+                  onClick={() => {
+                    // Create afternoon shift with explicit time values
+                    const today = new Date();
+                    const shiftDate = new Date(today);
+                    shiftDate.setHours(13, 0, 0, 0); // 1:00 PM
+
+                    const endDate = new Date(today);
+                    endDate.setHours(17, 0, 0, 0); // 5:00 PM
+
+                    addShiftWithPayload({
+                      start_time: formatDateForBackend(shiftDate),
+                      end_time: formatDateForBackend(endDate),
+                      doctor_id: 2,
+                      title: "Afternoon Shift (1PM-5PM)"
+                    });
+                  }}
+                  size="sm"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white ml-2"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Afternoon Shift
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -469,11 +552,11 @@ const ScheduleManagement = () => {
                         className={cn(
                           "ml-2 capitalize font-medium",
                           shift.status === "scheduled" &&
-                            "bg-blue-100 text-blue-800 hover:bg-blue-100",
+                          "bg-blue-100 text-blue-800 hover:bg-blue-100",
                           shift.status === "completed" &&
-                            "bg-green-100 text-green-800 hover:bg-green-100",
+                          "bg-green-100 text-green-800 hover:bg-green-100",
                           shift.status === "cancelled" &&
-                            "bg-red-100 text-red-800 hover:bg-red-100"
+                          "bg-red-100 text-red-800 hover:bg-red-100"
                         )}
                       >
                         {shift.status}
