@@ -1,20 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
-import { ListPatients } from '@/services/pet-services';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { format } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { 
-  Search, Plus, Loader2, ChevronRight, PawPrint, UserCircle, 
-  List, Grid, Calendar, ArrowLeft, UserCog, LogOut, User, Settings,
-  MoreHorizontal, Pencil, Trash2, Syringe, Stethoscope, ClipboardList
-} from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { ListPatients } from "@/services/pet-services";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { format } from "date-fns";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import {
+  Search,
+  Plus,
+  Loader2,
+  ChevronRight,
+  PawPrint,
+  UserCircle,
+  List,
+  Grid,
+  Calendar,
+  ArrowLeft,
+  UserCog,
+  LogOut,
+  User,
+  Settings,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Syringe,
+  Stethoscope,
+  ClipboardList,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { usePatientsData } from '@/hooks/use-pet';
-import { PaginatedResponse } from '@/types';
+import { usePatientsData } from "@/hooks/use-pet";
+import { PaginatedResponse } from "@/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,8 +78,8 @@ interface ExpandedCardState {
 
 export const PatientsPage: React.FC = () => {
   const [, setLocation] = useLocation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'list'>('list');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"list">("list");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10); // Changed from 8 to 10
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -64,22 +87,25 @@ export const PatientsPage: React.FC = () => {
   const [expandedCards, setExpandedCards] = useState<ExpandedCardState>({});
 
   // Use React Query for data fetching with pagination with proper typing
-  const { 
-    data: patientsData, 
-    isLoading, 
-    isError 
-  } = usePatientsData(currentPage, pageSize) as { 
-    data: PaginatedPetData | undefined; 
-    isLoading: boolean; 
-    isError: boolean 
+  const {
+    data: patientsData,
+    isLoading,
+    isError,
+  } = usePatientsData(currentPage, pageSize) as {
+    data: PaginatedPetData | undefined;
+    isLoading: boolean;
+    isError: boolean;
   };
 
   // Sửa hàm handlePageChange để đảm bảo nó hoạt động đúng
   const handlePageChange = (newPage: number) => {
     // Đảm bảo rằng chúng ta có thể chuyển trang ngay cả khi totalPages chưa được xác định
-    if (newPage >= 1 && (!patientsData?.totalPages || newPage <= patientsData.totalPages)) {
+    if (
+      newPage >= 1 &&
+      (!patientsData?.totalPages || newPage <= patientsData.totalPages)
+    ) {
       setCurrentPage(newPage);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -92,7 +118,7 @@ export const PatientsPage: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    setLocation('/login');
+    setLocation("/login");
   };
 
   const handlePageSizeChange = (newSize: number) => {
@@ -100,12 +126,16 @@ export const PatientsPage: React.FC = () => {
     setCurrentPage(1); // Reset to first page when changing page size
   };
 
-  const filteredPatients = !patientsData?.data ? [] : patientsData.data.filter((patient: Pet) =>
-    patient?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient?.breed?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient?.type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (patient?.username && patient.username.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredPatients = !patientsData?.data
+    ? []
+    : patientsData.data.filter(
+        (patient: Pet) =>
+          patient?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          patient?.breed?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          patient?.type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (patient?.username &&
+            patient.username.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
 
   const handlePatientClick = (patientId: string) => {
     setLocation(`/patient/${patientId}`);
@@ -143,9 +173,9 @@ export const PatientsPage: React.FC = () => {
 
   const toggleCardExpansion = (petId: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    setExpandedCards(prev => ({
+    setExpandedCards((prev) => ({
       ...prev,
-      [petId]: !prev[petId]
+      [petId]: !prev[petId],
     }));
   };
 
@@ -161,15 +191,17 @@ export const PatientsPage: React.FC = () => {
   if (isError) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500 dark:text-red-400">Failed to fetch patients</div>
+        <div className="text-red-500 dark:text-red-400">
+          Failed to fetch patients
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-            {/* Header with gradient background */}
-            <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md mb-6">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md mb-6">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <Button
@@ -193,13 +225,13 @@ export const PatientsPage: React.FC = () => {
               <Calendar className="h-4 w-4 text-white/80 mr-2" />
               <input
                 type="date"
-                value={format(selectedDate, 'yyyy-MM-dd')}
+                value={format(selectedDate, "yyyy-MM-dd")}
                 onChange={handleDateChange}
                 className="text-sm bg-transparent border-none focus:outline-none text-white"
               />
             </div>
-            <Button 
-              onClick={() => setLocation('/patients/new')}
+            <Button
+              onClick={() => setLocation("/patients/new")}
               className="bg-white text-[#2C78E4] hover:bg-white/90 rounded-lg shadow-sm"
               size="sm"
             >
@@ -228,13 +260,17 @@ export const PatientsPage: React.FC = () => {
                 className="pl-10 border-gray-200 rounded-lg focus:ring-[#2C78E4] focus:border-[#2C78E4]"
               />
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
+                variant={viewMode === "list" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setViewMode('list')}
-                className={viewMode === 'list' ? 'bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90' : 'border-gray-200 text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4] hover:border-[#2C78E4]/20'}
+                onClick={() => setViewMode("list")}
+                className={
+                  viewMode === "list"
+                    ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
+                    : "border-gray-200 text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4] hover:border-[#2C78E4]/20"
+                }
               >
                 <List className="h-4 w-4 mr-1" />
                 List
@@ -261,11 +297,9 @@ export const PatientsPage: React.FC = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent className={viewMode === 'list' ? 'p-6' : 'p-0'}>
-       
-
+        <CardContent className={viewMode === "list" ? "p-6" : "p-0"}>
           {/* Patients list view */}
-          {viewMode === 'list' && (
+          {viewMode === "list" && (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-100">
                 <thead className="bg-[#F9FAFB]">
@@ -293,7 +327,10 @@ export const PatientsPage: React.FC = () => {
                 <tbody className="bg-white divide-y divide-gray-100">
                   {filteredPatients.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-10 text-center text-[#4B5563]">
+                      <td
+                        colSpan={6}
+                        className="px-6 py-10 text-center text-[#4B5563]"
+                      >
                         No patients found matching your search criteria
                       </td>
                     </tr>
@@ -303,15 +340,15 @@ export const PatientsPage: React.FC = () => {
                         key={patient.petid}
                         className="hover:bg-[#F9FAFB] transition-colors"
                       >
-                        <td 
+                        <td
                           className="px-6 py-4 whitespace-nowrap cursor-pointer"
                           onClick={() => handlePatientClick(patient.petid)}
                         >
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10 rounded-full bg-[#2C78E4]/10 flex items-center justify-center">
                               {patient.data_image ? (
-                                <img 
-                                  src={`data:image/png;base64,${patient.data_image}`} 
+                                <img
+                                  src={`data:image/png;base64,${patient.data_image}`}
                                   alt={patient.name}
                                   className="h-10 w-10 rounded-full object-cover"
                                 />
@@ -320,71 +357,102 @@ export const PatientsPage: React.FC = () => {
                               )}
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-[#111827]">{patient.name}</div>
-                              <div className="text-sm text-[#4B5563]">{patient.breed}</div>
+                              <div className="text-sm font-medium text-[#111827]">
+                                {patient.name}
+                              </div>
+                              <div className="text-sm text-[#4B5563]">
+                                {patient.breed}
+                              </div>
                             </div>
                           </div>
                         </td>
-                        <td 
+                        <td
                           className="px-6 py-4 whitespace-nowrap cursor-pointer"
                           onClick={() => handlePatientClick(patient.petid)}
                         >
-                          <Badge 
+                          <Badge
                             variant="outline"
                             className="bg-[#2C78E4]/10 text-[#2C78E4] border-[#2C78E4]/20 rounded-full"
                           >
                             {patient.type}
                           </Badge>
                         </td>
-                        <td 
+                        <td
                           className="px-6 py-4 whitespace-nowrap cursor-pointer"
                           onClick={() => handlePatientClick(patient.petid)}
                         >
-                          <div className="text-sm text-[#111827]">{patient.username || 'Unknown'}</div>
+                          <div className="text-sm text-[#111827]">
+                            {patient.username || "Unknown"}
+                          </div>
                         </td>
-                        <td 
+                        <td
                           className="px-6 py-4 whitespace-nowrap cursor-pointer"
                           onClick={() => handlePatientClick(patient.petid)}
                         >
-                          <div className="text-sm text-[#111827]">{patient.age} years</div>
+                          <div className="text-sm text-[#111827]">
+                            {patient.age} years
+                          </div>
                         </td>
-                        <td 
+                        <td
                           className="px-6 py-4 whitespace-nowrap cursor-pointer"
                           onClick={() => handlePatientClick(patient.petid)}
                         >
-                          <div className="text-sm text-[#111827]">{patient.gender || 'Unknown'}</div>
+                          <div className="text-sm text-[#111827]">
+                            {patient.gender || "Unknown"}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 className="h-8 w-8 text-[#4B5563] hover:bg-[#F9FAFB] rounded-full"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()} className="bg-white rounded-lg shadow-md border-none">
-                              <DropdownMenuItem onClick={() => handlePatientClick(patient.petid)} className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer">
+                            <DropdownMenuContent
+                              align="end"
+                              onClick={(e) => e.stopPropagation()}
+                              className="bg-white rounded-lg shadow-md border-none"
+                            >
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handlePatientClick(patient.petid)
+                                }
+                                className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer"
+                              >
                                 <User className="mr-2 h-4 w-4 text-[#2C78E4]" />
                                 <span>View Details</span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => handleEditPatient(patient.petid, e)} className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer">
+                              <DropdownMenuItem
+                                onClick={(e) =>
+                                  handleEditPatient(patient.petid, e)
+                                }
+                                className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer"
+                              >
                                 <Pencil className="mr-2 h-4 w-4 text-[#2C78E4]" />
                                 <span>Edit</span>
                               </DropdownMenuItem>
                               <DropdownMenuSeparator className="bg-gray-100" />
-                              <DropdownMenuItem onClick={(e) => handleVaccination(patient.petid, e)} className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer">
+                              <DropdownMenuItem
+                                onClick={(e) =>
+                                  handleVaccination(patient.petid, e)
+                                }
+                                className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer"
+                              >
                                 <Syringe className="mr-2 h-4 w-4 text-[#FFA726]" />
                                 <span>Vaccination</span>
                               </DropdownMenuItem>
-                        
+
                               <DropdownMenuSeparator className="bg-gray-100" />
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 className="text-red-600 focus:text-red-600 hover:bg-red-50 cursor-pointer"
-                                onClick={(e) => handleDeletePatient(patient.petid, e)}
+                                onClick={(e) =>
+                                  handleDeletePatient(patient.petid, e)
+                                }
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 <span>Delete</span>
@@ -419,9 +487,15 @@ export const PatientsPage: React.FC = () => {
             </select>
             <span className="text-[#4B5563]">entries</span>
           </div>
-          
+
           <div className="text-sm text-[#4B5563]">
-            Showing {Math.min((currentPage - 1) * pageSize + 1, patientsData?.total || 0)} - {Math.min(currentPage * pageSize, patientsData?.total || 0)} of {patientsData?.total || 0} patients
+            Showing{" "}
+            {Math.min(
+              (currentPage - 1) * pageSize + 1,
+              patientsData?.total || 0
+            )}{" "}
+            - {Math.min(currentPage * pageSize, patientsData?.total || 0)} of{" "}
+            {patientsData?.total || 0} patients
           </div>
 
           <div className="flex items-center gap-1">
@@ -430,7 +504,8 @@ export const PatientsPage: React.FC = () => {
               size="sm"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className={cn("rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+              className={cn(
+                "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
                 currentPage === 1
                   ? "text-gray-400 cursor-not-allowed"
                   : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
@@ -438,10 +513,13 @@ export const PatientsPage: React.FC = () => {
             >
               <ChevronRight className="h-4 w-4 rotate-180" />
             </Button>
-            
+
             {patientsData?.totalPages && patientsData.totalPages <= 5 ? (
               // Show all page numbers if there are 5 or fewer pages
-              Array.from({ length: patientsData.totalPages }, (_, i) => i + 1).map((page) => (
+              Array.from(
+                { length: patientsData.totalPages },
+                (_, i) => i + 1
+              ).map((page) => (
                 <Button
                   key={page}
                   variant="ghost"
@@ -474,12 +552,12 @@ export const PatientsPage: React.FC = () => {
                 >
                   1
                 </Button>
-                
+
                 {/* Ellipsis if needed */}
                 {currentPage > 3 && (
                   <span className="px-1 text-[#4B5563]">...</span>
                 )}
-                
+
                 {/* Pages around current page */}
                 {Array.from(
                   { length: Math.min(3, patientsData?.totalPages || 1) },
@@ -488,7 +566,10 @@ export const PatientsPage: React.FC = () => {
                       2,
                       currentPage - 1 + i - (currentPage > 2 ? 1 : 0)
                     );
-                    if (pageNum >= 2 && pageNum < (patientsData?.totalPages || 1)) {
+                    if (
+                      pageNum >= 2 &&
+                      pageNum < (patientsData?.totalPages || 1)
+                    ) {
                       return (
                         <Button
                           key={pageNum}
@@ -509,12 +590,13 @@ export const PatientsPage: React.FC = () => {
                     return null;
                   }
                 )}
-                
+
                 {/* Ellipsis if needed */}
-                {patientsData?.totalPages && currentPage < patientsData.totalPages - 2 && (
-                  <span className="px-1 text-[#4B5563]">...</span>
-                )}
-                
+                {patientsData?.totalPages &&
+                  currentPage < patientsData.totalPages - 2 && (
+                    <span className="px-1 text-[#4B5563]">...</span>
+                  )}
+
                 {/* Last page */}
                 {patientsData?.totalPages && patientsData.totalPages > 1 && (
                   <Button
@@ -538,9 +620,18 @@ export const PatientsPage: React.FC = () => {
               variant="ghost"
               size="sm"
               onClick={() => handlePageChange(currentPage + 1)}
-              disabled={patientsData?.total ? currentPage >= Math.ceil(patientsData.total / pageSize) : true}
-              className={cn("rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
-                (patientsData?.total ? currentPage >= Math.ceil(patientsData.total / pageSize) : true)
+              disabled={
+                patientsData?.total
+                  ? currentPage >= Math.ceil(patientsData.total / pageSize)
+                  : true
+              }
+              className={cn(
+                "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                (
+                  patientsData?.total
+                    ? currentPage >= Math.ceil(patientsData.total / pageSize)
+                    : true
+                )
                   ? "text-gray-400 cursor-not-allowed"
                   : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
               )}

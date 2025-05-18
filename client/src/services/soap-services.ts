@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import { SubjectiveData } from "@/types";
+import { SOAPData, SubjectiveData } from "@/types";
 
 const getTokenOrThrow = () => {
   const token = localStorage.getItem("access_token");
@@ -76,9 +76,14 @@ export const createSOAP = async (appointmentID: string, subjective: string | Sub
   }
 };
 
-export const getSOAP = async (appointmentID: string) => {
+
+
+
+
+export const getSOAP = async (appointmentID: string): Promise<SOAPData> =>  {
   try {
     const response = await api.get(`/api/v1/appointment/${appointmentID}/soap`);
+
     return response.data;
   } catch (error: any) {
     if (error.response?.data?.message) {
@@ -114,13 +119,8 @@ export const getAllSOAPs = async (pet_id: string) => {
     console.error("getAllSOAPs called with empty pet_id");
     return [];
   }
-  
-  console.log(`Fetching SOAP notes for pet_id: ${pet_id}`);
-  
-  try {
-    getTokenOrThrow(); // Ensure token exists
-    console.log(`Making API request to: /api/v1/pets/${pet_id}/soap-notes`);
     
+  try {
     const response = await api.get(`/api/v1/pets/${pet_id}/soap-notes`);
     console.log("SOAP API response:", response);
     

@@ -205,6 +205,7 @@ const TreatmentManagement: React.FC = () => {
     refetch: refetchPhases,
   } = useTreatmentPhasesData(selectedTreatment?.id?.toString() || "");
 
+  console.log("phases", phases);
   // Add the useAddTreatmentPhase hook after phases is loaded
   const addTreatmentPhaseMutation = useAddTreatmentPhase(
     selectedTreatment?.id?.toString() || ""
@@ -1295,7 +1296,7 @@ const TreatmentManagement: React.FC = () => {
               <span>Complete Appointment</span>
             </Button>
 
-            <Button
+            {/* <Button
               variant="outline"
               size="sm"
               className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
@@ -1309,7 +1310,7 @@ const TreatmentManagement: React.FC = () => {
             >
               <Syringe className="h-4 w-4 mr-1" />
               <span>Go to Vaccination</span>
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>

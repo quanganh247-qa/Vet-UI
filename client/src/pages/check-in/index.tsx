@@ -268,21 +268,9 @@ const SubjectiveKeyValueEditor = ({
             </div>
           </div>
         )}
-        
-        <div className="text-xs text-gray-500 flex items-center justify-between border-t border-gray-100 pt-2 mt-4">
-          <span>Fields added: {entries.length}</span>
-          <span className="text-gray-400">
-            Storing as JSON format
-          </span>
-        </div>
+      
 
-        {/* Optional data preview (for debugging) */}
-        {entries.length > 0 && (
-          <div className="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200 text-xs font-mono text-gray-500 overflow-x-auto">
-            <div className="mb-1 text-xs font-medium text-gray-700">JSON Preview:</div>
-            <pre>{JSON.stringify(entries, null, 2)}</pre>
-          </div>
-        )}
+   
       </div>
     </div>
   );
@@ -473,16 +461,15 @@ const CheckIn = () => {
   };
 
   return (
-    <div className="flex justify-center min-h-screen bg-[#F9FAFB]">
-      <div className="w-full max-w-7xl mx-auto my-4 px-2 sm:px-4">
-        {/* Page Header */}
-        <div className="bg-[#2C78E4] px-4 sm:px-6 py-4 md:px-8 md:py-5 rounded-xl shadow-sm mb-4">
+    <div className="space-y-6">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center">
               <Button
                 variant="ghost"
                 size="icon"
-                className="mr-2 h-8 w-8 text-white hover:bg-white/20 rounded-full"
+                className="mr-3 h-9 w-9 text-white hover:bg-white/20 rounded-full"
                 onClick={() => setLocation("/appointment-flow")}
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -491,18 +478,18 @@ const CheckIn = () => {
                 <h1 className="text-xl font-semibold text-white">
                   Nurse Check-in
                 </h1>
-                <p className="text-white/80 text-sm">
+                <p className="text-white/90 text-sm mt-0.5">
                   Room assignment and initial assessment
                 </p>
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button
                 onClick={handleCompleteCheckIn}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1.5 shadow-sm rounded-lg"
+                className="bg-white hover:bg-white/90 text-[#2C78E4] border-transparent font-medium px-5 py-2.5 rounded-xl shadow-sm transition-all duration-200"
               >
-                <CheckCircle className="w-4 h-4" />
+                <CheckCircle className="w-4 h-4 mr-2" />
                 Complete Check-in
               </Button>
             </div>
@@ -510,14 +497,14 @@ const CheckIn = () => {
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-3 lg:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-6">
           {/* Left Column - Patient Details & Check-in Form */}
-          <div className="md:col-span-4 flex flex-col gap-3 lg:gap-6">
+          <div className="md:col-span-4 flex flex-col gap-6">
             {/* Patient Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 lg:mb-6">
-              <div className="flex items-center px-5 py-4 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
-                <div className="relative h-24 w-24 rounded-lg shadow-sm overflow-hidden flex-shrink-0 border-2 border-white bg-indigo-100 mr-3">
-                  <div className="absolute inset-0 flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/20">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="flex items-center p-6 bg-gradient-to-r from-blue-50 to-white border-b border-gray-100">
+                <div className="relative h-28 w-28 rounded-2xl shadow-sm overflow-hidden flex-shrink-0 border-2 border-white bg-blue-100 mr-5">
+                  <div className="absolute inset-0 flex items-center justify-center">
                     {patient.data_image ? (
                       <img
                         src={`data:image/png;base64,${patient.data_image}`}
@@ -529,18 +516,18 @@ const CheckIn = () => {
                         }}
                       />
                     ) : (
-                      <div className="flex items-center justify-center h-full w-full text-indigo-300 dark:text-indigo-700">
+                      <div className="flex items-center justify-center h-full w-full text-[#2C78E4]/40">
                         <PawPrint className="h-16 w-16" />
                       </div>
                     )}
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">
                     {patient.name}
                   </h2>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                    <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-2.5 py-0.5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-1">
+                    <Badge className="bg-[#2C78E4]/10 text-[#2C78E4] border-[#2C78E4]/20 px-3 py-0.5 rounded-xl text-sm font-medium">
                       {patient.breed}
                     </Badge>
                     <div className="text-gray-600 text-sm flex items-center gap-3 ml-1">
@@ -557,15 +544,15 @@ const CheckIn = () => {
               <div className="px-6 py-5 space-y-6">
                 {/* Owner Information */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="px-5 py-3 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
+                  <div className="px-5 py-3 bg-gradient-to-r from-[#2C78E4]/10 to-white border-b border-gray-100">
                     <h3 className="text-sm font-medium text-gray-800 flex items-center">
-                      <User className="mr-2 h-4 w-4 text-indigo-500" />
+                      <User className="mr-2 h-4 w-4 text-[#2C78E4]" />
                       Owner Information
                     </h3>
                   </div>
                   <div className="p-5 space-y-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-[#2C78E4]/30 transition-colors">
                         <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
                           Owner Name
                         </label>
@@ -573,13 +560,10 @@ const CheckIn = () => {
                           <div className="font-medium text-gray-900">
                             {appointment.owner.owner_name}
                           </div>
-                          <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-0.5 rounded text-xs font-medium border border-green-100">
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            <span>Verified</span>
-                          </div>
+                
                         </div>
                       </div>
-                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-[#2C78E4]/30 transition-colors">
                         <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
                           Phone Number
                         </label>
@@ -587,15 +571,12 @@ const CheckIn = () => {
                           <div className="font-medium text-gray-900">
                             {appointment.owner.owner_phone}
                           </div>
-                          <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-0.5 rounded text-xs font-medium border border-green-100">
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            <span>Verified</span>
-                          </div>
+                        
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-[#2C78E4]/30 transition-colors">
                       <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
                         Address
                       </label>
@@ -603,10 +584,7 @@ const CheckIn = () => {
                         <div className="font-medium text-gray-900">
                           {appointment.owner.owner_address}
                         </div>
-                        <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-0.5 rounded text-xs font-medium border border-green-100">
-                          <CheckCircle className="w-3.5 h-3.5" />
-                          <span>Verified</span>
-                        </div>
+                      
                       </div>
                     </div>
                   </div>
@@ -614,14 +592,14 @@ const CheckIn = () => {
 
                 {/* Appointment Details */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="px-5 py-3 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
+                  <div className="px-5 py-3 bg-gradient-to-r from-[#2C78E4]/10 to-white border-b border-gray-100">
                     <h3 className="text-sm font-medium text-gray-800 flex items-center">
-                      <Clock className="mr-2 h-4 w-4 text-indigo-500" />
+                      <Clock className="mr-2 h-4 w-4 text-[#2C78E4]" />
                       Appointment Details
                     </h3>
                   </div>
                   <div className="p-5 space-y-5">
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-[#2C78E4]/30 transition-colors">
                       <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
                         Appointment Reason
                       </label>
@@ -631,7 +609,7 @@ const CheckIn = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-[#2C78E4]/30 transition-colors">
                         <label className="block text-xs text-gray-500 uppercase font-medium mb-2 flex items-center gap-1">
                           <MapPin className="w-3.5 h-3.5 text-gray-500" />
                           Select Room
@@ -640,7 +618,7 @@ const CheckIn = () => {
                           value={selectedRoom}
                           onValueChange={setSelectedRoom}
                         >
-                          <SelectTrigger className="w-full bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                          <SelectTrigger className="w-full bg-white border-gray-200 focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] rounded-lg">
                             <SelectValue placeholder="Choose a room" />
                           </SelectTrigger>
                           <SelectContent>
@@ -684,13 +662,13 @@ const CheckIn = () => {
                         </Select>
                       </div>
 
-                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-[#2C78E4]/30 transition-colors">
                         <label className="block text-xs text-gray-500 uppercase font-medium mb-2 flex items-center gap-1">
                           <AlertTriangle className="w-3.5 h-3.5 text-gray-500" />
                           Priority
                         </label>
                         <Select value={priority} onValueChange={setPriority}>
-                          <SelectTrigger className="w-full bg-white border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                          <SelectTrigger className="w-full bg-white border-gray-200 focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] rounded-lg">
                             <SelectValue placeholder="Select priority" />
                           </SelectTrigger>
                           <SelectContent>
@@ -710,7 +688,7 @@ const CheckIn = () => {
                                 value="High"
                                 className="flex items-center gap-2"
                               >
-                                <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                                <div className="w-2 h-2 rounded-full bg-[#FFA726]" />
                                 <span>High</span>
                               </SelectItem>
                               <SelectItem
@@ -730,10 +708,10 @@ const CheckIn = () => {
 
                 {/* Subjective Notes - Replace RichTextEditor with SubjectiveKeyValueEditor */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="px-5 py-3 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
+                  <div className="px-5 py-3 bg-gradient-to-r from-[#2C78E4]/10 to-white border-b border-gray-100">
                     <h3 className="text-sm font-medium text-gray-800 flex items-center justify-between">
                       <div className="flex items-center">
-                        <Stethoscope className="mr-2 h-4 w-4 text-indigo-500" />
+                        <Stethoscope className="mr-2 h-4 w-4 text-[#2C78E4]" />
                         Subjective Notes
                       </div>
                       
@@ -751,10 +729,17 @@ const CheckIn = () => {
                   <Button
                     variant="outline"
                     onClick={handleCancel}
-                    className="flex items-center gap-1.5 bg-white shadow-sm border-gray-200 hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-1.5 bg-white shadow-sm border-gray-200 hover:bg-gray-50 transition-colors rounded-xl px-5"
                   >
                     <X className="w-4 h-4" />
                     Cancel
+                  </Button>
+                  <Button
+                    onClick={handleCompleteCheckIn}
+                    className="bg-[#2C78E4] hover:bg-[#2C78E4]/90 text-white flex items-center gap-1.5 shadow-sm rounded-xl px-5"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Complete Check-in
                   </Button>
                 </div>
               </div>
@@ -764,10 +749,10 @@ const CheckIn = () => {
           {/* Right Column - Billing and Payment */}
           <div className="md:col-span-3 flex flex-col">
             {/* Billing Information */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
-              <div className="px-5 py-3 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
+              <div className="px-5 py-3 bg-gradient-to-r from-[#2C78E4]/10 to-white border-b border-gray-100">
                 <h3 className="text-sm font-medium text-gray-800 flex items-center">
-                  <Receipt className="mr-2 h-4 w-4 text-indigo-500" />
+                  <Receipt className="mr-2 h-4 w-4 text-[#2C78E4]" />
                   Billing Information
                 </h3>
               </div>
@@ -791,7 +776,7 @@ const CheckIn = () => {
                   </div>
 
                   {/* Service Details */}
-                  <div className="overflow-hidden rounded-lg border border-gray-100 mb-4">
+                  <div className="overflow-hidden rounded-xl border border-gray-100 mb-4">
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50 text-left">
                         <tr>
@@ -805,10 +790,10 @@ const CheckIn = () => {
                       </thead>
                       <tbody className="divide-y divide-gray-100 bg-white">
                         <tr>
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-3">
                             {appointment.service.service_name}
                           </td>
-                          <td className="px-4 py-2 text-right">
+                          <td className="px-4 py-3 text-right font-medium">
                             {formatCurrency(appointment.service.service_amount)}
                           </td>
                         </tr>
@@ -824,27 +809,27 @@ const CheckIn = () => {
                         {formatCurrency(appointment.service.service_amount)}
                       </span>
                     </div>
-                    <div className="flex justify-between py-1 border-t border-gray-200 font-bold text-base">
+                    <div className="flex justify-between py-2 mt-1 border-t border-gray-200 font-bold text-base">
                       <span>Total:</span>
-                      <span>{formatCurrency(total)}</span>
+                      <span className="text-[#2C78E4]">{formatCurrency(total)}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Payment Information */}
-                <div className="mt-4 border-t border-gray-100 pt-4">
-                  <h3 className="text-sm font-medium text-gray-800 mb-3">
+                <div className="mt-6 border-t border-gray-100 pt-5">
+                  <h3 className="text-sm font-medium text-gray-800 mb-4">
                     Payment Options
                   </h3>
 
                   {/* Payment Buttons */}
-                  <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="grid grid-cols-2 gap-3 mb-5">
                     {/* Get QR Code button */}
                     {!qrMutation.data && (
                       <Button
                         onClick={handleGetQRCode}
                         disabled={isQRLoading || qrMutation.isPending}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-1.5 shadow-sm"
+                        className="bg-[#2C78E4] hover:bg-[#2C78E4]/90 text-white flex items-center justify-center gap-1.5 shadow-sm rounded-xl py-2.5"
                       >
                         {isQRLoading || qrMutation.isPending ? (
                           <>
@@ -882,7 +867,7 @@ const CheckIn = () => {
                     {/* Cash Payment button */}
                     <Button
                       onClick={() => setIsCashPaymentOpen(true)}
-                      className="bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-1.5 shadow-sm"
+                      className="bg-[#FFA726] hover:bg-[#FFA726]/90 text-white flex items-center justify-center gap-1.5 shadow-sm rounded-xl py-2.5"
                     >
                       <DollarSign className="w-4 h-4" />
                       Cash Payment
@@ -893,13 +878,13 @@ const CheckIn = () => {
                   {!qrMutation.data &&
                     !isQRLoading &&
                     !qrMutation.isPending && (
-                      <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100 mb-4">
-                        <div className="flex justify-center mb-3">
-                          <div className="bg-white p-2 rounded-lg shadow-sm">
-                            <QrCode className="w-32 h-32 text-indigo-600" />
+                      <div className="bg-[#2C78E4]/5 rounded-lg p-6 border border-[#2C78E4]/20 mb-4">
+                        <div className="flex justify-center mb-4">
+                          <div className="bg-white p-3 rounded-lg shadow-sm">
+                            <QrCode className="w-32 h-32 text-[#2C78E4]" />
                           </div>
                         </div>
-                        <div className="text-center text-sm text-indigo-700 font-medium mb-1">
+                        <div className="text-center text-sm text-[#2C78E4] font-medium mb-1">
                           Scan to pay
                         </div>
                         <div className="text-center text-xs text-gray-500">
@@ -910,17 +895,17 @@ const CheckIn = () => {
 
                   {qrMutation.data && (
                     <div id="qrCode" className="space-y-3">
-                      <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100 mb-4">
-                        <label className="block text-xs text-gray-500 uppercase font-medium mb-2 text-center">
+                      <div className="bg-[#2C78E4]/5 p-6 rounded-lg border border-[#2C78E4]/20 mb-4">
+                        <label className="block text-xs text-gray-600 uppercase font-medium mb-3 text-center">
                           Payment QR Code
                         </label>
                         <div className="flex items-center justify-center">
-                          <div className="bg-white p-2 rounded-lg shadow-sm">
+                          <div className="bg-white p-3 rounded-lg shadow-sm">
                             {qrImageUrl ? (
                               <img
                                 src={qrImageUrl}
                                 alt="QR Code"
-                                className="w-80 h-80"
+                                className="w-full h-auto"
                                 onError={(e) => {
                                   console.error("Error loading QR image");
                                   e.currentTarget.src =
@@ -928,13 +913,13 @@ const CheckIn = () => {
                                 }}
                               />
                             ) : (
-                              <div className="w-80 h-80 flex items-center justify-center text-indigo-300">
+                              <div className="w-full h-auto aspect-square flex items-center justify-center text-[#2C78E4]/30">
                                 <QrCode className="w-32 h-32" />
                               </div>
                             )}
                           </div>
                         </div>
-                        <div className="text-center text-sm text-indigo-700 font-medium mt-3 mb-1">
+                        <div className="text-center text-sm text-[#2C78E4] font-medium mt-4 mb-1">
                           Scan to pay: {formatCurrency(total)}
                         </div>
                         <div className="text-center text-xs text-gray-500">
@@ -945,11 +930,11 @@ const CheckIn = () => {
                   )}
 
                   {/* Action Buttons */}
-                  <div className="mt-6 flex flex-col gap-3">
+                  <div className="mt-6">
                     <Button
                       onClick={handleConfirmPayment}
                       disabled={isConfirmingPayment}
-                      className="bg-green-600 hover:bg-green-700 text-white w-full flex items-center justify-center gap-1.5 shadow-sm"
+                      className="bg-[#FDD835] hover:bg-[#FDD835]/90 text-gray-800 w-full flex items-center justify-center gap-1.5 shadow-sm rounded-xl py-3 font-medium"
                     >
                       {isConfirmingPayment ? (
                         <>
@@ -957,7 +942,7 @@ const CheckIn = () => {
                         </>
                       ) : (
                         <>
-                          <CreditCard className="w-4 h-4" />
+                          <CheckCheck className="w-4 h-4" />
                           Confirm Payment
                         </>
                       )}
@@ -966,7 +951,7 @@ const CheckIn = () => {
                 </div>
               </div>
             </div>
-          </div>
+
         </div>
         <Toaster />
       </div>

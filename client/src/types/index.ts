@@ -191,12 +191,6 @@ export interface Vaccination {
   notes: string;
 }
 
-interface Task {
-  id: number;
-  name: string;
-  status: string;
-  dueDate: string;
-}
 
 export interface PhaseMedicine {
   phase_id: number;
@@ -644,7 +638,7 @@ export interface AppointmentNotification {
 }
 
 export interface SOAPData {
-  subjective: string | SubjectiveData[];
+  subjective: SubjectiveData[];
   objective: ObjectiveData;
   assessment: AssessmentData;
   plan: string; // Change from number to string for rich text support

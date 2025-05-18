@@ -477,7 +477,7 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                       petId: appointment.pet?.pet_id,
                     });
                     setLocation(
-                      `/patient/health-card?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`
+                      `/patient/health-card?appointmentId=${appointment.id}`
                     );
                     // setLocation(`/examination?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`);
                   }

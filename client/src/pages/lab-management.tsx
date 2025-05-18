@@ -322,7 +322,7 @@ const LabManagement: React.FC = () => {
       });
     });
 
-    // Add selected vaccines
+    // Add selected vaccinespl
     if (vaccineCategory) {
       vaccineCategory.tests.forEach((vaccine: any) => {
         if (selectedTests[vaccine.id]) {
@@ -488,7 +488,6 @@ const LabManagement: React.FC = () => {
         };
         // Create invoice in the system
         const invoiceResult = await createInvoice(invoiceRequest);
-        console.log("Invoice created successfully:", invoiceResult);
 
         toast({
           title: `${
@@ -518,12 +517,12 @@ const LabManagement: React.FC = () => {
         });
       }
 
-      // Navigate using the workflow parameters
-      const params = {
-        appointmentId: effectiveAppointmentId,
-        petId: patient?.petid,
-      };
-      navigate(`/soap${buildUrlParams(params)}`);
+      // // Navigate using the workflow parameters
+      // const params = {
+      //   appointmentId: effectiveAppointmentId,
+      //   petId: patient?.petid,
+      // };
+      // navigate(`/soap${buildUrlParams(params)}`);
     } catch (error) {
       console.error("Error ordering tests:", error);
       toast({
