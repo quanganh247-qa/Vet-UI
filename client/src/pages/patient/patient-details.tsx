@@ -209,7 +209,7 @@ const PatientDetailsPage: React.FC = () => {
   return (
     <div className="container max-w-screen-xl mx-auto p-4 md:p-6">
       {/* Header with enhanced gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 -mx-4 -mt-4 md:-mx-6 md:-mt-6 px-6 py-6 md:px-8 md:py-8 mb-6 rounded-br-xl rounded-bl-xl shadow-lg">
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] -mx-4 -mt-4 md:-mx-6 md:-mt-6 px-6 py-6 md:px-8 md:py-8 mb-6 rounded-br-xl rounded-bl-xl shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center">
             <Button
@@ -261,22 +261,22 @@ const PatientDetailsPage: React.FC = () => {
 
       {/* Tabs Navigation */}
       <Tabs defaultValue="details" className="mb-6" onValueChange={setActiveTab}>
-        <TabsList className="bg-indigo-50 p-1 rounded-lg mb-6 border border-indigo-100">
+        <TabsList className="bg-[#F0F7FF] p-1 rounded-lg mb-6 border border-[#2C78E4]/20">
           <TabsTrigger 
             value="details" 
-            className="data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm"
+            className="data-[state=active]:bg-white data-[state=active]:text-[#2C78E4] data-[state=active]:shadow-sm"
           >
             Patient Details
           </TabsTrigger>
           <TabsTrigger 
             value="vaccinations" 
-            className="data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm"
+            className="data-[state=active]:bg-white data-[state=active]:text-[#2C78E4] data-[state=active]:shadow-sm"
           >
             Vaccination History
           </TabsTrigger>
           <TabsTrigger 
             value="soap" 
-            className="data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm"
+            className="data-[state=active]:bg-white data-[state=active]:text-[#2C78E4] data-[state=active]:shadow-sm"
           >
             SOAP History
           </TabsTrigger>
@@ -285,7 +285,7 @@ const PatientDetailsPage: React.FC = () => {
         {/* Patient Details Tab */}
         <TabsContent value="details" className="mt-0 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="border-none shadow-lg overflow-hidden lg:col-span-1 bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+            <Card className="border-none shadow-lg overflow-hidden lg:col-span-1 bg-gradient-to-br from-[#F0F7FF] via-white to-[#F0F7FF]/50 rounded-xl">
               <div className="aspect-square relative">
                 {patientData.data_image ? (
                   <img 
@@ -295,13 +295,13 @@ const PatientDetailsPage: React.FC = () => {
                     loading="lazy"
                   />
                 ) : (
-                  <div className="h-full w-full flex items-center justify-center text-indigo-300 bg-indigo-100">
+                  <div className="h-full w-full flex items-center justify-center text-[#2C78E4] bg-[#F0F7FF]">
                     <ImageIcon size={80} strokeWidth={1.5} />
                   </div>
                 )}
                 <Badge 
                   variant="secondary" 
-                  className={`absolute bottom-3 right-3 text-xs font-semibold shadow-md ${
+                  className={`absolute bottom-3 right-3 text-xs font-semibold shadow-md rounded-full ${
                     patientData.gender === "Male" 
                       ? "bg-blue-500 text-white border-blue-600" 
                       : "bg-pink-500 text-white border-pink-600"
@@ -312,9 +312,9 @@ const PatientDetailsPage: React.FC = () => {
               </div>
               <CardContent className="p-5">
                 <div className="mb-3">
-                  <h3 className="text-xl font-semibold text-indigo-900">{patientData.name}</h3>
+                  <h3 className="text-xl font-semibold text-[#2C78E4]">{patientData.name}</h3>
                   <p className="text-sm text-gray-600 flex items-center">
-                    {PetIcon && React.cloneElement(PetIcon, { className: "h-4 w-4 inline-block mr-1 text-indigo-500" })}
+                    {PetIcon && React.cloneElement(PetIcon, { className: "h-4 w-4 inline-block mr-1 text-[#2C78E4]" })}
                     {patientData.breed} {patientData.type}
                   </p>
                 </div>
@@ -323,18 +323,18 @@ const PatientDetailsPage: React.FC = () => {
 
                 <div className="space-y-3">
                   <DetailItemWithIcon 
-                    icon={<Weight className="h-4 w-4 text-indigo-500" />}
+                    icon={<Weight className="h-4 w-4 text-[#2C78E4]" />}
                     label="Weight"
                     value={`${patientData.weight} kg`}
                   />
                   <DetailItemWithIcon 
-                    icon={<CalendarDays className="h-4 w-4 text-indigo-500" />}
+                    icon={<CalendarDays className="h-4 w-4 text-[#2C78E4]" />}
                     label="Birth Date"
                     value={patientData.birth_date ? format(new Date(patientData.birth_date), 'MMMM d, yyyy') : 'Unknown'}
                   />
                   {patientData.microchip_number && (
                     <DetailItemWithIcon 
-                      icon={<QrCode className="h-4 w-4 text-indigo-500" />}
+                      icon={<QrCode className="h-4 w-4 text-[#2C78E4]" />}
                       label="Microchip"
                       value={patientData.microchip_number}
                     />
@@ -343,10 +343,10 @@ const PatientDetailsPage: React.FC = () => {
               </CardContent>
             </Card>
             
-            <Card className="border-none shadow-lg lg:col-span-2">
-              <CardHeader className="pb-3 border-b bg-gradient-to-r from-indigo-50 to-white rounded-t-lg">
+            <Card className="border-none shadow-lg lg:col-span-2 rounded-xl">
+              <CardHeader className="pb-3 border-b bg-gradient-to-r from-[#F0F7FF] to-white rounded-t-xl">
                 <CardTitle className="text-lg font-semibold text-gray-800 flex items-center">
-                  <Stethoscope className="h-5 w-5 mr-2 text-indigo-600" />
+                  <Stethoscope className="h-5 w-5 mr-2 text-[#2C78E4]" />
                   Patient Information
                 </CardTitle>
                 <CardDescription>Complete details about this patient and owner</CardDescription>
@@ -354,8 +354,8 @@ const PatientDetailsPage: React.FC = () => {
               <CardContent className="p-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-indigo-700 border-b pb-1 mb-3 flex items-center">
-                      <Dog className="h-4 w-4 mr-1.5 text-indigo-500" /> Pet Information
+                    <h4 className="text-sm font-medium text-[#2C78E4] border-b pb-1 mb-3 flex items-center">
+                      <Dog className="h-4 w-4 mr-1.5 text-[#2C78E4]" /> Pet Information
                     </h4>
                     
                     <div className="grid grid-cols-2 gap-4">
@@ -374,8 +374,8 @@ const PatientDetailsPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-indigo-700 border-b pb-1 mb-3 flex items-center">
-                      <UserCircle className="h-4 w-4 mr-1.5 text-indigo-500" /> Owner Information
+                    <h4 className="text-sm font-medium text-[#2C78E4] border-b pb-1 mb-3 flex items-center">
+                      <UserCircle className="h-4 w-4 mr-1.5 text-[#2C78E4]" /> Owner Information
                     </h4>
                     
                     {isOwnerLoading ? (
@@ -387,22 +387,22 @@ const PatientDetailsPage: React.FC = () => {
                     ) : ownerData ? (
                       <div className="space-y-3">
                         <DetailItemWithIcon 
-                          icon={<UserCircle className="h-4 w-4 text-indigo-500" />}
+                          icon={<UserCircle className="h-4 w-4 text-[#2C78E4]" />}
                           label="Name" 
                           value={ownerData.username || 'N/A'} 
                         />
                         <DetailItemWithIcon 
-                          icon={<Phone className="h-4 w-4 text-indigo-500" />}
+                          icon={<Phone className="h-4 w-4 text-[#2C78E4]" />}
                           label="Phone" 
                           value={ownerData.phone_number || 'N/A'} 
                         />
                         <DetailItemWithIcon 
-                          icon={<Mail className="h-4 w-4 text-indigo-500" />}
+                          icon={<Mail className="h-4 w-4 text-[#2C78E4]" />}
                           label="Email" 
                           value={ownerData.email || 'N/A'} 
                         />
                         <DetailItemWithIcon 
-                          icon={<MapPin className="h-4 w-4 text-indigo-500" />}
+                          icon={<MapPin className="h-4 w-4 text-[#2C78E4]" />}
                           label="Address" 
                           value={ownerData.address || 'N/A'} 
                         />
@@ -414,9 +414,9 @@ const PatientDetailsPage: React.FC = () => {
                 </div>
 
                 {patientData.notes && (
-                  <div className="mt-6 pt-4 border-t border-indigo-100">
-                    <h4 className="text-sm font-medium text-indigo-700 mb-2">Notes</h4>
-                    <div className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-4 rounded-md border border-indigo-100">
+                  <div className="mt-6 pt-4 border-t border-[#2C78E4]/10">
+                    <h4 className="text-sm font-medium text-[#2C78E4] mb-2">Notes</h4>
+                    <div className="text-sm text-gray-600 whitespace-pre-wrap bg-[#F0F7FF]/50 p-4 rounded-xl border border-[#2C78E4]/10">
                       {patientData.notes}
                     </div>
                   </div>
@@ -429,15 +429,15 @@ const PatientDetailsPage: React.FC = () => {
         {/* Vaccination History Tab */}
         <TabsContent value="vaccinations" className="mt-0">
           <AlertDialog>
-            <Card className="border-none shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 pb-4 border-b rounded-t-lg">
+            <Card className="border-none shadow-lg rounded-xl">
+              <CardHeader className="bg-gradient-to-r from-[#F0F7FF] to-white pb-4 border-b rounded-t-xl">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div>
-                    <CardTitle className="text-lg font-semibold text-indigo-900 flex items-center">
-                      <FlaskConical className="h-5 w-5 mr-2 text-amber-700" />
+                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center">
+                      <FlaskConical className="h-5 w-5 mr-2 text-[#2C78E4]" />
                       Vaccination History
                     </CardTitle>
-                    <CardDescription className="text-amber-700">
+                    <CardDescription className="text-[#2C78E4]/80">
                       View and manage vaccination records for {patientData.name}
                     </CardDescription>
                   </div>
@@ -449,11 +449,11 @@ const PatientDetailsPage: React.FC = () => {
                         placeholder="Search vaccinations..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8 h-9"
+                        className="pl-8 h-9 rounded-lg border-[#2C78E4]/20 focus:border-[#2C78E4] focus:ring-[#2C78E4]"
                       />
                     </div>
                     <AlertDialogTrigger asChild>
-                      <Button size="sm" className="h-9 bg-amber-600 hover:bg-amber-700 text-white" onClick={() => setIsAddVaccineDialogOpen(true)}>
+                      <Button size="sm" className="h-9 bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-lg" onClick={() => setIsAddVaccineDialogOpen(true)}>
                         <Plus className="h-4 w-4 mr-1" />
                         Add Vaccine
                       </Button>
@@ -471,23 +471,23 @@ const PatientDetailsPage: React.FC = () => {
                 ) : filteredVaccinations && filteredVaccinations.length > 0 ? (
                   <div className="overflow-x-auto">
                     <Table className="min-w-full">
-                      <TableHeader className="bg-gray-50">
+                      <TableHeader className="bg-[#F0F7FF]">
                         <TableRow>
-                          <TableHead className="py-3 px-4 text-indigo-900 font-medium">Vaccine</TableHead>
-                          <TableHead className="py-3 px-4 text-indigo-900 font-medium">Administered</TableHead>
-                          <TableHead className="py-3 px-4 text-indigo-900 font-medium">Next Due</TableHead>
-                          <TableHead className="py-3 px-4 text-indigo-900 font-medium">Provider</TableHead>
-                          <TableHead className="py-3 px-4 text-indigo-900 font-medium">Lot Number</TableHead>
-                          <TableHead className="py-3 px-4 text-indigo-900 font-medium">Status</TableHead>
-                          <TableHead className="py-3 px-4 text-indigo-900 font-medium">Notes</TableHead>
+                          <TableHead className="py-3 px-4 text-gray-700 font-medium">Vaccine</TableHead>
+                          <TableHead className="py-3 px-4 text-gray-700 font-medium">Administered</TableHead>
+                          <TableHead className="py-3 px-4 text-gray-700 font-medium">Next Due</TableHead>
+                          <TableHead className="py-3 px-4 text-gray-700 font-medium">Provider</TableHead>
+                          <TableHead className="py-3 px-4 text-gray-700 font-medium">Lot Number</TableHead>
+                          <TableHead className="py-3 px-4 text-gray-700 font-medium">Status</TableHead>
+                          <TableHead className="py-3 px-4 text-gray-700 font-medium">Notes</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredVaccinations.map((vaccination) => {
                           const isOverdue = new Date(vaccination.next_due_date) < new Date();
                           return (
-                            <TableRow key={vaccination.vaccination_id} className="hover:bg-gray-50 transition-colors duration-150">
-                              <TableCell className="font-medium py-3 px-4 text-indigo-900">{vaccination.vaccine_name}</TableCell>
+                            <TableRow key={vaccination.vaccination_id} className="hover:bg-[#F0F7FF]/50 transition-colors duration-150">
+                              <TableCell className="font-medium py-3 px-4 text-[#2C78E4]">{vaccination.vaccine_name}</TableCell>
                               <TableCell className="py-3 px-4">{format(new Date(vaccination.date_administered), 'MMM d, yyyy')}</TableCell>
                               <TableCell className={`py-3 px-4 ${isOverdue ? 'text-red-600 font-medium' : ''}`}>
                                 {format(new Date(vaccination.next_due_date), 'MMM d, yyyy')}
@@ -497,7 +497,7 @@ const PatientDetailsPage: React.FC = () => {
                               <TableCell className="py-3 px-4">
                                 <Badge
                                   variant="outline"
-                                  className={`text-xs font-semibold ${
+                                  className={`text-xs font-semibold rounded-full ${
                                     isOverdue 
                                       ? "bg-red-100 text-red-800 border-red-300" 
                                       : "bg-green-100 text-green-800 border-green-300"
@@ -516,8 +516,8 @@ const PatientDetailsPage: React.FC = () => {
                     </Table>
                   </div>
                 ) : (
-                  <div className="text-center py-16 px-6 bg-gray-50 rounded-b-lg">
-                    <FlaskConical className="h-12 w-12 text-amber-400 mx-auto mb-4" strokeWidth={1.5} />
+                  <div className="text-center py-16 px-6 bg-[#F0F7FF]/30 rounded-b-xl">
+                    <FlaskConical className="h-12 w-12 text-[#2C78E4]/40 mx-auto mb-4" strokeWidth={1.5} />
                     <p className="text-lg font-medium text-gray-700 mb-2">
                       {searchQuery ? 'No Matching Vaccinations' : 'No Vaccination Records'}
                     </p>
@@ -528,7 +528,7 @@ const PatientDetailsPage: React.FC = () => {
                     </p>
                     {!searchQuery && (
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" onClick={() => setIsAddVaccineDialogOpen(true)} className="border-amber-200 text-amber-700 hover:bg-amber-50">
+                        <Button variant="outline" size="sm" onClick={() => setIsAddVaccineDialogOpen(true)} className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF]">
                           <Plus className="h-4 w-4 mr-1.5" />
                           Add Vaccination Record
                         </Button>
@@ -539,19 +539,24 @@ const PatientDetailsPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            <AlertDialogContent>
+            <AlertDialogContent className="rounded-xl">
               <AlertDialogHeader>
                 <AlertDialogTitle>Add New Vaccination Record</AlertDialogTitle>
                 <AlertDialogDescription>
                   Enter the details for the new vaccination. (Form fields would go here)
-                  <div className="mt-4 p-4 border rounded bg-yellow-50 border-yellow-200 text-yellow-800 text-sm">
+                  <div className="mt-4 p-4 border rounded-lg bg-yellow-50 border-yellow-200 text-yellow-800 text-sm">
                     Form implementation is pending.
                   </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => console.log("Save vaccination")}>Save Record</AlertDialogAction>
+                <AlertDialogCancel className="rounded-lg">Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={() => console.log("Save vaccination")} 
+                  className="bg-[#2C78E4] hover:bg-[#1E40AF] rounded-lg"
+                >
+                  Save Record
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -559,21 +564,21 @@ const PatientDetailsPage: React.FC = () => {
 
         {/* SOAP History Tab */}
         <TabsContent value="soap" className="mt-0">
-          <Card className="border-none shadow-lg overflow-hidden">
-            <CardHeader className="pb-4 border-b bg-gradient-to-r from-indigo-50 to-white flex flex-row justify-between items-center">
+          <Card className="border-none shadow-lg overflow-hidden rounded-xl">
+            <CardHeader className="pb-4 border-b bg-gradient-to-r from-[#F0F7FF] to-white flex flex-row justify-between items-center rounded-t-xl">
               <div>
                 <CardTitle className="text-lg font-semibold text-gray-800 flex items-center">
-                  <ClipboardList className="h-5 w-5 text-indigo-600 mr-2" />
+                  <ClipboardList className="h-5 w-5 text-[#2C78E4] mr-2" />
                   SOAP Medical Records
                 </CardTitle>
-                <CardDescription className="text-indigo-600">
+                <CardDescription className="text-[#2C78E4]/80">
                   Complete medical history and treatment records
                 </CardDescription>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50"
+                className="bg-white text-[#2C78E4] border-[#2C78E4]/20 hover:bg-[#F0F7FF] rounded-lg"
                 onClick={() => {
                   const params = new URLSearchParams();
                   if (appointmentId) params.append("appointmentId", appointmentId);
@@ -585,9 +590,9 @@ const PatientDetailsPage: React.FC = () => {
               </Button>
             </CardHeader>
             <CardContent className="p-5">
-              <div className="flex flex-col items-center justify-center p-8 text-center bg-indigo-50 rounded-lg border border-dashed border-indigo-200">
-                <ClipboardList className="h-16 w-16 text-indigo-400 mb-4" strokeWidth={1.5} />
-                <h3 className="text-xl font-medium text-indigo-900 mb-2">Track SOAP Notes History</h3>
+              <div className="flex flex-col items-center justify-center p-8 text-center bg-[#F0F7FF]/50 rounded-xl border border-dashed border-[#2C78E4]/20">
+                <ClipboardList className="h-16 w-16 text-[#2C78E4]/40 mb-4" strokeWidth={1.5} />
+                <h3 className="text-xl font-medium text-[#2C78E4] mb-2">Track SOAP Notes History</h3>
                 <p className="text-gray-600 text-sm max-w-md mb-6">
                   View the complete medical SOAP history for this patient, including subjective observations, 
                   objective findings, assessments, and treatment plans.
@@ -595,7 +600,7 @@ const PatientDetailsPage: React.FC = () => {
                 <Button
                   variant="default"
                   size="sm"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-lg"
                   onClick={() => {
                     const params = new URLSearchParams();
                     if (appointmentId) params.append("appointmentId", appointmentId);
@@ -613,7 +618,7 @@ const PatientDetailsPage: React.FC = () => {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Patient Record</AlertDialogTitle>
             <AlertDialogDescription>
@@ -622,8 +627,8 @@ const PatientDetailsPage: React.FC = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white">
+            <AlertDialogCancel className="rounded-lg">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white rounded-lg">
               Delete Patient
             </AlertDialogAction>
           </AlertDialogFooter>

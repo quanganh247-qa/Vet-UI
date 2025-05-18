@@ -269,7 +269,7 @@ const InventoryManagement: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Inventory Management Tabs */}
+        {/* Inventory Management Tabs
         <div className="bg-white rounded-lg border border-indigo-100 shadow-sm p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-3 mb-6">
@@ -536,7 +536,7 @@ const InventoryManagement: React.FC = () => {
               </Card>
             </TabsContent>
           </Tabs>
-        </div>
+        </div> */}
       </div>
     </div>
   );

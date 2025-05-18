@@ -473,16 +473,16 @@ const CheckIn = () => {
   };
 
   return (
-    <div className="flex justify-center min-h-screen bg-gray-50">
-      <div className="w-full mx-auto my-4 px-2 sm:px-4">
+    <div className="flex justify-center min-h-screen bg-[#F9FAFB]">
+      <div className="w-full max-w-7xl mx-auto my-4 px-2 sm:px-4">
         {/* Page Header */}
-        <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-4 sm:px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-4">
+        <div className="bg-[#2C78E4] px-4 sm:px-6 py-4 md:px-8 md:py-5 rounded-xl shadow-sm mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center">
               <Button
                 variant="ghost"
                 size="icon"
-                className="mr-2 h-8 w-8 text-white hover:bg-white/20"
+                className="mr-2 h-8 w-8 text-white hover:bg-white/20 rounded-full"
                 onClick={() => setLocation("/appointment-flow")}
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -491,7 +491,7 @@ const CheckIn = () => {
                 <h1 className="text-xl font-semibold text-white">
                   Nurse Check-in
                 </h1>
-                <p className="text-indigo-100 text-sm">
+                <p className="text-white/80 text-sm">
                   Room assignment and initial assessment
                 </p>
               </div>
@@ -500,7 +500,7 @@ const CheckIn = () => {
             <div className="flex gap-2">
               <Button
                 onClick={handleCompleteCheckIn}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1.5 shadow-sm"
+                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1.5 shadow-sm rounded-lg"
               >
                 <CheckCircle className="w-4 h-4" />
                 Complete Check-in
@@ -510,9 +510,9 @@ const CheckIn = () => {
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-3 lg:gap-6">
           {/* Left Column - Patient Details & Check-in Form */}
-          <div className="md:col-span-4 flex flex-col gap-4 lg:gap-6">
+          <div className="md:col-span-4 flex flex-col gap-3 lg:gap-6">
             {/* Patient Card */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 lg:mb-6">
               <div className="flex items-center px-5 py-4 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-100">

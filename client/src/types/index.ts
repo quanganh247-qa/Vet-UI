@@ -557,7 +557,7 @@ export interface Shift {
   id: number;
   start_time: Date;
   end_time: Date;
-  assigned_patients: number;
+  date: string;
   created_at: Date;
   doctor_id: number;
   title?: string;

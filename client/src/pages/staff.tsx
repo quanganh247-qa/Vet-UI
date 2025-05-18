@@ -625,7 +625,7 @@ const StaffPage = () => {
   return (
     <div className="space-y-6">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md">
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <div className="flex items-center">
@@ -647,7 +647,7 @@ const StaffPage = () => {
           <div className="flex gap-2">
             <Button
               onClick={() => setLocation("/staff/new")}
-              className="bg-white text-indigo-700 hover:bg-indigo-50 flex items-center gap-1.5 shadow-sm"
+              className="bg-white text-[#2C78E4] hover:bg-white/90 flex items-center gap-1.5 shadow-sm rounded-lg"
             >
               <Plus className="w-4 h-4" />
               Add New Staff
@@ -657,26 +657,26 @@ const StaffPage = () => {
       </div>
 
       {/* Search and filter section */}
-      <div className="bg-white shadow-sm rounded-lg border border-indigo-100 p-5 mb-6">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-indigo-50 p-3 rounded-md border border-indigo-100">
+      <div className="bg-white shadow-sm rounded-xl border border-[#2C78E4]/20 p-5 mb-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-[#F0F7FF] p-3 rounded-lg border border-[#2C78E4]/20">
           <div className="relative w-full md:w-96">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#2C78E4] h-4 w-4" />
             <Input
               placeholder="Search staff by name, role, or specialty..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 border-indigo-200 focus:border-indigo-500"
+              className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
             />
           </div>
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-indigo-500" />
+              <Filter className="h-4 w-4 text-[#2C78E4]" />
               <Select defaultValue="all" onValueChange={setRoleFilter}>
-                <SelectTrigger className="border border-indigo-200 rounded-md h-9 w-40 bg-white">
+                <SelectTrigger className="border border-[#2C78E4]/20 rounded-lg h-9 w-40 bg-white">
                   <SelectValue placeholder="Filter by role" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-lg">
                   <SelectItem value="all">All Roles</SelectItem>
                   {uniqueRoles.map((role) => (
                     <SelectItem key={role as string} value={role as string}>
@@ -689,13 +689,13 @@ const StaffPage = () => {
 
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500">View:</span>
-              <div className="flex bg-gray-100 rounded-md p-1">
+              <div className="flex bg-gray-100 rounded-lg p-1">
                 <Button
                   size="sm"
                   variant={viewMode === "list" ? "default" : "ghost"}
                   onClick={() => setViewMode("list")}
                   className={cn(
-                    "h-8 w-8 p-0",
+                    "h-8 w-8 p-0 rounded-lg",
                     viewMode === "list"
                       ? "bg-white shadow-sm"
                       : "bg-transparent hover:bg-gray-200"
@@ -708,7 +708,7 @@ const StaffPage = () => {
                   variant={viewMode === "grid" ? "default" : "ghost"}
                   onClick={() => setViewMode("grid")}
                   className={cn(
-                    "h-8 w-8 p-0",
+                    "h-8 w-8 p-0 rounded-lg",
                     viewMode === "grid"
                       ? "bg-white shadow-sm"
                       : "bg-transparent hover:bg-gray-200"
@@ -723,14 +723,14 @@ const StaffPage = () => {
 
         {/* Staff List/Grid Views */}
         {filteredStaff.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-8 bg-indigo-50 rounded-lg border border-dashed border-indigo-200 h-64 mt-6">
-            <div className="rounded-full bg-indigo-100 p-3 mb-4">
-              <UserCircle className="h-6 w-6 text-indigo-600" />
+          <div className="flex flex-col items-center justify-center p-8 bg-[#F0F7FF]/50 rounded-xl border border-dashed border-[#2C78E4]/20 h-64 mt-6">
+            <div className="rounded-full bg-[#F0F7FF] p-3 mb-4">
+              <UserCircle className="h-6 w-6 text-[#2C78E4]" />
             </div>
-            <h3 className="text-lg font-medium mb-2 text-indigo-700">
+            <h3 className="text-lg font-medium mb-2 text-[#2C78E4]">
               No staff members found
             </h3>
-            <p className="text-sm text-indigo-500 text-center mb-4">
+            <p className="text-sm text-[#2C78E4]/70 text-center mb-4">
               {searchTerm || roleFilter !== "all"
                 ? "Try adjusting your search filters"
                 : "Get started by adding your first staff member"}
@@ -738,7 +738,7 @@ const StaffPage = () => {
             {!searchTerm && roleFilter === "all" && (
               <Button
                 size="sm"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-lg"
                 onClick={() => setLocation("/staff/new")}
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -753,7 +753,7 @@ const StaffPage = () => {
                 {filteredStaff.map((staff: DoctorDetail) => (
                   <Card
                     key={staff.doctor_id}
-                    className="border border-indigo-100 hover:shadow-md transition-shadow cursor-pointer"
+                    className="border border-[#2C78E4]/10 hover:shadow-md transition-shadow cursor-pointer rounded-xl"
                     onClick={() => handleStaffClick(staff.doctor_id)}
                   >
                     <CardHeader className="pb-2">
@@ -761,7 +761,7 @@ const StaffPage = () => {
                         <CardTitle className="text-lg">
                           {staff.doctor_name}
                         </CardTitle>
-                        <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200">
+                        <Badge className="bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20 rounded-full">
                           {staff.role}
                         </Badge>
                       </div>
@@ -772,7 +772,7 @@ const StaffPage = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="flex items-center mb-4">
-                        <div className="h-16 w-16 rounded-full overflow-hidden bg-indigo-100 flex-shrink-0 flex items-center justify-center mr-3">
+                        <div className="h-16 w-16 rounded-full overflow-hidden bg-[#F0F7FF] flex-shrink-0 flex items-center justify-center mr-3">
                           {staff.data_image ? (
                             <img
                               src={`data:image/png;base64,${staff.data_image}`}
@@ -780,14 +780,14 @@ const StaffPage = () => {
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <UserCircle className="h-8 w-8 text-indigo-600" />
+                            <UserCircle className="h-8 w-8 text-[#2C78E4]" />
                           )}
                         </div>
                         <div>
                           <div className="grid grid-cols-1 gap-y-1 text-sm">
                             {staff.email && (
                               <div className="flex items-center gap-2">
-                                <Mail className="h-4 w-4 text-indigo-500" />
+                                <Mail className="h-4 w-4 text-[#2C78E4]" />
                                 <span className="text-gray-600">
                                   {staff.email}
                                 </span>
@@ -795,7 +795,7 @@ const StaffPage = () => {
                             )}
                             {staff.certificate_number && (
                               <div className="flex items-center gap-2">
-                                <Award className="h-4 w-4 text-indigo-500" />
+                                <Award className="h-4 w-4 text-[#2C78E4]" />
                                 <span className="text-gray-600">
                                   {staff.certificate_number}
                                 </span>
@@ -808,7 +808,7 @@ const StaffPage = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-indigo-600 hover:bg-indigo-50"
+                          className="text-[#2C78E4] hover:bg-[#F0F7FF] rounded-lg"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleStaffClick(staff.doctor_id);
@@ -822,38 +822,38 @@ const StaffPage = () => {
                 ))}
               </div>
             ) : (
-              <div className="overflow-hidden border border-indigo-100 rounded-lg shadow-sm">
+              <div className="overflow-hidden border border-[#2C78E4]/10 rounded-xl shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
-                    <thead className="bg-indigo-50">
+                    <thead className="bg-[#F0F7FF]">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-[#2C78E4] uppercase tracking-wider">
                           Staff Member
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-[#2C78E4] uppercase tracking-wider">
                           Role
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-[#2C78E4] uppercase tracking-wider">
                           Contact
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-[#2C78E4] uppercase tracking-wider">
                           Certifications
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-indigo-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-right text-xs font-medium text-[#2C78E4] uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-indigo-100">
+                    <tbody className="bg-white divide-y divide-[#2C78E4]/10">
                       {filteredStaff.map((staff: DoctorDetail) => (
                         <tr
                           key={staff.doctor_id}
-                          className="hover:bg-indigo-50 cursor-pointer transition-colors"
+                          className="hover:bg-[#F0F7FF]/50 cursor-pointer transition-colors"
                           onClick={() => handleStaffClick(staff.doctor_id)}
                         >
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden border border-indigo-100">
+                              <div className="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden border border-[#2C78E4]/10">
                                 {staff.data_image ? (
                                   <img
                                     src={`data:image/png;base64,${staff.data_image}`}
@@ -861,8 +861,8 @@ const StaffPage = () => {
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  <div className="flex items-center justify-center h-full w-full bg-indigo-100">
-                                    <UserCircle className="h-6 w-6 text-indigo-600" />
+                                  <div className="flex items-center justify-center h-full w-full bg-[#F0F7FF]">
+                                    <UserCircle className="h-6 w-6 text-[#2C78E4]" />
                                   </div>
                                 )}
                               </div>
@@ -881,7 +881,7 @@ const StaffPage = () => {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <Badge
                               variant="outline"
-                              className="bg-indigo-50 text-indigo-600 border-indigo-200"
+                              className="bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20 rounded-full"
                             >
                               {staff.role}
                             </Badge>
@@ -900,7 +900,7 @@ const StaffPage = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-indigo-600 hover:bg-indigo-50 h-8"
+                              className="text-[#2C78E4] hover:bg-[#F0F7FF] h-8 rounded-lg"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleStaffClick(staff.doctor_id);
@@ -925,7 +925,7 @@ const StaffPage = () => {
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
       >
-        <AlertDialogContent className="border border-red-200 bg-white">
+        <AlertDialogContent className="border border-red-200 bg-white rounded-xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-red-600">
               Are you sure?
@@ -936,10 +936,10 @@ const StaffPage = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-indigo-200 text-indigo-700 hover:bg-indigo-50">
+            <AlertDialogCancel className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] rounded-lg">
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 focus:ring-red-600">
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 focus:ring-red-600 rounded-lg">
               <XCircle className="h-4 w-4 mr-2" />
               Delete Staff
             </AlertDialogAction>

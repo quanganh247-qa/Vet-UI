@@ -57,7 +57,7 @@ const StaffDetailPage = () => {
   return (
     <div className="space-y-6">
       {/* Simple header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md">
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Button
@@ -73,7 +73,7 @@ const StaffDetailPage = () => {
                 {doctorData?.data?.doctor_name}
               </h1>
               <div className="flex items-center gap-2">
-                <Badge className="bg-white/20 text-white border-white/30">
+                <Badge className="bg-white/20 text-white border-white/30 rounded-full">
                   {doctorData?.data?.role}
                 </Badge>
                 {doctorData?.data?.specialization && (
@@ -91,22 +91,26 @@ const StaffDetailPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left sidebar */}
         <div>
-          <Card className="shadow-md">
-            <div className="bg-gradient-to-r from-indigo-50 to-white p-6 flex flex-col items-center border-b">
-              <div className="h-28 w-28 rounded-full overflow-hidden bg-indigo-100 mb-4 ring-2 ring-white shadow-md">
+          <Card className="shadow-md rounded-xl overflow-hidden">
+            <div className="bg-gradient-to-r from-[#F0F7FF] to-white p-6 flex flex-col items-center border-b">
+              <div className="h-28 w-28 rounded-full overflow-hidden bg-[#F0F7FF] mb-4 ring-2 ring-white shadow-md">
                 <div className="h-full w-full flex items-center justify-center">
-                    <img src={`data:image/png;base64,${doctorData?.data?.data_image}`} 
-                    alt="Doctor" className="h-full w-full object-cover" />
+                    {doctorData?.data?.data_image ? (
+                      <img src={`data:image/png;base64,${doctorData?.data?.data_image}`} 
+                      alt="Doctor" className="h-full w-full object-cover" />
+                    ) : (
+                      <UserCircle className="h-20 w-20 text-[#2C78E4]" />
+                    )}
                 </div>
               </div>
-              <h2 className="text-xl font-semibold text-indigo-900">
+              <h2 className="text-xl font-semibold text-[#2C78E4]">
                 {doctorData?.data?.doctor_name}
               </h2>
-              <Badge className="mt-2 bg-indigo-100 text-indigo-700 border-indigo-200">
+              <Badge className="mt-2 bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20 rounded-full">
                 {doctorData?.data?.role}
               </Badge>
               {doctorData?.data?.specialization && (
-                <p className="text-indigo-500 text-sm mt-1">
+                <p className="text-[#2C78E4]/80 text-sm mt-1">
                   {doctorData?.data?.specialization}
                 </p>
               )}
@@ -116,13 +120,13 @@ const StaffDetailPage = () => {
               <div className="space-y-4">
                 {doctorData?.data?.email && (
                   <div className="flex items-center gap-3 text-gray-700">
-                    <Mail className="h-5 w-5 text-indigo-500" />
+                    <Mail className="h-5 w-5 text-[#2C78E4]" />
                     <span className="text-sm">{doctorData?.data?.email}</span>
                   </div>
                 )}
                 {doctorData?.data?.phone_number && (
                   <div className="flex items-center gap-3 text-gray-700">
-                    <Phone className="h-5 w-5 text-indigo-500" />
+                    <Phone className="h-5 w-5 text-[#2C78E4]" />
                     <span className="text-sm">
                       {doctorData?.data?.phone_number}
                     </span>
@@ -130,7 +134,7 @@ const StaffDetailPage = () => {
                 )}
                 {doctorData?.data?.address && (
                   <div className="flex items-start gap-3 text-gray-700">
-                    <MapPin className="h-5 w-5 text-indigo-500 mt-0.5" />
+                    <MapPin className="h-5 w-5 text-[#2C78E4] mt-0.5" />
                     <span className="text-sm">{doctorData?.data?.address}</span>
                   </div>
                 )}
@@ -140,13 +144,13 @@ const StaffDetailPage = () => {
 
               {/* Credentials */}
               <div className="space-y-4">
-                <h3 className="text-sm font-medium text-indigo-700 uppercase">
+                <h3 className="text-sm font-medium text-[#2C78E4] uppercase">
                   Credentials
                 </h3>
 
                 {doctorData?.data?.certificate_number && (
                   <div className="flex items-start gap-3">
-                    <Award className="h-5 w-5 text-indigo-500 mt-0.5" />
+                    <Award className="h-5 w-5 text-[#2C78E4] mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-gray-700">
                         License Number
@@ -159,7 +163,7 @@ const StaffDetailPage = () => {
                 )}
                 {doctorData?.data?.education && (
                   <div className="flex items-start gap-3">
-                    <BookOpen className="h-5 w-5 text-indigo-500 mt-0.5" />
+                    <BookOpen className="h-5 w-5 text-[#2C78E4] mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-gray-700">
                         Education
@@ -173,7 +177,7 @@ const StaffDetailPage = () => {
                 {doctorData?.data?.years_of_experience &&
                   doctorData?.data?.years_of_experience > 0 && (
                     <div className="flex items-start gap-3">
-                      <Briefcase className="h-5 w-5 text-indigo-500 mt-0.5" />
+                      <Briefcase className="h-5 w-5 text-[#2C78E4] mt-0.5" />
                       <div>
                         <p className="text-sm font-medium text-gray-700">
                           Experience
@@ -197,18 +201,18 @@ const StaffDetailPage = () => {
             className="w-full"
           >
             {/* Overview tab */}
-            <Card className="shadow-md">
-              <CardHeader className="pb-3 border-b bg-gradient-to-r from-indigo-50 to-white">
+            <Card className="shadow-md rounded-xl overflow-hidden">
+              <CardHeader className="pb-3 border-b bg-gradient-to-r from-[#F0F7FF] to-white">
                 <CardTitle className="flex items-center text-lg text-gray-800">
-                  <User className="h-5 w-5 mr-2 text-indigo-600" />
+                  <User className="h-5 w-5 mr-2 text-[#2C78E4]" />
                   About
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-[#2C78E4]/80">
                   Professional background and expertise
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-5">
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-gray-700 mb-6">
+                <div className="bg-[#F0F7FF]/50 p-4 rounded-xl border border-[#2C78E4]/10 text-gray-700 mb-6">
                   {doctorData?.data?.bio ? (
                     <p>{doctorData?.data?.bio}</p>
                   ) : (
@@ -219,20 +223,20 @@ const StaffDetailPage = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="border border-indigo-100">
+                  <Card className="border border-[#2C78E4]/10 rounded-xl">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="bg-indigo-100 rounded-full p-2">
-                          <Calendar className="h-5 w-5 text-indigo-600" />
+                        <div className="bg-[#F0F7FF] rounded-full p-2">
+                          <Calendar className="h-5 w-5 text-[#2C78E4]" />
                         </div>
-                        <h3 className="font-medium text-indigo-800">
+                        <h3 className="font-medium text-[#2C78E4]">
                           Experience
                         </h3>
                       </div>
-                      <p className="text-3xl font-bold text-indigo-900 mb-1">
+                      <p className="text-3xl font-bold text-gray-800 mb-1">
                         {doctorData?.data?.years_of_experience || 0}
                       </p>
-                      <p className="text-sm text-indigo-600">
+                      <p className="text-sm text-[#2C78E4]/80">
                         Years in practice
                       </p>
                     </CardContent>

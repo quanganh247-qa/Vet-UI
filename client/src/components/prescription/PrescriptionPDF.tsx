@@ -9,10 +9,12 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useGetMedicineByPhaseId } from "@/hooks/use-medicine";
 import { useUploadFile } from "@/hooks/use-file";
+import { useUpdateAppointmentStatus } from "@/hooks/use-appointment";
 import { toast } from "@/components/ui/use-toast";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { format } from "date-fns";
+import { useLocation } from "wouter";
 
 interface PrescriptionPDFProps {
   treatment: Treatment | null;
@@ -38,6 +40,17 @@ const PrescriptionPDF: React.FC<PrescriptionPDFProps> = ({
   const [selectedSinglePhase, setSelectedSinglePhase] = useState<TreatmentPhase | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const uploadFileMutation = useUploadFile();
+  const [, setLocation] = useLocation();
+
+  // Initialize the appointment status update mutation
+  const appointmentId = appointmentData?.id;
+  const updateAppointmentStatus = useUpdateAppointmentStatus(
+    appointmentId ? parseInt(appointmentId) : 0,
+    {
+      state_id: 6, // Completed status
+      notes: `Prescription uploaded and appointment completed on ${new Date().toLocaleString()}`,
+    }
+  );
   
   // Initialize selected phases with all phases on component mount
   useEffect(() => {
@@ -188,6 +201,25 @@ const PrescriptionPDF: React.FC<PrescriptionPDFProps> = ({
         className: "bg-green-50 border-green-200 text-green-800",
       });
 
+      // After successful upload, update the appointment status to completed
+      if (appointmentId) {
+        try {
+          await updateAppointmentStatus.mutateAsync();
+          toast({
+            title: "Appointment Status Updated",
+            description: "Appointment has been marked as completed",
+            className: "bg-green-50 border-green-200 text-green-800",
+          });
+          setLocation("/appointment-flow");
+        } catch (error) {
+          console.error("Error updating appointment status:", error);
+          toast({
+            title: "Warning",
+            description: "Prescription uploaded but failed to update appointment status",
+            variant: "destructive",
+          });
+        }
+      }
       
     } catch (error) {
       console.error("Error uploading prescription:", error);
@@ -357,6 +389,20 @@ const PrescriptionPDF: React.FC<PrescriptionPDFProps> = ({
               {viewMode === "byPhase" && selectedSinglePhase && (
                 <p className="text-gray-500">Phase: {selectedSinglePhase.phase_name}</p>
               )}
+              {/* Appointment Status Badge */}
+              {appointmentData?.state && (
+                <div className="mt-2">
+                  <Badge
+                    className={
+                      appointmentData.state.id === 6
+                        ? "bg-green-100 text-green-800 border-green-200"
+                        : "bg-blue-100 text-blue-800 border-blue-200"
+                    }
+                  >
+                    {appointmentData.state.id === 6 ? "Completed" : "In Progress"}
+                  </Badge>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -514,25 +560,38 @@ const PrescriptionPDF: React.FC<PrescriptionPDFProps> = ({
             Download
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-gray-200"
-            onClick={handleUploadPrescription}
-            disabled={isPdfGenerating || isUploading}
-          >
-            {isUploading ? (
-              <>
-                <div className="h-4 w-4 border-2 border-indigo-600 border-opacity-50 border-t-transparent rounded-full animate-spin mr-2"></div>
-                Uploading...
-              </>
-            ) : (
-              <>
-                <Upload className="mr-2 h-4 w-4" />
-                Upload
-              </>
+          <div className={`relative ${appointmentData?.state?.id === 6 ? "group" : ""}`}>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`border-gray-200 ${appointmentData?.state?.id === 6 ? "bg-green-50 text-green-700 border-green-200" : ""}`}
+              onClick={handleUploadPrescription}
+              disabled={isPdfGenerating || isUploading || appointmentData?.state?.id === 6}
+            >
+              {isUploading ? (
+                <>
+                  <div className="h-4 w-4 border-2 border-indigo-600 border-opacity-50 border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Uploading...
+                </>
+              ) : appointmentData?.state?.id === 6 ? (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Already Completed
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload
+                </>
+              )}
+            </Button>
+            
+            {appointmentData?.state?.id === 6 && (
+              <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                This appointment is already marked as completed
+              </div>
             )}
-          </Button>
+          </div>
         </div>
         
         {!patientData?.petid && (

@@ -121,11 +121,11 @@ const SubjectiveKeyValueDisplay = ({
   console.log("entries: ", entries);
 
   return (
-    <div className="p-3 space-y-3 bg-white rounded-md">
+    <div className="p-3 space-y-3 bg-white rounded-xl">
       {entries.map((entry, index) => (
         <div
           key={entry.id || index}
-          className="grid grid-cols-12 gap-3 items-start bg-gray-50 p-3 rounded-md border border-gray-100"
+          className="grid grid-cols-12 gap-3 items-start bg-[#F9FAFB] p-3 rounded-xl border border-gray-100"
         >
           <div className="col-span-3 text-gray-700 font-medium">
             {entry.key}:
@@ -159,48 +159,48 @@ const ObjectiveDataDisplay = ({ data }: { data: any }) => {
         name: "Weight",
         value: data.vital_signs.weight,
         unit: "kg",
-        icon: "⚖️",
+        icon: <span className="h-4 w-4 mr-2">⚖️</span>,
       },
       {
         name: "Temperature",
         value: data.vital_signs.temperature,
         unit: "°C",
-        icon: "🌡️",
+        icon: <span className="h-4 w-4 mr-2">🌡️</span>,
       },
       {
         name: "Heart Rate",
         value: data.vital_signs.heart_rate,
         unit: "bpm",
-        icon: "❤️",
+        icon: <span className="h-4 w-4 mr-2">❤️</span>,
       },
       {
         name: "Respiratory Rate",
         value: data.vital_signs.respiratory_rate,
         unit: "rpm",
-        icon: "🫁",
+        icon: <span className="h-4 w-4 mr-2">🫁</span>,
       },
     ];
 
     return (
       <div className="mb-6">
-        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-indigo-100">
-          <span className="text-indigo-600 text-lg">🔍</span>
-          <h3 className="font-medium text-indigo-700">VITAL SIGNS</h3>
+        <div className="flex items-center gap-2 mb-3">
+          <Activity className="h-4 w-4 text-[#2C78E4]" />
+          <h3 className="font-medium text-gray-700">VITAL SIGNS</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-3">
           {vitalSigns.map((sign, index) =>
             sign.value ? (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                className="bg-[#F0F7FF]/50 rounded-xl p-3"
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{sign.icon}</span>
+                <div className="flex items-center gap-2 mb-1">
+                  {sign.icon}
                   <span className="text-gray-700 font-medium">{sign.name}</span>
                 </div>
-                <span className="font-mono text-indigo-600 font-semibold">
+                <div className="ml-6 text-[#2C78E4] font-semibold">
                   {sign.value} {sign.unit}
-                </span>
+                </div>
               </div>
             ) : null
           )}
@@ -216,23 +216,43 @@ const ObjectiveDataDisplay = ({ data }: { data: any }) => {
       {
         name: "Cardiovascular",
         value: data.systems.cardiovascular,
-        icon: "❤️",
+        icon: <span className="text-[#2C78E4]">❤️</span>,
       },
-      { name: "Respiratory", value: data.systems.respiratory, icon: "🫁" },
+      { 
+        name: "Respiratory", 
+        value: data.systems.respiratory, 
+        icon: <span className="text-[#2C78E4]">🫁</span> 
+      },
       {
         name: "Gastrointestinal",
         value: data.systems.gastrointestinal,
-        icon: "🧠",
+        icon: <span className="text-[#2C78E4]">🧠</span>,
       },
       {
         name: "Musculoskeletal",
         value: data.systems.musculoskeletal,
-        icon: "🦴",
+        icon: <span className="text-[#2C78E4]">🦴</span>,
       },
-      { name: "Neurological", value: data.systems.neurological, icon: "🧠" },
-      { name: "Skin/Coat", value: data.systems.skin, icon: "🧥" },
-      { name: "Eyes", value: data.systems.eyes, icon: "👁️" },
-      { name: "Ears", value: data.systems.ears, icon: "👂" },
+      { 
+        name: "Neurological", 
+        value: data.systems.neurological, 
+        icon: <span className="text-[#2C78E4]">🧠</span> 
+      },
+      { 
+        name: "Skin/Coat", 
+        value: data.systems.skin, 
+        icon: <span className="text-[#2C78E4]">🧥</span> 
+      },
+      { 
+        name: "Eyes", 
+        value: data.systems.eyes, 
+        icon: <span className="text-[#2C78E4]">👁️</span> 
+      },
+      { 
+        name: "Ears", 
+        value: data.systems.ears, 
+        icon: <span className="text-[#2C78E4]">👂</span> 
+      },
     ];
 
     // Check if there's at least one system with data
@@ -242,16 +262,16 @@ const ObjectiveDataDisplay = ({ data }: { data: any }) => {
 
     return (
       <div>
-        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-indigo-100">
-          <span className="text-indigo-600 text-lg">🩺</span>
-          <h3 className="font-medium text-indigo-700">SYSTEMS EXAMINATION</h3>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[#2C78E4] text-lg">🩺</span>
+          <h3 className="font-medium text-gray-700">SYSTEMS EXAMINATION</h3>
         </div>
         <div className="grid gap-3">
           {systemPairs.map((system, index) =>
             system.value ? (
               <div
                 key={index}
-                className="flex p-3 bg-gray-50 rounded-md flex-col"
+                className="flex p-3 bg-[#F9FAFB] rounded-xl flex-col"
               >
                 <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-200">
                   <span className="text-lg">{system.icon}</span>
@@ -277,17 +297,13 @@ const ObjectiveDataDisplay = ({ data }: { data: any }) => {
   });
 
   return (
-    <div className="p-4 space-y-6 bg-white rounded-md">
-      <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <span className="text-indigo-600 text-lg">📋</span>
-          <h2 className="font-semibold text-gray-800">
-            CLINICAL EXAMINATION RESULTS
-          </h2>
-        </div>
-        <div className="text-sm text-gray-500">
-          <span className="text-indigo-600 mr-1">📅</span>
-          {currentDate}
+    <div className="p-4 space-y-6 bg-white">
+      <div className="flex items-center mb-6">
+        <div className="flex flex-col">
+        
+          <div className="text-sm text-gray-500 mt-1">
+            {currentDate}
+          </div>
         </div>
       </div>
 
@@ -358,7 +374,7 @@ const AssessmentEditor = ({
 
   return (
     <div className="space-y-4">
-      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+      <div className="bg-[#F9FAFB] p-4 rounded-xl border border-gray-100">
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Primary Diagnosis
         </label>
@@ -366,11 +382,11 @@ const AssessmentEditor = ({
           value={assessment.primary}
           onChange={(e) => handleInputChange("primary", e.target.value)}
           placeholder="Enter primary diagnosis"
-          className="resize-none min-h-[100px] bg-white"
+          className="resize-none min-h-[100px] bg-white rounded-lg border-gray-200 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
         />
       </div>
 
-      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+      <div className="bg-[#F9FAFB] p-4 rounded-xl border border-gray-100">
         <div className="flex justify-between items-center mb-2">
           <label className="block text-sm font-medium text-gray-700">
             Differential Diagnoses
@@ -379,7 +395,7 @@ const AssessmentEditor = ({
             onClick={addDifferential}
             size="sm"
             variant="outline"
-            className="h-7 text-xs bg-indigo-50 text-indigo-700 border-indigo-200"
+            className="h-7 text-xs bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20 hover:bg-[#E3F2FD]"
           >
             Add Differential
           </Button>
@@ -395,7 +411,7 @@ const AssessmentEditor = ({
               <div key={index} className="flex items-center gap-2">
                 <div className="flex-1">
                   <div className="flex items-center">
-                    <div className="bg-indigo-100 text-indigo-800 rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">
+                    <div className="bg-[#F0F7FF] text-[#2C78E4] rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">
                       {index + 1}
                     </div>
                     <Textarea
@@ -404,7 +420,7 @@ const AssessmentEditor = ({
                         changeDifferential(index, e.target.value)
                       }
                       placeholder={`Differential diagnosis ${index + 1}`}
-                      className="resize-none bg-white h-10 py-2"
+                      className="resize-none bg-white rounded-lg h-10 py-2 border-gray-200 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                     />
                   </div>
                 </div>
@@ -422,7 +438,7 @@ const AssessmentEditor = ({
         )}
       </div>
 
-      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+      <div className="bg-[#F9FAFB] p-4 rounded-xl border border-gray-100">
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Additional Notes
         </label>
@@ -430,7 +446,7 @@ const AssessmentEditor = ({
           value={assessment.notes}
           onChange={(e) => handleInputChange("notes", e.target.value)}
           placeholder="Enter additional notes about the diagnosis"
-          className="resize-none min-h-[100px] bg-white"
+          className="resize-none min-h-[100px] bg-white rounded-lg border-gray-200 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
         />
       </div>
     </div>
@@ -775,7 +791,7 @@ const SoapNotes = () => {
   return (
     <div className="space-y-6">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 md:px-8 md:py-5 rounded-xl shadow-md mb-6 text-white">
         <div className="flex items-center">
           <Button
             variant="ghost"
@@ -801,10 +817,10 @@ const SoapNotes = () => {
 
       {/* Main content */}
       <div className="p-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-200 flex justify-between items-center">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 bg-gradient-to-r from-[#F0F7FF] to-white border-b border-gray-200 flex justify-between items-center">
             <div className="flex items-center">
-              <NotebookText className="h-5 w-5 text-indigo-600 mr-2" />
+              <NotebookText className="h-5 w-5 text-[#2C78E4] mr-2" />
               <h2 className="text-lg font-semibold text-gray-800">
                 Medical SOAP Notes
               </h2>
@@ -813,34 +829,34 @@ const SoapNotes = () => {
           <div className="p-6">
             <Tabs defaultValue="all" className="w-full">
               <div className="mb-4">
-                <TabsList className="inline-flex p-1 bg-gray-100 rounded-md mb-4">
+                <TabsList className="inline-flex p-1 bg-[#F9FAFB] rounded-xl mb-4">
                   <TabsTrigger
                     value="all"
-                    className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
+                    className="px-4 py-2 text-sm font-medium rounded-xl transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-[#2C78E4]"
                   >
                     All Sections
                   </TabsTrigger>
                   <TabsTrigger
                     value="subjective"
-                    className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
+                    className="px-4 py-2 text-sm font-medium rounded-xl transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-[#2C78E4]"
                   >
                     Subjective
                   </TabsTrigger>
                   <TabsTrigger
                     value="objective"
-                    className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
+                    className="px-4 py-2 text-sm font-medium rounded-xl transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-[#2C78E4]"
                   >
                     Objective
                   </TabsTrigger>
                   <TabsTrigger
                     value="assessment"
-                    className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
+                    className="px-4 py-2 text-sm font-medium rounded-xl transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-[#2C78E4]"
                   >
                     Assessment
                   </TabsTrigger>
                   <TabsTrigger
                     value="history"
-                    className="px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700"
+                    className="px-4 py-2 text-sm font-medium rounded-xl transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-[#2C78E4]"
                   >
                     History
                   </TabsTrigger>
@@ -850,7 +866,7 @@ const SoapNotes = () => {
               <TabsContent value="all" className="space-y-6 py-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <FileText className="h-4 w-4 text-indigo-600" />
+                    <FileText className="h-4 w-4 text-[#2C78E4]" />
                     <label className="text-sm font-medium text-gray-700 flex items-center">
                       S - Subjective (Owner's Report)
                     </label>
@@ -860,19 +876,20 @@ const SoapNotes = () => {
 
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Activity className="h-4 w-4 text-indigo-600" />
+                    <Activity className="h-4 w-4 text-[#2C78E4]" />
                     <label className="text-sm font-medium text-gray-700 flex items-center">
                       O - Objective (Clinical Findings)
                     </label>
+                    <span className="text-sm text-gray-500">May 18, 2025</span>
                   </div>
-                  <div className="border rounded-md overflow-hidden">
+                  <div className="border rounded-xl overflow-hidden">
                     <ObjectiveDataDisplay data={soap?.objective} />
                   </div>
                 </div>
 
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <ClipboardEdit className="h-4 w-4 text-indigo-600" />
+                    <ClipboardEdit className="h-4 w-4 text-[#2C78E4]" />
                     <label className="text-sm font-medium text-gray-700 flex items-center">
                       A - Assessment (Diagnosis)
                     </label>
@@ -888,7 +905,7 @@ const SoapNotes = () => {
               <TabsContent value="subjective" className="py-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <FileText className="h-4 w-4 text-indigo-600" />
+                    <FileText className="h-4 w-4 text-[#2C78E4]" />
                     <label className="text-sm font-medium text-gray-700 flex items-center">
                       S - Subjective (Owner's Report)
                     </label>
@@ -901,12 +918,12 @@ const SoapNotes = () => {
               <TabsContent value="objective" className="py-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Activity className="h-4 w-4 text-indigo-600" />
+                    <Activity className="h-4 w-4 text-[#2C78E4]" />
                     <label className="text-sm font-medium text-gray-700">
                       O - Objective (Clinical Findings)
                     </label>
                   </div>
-                  <div className="border rounded-md overflow-hidden">
+                  <div className="border rounded-xl overflow-hidden">
                     <ObjectiveDataDisplay data={soap?.objective} />
                   </div>
                 </div>
@@ -916,7 +933,7 @@ const SoapNotes = () => {
               <TabsContent value="assessment" className="py-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <ClipboardEdit className="h-4 w-4 text-indigo-600" />
+                    <ClipboardEdit className="h-4 w-4 text-[#2C78E4]" />
                     <label className="text-sm font-medium text-gray-700">
                       A - Assessment (Diagnosis)
                     </label>
@@ -940,7 +957,7 @@ const SoapNotes = () => {
               <Button
                 variant="outline"
                 onClick={handleSave}
-                className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF]"
               >
                 <Save className="h-4 w-4 mr-2" />
                 Save Diagnosis
@@ -949,7 +966,7 @@ const SoapNotes = () => {
               <Button
                 variant="outline"
                 onClick={navigateToLabManagement}
-                className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF]"
               >
                 <FlaskConical className="h-4 w-4 mr-2" />
                 Labs
@@ -957,7 +974,7 @@ const SoapNotes = () => {
 
               <Button
                 onClick={handleProceedToTreatment}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white"
               >
                 <ArrowUpRight className="h-4 w-4 mr-2" />
                 Proceed to Treatment

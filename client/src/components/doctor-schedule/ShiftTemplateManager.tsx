@@ -57,15 +57,7 @@ export const defaultShiftTemplates: ShiftTemplate[] = [
     status: 'scheduled',
     color: 'bg-green-100 text-green-800 border-green-300',
   },
-  {
-    id: 'evening',
-    name: 'Evening Shift',
-    startTime: '18:00',
-    endTime: '22:00',
-    description: 'Standard evening shift',
-    status: 'scheduled',
-    color: 'bg-purple-100 text-purple-800 border-purple-300',
-  },
+
   {
     id: 'full-day',
     name: 'Full Day',

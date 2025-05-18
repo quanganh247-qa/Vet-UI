@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   useProducts,
   useCreateProduct,
@@ -89,19 +89,19 @@ const formatCurrency = (amount: number) => {
 
 // EmptyState component for when no products exist
 const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
-  <div className="flex flex-col items-center justify-center p-8 bg-indigo-50 rounded-lg border border-dashed border-indigo-200 h-64">
-    <div className="rounded-full bg-indigo-100 p-3 mb-4">
-      <Package className="h-6 w-6 text-indigo-600" />
+  <div className="flex flex-col items-center justify-center p-8 bg-[#F0F7FF]/50 rounded-xl border border-dashed border-[#2C78E4]/20 h-64">
+    <div className="rounded-full bg-[#F0F7FF] p-3 mb-4">
+      <Package className="h-6 w-6 text-[#2C78E4]" />
     </div>
-    <h3 className="text-lg font-medium mb-2 text-indigo-700">
+    <h3 className="text-lg font-medium mb-2 text-[#2C78E4]">
       No products found
     </h3>
-    <p className="text-sm text-indigo-500 text-center mb-4">
+    <p className="text-sm text-[#2C78E4]/70 text-center mb-4">
       Start by creating your first product
     </p>
     <Button
       size="sm"
-      className="bg-indigo-600 hover:bg-indigo-700 text-white"
+      className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-lg"
       onClick={onAdd}
     >
       <PlusCircle className="h-4 w-4 mr-2" />
@@ -245,14 +245,6 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
         variant: "destructive",
       });
     }
-  };
-
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
   };
 
   // Handle movement type badge color
@@ -612,8 +604,6 @@ const ProductManagement: React.FC = () => {
     error: productsError,
     refetch,
   } = useProducts(currentPage, pageSize);
-  console.log("pagination", pagination);
-  console.log("testing", products);
   const { createProduct, isLoading: isCreating } = useCreateProduct();
 
   // Filter products based on search term
@@ -623,6 +613,13 @@ const ProductManagement: React.FC = () => {
       (product.category &&
         product.category.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Reset pagination when search changes
+  useEffect(() => {
+    if (searchTerm) {
+      setCurrentPage(1);
+    }
+  }, [searchTerm]);
 
   // Handle opening add dialog
   const handleOpenAddDialog = () => {
@@ -713,8 +710,8 @@ const ProductManagement: React.FC = () => {
         {
           onSuccess: () => {
             toast({
-              title: "Tạo sản phẩm thành công",
-              description: "Sản phẩm mới đã được thêm vào danh mục.",
+              title: "Product created successfully",
+              description: "The new product has been added to your catalog.",
               className: "bg-green-50 text-green-800 border-green-200",
             });
             setIsAddingItem(false);
@@ -722,11 +719,11 @@ const ProductManagement: React.FC = () => {
           },
           onError: (error) => {
             toast({
-              title: "Lỗi tạo sản phẩm",
+              title: "Error creating product",
               description:
                 error instanceof Error
                   ? error.message
-                  : "Đã xảy ra lỗi không mong muốn",
+                  : "An unexpected error occurred",
               variant: "destructive",
             });
           },
@@ -744,7 +741,7 @@ const ProductManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md mb-6">
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md mb-6">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-white">
@@ -754,21 +751,21 @@ const ProductManagement: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-indigo-100 shadow-sm p-6 mb-6">
+      <div className="bg-white rounded-xl border border-[#2C78E4]/20 shadow-sm p-6 mb-6">
         {/* Search and add section */}
-        <div className="flex justify-between items-center mb-6 bg-indigo-50 p-3 rounded-md border border-indigo-100">
+        <div className="flex justify-between items-center mb-6 bg-[#F0F7FF] p-3 rounded-lg border border-[#2C78E4]/20">
           <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#2C78E4]" />
             <Input
               placeholder="Search product..."
-              className="pl-10 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
+              className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <Button
             onClick={handleOpenAddDialog}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-lg"
           >
             <PlusCircle className="h-4 w-4 mr-2" />
             Add new product
@@ -778,7 +775,7 @@ const ProductManagement: React.FC = () => {
         {/* Products listing */}
         {isLoadingProducts ? (
           <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-[#2C78E4]" />
           </div>
         ) : productsError ? (
           <div className="flex flex-col items-center justify-center h-64 text-red-600">
@@ -788,138 +785,156 @@ const ProductManagement: React.FC = () => {
         ) : filteredProducts.length === 0 ? (
           <EmptyState onAdd={handleOpenAddDialog} />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredProducts.map((product) => (
-              <Card
-                key={product.productId}
-                className="hover:shadow-md transition-shadow border border-indigo-100"
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex justify-between items-start">
-                    <div>
-                      <span className="text-lg font-semibold text-indigo-900">
-                        {product.name}
-                      </span>
-                      <Badge className="ml-2 bg-indigo-100 text-indigo-700 border-indigo-200">
-                        {product.category}
-                      </Badge>
-                    </div>
-                    <div className="flex space-x-2">
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredProducts.map((product) => (
+                <Card
+                  key={product.productId}
+                  className="hover:shadow-md transition-shadow border border-[#2C78E4]/10 rounded-xl overflow-hidden"
+                >
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex justify-between items-start">
+                      <div>
+                        <span className="text-lg font-semibold text-[#2C78E4]">
+                          {product.name}
+                        </span>
+                        <Badge className="ml-2 bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20 rounded-full">
+                          {product.category}
+                        </Badge>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-[#2C78E4] hover:bg-[#F0F7FF] rounded-lg"
+                          onClick={() => handleOpenEditDialog(product)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:bg-red-50 rounded-lg"
+                          onClick={() =>
+                            handleOpenDeleteDialog(product.productId)
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {product.originalImage && (
+                        <div className="h-32 rounded-lg overflow-hidden bg-[#F0F7FF]/40 flex items-center justify-center">
+                          <img
+                            src={product.originalImage}
+                            alt={product.name}
+                            className="object-contain h-full w-full"
+                          />
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center text-sm text-[#2C78E4]">
+                          <span
+                            className={`w-3 h-3 rounded-full mr-2 ${
+                              product.isAvailable ? "bg-green-500" : "bg-red-500"
+                            }`}
+                          ></span>
+                          {product.isAvailable ? "Available" : "Not available"}
+                        </div>
+                        <span className="font-medium text-green-600">
+                          {formatCurrency(product.price)}
+                        </span>
+                      </div>
+                      {product.description && (
+                        <p className="text-sm text-gray-600">
+                          {product.description}
+                        </p>
+                      )}
+                      <div className="bg-[#F0F7FF] p-2 rounded-lg text-xs text-[#2C78E4] border border-[#2C78E4]/20">
+                        <strong>Stock:</strong> {product.stock} units
+                      </div>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="text-indigo-600 hover:bg-indigo-50"
-                        onClick={() => handleOpenEditDialog(product)}
+                        className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] mt-2 rounded-lg w-full"
+                        onClick={() => handleOpenStockDialog(product)}
                       >
-                        <Edit className="h-4 w-4" />
+                        <ShoppingBag className="h-4 w-4 mr-2" />
+                        Stock Management
                       </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {pagination && pagination.totalPages > 0 && (
+              <div className="flex flex-col items-center space-y-4 mt-8 pb-4">
+                <p className="text-sm text-[#2C78E4] font-medium">
+                  Page {pagination.page} / {pagination.totalPages} • Showing {filteredProducts.length} / {pagination.total} products
+                </p>
+                <div className="flex justify-center items-center space-x-2 bg-[#F0F7FF] px-4 py-3 rounded-lg shadow-sm border border-[#2C78E4]/20">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                    className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF]/70 rounded-lg"
+                  >
+                    Previous
+                  </Button>
+                  
+                  {Array.from({ length: Math.min(5, pagination.totalPages) }).map((_, index) => {
+                    // Calculate which page numbers to show
+                    let pageNum;
+                    if (pagination.totalPages <= 5) {
+                      pageNum = index + 1;
+                    } else if (pagination.page <= 3) {
+                      pageNum = index + 1;
+                    } else if (pagination.page >= pagination.totalPages - 2) {
+                      pageNum = pagination.totalPages - 4 + index;
+                    } else {
+                      pageNum = pagination.page - 2 + index;
+                    }
+                    
+                    return (
                       <Button
-                        variant="ghost"
+                        key={index}
+                        variant={pagination.page === pageNum ? "default" : "outline"}
                         size="sm"
-                        className="text-red-600 hover:bg-red-50"
-                        onClick={() =>
-                          handleOpenDeleteDialog(product.productId)
+                        onClick={() => handlePageChange(pageNum)}
+                        className={
+                          pagination.page === pageNum
+                            ? "bg-[#2C78E4] text-white font-bold hover:bg-[#1E40AF] rounded-lg"
+                            : "border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF]/70 rounded-lg"
                         }
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {pageNum}
                       </Button>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {product.originalImage && (
-                      <div className="h-32 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
-                        <img
-                          src={product.originalImage}
-                          alt={product.name}
-                          className="object-contain h-full w-full"
-                        />
-                      </div>
-                    )}
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center text-sm text-indigo-600">
-                        <span
-                          className={`w-3 h-3 rounded-full mr-2 ${
-                            product.isAvailable ? "bg-green-500" : "bg-red-500"
-                          }`}
-                        ></span>
-                        {product.isAvailable ? "Available" : "Not available"}
-                      </div>
-                      <span className="font-medium text-green-600">
-                        {formatCurrency(product.price)}
-                      </span>
-                    </div>
-                    {product.description && (
-                      <p className="text-sm text-gray-600">
-                        {product.description}
-                      </p>
-                    )}
-                    <div className="bg-blue-50 p-2 rounded-md text-xs text-blue-800 border border-blue-200">
-                      <strong>Stock:</strong> {product.stock} units
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-indigo-300 text-indigo-700 hover:bg-indigo-100 mt-2"
-                      onClick={() => handleOpenStockDialog(product)}
-                    >
-                      <ShoppingBag className="h-4 w-4 mr-2" />
-                      Stock Management
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    );
+                  })}
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page === pagination.totalPages}
+                    className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF]/70 rounded-lg"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
-
-        {/* Pagination */}
-        {/* {pagination && pagination.totalPages > 0 && (
-                        <div className="flex flex-col items-center space-y-4 mt-8 pb-4">
-                            <p className="text-sm text-indigo-600 font-medium">
-                                Trang {pagination.page} / {pagination.totalPages} • Hiển thị {filteredProducts.length} / {pagination.total} sản phẩm
-                            </p>
-                            <div className="flex justify-center items-center space-x-2 bg-indigo-50 px-4 py-3 rounded-lg shadow-sm border border-indigo-100">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handlePageChange(pagination.page - 1)}
-                                    disabled={pagination.page === 1}
-                                    className="border-indigo-300 text-indigo-700 hover:bg-indigo-100"
-                                >
-                                    Trước
-                                </Button>
-                                {Array.from({ length: pagination.totalPages }).map((_, index) => (
-                                    <Button
-                                        key={index}
-                                        variant={pagination.page === index + 1 ? "default" : "outline"}
-                                        size="sm"
-                                        onClick={() => handlePageChange(index + 1)}
-                                        className={
-                                            pagination.page === index + 1
-                                                ? "bg-indigo-600 text-white font-bold hover:bg-indigo-700"
-                                                : "border-indigo-300 text-indigo-700 hover:bg-indigo-100"
-                                        }
-                                    >
-                                        {index + 1}
-                                    </Button>
-                                ))}
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handlePageChange(pagination.page + 1)}
-                                    disabled={pagination.page === pagination.totalPages}
-                                    className="border-indigo-300 text-indigo-700 hover:bg-indigo-100"
-                                >
-                                    Sau
-                                </Button>
-                            </div>
-                        </div>
-                    )} */}
       </div>
 
-      {/* Hộp thoại Thêm/Sửa */}
+      {/* Dialog boxes, etc... */}
       <Dialog
         open={isAddingItem || isEditingItem}
         onOpenChange={(open) => {
@@ -931,12 +946,12 @@ const ProductManagement: React.FC = () => {
           }
         }}
       >
-        <DialogContent className="sm:max-w-[600px] border border-indigo-200 bg-white">
-          <DialogHeader className="border-b border-indigo-100 pb-4">
-            <DialogTitle className="text-indigo-900">
+        <DialogContent className="sm:max-w-[600px] border border-[#2C78E4]/20 bg-white rounded-xl">
+          <DialogHeader className="border-b border-[#2C78E4]/10 pb-4">
+            <DialogTitle className="text-[#2C78E4]">
               {isAddingItem ? "Add new product" : "Edit product"}
             </DialogTitle>
-            <DialogDescription className="text-indigo-500">
+            <DialogDescription className="text-[#2C78E4]/70">
               Fill in the details below to {isAddingItem ? "create" : "update"}{" "}
               this product in your catalog.
             </DialogDescription>
@@ -954,6 +969,7 @@ const ProductManagement: React.FC = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="Enter product name"
+                  className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
                 />
               </div>
 
@@ -967,6 +983,7 @@ const ProductManagement: React.FC = () => {
                   value={formData.category}
                   onChange={handleInputChange}
                   placeholder="Product category (e.g. Medicine, Food, Toys)"
+                  className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
                 />
               </div>
 
@@ -982,6 +999,7 @@ const ProductManagement: React.FC = () => {
                     value={formData.price}
                     onChange={handleInputChange}
                     placeholder="0"
+                    className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
                   />
                 </div>
                 <div>
@@ -995,6 +1013,7 @@ const ProductManagement: React.FC = () => {
                     value={formData.stockQuantity}
                     onChange={handleInputChange}
                     placeholder="0"
+                    className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
                   />
                 </div>
               </div>
@@ -1010,6 +1029,7 @@ const ProductManagement: React.FC = () => {
                   onChange={handleInputChange}
                   placeholder="Enter product description"
                   rows={3}
+                  className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
                 />
               </div>
 
@@ -1032,10 +1052,10 @@ const ProductManagement: React.FC = () => {
                     type="file"
                     accept="image/*"
                     onChange={handleImageChange}
-                    className="flex-1"
+                    className="flex-1 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
                   />
                   {imagePreview && (
-                    <div className="w-16 h-16 border rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
+                    <div className="w-16 h-16 border border-[#2C78E4]/20 rounded-lg overflow-hidden bg-[#F0F7FF]/40 flex items-center justify-center">
                       <img
                         src={imagePreview}
                         alt="Preview"
@@ -1048,21 +1068,21 @@ const ProductManagement: React.FC = () => {
             </div>
           </ScrollArea>
 
-          <DialogFooter className="border-t border-indigo-100 pt-4">
+          <DialogFooter className="border-t border-[#2C78E4]/10 pt-4">
             <Button
               variant="outline"
               onClick={() => {
                 setIsAddingItem(false);
                 setIsEditingItem(false);
               }}
-              className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+              className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] rounded-lg"
             >
               Cancel
             </Button>
             <Button
               disabled={isCreating || !formData.name || formData.price <= 0}
               onClick={handleSubmit}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-lg"
             >
               {isCreating ? (
                 <>
@@ -1082,7 +1102,7 @@ const ProductManagement: React.FC = () => {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent className="border border-red-200 bg-white">
+        <AlertDialogContent className="border border-red-200 bg-white rounded-xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-red-600">
               Are you sure?
@@ -1093,10 +1113,10 @@ const ProductManagement: React.FC = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-indigo-200 text-indigo-700 hover:bg-indigo-50">
+            <AlertDialogCancel className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] rounded-lg">
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 focus:ring-red-600">
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 focus:ring-red-600 rounded-lg">
               <Trash2 className="h-4 w-4 mr-2" />
               Delete
             </AlertDialogAction>

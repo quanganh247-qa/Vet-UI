@@ -132,6 +132,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
     selectedPetId?.toString()
   );
 
+  // Form initialization with validation
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -152,6 +153,13 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
       },
     },
   });
+
+  // Log doctorsData for debugging
+  useEffect(() => {
+    if (doctorsData) {
+      console.log("Doctors data:", doctorsData);
+    }
+  }, [doctorsData]);
 
   // Add useEffect for real-time search
   useEffect(() => {
@@ -358,13 +366,14 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
         <Tabs
           defaultValue="new"
           onValueChange={(value) => setFormMode(value as "new" | "existing")}
+          className="w-full"
         >
-          <TabsList className="w-full mb-6">
-            <TabsTrigger value="new" className="flex-1">
+          <TabsList className="w-full mb-6 bg-[#F9FAFB] p-1 rounded-lg">
+            <TabsTrigger value="new" className="flex-1 rounded-md data-[state=active]:bg-[#2C78E4] data-[state=active]:text-white">
               <UserPlus className="h-4 w-4 mr-2" />
               <span>New Pet & Owner</span>
             </TabsTrigger>
-            <TabsTrigger value="existing" className="flex-1">
+            <TabsTrigger value="existing" className="flex-1 rounded-md data-[state=active]:bg-[#2C78E4] data-[state=active]:text-white">
               <PawPrint className="h-4 w-4 mr-2" />
               <span>Existing Pet</span>
             </TabsTrigger>
@@ -376,14 +385,14 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
           >
             <TabsContent value="existing" className="m-0">
               {!selectedPet ? (
-                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                <div className="bg-[#F9FAFB] border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center mb-3">
-                    <Search className="h-5 w-5 text-blue-600 mr-2" />
-                    <h3 className="font-medium text-blue-900">
+                    <Search className="h-5 w-5 text-[#2C78E4] mr-2" />
+                    <h3 className="font-medium text-[#111827]">
                       Find Existing Pet
                     </h3>
                   </div>
-                  <p className="text-sm text-blue-700 mb-4">
+                  <p className="text-sm text-[#4B5563] mb-4">
                     Search for a patient by name, ID, or owner name
                   </p>
 
@@ -393,45 +402,45 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                       placeholder="Search by pet name, ID, or owner name"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="flex-1"
+                      className="flex-1 border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4]"
                     />
                     {isSearching && (
-                      <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
+                      <div className="animate-spin h-4 w-4 border-2 border-[#2C78E4] border-t-transparent rounded-full mr-2"></div>
                     )}
                   </div>
 
                   {searchResults.length > 0 && (
-                    <div className="mt-4 bg-white rounded-lg shadow-md p-4">
-                      <h4 className="text-sm font-medium text-gray-900 mb-2">
+                    <div className="mt-4 bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                      <h4 className="text-sm font-medium text-[#111827] mb-2">
                         Search Results ({searchResults.length})
                       </h4>
                       <div className="space-y-2">
                         {searchResults.map((pet: PetInfo) => (
                           <div
                             key={`pet-${pet.petid}`}
-                            className="p-3 hover:bg-gray-50 cursor-pointer transition-colors border rounded-md"
+                            className="p-3 hover:bg-[#F9FAFB] cursor-pointer transition-colors border border-gray-200 rounded-lg"
                             onClick={() => selectPet(pet)}
                           >
                             <div className="flex justify-between items-start">
                               <div>
                                 <div className="flex items-center">
-                                  <PawPrint className="h-4 w-4 text-indigo-500 mr-1.5" />
-                                  <span className="font-medium text-gray-900">
+                                  <PawPrint className="h-4 w-4 text-[#2C78E4] mr-1.5" />
+                                  <span className="font-medium text-[#111827]">
                                     {pet.name}
                                   </span>
                                   <Badge
-                                    className="ml-2 text-xs"
+                                    className="ml-2 text-xs bg-[#F9FAFB] text-[#4B5563] border-gray-200"
                                     variant="outline"
                                   >
                                     {pet.breed}
                                   </Badge>
                                 </div>
-                                <div className="text-sm text-gray-500 mt-1">
+                                <div className="text-sm text-[#4B5563] mt-1">
                                   ID: {pet.petid}
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="text-sm font-medium text-gray-900">
+                                <div className="text-sm font-medium text-[#111827]">
                                   {pet.username}
                                 </div>
                               </div>
@@ -443,17 +452,17 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                   )}
 
                   {searchTerm && !isSearching && searchResults.length === 0 && (
-                    <div className="mt-4 text-center text-gray-500">
+                    <div className="mt-4 text-center text-[#4B5563]">
                       No pets found matching "{searchTerm}"
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+                <div className="bg-[#F9FAFB] border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center">
-                      <PawPrint className="h-5 w-5 text-indigo-600 mr-2" />
-                      <h3 className="font-medium text-indigo-900">
+                      <PawPrint className="h-5 w-5 text-[#2C78E4] mr-2" />
+                      <h3 className="font-medium text-[#111827]">
                         Selected Pet
                       </h3>
                     </div>
@@ -462,39 +471,39 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                       variant="outline"
                       size="sm"
                       onClick={clearPetSelection}
-                      className="text-xs h-8"
+                      className="text-xs h-8 border-gray-200 hover:bg-[#F9FAFB] hover:text-[#2C78E4] hover:border-[#2C78E4]/30"
                     >
                       Change Pet
                     </Button>
                   </div>
 
-                  <div className="bg-white rounded-md border border-indigo-200 p-4 mb-4">
+                  <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="flex items-center">
-                          <span className="font-medium text-gray-900 text-lg">
+                          <span className="font-medium text-[#111827] text-lg">
                             {selectedPet.name}
                           </span>
-                          <Badge className="ml-2" variant="outline">
+                          <Badge className="ml-2 bg-[#F9FAFB] text-[#4B5563] border-gray-200" variant="outline">
                             {selectedPet.type}
                           </Badge>
                         </div>
-                        <div className="text-sm text-gray-500 mt-1">
+                        <div className="text-sm text-[#4B5563] mt-1">
                           ID: {selectedPet.petid}
                         </div>
                       
                       </div>
                       {isPetOwnerLoading ? (
-                        <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></div>
+                        <div className="animate-spin h-4 w-4 border-2 border-[#2C78E4] border-t-transparent rounded-full"></div>
                       ) : petOwnerData ? (
                         <div className="text-right">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-[#111827]">
                             {petOwnerData.owner_name}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-[#4B5563]">
                             {petOwnerData.owner_phone}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-[#4B5563]">
                             {petOwnerData.owner_email}
                           </div>
                         </div>
@@ -505,31 +514,31 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
               )}
             </TabsContent>
 
-            <TabsContent value="new" className="space-y-6 m-0">
-              <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
-                <div className="flex items-center mb-2">
-                  <PawPrint className="h-5 w-5 text-indigo-600 mr-2" />
-                  <h3 className="font-medium text-indigo-900">
-                    Pet Information
+            <TabsContent value="new" className="m-0">
+              <div className="bg-[#F9FAFB] border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center mb-3">
+                  <UserPlus className="h-5 w-5 text-[#2C78E4] mr-2" />
+                  <h3 className="font-medium text-[#111827]">
+                    New Pet & Owner Registration
                   </h3>
                 </div>
-                <p className="text-sm text-indigo-700 mb-4">
-                  Enter details about the new pet
+                <p className="text-sm text-[#4B5563] mb-4">
+                  Enter new pet and owner information
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <Label
                       htmlFor="pet.pet_name"
-                      className="text-gray-700 flex items-center"
+                      className="text-[#111827] flex items-center"
                     >
                       Pet Name <span className="text-red-500 ml-1">*</span>
                     </Label>
                     <Input
                       id="pet.pet_name"
                       {...form.register("pet.pet_name")}
-                      placeholder="Pet's name"
-                      className={`transition-all border-gray-300 focus:border-indigo-500 ${
+                      placeholder="Fluffy"
+                      className={`transition-all border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] ${
                         form.formState.errors.pet?.pet_name
                           ? "border-red-500 focus:ring-red-500"
                           : ""
@@ -545,7 +554,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                   <div className="space-y-2">
                     <Label
                       htmlFor="pet.pet_species"
-                      className="text-gray-700 flex items-center"
+                      className="text-[#111827] flex items-center"
                     >
                       Species <span className="text-red-500 ml-1">*</span>
                     </Label>
@@ -556,7 +565,8 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                       }
                     >
                       <SelectTrigger
-                        className={`border-gray-300 transition-all hover:border-gray-400 focus:border-indigo-500 ${
+                        id="pet.pet_species"
+                        className={`border-gray-200 transition-all focus:border-[#2C78E4] focus:ring-[#2C78E4] ${
                           form.formState.errors.pet?.pet_species
                             ? "border-red-500 focus:ring-red-500"
                             : ""
@@ -564,13 +574,12 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                       >
                         <SelectValue placeholder="Select species" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Dog">Dog</SelectItem>
-                        <SelectItem value="Cat">Cat</SelectItem>
-                        <SelectItem value="Bird">Bird</SelectItem>
-                        <SelectItem value="Rabbit">Rabbit</SelectItem>
-                        <SelectItem value="Hamster">Hamster</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                      <SelectContent className="border-gray-200">
+                        <SelectItem value="dog">Dog</SelectItem>
+                        <SelectItem value="cat">Cat</SelectItem>
+                        <SelectItem value="bird">Bird</SelectItem>
+                        <SelectItem value="reptile">Reptile</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                     {form.formState.errors.pet?.pet_species && (
@@ -579,110 +588,28 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                       </p>
                     )}
                   </div>
-
-                  {/* <div className="space-y-2">
-                    <Label htmlFor="pet.pet_breed" className="text-gray-700">
-                      Breed
-                    </Label>
-                    <Input
-                      id="pet.pet_breed"
-                      {...form.register("pet.pet_breed")}
-                      placeholder="Breed"
-                      className={`transition-all border-gray-300 focus:border-indigo-500 ${
-                        form.formState.errors.pet?.pet_breed
-                          ? "border-red-500 focus:ring-red-500"
-                          : ""
-                      }`}
-                    />
-                    {form.formState.errors.pet?.pet_breed && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {form.formState.errors.pet.pet_breed.message}
-                      </p>
-                    )}
-                  </div> */}
-
-                  {/* <div className="space-y-2">
-                    <Label htmlFor="pet.pet_gender" className="text-gray-700">
-                      Gender
-                    </Label>
-                    <Select
-                      value={form.watch("pet.pet_gender")}
-                      onValueChange={(value) =>
-                        form.setValue("pet.pet_gender", value)
-                      }
-                    >
-                      <SelectTrigger
-                        className={`border-gray-300 transition-all hover:border-gray-400 focus:border-indigo-500 ${
-                          form.formState.errors.pet?.pet_gender
-                            ? "border-red-500 focus:ring-red-500"
-                            : ""
-                        }`}
-                      >
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Male">Male</SelectItem>
-                        <SelectItem value="Female">Female</SelectItem>
-                        <SelectItem value="Unknown">Unknown</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {form.formState.errors.pet?.pet_gender && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {form.formState.errors.pet.pet_gender.message}
-                      </p>
-                    )}
-                  </div> */}
-
-                  {/* <div className="space-y-2">
-                    <Label htmlFor="pet.pet_dob" className="text-gray-700">
-                      Date of Birth <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                      <Input
-                        id="pet.pet_dob"
-                        type="date"
-                        {...form.register("pet.pet_dob")}
-                        className={`pl-10 transition-all border-gray-300 focus:border-indigo-500 ${
-                          form.formState.errors.pet?.pet_dob
-                            ? "border-red-500 focus:ring-red-500"
-                            : ""
-                        }`}
-                      />
-                    </div>
-                    {form.formState.errors.pet?.pet_dob && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {form.formState.errors.pet.pet_dob.message}
-                      </p>
-                    )}
-                  </div> */}
                 </div>
-              </div>
 
-              <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                <div className="flex items-center mb-2">
-                  <User className="h-5 w-5 text-blue-600 mr-2" />
-                  <h3 className="font-medium text-blue-900">
-                    Owner Information
-                  </h3>
+                <Separator className="my-6 bg-gray-200" />
+
+                <div className="flex items-center mb-3">
+                  <User className="h-5 w-5 text-[#2C78E4] mr-2" />
+                  <h3 className="font-medium text-[#111827]">Owner Details</h3>
                 </div>
-                <p className="text-sm text-blue-700 mb-4">
-                  Enter the pet owner's contact details
-                </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <Label
                       htmlFor="owner.owner_name"
-                      className="text-gray-700 flex items-center"
+                      className="text-[#111827] flex items-center"
                     >
                       Full Name <span className="text-red-500 ml-1">*</span>
                     </Label>
                     <Input
                       id="owner.owner_name"
                       {...form.register("owner.owner_name")}
-                      placeholder="John Doe"
-                      className={`transition-all border-gray-300 focus:border-blue-500 ${
+                      placeholder="John Smith"
+                      className={`transition-all border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] ${
                         form.formState.errors.owner?.owner_name
                           ? "border-red-500 focus:ring-red-500"
                           : ""
@@ -698,7 +625,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                   <div className="space-y-2">
                     <Label
                       htmlFor="owner.owner_number"
-                      className="text-gray-700 flex items-center"
+                      className="text-[#111827] flex items-center"
                     >
                       Phone Number <span className="text-red-500 ml-1">*</span>
                     </Label>
@@ -706,7 +633,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                       id="owner.owner_number"
                       {...form.register("owner.owner_number")}
                       placeholder="(555) 123-4567"
-                      className={`transition-all border-gray-300 focus:border-blue-500 ${
+                      className={`transition-all border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] ${
                         form.formState.errors.owner?.owner_number
                           ? "border-red-500 focus:ring-red-500"
                           : ""
@@ -722,7 +649,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                   <div className="space-y-2">
                     <Label
                       htmlFor="owner.owner_email"
-                      className="text-gray-700 flex items-center"
+                      className="text-[#111827] flex items-center"
                     >
                       Email <span className="text-red-500 ml-1">*</span>
                     </Label>
@@ -731,7 +658,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                       type="email"
                       {...form.register("owner.owner_email")}
                       placeholder="email@example.com"
-                      className={`transition-all border-gray-300 focus:border-blue-500 ${
+                      className={`transition-all border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] ${
                         form.formState.errors.owner?.owner_email
                           ? "border-red-500 focus:ring-red-500"
                           : ""
@@ -747,7 +674,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                   <div className="space-y-2">
                     <Label
                       htmlFor="owner.owner_address"
-                      className="text-gray-700 flex items-center"
+                      className="text-[#111827] flex items-center"
                     >
                       Address <span className="text-red-500 ml-1">*</span>
                     </Label>
@@ -755,7 +682,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                       id="owner.owner_address"
                       {...form.register("owner.owner_address")}
                       placeholder="123 Main St, City, State"
-                      className={`transition-all border-gray-300 focus:border-blue-500 ${
+                      className={`transition-all border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] ${
                         form.formState.errors.owner?.owner_address
                           ? "border-red-500 focus:ring-red-500"
                           : ""
@@ -772,14 +699,14 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
             </TabsContent>
 
             {/* Common appointment details section for both tabs */}
-            <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
+            <div className="bg-[#F9FAFB] border border-gray-200 rounded-lg p-4">
               <div className="flex items-center mb-2">
-                <Calendar className="h-5 w-5 text-purple-600 mr-2" />
-                <h3 className="font-medium text-purple-900">
+                <Calendar className="h-5 w-5 text-[#2C78E4] mr-2" />
+                <h3 className="font-medium text-[#111827]">
                   Appointment Details
                 </h3>
               </div>
-              <p className="text-sm text-purple-700 mb-4">
+              <p className="text-sm text-[#4B5563] mb-4">
                 Enter details about the appointment
               </p>
 
@@ -787,7 +714,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                 <div className="space-y-2">
                   <Label
                     htmlFor="service_id"
-                    className="text-gray-700 flex items-center"
+                    className="text-[#111827] flex items-center"
                   >
                     Service <span className="text-red-500 ml-1">*</span>
                   </Label>
@@ -798,29 +725,30 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                     }
                   >
                     <SelectTrigger
-                      className={`border-gray-300 transition-all hover:border-gray-400 focus:border-purple-500 ${
+                      id="service_id"
+                      className={`border-gray-200 transition-all hover:border-gray-300 focus:border-[#2C78E4] focus:ring-[#2C78E4] ${
                         form.formState.errors.service_id
                           ? "border-red-500 focus:ring-red-500"
                           : ""
                       }`}
                     >
                       <div className="flex items-center">
-                        <Tag className="h-4 w-4 text-gray-500 mr-2" />
+                        <Tag className="h-4 w-4 text-[#4B5563] mr-2" />
                         <SelectValue placeholder="Select a service" />
                       </div>
                     </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
+                    <SelectContent className="max-h-[300px] border-gray-200">
                       {servicesLoading ? (
                         <div className="flex items-center justify-center py-2">
-                          <div className="animate-spin h-5 w-5 border-2 border-purple-500 border-t-transparent rounded-full mr-2"></div>
-                          <span>Loading services...</span>
+                          <div className="animate-spin h-5 w-5 border-2 border-[#2C78E4] border-t-transparent rounded-full mr-2"></div>
+                          <span className="text-[#4B5563]">Loading services...</span>
                         </div>
                       ) : servicesData && servicesData.length > 0 ? (
                         servicesData.map((service: Service) => (
                           <SelectItem
                             key={service?.id}
                             value={service.id?.toString()}
-                            className="focus:bg-purple-50"
+                            className="focus:bg-[#2C78E4]/10 focus:text-[#2C78E4]"
                           >
                             {service.name}
                           </SelectItem>
@@ -842,7 +770,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                 <div className="space-y-2">
                   <Label
                     htmlFor="doctor_id"
-                    className="text-gray-700 flex items-center"
+                    className="text-[#111827] flex items-center"
                   >
                     Doctor <span className="text-red-500 ml-1">*</span>
                   </Label>
@@ -851,29 +779,30 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                     onValueChange={(value) => form.setValue("doctor_id", value)}
                   >
                     <SelectTrigger
-                      className={`border-gray-300 transition-all hover:border-gray-400 focus:border-purple-500 ${
+                      id="doctor_id"
+                      className={`border-gray-200 transition-all hover:border-gray-300 focus:border-[#2C78E4] focus:ring-[#2C78E4] ${
                         form.formState.errors.doctor_id
                           ? "border-red-500 focus:ring-red-500"
                           : ""
                       }`}
                     >
                       <div className="flex items-center">
-                        <Stethoscope className="h-4 w-4 text-gray-500 mr-2" />
+                        <Stethoscope className="h-4 w-4 text-[#4B5563] mr-2" />
                         <SelectValue placeholder="Select a doctor" />
                       </div>
                     </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
+                    <SelectContent className="max-h-[300px] border-gray-200">
                       {doctorsLoading ? (
                         <div className="flex items-center justify-center py-2">
-                          <div className="animate-spin h-5 w-5 border-2 border-purple-500 border-t-transparent rounded-full mr-2"></div>
-                          <span>Loading doctors...</span>
+                          <div className="animate-spin h-5 w-5 border-2 border-[#2C78E4] border-t-transparent rounded-full mr-2"></div>
+                          <span className="text-[#4B5563]">Loading doctors...</span>
                         </div>
-                      ) : doctorsData?.data && doctorsData.data.length > 0 ? (
+                      ) : doctorsData && doctorsData.data && doctorsData.data.length > 0 ? (
                         doctorsData.data.map((doctor: Doctor) => (
                           <SelectItem
                             key={doctor.doctor_id}
                             value={doctor.doctor_id.toString()}
-                            className="focus:bg-purple-50"
+                            className="focus:bg-[#2C78E4]/10 focus:text-[#2C78E4]"
                           >
                             {doctor.doctor_name}
                           </SelectItem>
@@ -892,124 +821,58 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                   )}
                 </div>
 
-                {/* <div className="space-y-2">
-                  <Label htmlFor="priority" className="text-gray-700">
-                    Priority <span className="text-red-500 ml-1">*</span>
-                  </Label>
-                  <Select
-                    value={form.watch("priority")}
-                    onValueChange={(value) => form.setValue("priority", value)}
+                <div className="col-span-1 md:col-span-2 space-y-2">
+                  <Label
+                    htmlFor="reason"
+                    className="text-[#111827] flex items-center"
                   >
-                    <SelectTrigger
-                      className={`border-gray-300 transition-all hover:border-gray-400 focus:border-purple-500 ${
-                        form.formState.errors.priority
-                          ? "border-red-500 focus:ring-red-500"
-                          : ""
-                      }`}
-                    >
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 text-gray-500 mr-2" />
-                        <SelectValue placeholder="Select priority" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="high" className="focus:bg-red-50">
-                        <div className="flex items-center">
-                          <Badge
-                            variant="outline"
-                            className={`mr-2 ${getPriorityColor("high")}`}
-                          >
-                            High
-                          </Badge>
-                          <span>Emergency/Urgent</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="medium" className="focus:bg-orange-50">
-                        <div className="flex items-center">
-                          <Badge
-                            variant="outline"
-                            className={`mr-2 ${getPriorityColor("medium")}`}
-                          >
-                            Medium
-                          </Badge>
-                          <span>Moderate concern</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="low" className="focus:bg-green-50">
-                        <div className="flex items-center">
-                          <Badge
-                            variant="outline"
-                            className={`mr-2 ${getPriorityColor("low")}`}
-                          >
-                            Normal
-                          </Badge>
-                          <span>Routine visit</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.priority && (
+                    Reason for Visit <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Textarea
+                    id="reason"
+                    {...form.register("reason")}
+                    placeholder="Please describe the reason for the visit"
+                    className={`min-h-[120px] border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] ${
+                      form.formState.errors.reason
+                        ? "border-red-500 focus:ring-red-500"
+                        : ""
+                    }`}
+                  />
+                  {form.formState.errors.reason && (
                     <p className="text-xs text-red-500 mt-1">
-                      {form.formState.errors.priority.message}
+                      {form.formState.errors.reason.message}
                     </p>
                   )}
-                </div> */}
-              </div>
-
-              <div className="mt-5 space-y-2">
-                <Label
-                  htmlFor="reason"
-                  className="text-gray-700 flex items-center"
-                >
-                  Reason for Visit <span className="text-red-500 ml-1">*</span>
-                </Label>
-                <Textarea
-                  id="reason"
-                  {...form.register("reason")}
-                  placeholder="Please describe the reason for the visit in detail..."
-                  className={`min-h-[120px] transition-all border-gray-300 focus:border-purple-500 resize-y ${
-                    form.formState.errors.reason
-                      ? "border-red-500 focus:ring-red-500"
-                      : ""
-                  }`}
-                />
-                {form.formState.errors.reason && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {form.formState.errors.reason.message}
-                  </p>
-                )}
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-between items-center pt-6 border-t border-gray-100">
-              <div className="text-sm text-gray-500">
-                <span className="text-red-500">*</span> Required fields
-              </div>
-              <div className="flex space-x-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onCancel}
-                  className="border-gray-300 hover:bg-gray-50 transition-colors"
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white transition-all"
-                  disabled={isSubmitting || !isFormValid}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    "Register Walk-in"
-                  )}
-                </Button>
-              </div>
+            <div className="flex justify-end space-x-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                className="border-gray-200 hover:bg-[#F9FAFB] hover:text-[#4B5563] rounded-lg"
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-[#2C78E4] hover:bg-[#2C78E4]/90 text-white rounded-lg"
+                disabled={isSubmitting || !isFormValid}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" /> Create Appointment
+                  </>
+                )}
+              </Button>
             </div>
           </form>
         </Tabs>

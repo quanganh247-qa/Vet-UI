@@ -310,6 +310,7 @@ const ShiftManagement = () => {
         title: 'Unknown Shift',
         start_time: new Date(),
         end_time: new Date(),
+        // date: '',
         doctor_id: '',
         doctor_name: 'Unknown Doctor',
         status: 'scheduled',
@@ -341,184 +342,185 @@ const ShiftManagement = () => {
   // Loading state
   if (profileLoading || doctorsLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-[#F9FAFB]">
         <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading schedule data...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-[#2C78E4] mb-4" />
+          <p className="text-[#4B5563] font-medium">Loading schedule data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
-      {/* Header with gradient background - consistent with other workflow pages */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 md:px-8 md:py-5 flex items-center justify-between">
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
-            onClick={handleBackToDashboard}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            <span className="text-sm font-medium">Back to Dashboard</span>
-          </Button>
-          <div>
-            <h1 className="text-white font-semibold text-lg">
-              Shift Management
-            </h1>
+    <div className="space-y-6">
+    {/* Header with gradient background */}
+    <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mr-2 h-8 w-8 text-white hover:bg-white/20 rounded-full"
+              onClick={handleBackToDashboard}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-white">Shift Management</h1>
+              <p className="text-white/80 text-sm">
+                {userRole === "admin"
+                  ? "Manage doctor shifts and schedules"
+                  : "View your work shifts and schedule"}
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleToggleUserRole}
-            className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
-          >
-            <UserCog className="h-4 w-4 mr-1" />
-            <span>Switch to {userRole === 'admin' ? 'Doctor' : 'Admin'} View</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleToggleUserRole}
+              className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5 rounded-lg"
+            >
+              <UserCog className="h-4 w-4 mr-1" />
+              <span>{userRole === 'admin' ? 'Doctor View' : 'Admin View'}</span>
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
-        <Tabs value={view} onValueChange={handleChangeView} className="w-full">
-          <div className="flex items-center justify-between mb-4">
-            <TabsList className="grid grid-cols-2 w-[400px]">
-              <TabsTrigger value="calendar" className="flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4" />
-                Calendar View
-              </TabsTrigger>
-              <TabsTrigger value="list" className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                List View
-              </TabsTrigger>
-            </TabsList>
-
+      {/* Main content */}
+      <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
+        <CardHeader className="bg-white pb-3 border-b border-gray-100">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg font-semibold text-[#111827]">
+              Manage Shifts
+            </CardTitle>
             <div className="flex items-center gap-2">
-              <Button 
-                onClick={() => setIsAddShiftOpen(true)}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                {userRole === 'admin' ? 'Add Shift' : 'Schedule Shift'}
-              </Button>
-
-              {userRole === 'admin' && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <Filter className="h-4 w-4" />
-                      Filters
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[250px] p-4">
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-sm font-medium mb-2">Doctor</p>
-                        <Select
-                          value={filters.doctorId || 'all'}
-                          onValueChange={handleFilterByDoctor}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="All Doctors" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Doctors</SelectItem>
-                            {doctors?.map((doctor: Doctor) => (
-                              <SelectItem
-                                key={doctor.doctor_id}
-                                value={doctor.doctor_id.toString()}
-                              >
-                                {doctor.doctor_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full flex items-center justify-center gap-2"
-                        onClick={handleResetFilters}
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                        Reset Filters
-                      </Button>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+              <Tabs value={view} onValueChange={handleChangeView} className="w-full">
+                <TabsList className="grid grid-cols-2">
+                  <TabsTrigger value="calendar" className="flex items-center gap-1.5">
+                    <CalendarIcon className="h-4 w-4" />
+                    Calendar
+                  </TabsTrigger>
+                  <TabsTrigger value="list" className="flex items-center gap-1.5">
+                    <Filter className="h-4 w-4" />
+                    List
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 md:p-6">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2 border-gray-200 rounded-lg">
+                    <Filter className="h-4 w-4 text-[#4B5563]" />
+                    <span>Filter Doctor</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="bg-white border-gray-200 rounded-lg shadow-md w-[220px]">
+                  <DropdownMenuItem 
+                    onClick={() => handleFilterByDoctor('all')}
+                    className="cursor-pointer hover:bg-[#F9FAFB] text-[#111827]"
+                  >
+                    All Doctors
+                  </DropdownMenuItem>
+                  {doctors?.map((doctor: Doctor) => (
+                    <DropdownMenuItem
+                      key={doctor.doctor_id}
+                      onClick={() => handleFilterByDoctor(doctor.doctor_id.toString())}
+                      className="cursor-pointer hover:bg-[#F9FAFB] text-[#111827]"
+                    >
+                      {doctor.doctor_name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <Button
                 variant="outline"
-                className="flex items-center gap-2"
+                size="icon"
+                onClick={handleResetFilters}
+                className="border-gray-200 rounded-lg hover:bg-[#F9FAFB] hover:text-[#2C78E4] hover:border-[#2C78E4]/50"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setIsAddShiftOpen(true)}
+                className="bg-[#2C78E4] hover:bg-[#2C78E4]/90 text-white rounded-lg"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Shift
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="flex items-center gap-2 border-gray-200 rounded-lg hover:bg-[#F9FAFB] hover:border-[#2C78E4]/50"
                 onClick={handleOpenTemplateManager}
               >
-                <Layers className="h-4 w-4" />
-                Templates
+                <Layers className="h-4 w-4 text-[#4B5563]" />
+                <span>Templates</span>
               </Button>
             </div>
           </div>
 
-          <TabsContent value="calendar" className="mt-6">
-            {shiftsLoading ? (
-              <div className="flex items-center justify-center h-64 border rounded-lg bg-muted/20">
-                <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <p className="text-muted-foreground">Loading shifts...</p>
-                </div>
+          {shiftsLoading ? (
+            <div className="flex items-center justify-center h-64 border rounded-lg bg-[#F9FAFB]">
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin text-[#2C78E4]" />
+                <p className="text-[#4B5563]">Loading shifts...</p>
               </div>
-            ) : filteredShifts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 border rounded-lg bg-muted/20">
-                <p className="text-muted-foreground">No shifts found</p>
-                <Button 
-                  variant="link" 
-                  onClick={() => setIsAddShiftOpen(true)}
-                  className="mt-2"
-                >
-                  Create a new shift
-                </Button>
-              </div>
-            ) : (
-              <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
-                <CustomCalendar
-                  shifts={filteredShifts.map(shift => convertToWorkShift(shift))}
-                  doctors={doctors}
-                  onClickShift={(workShift) => {
-                    const shift = shifts.find(s => s.id.toString() === workShift.id);
-                    if (shift) handleViewShift(shift);
-                  }}
-                  userRole={userRole}
-                  currentDoctorId={currentDoctorId}
-                />
-              </div>
-            )}
-          </TabsContent>
+            </div>
+          ) : (
+            <>
+              {view === 'calendar' && (
+                <>
+                  {filteredShifts.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-64 border rounded-lg bg-[#F9FAFB]">
+                      <p className="text-[#4B5563]">No shifts found</p>
+                      <Button 
+                        variant="link" 
+                        onClick={() => setIsAddShiftOpen(true)}
+                        className="mt-2 text-[#2C78E4]"
+                      >
+                        Create a new shift
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
+                      <CustomCalendar
+                        shifts={filteredShifts.map(shift => convertToWorkShift(shift))}
+                        doctors={doctors}
+                        onClickShift={(workShift) => {
+                          const shift = shifts.find(s => s.id.toString() === workShift.id);
+                          if (shift) handleViewShift(shift);
+                        }}
+                        userRole={userRole}
+                        currentDoctorId={currentDoctorId}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
 
-          <TabsContent value="list" className="mt-6">
-            <Card className="border shadow-sm bg-white">
-              <CardHeader className="pb-2">
-                <CardTitle>Work Shifts</CardTitle>
-                <CardDescription>
-                  {filteredShifts.length} {filteredShifts.length === 1 ? 'shift' : 'shifts'} found
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
+              {view === 'list' && (
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-[#F9FAFB]">
                       <TableRow>
-                        <TableHead>Shift ID</TableHead>
-                        <TableHead>Doctor</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Time</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead className="font-medium text-[#111827]">Shift ID</TableHead>
+                        <TableHead className="font-medium text-[#111827]">Doctor</TableHead>
+                        <TableHead className="font-medium text-[#111827]">Date</TableHead>
+                        <TableHead className="font-medium text-[#111827]">Time</TableHead>
+                        <TableHead className="font-medium text-[#111827]">Status</TableHead>
+                        <TableHead className="font-medium text-[#111827] text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -526,13 +528,13 @@ const ShiftManagement = () => {
                         tableData.map((shift) => (
                           <TableRow
                             key={shift.id}
-                            className="cursor-pointer hover:bg-muted/50 transition-colors"
+                            className="cursor-pointer hover:bg-[#F9FAFB] transition-colors"
                             onClick={() => handleViewShift(shift)}
                           >
-                            <TableCell className="font-medium">#{shift.id}</TableCell>
-                            <TableCell>{shift.doctorName}</TableCell>
-                            <TableCell>{format(new Date(shift.start_time), 'PPP')}</TableCell>
-                            <TableCell>
+                            <TableCell className="font-medium text-[#111827]">#{shift.id}</TableCell>
+                            <TableCell className="text-[#111827]">{shift.doctorName}</TableCell>
+                            <TableCell className="text-[#111827]">{format(new Date(shift.start_time), 'MMM d, yyyy')}</TableCell>
+                            <TableCell className="text-[#111827]">
                               {format(new Date(shift.start_time), 'HH:mm')} - {format(new Date(shift.end_time), 'HH:mm')}
                             </TableCell>
                             <TableCell>
@@ -552,7 +554,7 @@ const ShiftManagement = () => {
                                   e.stopPropagation();
                                   handleViewShift(shift);
                                 }}
-                                className="hover:bg-muted rounded-full"
+                                className="hover:bg-[#F9FAFB] rounded-lg text-[#2C78E4]"
                                 aria-label={`View shift ${shift.id}`}
                               >
                                 View
@@ -564,11 +566,11 @@ const ShiftManagement = () => {
                         <TableRow>
                           <TableCell colSpan={6} className="h-24 text-center">
                             <div className="flex flex-col items-center justify-center gap-2">
-                              <p className="text-muted-foreground">No shifts found</p>
+                              <p className="text-[#4B5563]">No shifts found</p>
                               <Button
                                 variant="link"
                                 onClick={() => setIsAddShiftOpen(true)}
-                                className="text-sm"
+                                className="text-sm text-[#2C78E4]"
                               >
                                 Create a new shift
                               </Button>
@@ -579,20 +581,20 @@ const ShiftManagement = () => {
                     </TableBody>
                   </Table>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Add Shift Dialog */}
       <Dialog open={isAddShiftOpen} onOpenChange={setIsAddShiftOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className="sm:max-w-[600px] bg-white border border-gray-200 rounded-lg">
+          <DialogHeader className="border-b border-gray-100 pb-4">
+            <DialogTitle className="text-[#111827]">
               {userRole === 'admin' ? 'Add New Shift' : 'Schedule Your Shift'}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-[#4B5563]">
               {userRole === 'admin'
                 ? 'Create a new work shift for a doctor'
                 : 'Schedule your work shift'}
@@ -615,10 +617,10 @@ const ShiftManagement = () => {
       {/* Edit Shift Dialog */}
       {selectedShift && (
         <Dialog open={isEditShiftOpen} onOpenChange={setIsEditShiftOpen}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Edit Shift</DialogTitle>
-              <DialogDescription>
+          <DialogContent className="sm:max-w-[600px] bg-white border border-gray-200 rounded-lg">
+            <DialogHeader className="border-b border-gray-100 pb-4">
+              <DialogTitle className="text-[#111827]">Edit Shift</DialogTitle>
+              <DialogDescription className="text-[#4B5563]">
                 Update the details of this work shift
               </DialogDescription>
             </DialogHeader>
@@ -652,10 +654,10 @@ const ShiftManagement = () => {
 
       {/* Template Manager Dialog */}
       <Dialog open={isTemplateManagerOpen} onOpenChange={setIsTemplateManagerOpen}>
-        <DialogContent className="sm:max-w-[800px]">
-          <DialogHeader>
-            <DialogTitle>Shift Templates</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-[800px] bg-white border border-gray-200 rounded-lg">
+          <DialogHeader className="border-b border-gray-100 pb-4">
+            <DialogTitle className="text-[#111827]">Shift Templates</DialogTitle>
+            <DialogDescription className="text-[#4B5563]">
               Manage predefined shift templates for quick scheduling
             </DialogDescription>
           </DialogHeader>

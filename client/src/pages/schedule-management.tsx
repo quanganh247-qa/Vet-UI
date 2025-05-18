@@ -14,6 +14,7 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
 } from "lucide-react";
 
 import DoctorScheduleCalendar from "@/components/doctor-schedule/DoctorScheduleCalendar";
@@ -188,14 +189,6 @@ const ScheduleManagement = () => {
     setIsEditShiftOpen(true);
   };
 
-
-  // Format dates as "YYYY-MM-DD HH:MM:SS" for backend compatibility
-  const formatDateForBackend = (date: Date) => {
-    const pad = (num: number) => String(num).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-  };
-
-
   const handleDeleteShift = () => {
     if (selectedShift) {
       deleteMutation.mutate(Number(selectedShift.id), {
@@ -233,9 +226,6 @@ const ScheduleManagement = () => {
         status: data.status || "scheduled",
       };
 
-      // Log detailed time information for debugging
-      console.log("Creating shift with payload:", shiftData);
-      console.log(JSON.stringify(shiftData, null, 2));
       createMutation.mutate(shiftData, {
         onSuccess: () => {
           toast({
@@ -439,18 +429,26 @@ const ScheduleManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md">
+    {/* Header with gradient background */}
+    <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md mb-6">
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-white">
-              Schedule Management
-            </h1>
-            <p className="text-indigo-100 text-sm">
-              {userRole === "admin"
-                ? "Manage doctor schedules and work shifts"
-                : "View your work schedule and upcoming shifts"}
-            </p>
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mr-2 h-8 w-8 text-white hover:bg-white/20 rounded-full"
+              onClick={() => window.history.back()}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-white">Schedule Management</h1>
+              <p className="text-white/80 text-sm">
+                {userRole === "admin"
+                  ? "Manage doctor schedules and work shifts"
+                  : "View your work schedule and upcoming shifts"}
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -458,7 +456,7 @@ const ScheduleManagement = () => {
               variant="outline"
               size="sm"
               onClick={toggleUserRole}
-              className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+              className="bg-white/10 text-white border-white/20 hover:bg-white/20 rounded-lg"
             >
               <User className="h-4 w-4 mr-2" />
               {userRole === "admin" ? "Doctor View" : "Admin View"}
@@ -469,55 +467,87 @@ const ScheduleManagement = () => {
                 <Button
                   onClick={() => setIsAddShiftOpen(true)}
                   size="sm"
-                  className="bg-white hover:bg-white/90 text-indigo-700"
+                  className="bg-white hover:bg-white/90 text-[#2C78E4] rounded-lg"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Shift
                 </Button>
-                <Button
-                  onClick={() => {
-                    // Create afternoon shift with explicit time values
-                    const today = new Date();
-                    const shiftDate = new Date(today);
-                    shiftDate.setHours(13, 0, 0, 0); // 1:00 PM
-
-                    const endDate = new Date(today);
-                    endDate.setHours(17, 0, 0, 0); // 5:00 PM
-
-                    addShiftWithPayload({
-                      start_time: formatDateForBackend(shiftDate),
-                      end_time: formatDateForBackend(endDate),
-                      doctor_id: 2,
-                      title: "Afternoon Shift (1PM-5PM)"
-                    });
-                  }}
-                  size="sm"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white ml-2"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Afternoon Shift
-                </Button>
+                
               </>
             )}
           </div>
         </div>
       </div>
 
-      <div className="bg-white shadow-sm rounded-lg border border-indigo-100 p-5 mb-6">
+      {/* Search and filters section */}
+      <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
+        <CardHeader className="bg-white pb-3 border-b border-gray-100">
+          <CardTitle className="text-lg font-semibold text-[#111827] flex items-center">
+            <Search className="h-5 w-5 mr-2 text-[#2C78E4]" />
+            Search & Filters
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="relative w-full md:w-96">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#4B5563] h-4 w-4" />
+              <Input
+                placeholder="Search by shift name or doctor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 border-gray-200 rounded-lg focus:ring-[#2C78E4] focus:border-[#2C78E4]"
+              />
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <Select 
+                value={statusFilter} 
+                onValueChange={setStatusFilter}
+              >
+                <SelectTrigger className="w-[160px] border-gray-200 rounded-lg">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent className="bg-white rounded-lg border-gray-200">
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setSearchTerm("");
+                  setStatusFilter("all");
+                  setDateFilter({ startDate: "", endDate: "" });
+                  setFilters({});
+                }}
+                className="rounded-lg border-gray-200 hover:bg-[#F9FAFB] hover:text-[#2C78E4] hover:border-[#2C78E4]"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-5 mb-6">
         {/* Main content area */}
         <Table>
-          <TableHeader className="bg-indigo-50">
+          <TableHeader className="bg-[#F9FAFB]">
             <TableRow>
-              <TableHead className="font-medium text-indigo-900">
+              <TableHead className="font-medium text-[#111827]">
                 Doctor
               </TableHead>
-              <TableHead className="font-medium text-indigo-900">
+              <TableHead className="font-medium text-[#111827]">
                 Date
               </TableHead>
-              <TableHead className="font-medium text-indigo-900">
+              <TableHead className="font-medium text-[#111827]">
                 Time
               </TableHead>
-              <TableHead className="font-medium text-indigo-900 text-right">
+              <TableHead className="font-medium text-[#111827] text-right">
                 Actions
               </TableHead>
             </TableRow>
@@ -531,12 +561,12 @@ const ScheduleManagement = () => {
               return (
                 <TableRow
                   key={shift.id}
-                  className="hover:bg-indigo-50/50 cursor-pointer"
+                  className="hover:bg-[#F9FAFB] cursor-pointer"
                   onClick={() => handleViewShift(shift)}
                 >
                   <TableCell>
                     <div className="flex items-center">
-                      <Stethoscope className="h-4 w-4 mr-2 text-indigo-500" />
+                      <Stethoscope className="h-4 w-4 mr-2 text-[#2C78E4]" />
                       {doctor?.doctor_name || "Unknown"}
                     </div>
                   </TableCell>
@@ -545,12 +575,12 @@ const ScheduleManagement = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-indigo-500" />
+                      <Clock className="h-4 w-4 text-[#2C78E4]" />
                       {format(new Date(shift.start_time), "HH:mm")} -{" "}
                       {format(new Date(shift.end_time), "HH:mm")}
                       <Badge
                         className={cn(
-                          "ml-2 capitalize font-medium",
+                          "ml-2 capitalize font-medium rounded-full",
                           shift.status === "scheduled" &&
                           "bg-blue-100 text-blue-800 hover:bg-blue-100",
                           shift.status === "completed" &&
@@ -571,7 +601,7 @@ const ScheduleManagement = () => {
                         e.stopPropagation();
                         handleViewShift(shift);
                       }}
-                      className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50"
+                      className="text-[#2C78E4] hover:text-[#2C78E4]/80 hover:bg-[#2C78E4]/5 rounded-lg"
                     >
                       View details
                     </Button>
@@ -581,61 +611,124 @@ const ScheduleManagement = () => {
             })}
           </TableBody>
         </Table>
+      </div>
 
-        {/* Add Shift Dialog */}
-        <Dialog open={isAddShiftOpen} onOpenChange={setIsAddShiftOpen}>
-          <DialogContent className="sm:max-w-[550px] border border-indigo-200 bg-white">
-            <DialogHeader className="border-b border-indigo-100 pb-4">
-              <DialogTitle className="text-indigo-900">
-                Add New Shift
+      {/* Pagination controls */}
+      {totalPages > 1 && (
+        <div className="border-t border-gray-100 px-4 py-3 bg-white rounded-xl shadow-sm">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-sm text-[#4B5563]">
+              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredShifts.length)} - {Math.min(currentPage * itemsPerPage, filteredShifts.length)} of {filteredShifts.length} shifts
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={cn("rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                  currentPage === 1
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
+                )}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              {/* Page numbers */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum = totalPages <= 5 ? i + 1 : currentPage <= 3 ? i + 1 : currentPage >= totalPages - 2 ? totalPages - 4 + i : currentPage - 2 + i;
+                
+                return (
+                  <Button
+                    key={pageNum}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handlePageChange(pageNum)}
+                    className={cn(
+                      "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                      currentPage === pageNum
+                        ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
+                        : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
+                    )}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                className={cn("rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                  currentPage >= totalPages
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
+                )}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Shift Dialog */}
+      <Dialog open={isAddShiftOpen} onOpenChange={setIsAddShiftOpen}>
+        <DialogContent className="sm:max-w-[550px] border border-gray-200 bg-white">
+          <DialogHeader className="border-b border-gray-100 pb-4">
+            <DialogTitle className="text-[#111827]">
+              Add New Shift
+            </DialogTitle>
+            <DialogDescription className="text-[#4B5563]">
+              Create a new work shift for a doctor in the schedule
+            </DialogDescription>
+          </DialogHeader>
+          <ShiftForm
+            doctors={doctorsData?.data}
+            onSubmit={handleCreateShift}
+            onCancel={() => setIsAddShiftOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Shift Dialog */}
+      {selectedShift && (
+        <Dialog open={isEditShiftOpen} onOpenChange={setIsEditShiftOpen}>
+          <DialogContent className="sm:max-w-[550px] border border-gray-200 bg-white">
+            <DialogHeader className="border-b border-gray-100 pb-4">
+              <DialogTitle className="text-[#111827]">
+                Edit Shift
               </DialogTitle>
-              <DialogDescription className="text-indigo-500">
-                Create a new work shift for a doctor in the schedule
+              <DialogDescription className="text-[#4B5563]">
+                Update the details of this work shift
               </DialogDescription>
             </DialogHeader>
             <ShiftForm
+              shift={selectedShift}
               doctors={doctorsData?.data}
-              onSubmit={handleCreateShift}
-              onCancel={() => setIsAddShiftOpen(false)}
+              onSubmit={handleUpdateShift}
+              onCancel={() => setIsEditShiftOpen(false)}
             />
           </DialogContent>
         </Dialog>
+      )}
 
-        {/* Edit Shift Dialog */}
-        {selectedShift && (
-          <Dialog open={isEditShiftOpen} onOpenChange={setIsEditShiftOpen}>
-            <DialogContent className="sm:max-w-[550px] border border-indigo-200 bg-white">
-              <DialogHeader className="border-b border-indigo-100 pb-4">
-                <DialogTitle className="text-indigo-900">
-                  Edit Shift
-                </DialogTitle>
-                <DialogDescription className="text-indigo-500">
-                  Update the details of this work shift
-                </DialogDescription>
-              </DialogHeader>
-              <ShiftForm
-                shift={selectedShift}
-                doctors={doctorsData?.data}
-                onSubmit={handleUpdateShift}
-                onCancel={() => setIsEditShiftOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
-
-        {/* View Shift Dialog */}
-        {selectedShift && (
-          <ShiftDetailsDialog
-            shift={selectedShift}
-            doctor={getSelectedDoctor()}
-            isOpen={isViewShiftOpen}
-            onClose={() => setIsViewShiftOpen(false)}
-            onEdit={userRole === "admin" ? handleEditShift : undefined}
-            onDelete={userRole === "admin" ? handleDeleteShift : undefined}
-            userRole={userRole}
-          />
-        )}
-      </div>
+      {/* View Shift Dialog */}
+      {selectedShift && (
+        <ShiftDetailsDialog
+          shift={selectedShift}
+          doctor={getSelectedDoctor()}
+          isOpen={isViewShiftOpen}
+          onClose={() => setIsViewShiftOpen(false)}
+          onEdit={userRole === "admin" ? handleEditShift : undefined}
+          onDelete={userRole === "admin" ? handleDeleteShift : undefined}
+          userRole={userRole}
+        />
+      )}
     </div>
   );
 };

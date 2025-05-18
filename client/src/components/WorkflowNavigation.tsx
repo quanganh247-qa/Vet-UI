@@ -1,20 +1,12 @@
 import React from 'react';
 import { useLocation } from 'wouter';
 import { 
-  UserRound, 
-  ClipboardCheck, 
-  Stethoscope, 
-  Tablets, 
-  FileClock,
-  FileText,
-  ChevronRight,
-  UserCircle,
-  Receipt,
-  FlaskConical,
-  CalendarClock,
-  ClipboardList,
-  Syringe,
-  Heart
+  Check,
+  Calendar,
+  FileText as FileTextIcon,
+  ShieldCheck,
+  Clock,
+  Activity
 } from 'lucide-react';
 
 interface WorkflowNavigationProps {
@@ -42,12 +34,12 @@ const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, 
   // Doctor workflow - starts with patient-management and continues with examination
   const workflowSteps = [
     // { id: 'patient-details', label: 'Patient', icon: ClipboardList, path: `/patient${buildUrlParams()}` },
-    { id: 'health-card', label: 'Health Card', icon: Heart, path: `/patient/health-card${buildUrlParams()}` },
-    { id: 'examination', label: 'Exam', icon: Stethoscope, path: `/examination${buildUrlParams()}` },
-    { id: 'soap', label: 'SOAP', icon: FileText, path: `/soap${buildUrlParams()}` },
-    { id: 'diagnostic', label: 'Tests', icon: FlaskConical, path: `/lab-management${buildUrlParams()}` },
-    { id: 'treatment', label: 'Treatment', icon: Tablets, path: `/treatment${buildUrlParams()}` },
-    { id: 'vaccination', label: 'Vaccine', icon: Syringe, path: `/vaccination${buildUrlParams()}` },
+    { id: 'health-card', label: 'Health Card', icon: Activity, path: `/patient/health-card${buildUrlParams()}` },
+    { id: 'examination', label: 'Exam', icon: Calendar, path: `/examination${buildUrlParams()}` },
+    { id: 'soap', label: 'SOAP', icon: Check, path: `/soap${buildUrlParams()}` },
+    { id: 'diagnostic', label: 'Tests', icon: FileTextIcon, path: `/lab-management${buildUrlParams()}` },
+    { id: 'vaccination', label: 'Vaccine', icon: Clock, path: `/vaccination${buildUrlParams()}` },
+    { id: 'treatment', label: 'Treatment', icon: ShieldCheck, path: `/treatment${buildUrlParams()}` },
   ];
 
   const handleNavigation = (path: string) => {
@@ -59,32 +51,37 @@ const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, 
   const activeIndex = workflowSteps.findIndex(step => step.id === currentStep);
   
   return (
-    <div className="bg-white border-b border-gray-200 py-2">
-      <div className="flex justify-center">
-        <div className="flex space-x-1">
-          {workflowSteps.map((step, index) => {
-            const isCurrent = step.id === currentStep;
-            const isPast = index < activeIndex;
-            const isDisabled = !appointmentId && (step.id !== 'patient-details' && step.id !== 'health-card');
-            const IconComponent = step.icon;
-            
-            return (
-              <div 
-                key={step.id}
-                className={`
-                  flex flex-col items-center cursor-pointer px-4 py-2 rounded-md transition-all
-                  ${isCurrent ? 'bg-indigo-100 text-indigo-800' : ''}
-                  ${isPast ? 'text-indigo-600' : 'text-gray-500'}
-                  ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}
-                `}
-                onClick={() => !isDisabled && handleNavigation(step.path)}
-              >
-                <IconComponent className={`h-5 w-5 mb-1 ${isCurrent ? 'text-indigo-600' : isPast ? 'text-indigo-500' : 'text-gray-400'}`} />
-                <span className="text-xs font-medium">{step.label}</span>
-                {isCurrent && <div className="h-1 w-8 bg-indigo-600 rounded-full mt-1"></div>}
-              </div>
-            );
-          })}
+    <div className="bg-white shadow-sm border-b border-gray-100 mb-6">
+      <div className="container mx-auto">
+        <div className="flex justify-center">
+          <div className="flex rounded-lg overflow-hidden">
+            {workflowSteps.map((step, index) => {
+              const isCurrent = step.id === currentStep;
+              const isPast = index < activeIndex;
+              const isDisabled = !appointmentId && (step.id !== 'patient-details' && step.id !== 'health-card');
+              const IconComponent = step.icon;
+              
+              return (
+                <button 
+                  key={step.id}
+                  className={`
+                    group relative flex items-center py-3 px-7 cursor-pointer transition-all duration-200 ease-in-out
+                    ${isCurrent ? 'bg-[#EBF5FF] text-[#2C78E4] font-medium' : 'bg-white text-[#6B7280]'}
+                    ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:text-[#2C78E4] hover:bg-[#F8FAFC]'}
+                    border-r last:border-r-0 border-gray-100
+                  `}
+                  onClick={() => !isDisabled && handleNavigation(step.path)}
+                  disabled={isDisabled}
+                >
+                  <IconComponent className={`h-5 w-5 mr-2.5 ${isCurrent ? 'text-[#2C78E4]' : 'text-[#6B7280] group-hover:text-[#2C78E4] transition-colors duration-200'}`} />
+                  <span className="text-sm whitespace-nowrap">{step.label}</span>
+                  {isCurrent && (
+                    <div className="absolute bottom-0 left-0 w-full h-[3px] bg-[#2C78E4]"></div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

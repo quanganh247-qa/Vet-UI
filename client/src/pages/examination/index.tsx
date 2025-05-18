@@ -32,6 +32,7 @@ import {
   Table,
   MousePointerClick,
   Keyboard,
+  User,
 } from "lucide-react";
 import {
   Select,
@@ -466,7 +467,7 @@ const Examination: React.FC = () => {
       appointmentId: effectiveAppointmentId,
       petId: appointment?.pet?.pet_id,
     };
-    navigate(`/patient${buildUrlParams(params)}`);
+    navigate(`/health-card${buildUrlParams(params)}`);
   };
 
   // Navigate to lab management
@@ -548,18 +549,19 @@ const Examination: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 md:px-8 md:py-5 rounded-xl shadow-md mb-6 text-white">
       {/* Header Row */}
         <div className="flex items-center">
-          {/* <Button
+          <Button
             variant="ghost"
             size="sm"
             className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
             onClick={navigateToPatient}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            <span className="text-sm font-medium">Back to Patient</span>
-          </Button> */}
+            <span className="text-sm font-medium">Back</span>
+          </Button>
           <h1 className="text-white font-semibold text-lg">
             Clinical Examination
           </h1>
@@ -575,7 +577,7 @@ const Examination: React.FC = () => {
 
       {/* Template Dialog */}
       <Dialog>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle>Save as Template</DialogTitle>
             <DialogDescription>
@@ -600,6 +602,7 @@ const Examination: React.FC = () => {
             </Button>
             <Button
               size="sm"
+              className="bg-[#2C78E4] hover:bg-[#1E40AF]"
               onClick={() => {
                 const input = document.getElementById(
                   "templateName"
@@ -619,63 +622,6 @@ const Examination: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Keyboard Shortcuts Dialog */}
-      <Dialog open={showShortcutHelp} onOpenChange={setShowShortcutHelp}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Keyboard Shortcuts</DialogTitle>
-            <DialogDescription>
-              Use these shortcuts to work more efficiently
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="p-4 space-y-3">
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="flex items-center">
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">
-                  Ctrl+S
-                </kbd>
-                <span>Quick Save</span>
-              </div>
-              <div className="flex items-center">
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">
-                  Alt+1
-                </kbd>
-                <span>Physical Exam Tab</span>
-              </div>
-              <div className="flex items-center">
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">
-                  Alt+2
-                </kbd>
-                <span>Systems Exam Tab</span>
-              </div>
-              <div className="flex items-center">
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">
-                  Alt+T
-                </kbd>
-                <span>Templates Menu</span>
-              </div>
-              <div className="flex items-center">
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">
-                  Alt+Enter
-                </kbd>
-                <span>Save & Continue</span>
-              </div>
-              <div className="flex items-center">
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs mr-2">
-                  Esc
-                </kbd>
-                <span>Close Popup</span>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button onClick={() => setShowShortcutHelp(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Main Content */}
       <div className="px-4 py-3">
         <Tabs
@@ -684,17 +630,17 @@ const Examination: React.FC = () => {
           value={activeTab}
         >
           <div className="border-b pb-2 mb-3 overflow-x-auto">
-            <TabsList className="grid grid-cols-2 bg-gray-100 p-1 rounded-md w-full shadow-sm">
+            <TabsList className="grid grid-cols-2 bg-[#F9FAFB] p-1 rounded-xl w-full shadow-sm">
               <TabsTrigger
                 value="physical"
-                className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-2.5 text-xs font-medium transition-all"
+                className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:text-[#2C78E4] data-[state=active]:shadow-sm py-1.5 px-2.5 text-xs font-medium transition-all rounded-xl"
               >
-                <Thermometer className="h-3.5 w-3.5" />
+                <Clipboard className="h-3.5 w-3.5" />
                 <span>Physical Examination</span>
               </TabsTrigger>
               <TabsTrigger
                 value="systems"
-                className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow py-1.5 px-2.5 text-xs font-medium transition-all"
+                className="flex items-center gap-1.5 data-[state=active]:bg-white data-[state=active]:text-[#2C78E4] data-[state=active]:shadow-sm py-1.5 px-2.5 text-xs font-medium transition-all rounded-xl"
               >
                 <ScanLine className="h-3.5 w-3.5" />
                 <span>Systems Examination</span>
@@ -703,19 +649,19 @@ const Examination: React.FC = () => {
           </div>
 
           <TabsContent value="physical" className="mt-3">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               {/* Main Column */}
-              <div className="lg:col-span-2 space-y-3">
+              <div className="lg:col-span-2 space-y-5">
                 {/* Quick Actions Bar */}
-                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden mb-3">
-                  <div className="p-2 flex flex-wrap gap-2">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-3">
+                  <div className="p-3 flex flex-wrap gap-2">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="bg-indigo-50 border-indigo-100 text-indigo-700 text-xs h-7"
+                            className="bg-white border-gray-200 text-[#4B5563] text-xs h-8 rounded-lg"
                             onClick={() => {
                               setWeight("");
                               setTemperature("");
@@ -725,7 +671,7 @@ const Examination: React.FC = () => {
                               setUnsavedChanges(true);
                             }}
                           >
-                            <RefreshCw className="h-3 w-3 mr-1" />
+                            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                             Clear All
                           </Button>
                         </TooltipTrigger>
@@ -737,57 +683,38 @@ const Examination: React.FC = () => {
                       </Tooltip>
                     </TooltipProvider>
 
-                    {/* Normal ranges reference button */}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="bg-green-50 border-green-100 text-green-700 text-xs h-7"
-                          >
-                            <Table className="h-3 w-3 mr-1" />
-                            Normal Ranges
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent className="w-64">
-                          <div className="text-xs">
-                            <p className="font-medium mb-1">
-                              Normal Reference Ranges:
-                            </p>
-                            <ul className="space-y-1">
-                              <li>
-                                Temperature: 37.5-39.2°C (dog), 38.0-39.2°C
-                                (cat)
-                              </li>
-                              <li>
-                                Heart Rate: 70-120 bpm (dog), 140-220 bpm (cat)
-                              </li>
-                              <li>
-                                Respiratory Rate: 10-30 rpm (dog), 20-40 rpm
-                                (cat)
-                              </li>
-                            </ul>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    {/* Fill all normal button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-white border-gray-200 text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#2C78E4] text-xs h-8 rounded-lg"
+                      onClick={() => {
+                        setWeight("");
+                        setTemperature("");
+                        setHeartRate("");
+                        setRespiratoryRate("");
+                        setUnsavedChanges(true);
+                      }}
+                    >
+                      <Check className="h-3.5 w-3.5 mr-1.5" />
+                      Fill All Normal
+                    </Button>
                   </div>
                 </div>
 
                 {/* Vital Signs */}
-                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                  <div className="flex justify-between items-center px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
-                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                      <Activity className="h-4 w-4 mr-1.5 text-indigo-600" />
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="flex justify-between items-center px-4 py-3 bg-[#F0F7FF] border-b border-gray-100">
+                    <h3 className="font-medium text-[#111827] flex items-center text-sm">
+                      <Activity className="h-4 w-4 mr-2 text-[#2C78E4]" />
                       Vital Signs
                     </h3>
                     {/* Quick fill normal values for common species */}
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="h-7 text-xs text-indigo-600 hover:bg-indigo-50"
+                        className="h-8 text-xs rounded-lg bg-white text-[#2C78E4] hover:bg-[#E3F2FD] border-gray-200"
                         onClick={() => {
                           setTemperature("38.5");
                           setHeartRate("100");
@@ -798,9 +725,9 @@ const Examination: React.FC = () => {
                         Fill Dog Normal
                       </Button>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="h-7 text-xs text-indigo-600 hover:bg-indigo-50"
+                        className="h-8 text-xs rounded-lg bg-white text-[#2C78E4] hover:bg-[#E3F2FD] border-gray-200"
                         onClick={() => {
                           setTemperature("38.5");
                           setHeartRate("180");
@@ -812,10 +739,10 @@ const Examination: React.FC = () => {
                       </Button>
                     </div>
                   </div>
-                  <div className="p-3 space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
-                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-[#F9FAFB] p-4 rounded-xl">
+                        <label className="block text-xs text-[#4B5563] uppercase font-medium mb-1.5">
                           Weight (kg)
                         </label>
                         <Input
@@ -823,16 +750,16 @@ const Examination: React.FC = () => {
                           value={weight}
                           onChange={handleInputChange(setWeight)}
                           placeholder="Enter weight in kg"
-                          className="bg-white border-gray-200 text-sm h-8 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="bg-white border-gray-200 rounded-lg text-sm h-10 focus:ring-1 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                         />
                         {patient?.weight && (
-                          <p className="text-xs text-indigo-600 mt-1 flex items-center">
+                          <p className="text-xs text-[#2C78E4] mt-1.5 flex items-center">
                             <RefreshCw className="h-3 w-3 mr-1" />
                             Previous: {patient.weight} kg
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-5 p-0 px-1 ml-1 text-[10px] text-indigo-600 hover:bg-indigo-50"
+                              className="h-5 p-0 px-1 ml-1 text-[10px] text-[#2C78E4] hover:bg-[#E3F2FD]"
                               onClick={() => {
                                 setWeight(patient.weight?.toString() || "");
                                 setUnsavedChanges(true);
@@ -843,8 +770,8 @@ const Examination: React.FC = () => {
                           </p>
                         )}
                       </div>
-                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
-                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                      <div className="bg-[#F9FAFB] p-4 rounded-xl">
+                        <label className="block text-xs text-[#4B5563] uppercase font-medium mb-1.5">
                           Temperature (°C)
                         </label>
                         <Input
@@ -852,10 +779,10 @@ const Examination: React.FC = () => {
                           value={temperature}
                           onChange={handleInputChange(setTemperature)}
                           placeholder="Enter temperature in °C"
-                          className="bg-white border-gray-200 text-sm h-8 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="bg-white border-gray-200 rounded-lg text-sm h-10 focus:ring-1 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                         />
-                        <div className="flex justify-between mt-1">
-                          <p className="text-xs text-gray-500">
+                        <div className="flex justify-between mt-1.5">
+                          <p className="text-xs text-[#4B5563]">
                             Normal: 37.5-39.2°C
                           </p>
                           {temperature && parseFloat(temperature) > 39.2 && (
@@ -866,8 +793,8 @@ const Examination: React.FC = () => {
                           )}
                         </div>
                       </div>
-                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
-                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                      <div className="bg-[#F9FAFB] p-4 rounded-xl">
+                        <label className="block text-xs text-[#4B5563] uppercase font-medium mb-1.5">
                           Heart Rate (bpm)
                         </label>
                         <Input
@@ -875,10 +802,10 @@ const Examination: React.FC = () => {
                           value={heartRate}
                           onChange={handleInputChange(setHeartRate)}
                           placeholder="Enter heart rate in bpm"
-                          className="bg-white border-gray-200 text-sm h-8 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="bg-white border-gray-200 rounded-lg text-sm h-10 focus:ring-1 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                         />
-                        <div className="flex justify-between mt-1">
-                          <p className="text-xs text-gray-500">
+                        <div className="flex justify-between mt-1.5">
+                          <p className="text-xs text-[#4B5563]">
                             Normal:{" "}
                             {patient?.species?.toLowerCase() === "cat"
                               ? "140-220 bpm"
@@ -886,8 +813,8 @@ const Examination: React.FC = () => {
                           </p>
                         </div>
                       </div>
-                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
-                        <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                      <div className="bg-[#F9FAFB] p-4 rounded-xl">
+                        <label className="block text-xs text-[#4B5563] uppercase font-medium mb-1.5">
                           Respiratory Rate (rpm)
                         </label>
                         <Input
@@ -895,10 +822,10 @@ const Examination: React.FC = () => {
                           value={respiratoryRate}
                           onChange={handleInputChange(setRespiratoryRate)}
                           placeholder="Enter respiratory rate in rpm"
-                          className="bg-white border-gray-200 text-sm h-8 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="bg-white border-gray-200 rounded-lg text-sm h-10 focus:ring-1 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                         />
-                        <div className="flex justify-between mt-1">
-                          <p className="text-xs text-gray-500">
+                        <div className="flex justify-between mt-1.5">
+                          <p className="text-xs text-[#4B5563]">
                             Normal:{" "}
                             {patient?.species?.toLowerCase() === "cat"
                               ? "20-40 rpm"
@@ -908,17 +835,17 @@ const Examination: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-3">
-                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="block text-xs text-gray-500 uppercase font-medium">
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="bg-[#F9FAFB] p-4 rounded-xl">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="block text-xs text-[#4B5563] uppercase font-medium">
                             General Notes
                           </label>
                           <div className="flex gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
+                              className="h-7 text-xs text-[#2C78E4] hover:bg-[#E3F2FD]"
                               onClick={() => {
                                 setGeneralNotes(
                                   "Alert, responsive, and well-hydrated. No signs of distress."
@@ -935,7 +862,7 @@ const Examination: React.FC = () => {
                           onChange={handleInputChange(setGeneralNotes)}
                           placeholder="Additional observations and notes"
                           rows={2}
-                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="bg-white border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                         />
                       </div>
                     </div>
@@ -944,68 +871,52 @@ const Examination: React.FC = () => {
               </div>
 
               {/* Sidebar - Enhanced with patient info and actions */}
-              <div className="space-y-3">
+              <div className="space-y-5">
                 {/* Patient Information Card with Quick Edit */}
                 {patient && (
-                  <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                    <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b flex justify-between items-center">
-                      <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                        <Stethoscope className="h-4 w-4 mr-1.5 text-indigo-600" />
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="px-4 py-3 bg-[#F0F7FF] border-b border-gray-100 flex justify-between items-center">
+                      <h3 className="font-medium text-[#111827] flex items-center text-sm">
+                        <User className="h-4 w-4 mr-2 text-[#2C78E4]" />
                         Patient Information
                       </h3>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
-                          >
-                            <span>Quick Edit</span>
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-md bg-white border-0 shadow-lg">
-                          <DialogHeader className="bg-white">
-                            <DialogTitle className="text-gray-900">
-                              Update Patient Information
-                            </DialogTitle>
-                            <DialogDescription className="text-gray-600">
-                              Make quick updates to this patient's details
-                            </DialogDescription>
-                          </DialogHeader>
-
-                          <QuickPatientEditForm patient={patient} />
-                        </DialogContent>
-                      </Dialog>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs text-[#2C78E4] hover:bg-[#E3F2FD] border-gray-200"
+                      >
+                        <span>Quick Edit</span>
+                      </Button>
                     </div>
-                    <div className="p-3">
+                    <div className="p-4">
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
-                          <p className="text-xs text-gray-500">Type</p>
-                          <p className="font-medium">
+                          <p className="text-xs text-[#4B5563]">Type</p>
+                          <p className="font-medium text-[#111827]">
                             {patient.type || "Unknown"}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Breed</p>
-                          <p className="font-medium">
+                          <p className="text-xs text-[#4B5563]">Breed</p>
+                          <p className="font-medium text-[#111827]">
                             {patient.breed || "Unknown"}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Age</p>
-                          <p className="font-medium">
+                          <p className="text-xs text-[#4B5563]">Age</p>
+                          <p className="font-medium text-[#111827]">
                             {patient.age || "Unknown"}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Sex</p>
-                          <p className="font-medium">
+                          <p className="text-xs text-[#4B5563]">Sex</p>
+                          <p className="font-medium text-[#111827]">
                             {patient.gender || "Unknown"}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Weight</p>
-                          <p className="font-medium">
+                          <p className="text-xs text-[#4B5563]">Weight</p>
+                          <p className="font-medium text-[#111827]">
                             {patient.weight
                               ? `${patient.weight} kg`
                               : "Unknown"}
@@ -1015,7 +926,7 @@ const Examination: React.FC = () => {
 
                       {patient.medical_alerts && (
                         <div className="mt-3 pt-2 border-t border-gray-100">
-                          <p className="text-xs text-gray-500 mb-1">
+                          <p className="text-xs text-[#4B5563] mb-1">
                             Medical Alerts
                           </p>
                           <div className="flex flex-wrap gap-1">
@@ -1038,56 +949,47 @@ const Examination: React.FC = () => {
                 )}
 
                 {/* Next Workflow */}
-                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                  <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
-                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                      <Stethoscope className="h-4 w-4 mr-1.5 text-indigo-600" />
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="px-4 py-3 bg-[#F0F7FF] border-b border-gray-100">
+                    <h3 className="font-medium text-[#111827] flex items-center text-sm">
+                      <ChevronDown className="h-4 w-4 mr-2 text-[#2C78E4]" />
                       Next Workflow
                     </h3>
                   </div>
-                  <div className="p-3">
-                    <div className="mt-3">
-                      <h4 className="text-xs font-medium text-gray-700 mb-2">
+                  <div className="p-4">
+                    <div>
+                      <h4 className="text-xs font-medium text-[#4B5563] mb-2">
                         Quick Actions
                       </h4>
                       <div className="grid grid-cols-1 gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="justify-start text-xs h-8"
+                          className="justify-start text-xs h-8 text-[#2C78E4] hover:bg-[#E3F2FD] border-gray-200 rounded-lg"
                           onClick={navigateToHealthCard}
                         >
-                          <Heart className="mr-1.5 h-3.5 w-3.5 text-pink-500" />
+                          <Heart className="mr-1.5 h-3.5 w-3.5 text-[#2C78E4]" />
                           View Health Card
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="justify-start text-xs h-8"
+                          className="justify-start text-xs h-8 text-[#2C78E4] hover:bg-[#E3F2FD] border-gray-200 rounded-lg"
                           onClick={navigateToLabManagement}
                         >
-                          <FlaskConical className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />
+                          <FlaskConical className="mr-1.5 h-3.5 w-3.5 text-[#2C78E4]" />
                           Order Lab Tests
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="justify-start text-xs h-8"
-                          onClick={navigateToSOAP}
-                        >
-                          <FileText className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />
-                          SOAP Notes
                         </Button>
                       </div>
                     </div>
 
-                    <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="mt-4 pt-4 border-t border-gray-100">
                       <Button
                         onClick={saveExamination}
                         size="sm"
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs"
+                        className="w-full bg-[#2C78E4] hover:bg-[#1E40AF] text-white text-xs h-9 rounded-lg transition-colors"
                       >
-                        <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+                        <ChevronDown className="mr-1.5 h-3.5 w-3.5" />
                         Save Examination
                       </Button>
                     </div>
@@ -1098,19 +1000,19 @@ const Examination: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="systems" className="mt-3">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               {/* Main column */}
-              <div className="lg:col-span-2 space-y-3">
+              <div className="lg:col-span-2 space-y-5">
                 {/* Quick Actions Bar */}
-                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden mb-3">
-                  <div className="p-2 flex flex-wrap gap-2">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-3">
+                  <div className="p-3 flex flex-wrap gap-2">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="bg-indigo-50 border-indigo-100 text-indigo-700 text-xs h-7"
+                            className="bg-white border-gray-200 text-[#4B5563] text-xs h-8 rounded-lg"
                             onClick={() => {
                               setCardiovascular("");
                               setRespiratory("");
@@ -1123,7 +1025,7 @@ const Examination: React.FC = () => {
                               setUnsavedChanges(true);
                             }}
                           >
-                            <RefreshCw className="h-3 w-3 mr-1" />
+                            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                             Clear All
                           </Button>
                         </TooltipTrigger>
@@ -1138,7 +1040,7 @@ const Examination: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="bg-green-50 border-green-100 text-green-700 text-xs h-7"
+                      className="bg-white border-gray-200 text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#2C78E4] text-xs h-8 rounded-lg"
                       onClick={() => {
                         setCardiovascular(
                           "Normal heart sounds, no murmurs detected."
@@ -1163,31 +1065,31 @@ const Examination: React.FC = () => {
                         setUnsavedChanges(true);
                       }}
                     >
-                      <Check className="h-3 w-3 mr-1" />
+                      <Check className="h-3.5 w-3.5 mr-1.5" />
                       Fill All Normal
                     </Button>
                   </div>
                 </div>
 
                 {/* Cardiovascular and Respiratory */}
-                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                  <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
-                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                      <Heart className="h-4 w-4 mr-1.5 text-indigo-600" />
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="flex justify-between items-center px-4 py-3 bg-[#F0F7FF] border-b border-gray-100">
+                    <h3 className="font-medium text-[#111827] flex items-center text-sm">
+                      <Heart className="h-4 w-4 mr-2 text-[#2C78E4]" />
                       Cardiovascular & Respiratory
                     </h3>
                   </div>
-                  <div className="p-3 space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="block text-xs text-gray-500 uppercase font-medium">
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-[#F9FAFB] p-4 rounded-xl">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="block text-xs text-[#4B5563] uppercase font-medium">
                             Cardiovascular
                           </label>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
+                            className="h-7 text-xs text-[#2C78E4] hover:bg-[#E3F2FD]"
                             onClick={() => {
                               setCardiovascular(
                                 "Normal heart sounds, no murmurs detected."
@@ -1203,18 +1105,18 @@ const Examination: React.FC = () => {
                           onChange={handleInputChange(setCardiovascular)}
                           placeholder="Heart sounds, pulses, etc."
                           rows={2}
-                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="bg-white border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                         />
                       </div>
-                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="block text-xs text-gray-500 uppercase font-medium">
+                      <div className="bg-[#F9FAFB] p-4 rounded-xl">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="block text-xs text-[#4B5563] uppercase font-medium">
                             Respiratory
                           </label>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
+                            className="h-7 text-xs text-[#2C78E4] hover:bg-[#E3F2FD]"
                             onClick={() => {
                               setRespiratory(
                                 "Normal respiratory sounds, no crackles or wheezes."
@@ -1230,7 +1132,7 @@ const Examination: React.FC = () => {
                           onChange={handleInputChange(setRespiratory)}
                           placeholder="Lung sounds, breathing pattern, etc."
                           rows={2}
-                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="bg-white border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                         />
                       </div>
                     </div>
@@ -1238,24 +1140,24 @@ const Examination: React.FC = () => {
                 </div>
 
                 {/* Digestive and Musculoskeletal */}
-                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                  <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
-                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                      <Activity className="h-4 w-4 mr-1.5 text-indigo-600" />
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="flex justify-between items-center px-4 py-3 bg-[#F0F7FF] border-b border-gray-100">
+                    <h3 className="font-medium text-[#111827] flex items-center text-sm">
+                      <Activity className="h-4 w-4 mr-2 text-[#2C78E4]" />
                       Gastrointestinal & Musculoskeletal
                     </h3>
                   </div>
-                  <div className="p-3 space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="block text-xs text-gray-500 uppercase font-medium">
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-[#F9FAFB] p-4 rounded-xl">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="block text-xs text-[#4B5563] uppercase font-medium">
                             Gastrointestinal
                           </label>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
+                            className="h-7 text-xs text-[#2C78E4] hover:bg-[#E3F2FD]"
                             onClick={() => {
                               setGastrointestinal(
                                 "Normal abdomen on palpation, no signs of discomfort."
@@ -1271,18 +1173,18 @@ const Examination: React.FC = () => {
                           onChange={handleInputChange(setGastrointestinal)}
                           placeholder="Abdomen, oral cavity, etc."
                           rows={2}
-                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="bg-white border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                         />
                       </div>
-                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="block text-xs text-gray-500 uppercase font-medium">
+                      <div className="bg-[#F9FAFB] p-4 rounded-xl">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="block text-xs text-[#4B5563] uppercase font-medium">
                             Musculoskeletal
                           </label>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
+                            className="h-7 text-xs text-[#2C78E4] hover:bg-[#E3F2FD]"
                             onClick={() => {
                               setMusculoskeletal(
                                 "Normal gait and posture, no lameness observed."
@@ -1298,7 +1200,7 @@ const Examination: React.FC = () => {
                           onChange={handleInputChange(setMusculoskeletal)}
                           placeholder="Gait, joints, muscles, etc."
                           rows={2}
-                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="bg-white border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                         />
                       </div>
                     </div>
@@ -1306,24 +1208,24 @@ const Examination: React.FC = () => {
                 </div>
 
                 {/* Remaining sections - Neurological, Skin, Eyes, Ears */}
-                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                  <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
-                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                      <ScanLine className="h-4 w-4 mr-1.5 text-indigo-600" />
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="flex justify-between items-center px-4 py-3 bg-[#F0F7FF] border-b border-gray-100">
+                    <h3 className="font-medium text-[#111827] flex items-center text-sm">
+                      <ScanLine className="h-4 w-4 mr-2 text-[#2C78E4]" />
                       Neurological & Skin
                     </h3>
                   </div>
-                  <div className="p-3 space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="block text-xs text-gray-500 uppercase font-medium">
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-[#F9FAFB] p-4 rounded-xl">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="block text-xs text-[#4B5563] uppercase font-medium">
                             Neurological
                           </label>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
+                            className="h-7 text-xs text-[#2C78E4] hover:bg-[#E3F2FD]"
                             onClick={() => {
                               setNeurological(
                                 "Alert and responsive, no neurological deficits noted."
@@ -1339,18 +1241,18 @@ const Examination: React.FC = () => {
                           onChange={handleInputChange(setNeurological)}
                           placeholder="Reflexes, responses, etc."
                           rows={2}
-                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="bg-white border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                         />
                       </div>
-                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="block text-xs text-gray-500 uppercase font-medium">
+                      <div className="bg-[#F9FAFB] p-4 rounded-xl">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="block text-xs text-[#4B5563] uppercase font-medium">
                             Skin/Coat
                           </label>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
+                            className="h-7 text-xs text-[#2C78E4] hover:bg-[#E3F2FD]"
                             onClick={() => {
                               setSkin(
                                 "Good coat condition, no lesions or parasites."
@@ -1366,31 +1268,31 @@ const Examination: React.FC = () => {
                           onChange={handleInputChange(setSkin)}
                           placeholder="Lesions, parasites, etc."
                           rows={2}
-                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="bg-white border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                         />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                  <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
-                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                      <Eye className="h-4 w-4 mr-1.5 text-indigo-600" />
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="flex justify-between items-center px-4 py-3 bg-[#F0F7FF] border-b border-gray-100">
+                    <h3 className="font-medium text-[#111827] flex items-center text-sm">
+                      <Eye className="h-4 w-4 mr-2 text-[#2C78E4]" />
                       Special Senses
                     </h3>
                   </div>
-                  <div className="p-3 space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="block text-xs text-gray-500 uppercase font-medium">
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-[#F9FAFB] p-4 rounded-xl">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="block text-xs text-[#4B5563] uppercase font-medium">
                             Eyes
                           </label>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
+                            className="h-7 text-xs text-[#2C78E4] hover:bg-[#E3F2FD]"
                             onClick={() => {
                               setEyes("Clear, no discharge or abnormalities.");
                               setUnsavedChanges(true);
@@ -1404,18 +1306,18 @@ const Examination: React.FC = () => {
                           onChange={handleInputChange(setEyes)}
                           placeholder="Pupils, discharge, etc."
                           rows={2}
-                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="bg-white border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                         />
                       </div>
-                      <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="block text-xs text-gray-500 uppercase font-medium">
+                      <div className="bg-[#F9FAFB] p-4 rounded-xl">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="block text-xs text-[#4B5563] uppercase font-medium">
                             Ears
                           </label>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 text-xs text-indigo-600 hover:bg-indigo-50"
+                            className="h-7 text-xs text-[#2C78E4] hover:bg-[#E3F2FD]"
                             onClick={() => {
                               setEars("Clean, no inflammation or discharge.");
                               setUnsavedChanges(true);
@@ -1429,7 +1331,7 @@ const Examination: React.FC = () => {
                           onChange={handleInputChange(setEars)}
                           placeholder="Discharge, inflammation, etc."
                           rows={2}
-                          className="bg-white border-gray-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="bg-white border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                         />
                       </div>
                     </div>
@@ -1437,46 +1339,53 @@ const Examination: React.FC = () => {
                 </div>
               </div>
 
-              {/* Sidebar - same as in physical tab */}
-              <div className="space-y-3">
+              {/* Sidebar - same structure as the physical tab */}
+              <div className="space-y-5">
                 {/* Patient Information Card */}
                 {patient && (
-                  <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                    <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
-                      <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                        <Stethoscope className="h-4 w-4 mr-1.5 text-indigo-600" />
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="px-4 py-3 bg-[#F0F7FF] border-b border-gray-100 flex justify-between items-center">
+                      <h3 className="font-medium text-[#111827] flex items-center text-sm">
+                        <User className="h-4 w-4 mr-2 text-[#2C78E4]" />
                         Patient Information
                       </h3>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs text-[#2C78E4] hover:bg-[#E3F2FD] border-gray-200"
+                      >
+                        <span>Quick Edit</span>
+                      </Button>
                     </div>
-                    <div className="p-3">
+                    <div className="p-4">
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
-                          <p className="text-xs text-gray-500">Species</p>
-                          <p className="font-medium">
+                          <p className="text-xs text-[#4B5563]">Species</p>
+                          <p className="font-medium text-[#111827]">
                             {patient.type || "Unknown"}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Breed</p>
-                          <p className="font-medium">
+                          <p className="text-xs text-[#4B5563]">Breed</p>
+                          <p className="font-medium text-[#111827]">
                             {patient.breed || "Unknown"}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Age</p>
-                          <p className="font-medium">
+                          <p className="text-xs text-[#4B5563]">Age</p>
+                          <p className="font-medium text-[#111827]">
                             {patient.age || "Unknown"}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Gender</p>
-                          <p className="font-medium">
+                          <p className="text-xs text-[#4B5563]">Gender</p>
+                          <p className="font-medium text-[#111827]">
                             {patient.gender || "Unknown"}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Weight (kg)</p>
-                          <p className="font-medium">
+                          <p className="text-xs text-[#4B5563]">Weight (kg)</p>
+                          <p className="font-medium text-[#111827]">
                             {patient.weight || "Unknown"}
                           </p>
                         </div>
@@ -1484,7 +1393,7 @@ const Examination: React.FC = () => {
 
                       {patient.medical_alerts && (
                         <div className="mt-3 pt-2 border-t border-gray-100">
-                          <p className="text-xs text-gray-500 mb-1">
+                          <p className="text-xs text-[#4B5563] mb-1">
                             Medical Alerts
                           </p>
                           <div className="flex flex-wrap gap-1">
@@ -1506,55 +1415,47 @@ const Examination: React.FC = () => {
                   </div>
                 )}
 
-                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                  <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-white border-b">
-                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
-                      <Stethoscope className="h-4 w-4 mr-1.5 text-indigo-600" />
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="px-4 py-3 bg-[#F0F7FF] border-b border-gray-100">
+                    <h3 className="font-medium text-[#111827] flex items-center text-sm">
+                      <ChevronDown className="h-4 w-4 mr-2 text-[#2C78E4]" />
                       Next Workflow
                     </h3>
                   </div>
-                  <div className="p-3">
-                    <div className="mt-3">
-                      <h4 className="text-xs font-medium text-gray-700 mb-2">
+                  <div className="p-4">
+                    <div>
+                      <h4 className="text-xs font-medium text-[#4B5563] mb-2">
                         Quick Actions
                       </h4>
                       <div className="grid grid-cols-1 gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="justify-start text-xs h-8"
+                          className="justify-start text-xs h-8 text-[#2C78E4] hover:bg-[#E3F2FD] border-gray-200 rounded-lg"
                           onClick={navigateToHealthCard}
                         >
-                          <Heart className="mr-1.5 h-3.5 w-3.5 text-pink-500" />
+                          <Heart className="mr-1.5 h-3.5 w-3.5 text-[#2C78E4]" />
                           View Health Card
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="justify-start text-xs h-8"
+                          className="justify-start text-xs h-8 text-[#2C78E4] hover:bg-[#E3F2FD] border-gray-200 rounded-lg"
                           onClick={navigateToLabManagement}
                         >
-                          <FlaskConical className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />
+                          <FlaskConical className="mr-1.5 h-3.5 w-3.5 text-[#2C78E4]" />
                           Order Lab Tests
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="justify-start text-xs h-8"
-                          onClick={navigateToSOAP}
-                        >
-                          <FileText className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />
-                          SOAP Notes
                         </Button>
                       </div>
                     </div>
 
-                    <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="mt-4 pt-4 border-t border-gray-100">
                       <Button
                         onClick={saveExamination}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-1.5 text-xs"
+                        size="sm"
+                        className="w-full bg-[#2C78E4] hover:bg-[#1E40AF] text-white text-xs h-9 rounded-lg transition-colors"
                       >
-                        <CheckCircle className="h-3.5 w-3.5" />
+                        <ChevronDown className="mr-1.5 h-3.5 w-3.5" />
                         Save Examination
                       </Button>
                     </div>

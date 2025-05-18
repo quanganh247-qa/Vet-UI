@@ -56,7 +56,7 @@ interface ExpandedCardState {
 export const PatientsPage: React.FC = () => {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<'list'>('list');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10); // Changed from 8 to 10
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -168,29 +168,29 @@ export const PatientsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md">
+            {/* Header with gradient background */}
+            <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md mb-6">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <Button
               variant="ghost"
               size="icon"
-              className="mr-2 h-8 w-8 text-white hover:bg-white/20"
+              className="mr-2 h-8 w-8 text-white hover:bg-white/20 rounded-full"
               onClick={() => window.history.back()}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-2xl font-bold text-white">Patients</h1>
             {doctor && (
-              <Badge className="ml-4 bg-white/20 text-white hover:bg-white/30">
+              <Badge className="ml-4 bg-white/20 text-white hover:bg-white/30 rounded-full">
                 Dr. {doctor.username}
               </Badge>
             )}
           </div>
 
           <div className="flex items-center space-x-3">
-            <div className="flex items-center bg-white/10 text-white border-white/20 rounded-md px-3 py-1">
-              <Calendar className="h-4 w-4 text-white/70 mr-2" />
+            <div className="flex items-center bg-white/10 text-white border-white/20 rounded-lg px-3 py-1 transition-all hover:bg-white/15">
+              <Calendar className="h-4 w-4 text-white/80 mr-2" />
               <input
                 type="date"
                 value={format(selectedDate, 'yyyy-MM-dd')}
@@ -200,7 +200,7 @@ export const PatientsPage: React.FC = () => {
             </div>
             <Button 
               onClick={() => setLocation('/patients/new')}
-              className="bg-white text-indigo-700 hover:bg-white/90"
+              className="bg-white text-[#2C78E4] hover:bg-white/90 rounded-lg shadow-sm"
               size="sm"
             >
               <Plus className="h-4 w-4 mr-1" /> New Patient
@@ -210,39 +210,49 @@ export const PatientsPage: React.FC = () => {
       </div>
 
       {/* Search and filter section */}
-      <Card className="border-none shadow-md overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-3 border-b">
-          <CardTitle className="text-lg font-semibold text-indigo-900 flex items-center">
-            <Search className="h-5 w-5 mr-2 text-indigo-600" />
+      <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
+        <CardHeader className="bg-white pb-3 border-b border-gray-100">
+          <CardTitle className="text-lg font-semibold text-[#111827] flex items-center">
+            <Search className="h-5 w-5 mr-2 text-[#2C78E4]" />
             Search & Filters
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="relative w-full md:w-96">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#4B5563] h-4 w-4" />
               <Input
                 placeholder="Search patients by name, owner, or species..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 border-gray-200"
+                className="pl-10 border-gray-200 rounded-lg focus:ring-[#2C78E4] focus:border-[#2C78E4]"
               />
             </div>
             
-          
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={viewMode === 'list' ? 'bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90' : 'border-gray-200 text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4] hover:border-[#2C78E4]/20'}
+              >
+                <List className="h-4 w-4 mr-1" />
+                List
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Patients data display */}
-      <Card className="border-none shadow-md overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-3 border-b">
+      <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
+        <CardHeader className="bg-white pb-3 border-b border-gray-100">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-lg font-semibold text-indigo-900 flex items-center">
-              <PawPrint className="h-5 w-5 mr-2 text-indigo-600" />
+            <CardTitle className="text-lg font-semibold text-[#111827] flex items-center">
+              <PawPrint className="h-5 w-5 mr-2 text-[#2C78E4]" />
               Patients List
             </CardTitle>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-[#4B5563]">
               {patientsData?.total ? (
                 <span>{patientsData.total} patients found</span>
               ) : (
@@ -251,186 +261,39 @@ export const PatientsPage: React.FC = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent className={viewMode === 'grid' ? 'p-6' : 'p-0'}>
-          {/* Patients grid view */}
-            {viewMode === 'grid' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredPatients.length === 0 ? (
-              <div className="col-span-full text-center py-12 text-gray-500">
-                No patients found matching your search criteria
-              </div>
-              ) : (
-              filteredPatients.map((patient: Pet) => (
-                <Card 
-                key={patient.petid} 
-                className="overflow-hidden hover:shadow-lg transition-shadow border border-gray-200 flex flex-col"
-                >
-                <div 
-                  className="aspect-w-16 aspect-h-9 bg-indigo-50 cursor-pointer"
-                  onClick={() => handlePatientClick(patient.petid)}
-                >
-                  {patient.data_image ? (
-                  <img 
-                    src={`data:image/png;base64,${patient.data_image}`} 
-                    alt={patient.name}
-                    className="object-cover w-full h-full"
-                  />
-                  ) : (
-                  <div className="flex items-center justify-center h-full text-indigo-300">
-                    <PawPrint className="h-12 w-12" />
-                  </div>
-                  )}
-                </div>
-                <CardHeader 
-                  className="pb-2 cursor-pointer"
-                  onClick={() => handlePatientClick(patient.petid)}
-                >
-                  <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{patient.name}</CardTitle>
-                  <Badge
-                    variant="outline"
-                    className="bg-indigo-50 text-indigo-600 border-indigo-200"
-                  >
-                    {patient.type}
-                  </Badge>
-                  </div>
-                  <CardDescription className="flex items-center gap-1 pt-1">
-                  <UserCircle className="h-3.5 w-3.5 text-gray-400" />
-                  <span>{patient.username || 'Unknown Owner'}</span>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <div className={cn(
-                  "grid gap-x-4 gap-y-2 text-sm transition-all duration-300",
-                  expandedCards[patient.petid] ? "grid-cols-2" : "grid-cols-2"
-                  )}>
-                  <div>
-                    <span className="text-gray-500">Breed:</span>
-                    <span className="ml-1 text-gray-900">{patient.breed}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Age:</span>
-                    <span className="ml-1 text-gray-900">{patient.age} years</span>
-                  </div>
-                  {expandedCards[patient.petid] && (
-                    <>
-                    <div>
-                      <span className="text-gray-500">Gender:</span>
-                      <span className="ml-1 text-gray-900">{patient.gender || 'Unknown'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Weight:</span>
-                      <span className="ml-1 text-gray-900">{patient.weight} kg</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Color:</span>
-                      <span className="ml-1 text-gray-900">{patient.color || 'Unknown'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Birth Date:</span>
-                      <span className="ml-1 text-gray-900">
-                      {patient.birth_date ? format(new Date(patient.birth_date), 'MM/dd/yyyy') : 'Unknown'}
-                      </span>
-                    </div>
-                    {patient.microchip_number && (
-                      <div className="col-span-2">
-                      <span className="text-gray-500">Microchip:</span>
-                      <span className="ml-1 text-gray-900">{patient.microchip_number}</span>
-                      </div>
-                    )}
-                    </>
-                  )}
-                  </div>
-                  <div className="mt-4 flex justify-between items-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => toggleCardExpansion(patient.petid, e)}
-                    className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                  >
-                    {expandedCards[patient.petid] ? 'Show Less' : 'Show More'}
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-gray-500 hover:bg-gray-100"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenuItem onClick={() => handlePatientClick(patient.petid)}>
-                        <User className="mr-2 h-4 w-4" />
-                        <span>View Details</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => handleEditPatient(patient.petid, e)}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        <span>Edit</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={(e) => handleVaccination(patient.petid, e)}>
-                        <Syringe className="mr-2 h-4 w-4" />
-                        <span>Vaccination</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => handleTreatment(patient.petid, e)}>
-                        <Stethoscope className="mr-2 h-4 w-4" />
-                        <span>Treatment</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => handlePrescription(patient.petid, e)}>
-                        <ClipboardList className="mr-2 h-4 w-4" />
-                        <span>Prescription</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                        onClick={(e) => handleDeletePatient(patient.petid, e)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>Delete</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  </div>
-                </CardContent>
-                </Card>
-              ))
-              )}
-            </div>
-            )}
+        <CardContent className={viewMode === 'list' ? 'p-6' : 'p-0'}>
+       
 
           {/* Patients list view */}
           {viewMode === 'list' && (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-100">
+                <thead className="bg-[#F9FAFB]">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                       Pet Name
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                       Species
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                       Owner
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                       Age
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                       Gender
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-100">
                   {filteredPatients.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
+                      <td colSpan={6} className="px-6 py-10 text-center text-[#4B5563]">
                         No patients found matching your search criteria
                       </td>
                     </tr>
@@ -438,14 +301,14 @@ export const PatientsPage: React.FC = () => {
                     filteredPatients.map((patient: Pet) => (
                       <tr
                         key={patient.petid}
-                        className="hover:bg-gray-50 transition-colors"
+                        className="hover:bg-[#F9FAFB] transition-colors"
                       >
                         <td 
                           className="px-6 py-4 whitespace-nowrap cursor-pointer"
                           onClick={() => handlePatientClick(patient.petid)}
                         >
                           <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-[#2C78E4]/10 flex items-center justify-center">
                               {patient.data_image ? (
                                 <img 
                                   src={`data:image/png;base64,${patient.data_image}`} 
@@ -453,12 +316,12 @@ export const PatientsPage: React.FC = () => {
                                   className="h-10 w-10 rounded-full object-cover"
                                 />
                               ) : (
-                                <PawPrint className="h-5 w-5 text-indigo-600" />
+                                <PawPrint className="h-5 w-5 text-[#2C78E4]" />
                               )}
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{patient.name}</div>
-                              <div className="text-sm text-gray-500">{patient.breed}</div>
+                              <div className="text-sm font-medium text-[#111827]">{patient.name}</div>
+                              <div className="text-sm text-[#4B5563]">{patient.breed}</div>
                             </div>
                           </div>
                         </td>
@@ -468,7 +331,7 @@ export const PatientsPage: React.FC = () => {
                         >
                           <Badge 
                             variant="outline"
-                            className="bg-indigo-50 text-indigo-600 border-indigo-200"
+                            className="bg-[#2C78E4]/10 text-[#2C78E4] border-[#2C78E4]/20 rounded-full"
                           >
                             {patient.type}
                           </Badge>
@@ -477,19 +340,19 @@ export const PatientsPage: React.FC = () => {
                           className="px-6 py-4 whitespace-nowrap cursor-pointer"
                           onClick={() => handlePatientClick(patient.petid)}
                         >
-                          <div className="text-sm text-gray-900">{patient.username || 'Unknown'}</div>
+                          <div className="text-sm text-[#111827]">{patient.username || 'Unknown'}</div>
                         </td>
                         <td 
                           className="px-6 py-4 whitespace-nowrap cursor-pointer"
                           onClick={() => handlePatientClick(patient.petid)}
                         >
-                          <div className="text-sm text-gray-900">{patient.age} years</div>
+                          <div className="text-sm text-[#111827]">{patient.age} years</div>
                         </td>
                         <td 
                           className="px-6 py-4 whitespace-nowrap cursor-pointer"
                           onClick={() => handlePatientClick(patient.petid)}
                         >
-                          <div className="text-sm text-gray-900">{patient.gender || 'Unknown'}</div>
+                          <div className="text-sm text-[#111827]">{patient.gender || 'Unknown'}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                           <DropdownMenu>
@@ -497,37 +360,30 @@ export const PatientsPage: React.FC = () => {
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-8 w-8 text-gray-500 hover:bg-gray-100"
+                                className="h-8 w-8 text-[#4B5563] hover:bg-[#F9FAFB] rounded-full"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                              <DropdownMenuItem onClick={() => handlePatientClick(patient.petid)}>
-                                <User className="mr-2 h-4 w-4" />
+                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()} className="bg-white rounded-lg shadow-md border-none">
+                              <DropdownMenuItem onClick={() => handlePatientClick(patient.petid)} className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer">
+                                <User className="mr-2 h-4 w-4 text-[#2C78E4]" />
                                 <span>View Details</span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => handleEditPatient(patient.petid, e)}>
-                                <Pencil className="mr-2 h-4 w-4" />
+                              <DropdownMenuItem onClick={(e) => handleEditPatient(patient.petid, e)} className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer">
+                                <Pencil className="mr-2 h-4 w-4 text-[#2C78E4]" />
                                 <span>Edit</span>
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={(e) => handleVaccination(patient.petid, e)}>
-                                <Syringe className="mr-2 h-4 w-4" />
+                              <DropdownMenuSeparator className="bg-gray-100" />
+                              <DropdownMenuItem onClick={(e) => handleVaccination(patient.petid, e)} className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer">
+                                <Syringe className="mr-2 h-4 w-4 text-[#FFA726]" />
                                 <span>Vaccination</span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => handleTreatment(patient.petid, e)}>
-                                <Stethoscope className="mr-2 h-4 w-4" />
-                                <span>Treatment</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => handlePrescription(patient.petid, e)}>
-                                <ClipboardList className="mr-2 h-4 w-4" />
-                                <span>Prescription</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
+                        
+                              <DropdownMenuSeparator className="bg-gray-100" />
                               <DropdownMenuItem 
-                                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                                className="text-red-600 focus:text-red-600 hover:bg-red-50 cursor-pointer"
                                 onClick={(e) => handleDeletePatient(patient.petid, e)}
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
@@ -547,136 +403,153 @@ export const PatientsPage: React.FC = () => {
       </Card>
 
       {/* Pagination Controls */}
-      <Card className="border-none shadow-md overflow-hidden">
-        <CardContent className="px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">
-              Showing {Math.min((currentPage - 1) * pageSize + 1, patientsData?.total || 0)} - {Math.min(currentPage * pageSize, patientsData?.total || 0)} of {patientsData?.total || 0} patients
-            </span>
+      <div className="border-t border-gray-100 px-4 py-3 bg-white rounded-xl shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-[#4B5563]">Show</span>
             <select
               value={pageSize}
               onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-              className="rounded-md border border-gray-200 bg-white text-sm p-1"
+              className="rounded-lg border border-gray-200 bg-white text-sm py-1 px-2 text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
             >
               <option value="5">5</option>
               <option value="10">10</option>
               <option value="20">20</option>
               <option value="50">50</option>
             </select>
+            <span className="text-[#4B5563]">entries</span>
+          </div>
+          
+          <div className="text-sm text-[#4B5563]">
+            Showing {Math.min((currentPage - 1) * pageSize + 1, patientsData?.total || 0)} - {Math.min(currentPage * pageSize, patientsData?.total || 0)} of {patientsData?.total || 0} patients
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="bg-white shadow-sm border-gray-200 hover:bg-gray-50"
+              className={cn("rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                currentPage === 1
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
+              )}
             >
-              Previous
+              <ChevronRight className="h-4 w-4 rotate-180" />
             </Button>
             
-            <div className="flex items-center gap-1">
-              {patientsData?.totalPages && patientsData.totalPages <= 7 ? (
-                // Show all page numbers if there are 7 or fewer pages
-                Array.from({ length: patientsData.totalPages }, (_, i) => i + 1).map((page) => (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handlePageChange(page)}
-                    className={cn(
-                      'px-3',
-                      currentPage === page && 'bg-indigo-600 text-white hover:bg-indigo-700'
-                    )}
-                  >
-                    {page}
-                  </Button>
-                ))
-              ) : (
-                // Show limited page numbers with ellipsis for many pages
-                <>
-                  {/* First page */}
-                  <Button
-                    variant={currentPage === 1 ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handlePageChange(1)}
-                    className={cn(
-                      'px-3',
-                      currentPage === 1 && 'bg-indigo-600 text-white hover:bg-indigo-700'
-                    )}
-                  >
-                    1
-                  </Button>
-                  
-                  {/* Ellipsis if needed */}
-                  {currentPage > 3 && (
-                    <span className="px-2 text-gray-500">...</span>
+            {patientsData?.totalPages && patientsData.totalPages <= 5 ? (
+              // Show all page numbers if there are 5 or fewer pages
+              Array.from({ length: patientsData.totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handlePageChange(page)}
+                  className={cn(
+                    "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                    currentPage === page
+                      ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
+                      : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
                   )}
-                  
-                  {/* Pages around current page */}
-                  {Array.from(
-                    { length: Math.min(3, patientsData?.totalPages || 1) },
-                    (_, i) => {
-                      const pageNum = Math.max(
-                        2,
-                        currentPage - 1 + i - (currentPage > 2 ? 1 : 0)
+                >
+                  {page}
+                </Button>
+              ))
+            ) : (
+              // Show limited page numbers with ellipsis for many pages
+              <>
+                {/* First page */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handlePageChange(1)}
+                  className={cn(
+                    "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                    currentPage === 1
+                      ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
+                      : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
+                  )}
+                >
+                  1
+                </Button>
+                
+                {/* Ellipsis if needed */}
+                {currentPage > 3 && (
+                  <span className="px-1 text-[#4B5563]">...</span>
+                )}
+                
+                {/* Pages around current page */}
+                {Array.from(
+                  { length: Math.min(3, patientsData?.totalPages || 1) },
+                  (_, i) => {
+                    const pageNum = Math.max(
+                      2,
+                      currentPage - 1 + i - (currentPage > 2 ? 1 : 0)
+                    );
+                    if (pageNum >= 2 && pageNum < (patientsData?.totalPages || 1)) {
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePageChange(pageNum)}
+                          className={cn(
+                            "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                            currentPage === pageNum
+                              ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
+                              : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
+                          )}
+                        >
+                          {pageNum}
+                        </Button>
                       );
-                      if (pageNum >= 2 && pageNum < (patientsData?.totalPages || 1)) {
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={currentPage === pageNum ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => handlePageChange(pageNum)}
-                            className={cn(
-                              'px-3',
-                              currentPage === pageNum && 'bg-indigo-600 text-white hover:bg-indigo-700'
-                            )}
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      }
-                      return null;
                     }
-                  )}
-                  
-                  {/* Ellipsis if needed */}
-                  {patientsData?.totalPages && currentPage < patientsData.totalPages - 2 && (
-                    <span className="px-2 text-gray-500">...</span>
-                  )}
-                  
-                  {/* Last page */}
-                  {patientsData?.totalPages && patientsData.totalPages > 1 && (
-                    <Button
-                      variant={currentPage === patientsData.totalPages ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handlePageChange(patientsData.totalPages)}
-                      className={cn(
-                        'px-3',
-                        currentPage === patientsData.totalPages && 'bg-indigo-600 text-white hover:bg-indigo-700'
-                      )}
-                    >
-                      {patientsData.totalPages}
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
+                    return null;
+                  }
+                )}
+                
+                {/* Ellipsis if needed */}
+                {patientsData?.totalPages && currentPage < patientsData.totalPages - 2 && (
+                  <span className="px-1 text-[#4B5563]">...</span>
+                )}
+                
+                {/* Last page */}
+                {patientsData?.totalPages && patientsData.totalPages > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handlePageChange(patientsData.totalPages)}
+                    className={cn(
+                      "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                      currentPage === patientsData.totalPages
+                        ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
+                        : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
+                    )}
+                  >
+                    {patientsData.totalPages}
+                  </Button>
+                )}
+              </>
+            )}
 
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={patientsData?.total ? currentPage >= Math.ceil(patientsData.total / pageSize) : true}
-              className="bg-white shadow-sm border-gray-200 hover:bg-gray-50"
+              className={cn("rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                (patientsData?.total ? currentPage >= Math.ceil(patientsData.total / pageSize) : true)
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
+              )}
             >
-              Next
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

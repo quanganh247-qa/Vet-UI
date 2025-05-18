@@ -30,7 +30,7 @@ export const useGetMedicineSupplierById = (id: number) => {
 export const useGetAllMedicines = (page: number, pageSize: number, search: string = "") => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["medicines", page, pageSize, search],
-    queryFn: () => getAllMedicines(page, pageSize),
+    queryFn: () => getAllMedicines(page, pageSize, search),
     staleTime: 300000, // Consider data fresh for 5 minutes
   });
   return { data, isLoading, error };

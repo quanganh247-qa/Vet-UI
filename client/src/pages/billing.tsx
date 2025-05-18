@@ -336,56 +336,56 @@ const BillingPage = () => {
   return (
     <div className="space-y-6">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 md:px-8 md:py-5 rounded-xl shadow-md mb-6 text-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold">Billing & Payments</h1>
-            <p className="text-indigo-100 text-sm">
+            <p className="text-[#F0F7FF] text-sm">
               Manage invoices and payment methods
             </p>
           </div>
 
-          <div className="flex gap-2">
+          {/* <div className="flex gap-2">
             <Button
               variant="outline"
-              className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
+              className="bg-white/10 text-white border-white/20 hover:bg-white/20 rounded-lg flex items-center gap-1.5"
             >
               <Download className="w-4 h-4" />
               Export History
             </Button>
-          </div>
+          </div> */}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Invoice List */}
         <div className="lg:col-span-1">
-          <Card className="shadow-sm border border-gray-200 dark:border-gray-700">
+          <Card className="shadow-sm border border-[#2C78E4]/20 rounded-xl">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center justify-between text-[#2C78E4]">
                 <span>Invoices</span>
-                <Badge className="ml-2">{filteredInvoices.length}</Badge>
+                <Badge className="ml-2 bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20">{filteredInvoices.length}</Badge>
               </CardTitle>
-              <CardDescription>View and manage your invoices</CardDescription>
+              <CardDescription className="text-[#2C78E4]/70">View and manage your invoices</CardDescription>
 
               <div className="mt-2 space-y-3">
                 <div className="relative w-full">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#2C78E4]/70 h-4 w-4" />
                   <Input
                     placeholder="Search invoices..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 border-gray-200 dark:border-gray-700 dark:bg-gray-900/50 dark:placeholder:text-gray-500"
+                    className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
                   />
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <Filter className="h-4 w-4 text-[#2C78E4]/70" />
                   <Select defaultValue="all" onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-full border-gray-200 dark:border-gray-700 rounded-md h-10 bg-white dark:bg-gray-900/50">
+                    <SelectTrigger className="w-full border-[#2C78E4]/20 rounded-lg h-10 bg-white">
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="border-[#2C78E4]/20 rounded-lg">
                       <SelectItem value="all">All invoices</SelectItem>
                       <SelectItem value="paid">Paid</SelectItem>
                       <SelectItem value="unpaid">Unpaid</SelectItem>
@@ -395,26 +395,26 @@ const BillingPage = () => {
               </div>
             </CardHeader>
 
-            <Separator className="dark:bg-gray-700" />
+            <Separator className="bg-[#2C78E4]/10" />
 
             <CardContent className="p-0 max-h-[500px] overflow-y-auto">
-              <div className="grid grid-cols-1 divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="grid grid-cols-1 divide-y divide-[#2C78E4]/10">
                 {filteredInvoices.map((invoice: any) => (
                   <div
                     key={invoice.id}
                     className={cn(
-                      "p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors",
+                      "p-4 hover:bg-[#F0F7FF] cursor-pointer transition-colors rounded-lg mx-1 my-0.5",
                       activeInvoice?.id === invoice.id &&
-                        "bg-indigo-50 dark:bg-indigo-900/20"
+                        "bg-[#F0F7FF]"
                     )}
                     onClick={() => setActiveInvoice(invoice)}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                        <h3 className="font-medium text-[#2C78E4]">
                           {invoice.invoice_number}
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        <p className="text-sm text-[#2C78E4]/70 mt-0.5">
                           {invoice.description}
                         </p>
                       </div>
@@ -424,21 +424,21 @@ const BillingPage = () => {
                         }
                         className={cn(
                           invoice.status === "paid"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800 border-yellow-200"
                         )}
                       >
                         {invoice.status === "paid" ? "Paid" : "Unpaid"}
                       </Badge>
                     </div>
                     <div className="flex justify-between items-center text-sm">
-                      <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center gap-1 text-[#2C78E4]/70">
                         <Calendar className="h-3.5 w-3.5" />
                         <span>
                           {format(new Date(invoice.due_date), "MMM dd, yyyy")}
                         </span>
                       </div>
-                      <div className="font-medium text-gray-900 dark:text-gray-100">
+                      <div className="font-medium text-[#2C78E4]">
                         {formatCurrency(invoice.amount)}
                       </div>
                     </div>
@@ -446,7 +446,7 @@ const BillingPage = () => {
                 ))}
 
                 {filteredInvoices.length === 0 && (
-                  <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                  <div className="p-8 text-center text-[#2C78E4]/70">
                     No invoices found matching your criteria.
                   </div>
                 )}
@@ -458,12 +458,12 @@ const BillingPage = () => {
         {/* Invoice Details and Payment */}
         <div className="lg:col-span-2">
           {activeInvoice ? (
-            <Card className="shadow-sm border border-gray-200 dark:border-gray-700">
+            <Card className="shadow-sm border border-[#2C78E4]/20 rounded-xl">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">Invoice Details</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-lg text-[#2C78E4]">Invoice Details</CardTitle>
+                    <CardDescription className="text-[#2C78E4]/70">
                       Invoice {activeInvoice.invoice_number}
                     </CardDescription>
                   </div>
@@ -473,8 +473,8 @@ const BillingPage = () => {
                     }
                     className={cn(
                       activeInvoice.status === "paid"
-                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                        : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800 border-yellow-200"
                     )}
                   >
                     {activeInvoice.status === "paid" ? "Paid" : "Unpaid"}
@@ -482,66 +482,66 @@ const BillingPage = () => {
                 </div>
               </CardHeader>
 
-              <Separator className="dark:bg-gray-700" />
+              <Separator className="bg-[#2C78E4]/10" />
 
               <CardContent className="py-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-[#2C78E4]/70">
                       Invoice Date
                     </p>
-                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                    <p className="font-medium text-[#2C78E4]">
                       {format(new Date(activeInvoice.date), "MMM dd, yyyy")}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-[#2C78E4]/70">
                       Due Date
                     </p>
-                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                    <p className="font-medium text-[#2C78E4]">
                       {format(new Date(activeInvoice.due_date), "MMM dd, yyyy")}
                     </p>
                   </div>
                   <div className="md:text-right md:col-span-2">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-[#2C78E4]/70">
                       Total Amount
                     </p>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    <p className="text-lg font-semibold text-[#2C78E4]">
                       {formatCurrency(activeInvoice.amount)}
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-6">
-                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
+                <div className="bg-[#F0F7FF] rounded-xl p-4 mb-6">
+                  <h3 className="font-medium text-[#2C78E4] mb-3">
                     Service Details
                   </h3>
                   <div className="overflow-x-auto">
                     <table className="min-w-full">
                       <thead>
-                        <tr className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <tr className="text-left text-xs font-medium text-[#2C78E4]/70 uppercase tracking-wider">
                           <th className="pb-2">Description</th>
                           <th className="pb-2 text-right">Amount</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      <tbody className="divide-y divide-[#2C78E4]/10">
                         {activeInvoice.items.map((item: any, i: number) => (
                           <tr key={i}>
-                            <td className="py-3 text-sm text-gray-900 dark:text-gray-100">
+                            <td className="py-3 text-sm text-[#2C78E4]">
                               {item.name}
                             </td>
-                            <td className="py-3 text-sm text-gray-900 dark:text-gray-100 text-right">
+                            <td className="py-3 text-sm text-[#2C78E4] text-right">
                               {formatCurrency(item.price)}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                       <tfoot>
-                        <tr className="border-t border-gray-200 dark:border-gray-700">
-                          <th className="pt-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        <tr className="border-t border-[#2C78E4]/20">
+                          <th className="pt-3 text-sm font-semibold text-[#2C78E4]">
                             Total
                           </th>
-                          <th className="pt-3 text-sm font-semibold text-gray-900 dark:text-gray-100 text-right">
+                          <th className="pt-3 text-sm font-semibold text-[#2C78E4] text-right">
                             {formatCurrency(activeInvoice.amount)}
                           </th>
                         </tr>
@@ -552,7 +552,7 @@ const BillingPage = () => {
 
                 {activeInvoice.status === "unpaid" && (
                   <div>
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
+                    <h3 className="font-medium text-[#2C78E4] mb-3">
                       Payment Method
                     </h3>
 
@@ -563,34 +563,34 @@ const BillingPage = () => {
                         setPaymentMethod(value as "vietqr" | "cash")
                       }
                     >
-                      <div className="flex items-center space-x-2 rounded-lg border border-gray-200 dark:border-gray-700 p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <div className="flex items-center space-x-2 rounded-xl border border-[#2C78E4]/20 p-3 hover:bg-[#F0F7FF]">
                         <RadioGroupItem value="vietqr" id="vietqr" />
                         <Label
                           htmlFor="vietqr"
                           className="flex items-center cursor-pointer"
                         >
-                          <QrCode className="h-4 w-4 mr-2 text-indigo-600 dark:text-indigo-400" />
+                          <QrCode className="h-4 w-4 mr-2 text-[#2C78E4]" />
                           VietQR Gateway
                         </Label>
                       </div>
-                      <div className="flex items-center space-x-2 rounded-lg border border-gray-200 dark:border-gray-700 p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <div className="flex items-center space-x-2 rounded-xl border border-[#2C78E4]/20 p-3 hover:bg-[#F0F7FF] mt-2">
                         <RadioGroupItem value="cash" id="cash" />
                         <Label
                           htmlFor="cash"
                           className="flex items-center cursor-pointer"
                         >
-                          <DollarSign className="h-4 w-4 mr-2 text-green-600 dark:text-green-400" />
+                          <DollarSign className="h-4 w-4 mr-2 text-green-600" />
                           Cash Payment
                         </Label>
                       </div>
                     </RadioGroup>
 
                     <Tabs defaultValue="payment" className="mb-4">
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="payment" className="text-center">
+                      <TabsList className="grid w-full grid-cols-2 bg-[#F0F7FF] p-1 rounded-lg">
+                        <TabsTrigger value="payment" className="text-center rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#2C78E4] data-[state=active]:shadow-sm">
                           Make Payment
                         </TabsTrigger>
-                        <TabsTrigger value="info" className="text-center">
+                        <TabsTrigger value="info" className="text-center rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#2C78E4] data-[state=active]:shadow-sm">
                           Payment Info
                         </TabsTrigger>
                       </TabsList>
@@ -599,7 +599,7 @@ const BillingPage = () => {
                         {paymentMethod === "vietqr" ? (
                           <div className="flex flex-col items-center">
                             {qrUrl ? (
-                              <div className="p-4 bg-white border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
+                              <div className="p-4 bg-white border border-[#2C78E4]/20 rounded-xl mb-4">
                                 <img
                                   src={qrUrl}
                                   alt="VietQR Code"
@@ -607,10 +607,10 @@ const BillingPage = () => {
                                 />
                               </div>
                             ) : (
-                              <div className="p-4 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg mb-4 flex items-center justify-center w-64 h-64 mx-auto">
+                              <div className="p-4 bg-[#F0F7FF] border border-[#2C78E4]/20 rounded-xl mb-4 flex items-center justify-center w-64 h-64 mx-auto">
                                 <div className="text-center">
-                                  <QrCode className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                                  <p className="text-gray-500 dark:text-gray-400">
+                                  <QrCode className="h-12 w-12 mx-auto mb-4 text-[#2C78E4]/50" />
+                                  <p className="text-[#2C78E4]/70">
                                     Click the button below to generate QR code
                                   </p>
                                 </div>
@@ -620,7 +620,7 @@ const BillingPage = () => {
                             <Button
                               onClick={handleGenerateQR}
                               disabled={isGeneratingQR}
-                              className="mb-4 bg-indigo-600 hover:bg-indigo-700 text-white"
+                              className="mb-4 bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-lg"
                             >
                               {isGeneratingQR ? (
                                 <>
@@ -641,31 +641,31 @@ const BillingPage = () => {
                             </Button>
 
                             {qrUrl && (
-                              <div className="text-center text-sm text-gray-500 dark:text-gray-400 mb-4">
+                              <div className="text-center text-sm text-[#2C78E4]/70 mb-4">
                                 <p>
                                   Scan the QR code with your banking app to pay
                                 </p>
                                 <p className="mt-1">
                                   Account name:{" "}
-                                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                                  <span className="font-medium text-[#2C78E4]">
                                     DINH HUU QUANG ANH
                                   </span>
                                 </p>
                                 <p>
                                   Account number:{" "}
-                                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                                  <span className="font-medium text-[#2C78E4]">
                                     220220222419
                                   </span>
                                 </p>
                                 <p>
                                   Bank:{" "}
-                                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                                  <span className="font-medium text-[#2C78E4]">
                                     MB Bank
                                   </span>
                                 </p>
                                 <p>
                                   Amount:{" "}
-                                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                                  <span className="font-medium text-[#2C78E4]">
                                     {formatCurrency(activeInvoice.amount)}
                                   </span>
                                 </p>
@@ -674,7 +674,7 @@ const BillingPage = () => {
                           </div>
                         ) : (
                           <div>
-                            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-green-800 dark:text-green-300 text-sm mb-4">
+                            <div className="bg-green-50 rounded-xl p-4 text-green-800 text-sm mb-4">
                               Enter the cash amount received from the customer.
                             </div>
 
@@ -682,7 +682,7 @@ const BillingPage = () => {
                               <div>
                                 <Label
                                   htmlFor="invoiceAmount"
-                                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                                  className="text-sm font-medium text-[#2C78E4]"
                                 >
                                   Invoice amount
                                 </Label>
@@ -690,14 +690,14 @@ const BillingPage = () => {
                                   id="invoiceAmount"
                                   value={activeInvoice.amount}
                                   disabled
-                                  className="mt-1 bg-gray-100 dark:bg-gray-800"
+                                  className="mt-1 bg-[#F0F7FF] border-[#2C78E4]/20 rounded-lg"
                                 />
                               </div>
 
                               <div>
                                 <Label
                                   htmlFor="cashReceived"
-                                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                                  className="text-sm font-medium text-[#2C78E4]"
                                 >
                                   Cash received
                                 </Label>
@@ -705,7 +705,7 @@ const BillingPage = () => {
                                   id="cashReceived"
                                   type="number"
                                   placeholder="Enter amount received"
-                                  className="mt-1"
+                                  className="mt-1 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
                                   value={cashAmount || ""}
                                   onChange={(e) =>
                                     setCashAmount(Number(e.target.value))
@@ -716,7 +716,7 @@ const BillingPage = () => {
                               <div>
                                 <Label
                                   htmlFor="cashChange"
-                                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                                  className="text-sm font-medium text-[#2C78E4]"
                                 >
                                   Change to return
                                 </Label>
@@ -724,7 +724,7 @@ const BillingPage = () => {
                                   id="cashChange"
                                   value={formatCurrency(cashChange)}
                                   disabled
-                                  className="mt-1 bg-gray-100 dark:bg-gray-800"
+                                  className="mt-1 bg-[#F0F7FF] border-[#2C78E4]/20 rounded-lg"
                                 />
                               </div>
                             </div>
@@ -733,13 +733,13 @@ const BillingPage = () => {
                       </TabsContent>
 
                       <TabsContent value="info" className="space-y-4 mt-4">
-                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-                          <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        <div className="bg-[#F0F7FF] rounded-xl p-4">
+                          <h3 className="font-medium text-[#2C78E4] mb-2">
                             Payment Instructions
                           </h3>
 
                           {paymentMethod === "vietqr" ? (
-                            <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                            <div className="text-sm text-[#2C78E4]/80 space-y-2">
                               <p>1. Open your mobile banking app</p>
                               <p>
                                 2. Scan the VietQR code using your app's scanner
@@ -747,24 +747,24 @@ const BillingPage = () => {
                               <p>3. Verify payment details</p>
                               <p>4. Confirm payment</p>
                               <p>5. Wait for confirmation (usually instant)</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                              <p className="text-xs text-[#2C78E4]/60 mt-2">
                                 For assistance, please contact our support at
                                 support@vetclinic.com or call 1900-1234
                               </p>
                             </div>
                           ) : (
-                            <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                            <div className="text-sm text-[#2C78E4]/80 space-y-2">
                               <p>1. Collect cash payment from customer</p>
                               <p>2. Enter the cash amount received</p>
                               <p>3. Verify the change amount to be returned</p>
                               <p>
-                                4. Click "Process Payment" to record the
+                                4. Click "Confirm Payment" to record the
                                 transaction
                               </p>
                               <p>
                                 5. Give the change and receipt to the customer
                               </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                              <p className="text-xs text-[#2C78E4]/60 mt-2">
                                 Always count the cash carefully before
                                 confirming the payment
                               </p>
@@ -775,7 +775,7 @@ const BillingPage = () => {
                     </Tabs>
 
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                      <div className="text-sm text-[#2C78E4]/70">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           <span>
@@ -792,7 +792,7 @@ const BillingPage = () => {
                           <Button
                             onClick={handleConfirmPayment}
                             disabled={isConfirmingPayment}
-                            className="w-full md:w-auto flex-1 bg-green-600 hover:bg-green-700"
+                            className="w-full md:w-auto flex-1 bg-green-600 hover:bg-green-700 rounded-lg"
                           >
                             {isConfirmingPayment ? (
                               <>
@@ -814,7 +814,7 @@ const BillingPage = () => {
                               cashAmount <= 0 ||
                               cashAmount < activeInvoice.amount
                             }
-                            className="w-full md:w-auto flex-1 bg-green-600 hover:bg-green-700"
+                            className="w-full md:w-auto flex-1 bg-green-600 hover:bg-green-700 rounded-lg"
                           >
                             {isConfirmingPayment ? (
                               <>
@@ -833,7 +833,7 @@ const BillingPage = () => {
                     </div>
 
                     {qrError && (
-                      <div className="mt-4 mb-6 bg-red-50 dark:bg-red-900/20 rounded-lg p-4 text-red-800 dark:text-red-300 text-sm flex items-start">
+                      <div className="mt-4 mb-6 bg-red-50 rounded-xl p-4 text-red-800 text-sm flex items-start">
                         <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
                         <div>
                           <p className="font-semibold">
@@ -847,7 +847,7 @@ const BillingPage = () => {
                 )}
 
                 {activeInvoice.status === "paid" && (
-                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-green-800 dark:text-green-300 text-sm flex items-start">
+                  <div className="bg-green-50 rounded-xl p-4 text-green-800 text-sm flex items-start">
                     <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold">Invoice Paid</p>
@@ -855,7 +855,7 @@ const BillingPage = () => {
                         This invoice has been paid already. Thank you for your
                         payment.
                       </p>
-                      <Button variant="outline" size="sm" className="mt-3">
+                      <Button variant="outline" size="sm" className="mt-3 rounded-lg border-green-200 text-green-600 hover:bg-green-50">
                         <Download className="mr-2 h-4 w-4" />
                         Download Receipt
                       </Button>
@@ -863,28 +863,17 @@ const BillingPage = () => {
                   </div>
                 )}
               </CardContent>
-
-              {/* <CardFooter className="pt-0 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center px-6 py-4">
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {activeInvoice.status === "paid" ? "Paid on " : "Created on "}
-                  {format(new Date(activeInvoice.date), "MMMM dd, yyyy")}
-                </div>
-                <Button variant="ghost" size="sm">
-                  <FileText className="mr-2 h-4 w-4" />
-                  View Full Invoice
-                </Button>
-              </CardFooter> */}
             </Card>
           ) : (
             <div className="flex h-full items-center justify-center">
-              <Card className="w-full p-8 text-center">
+              <Card className="w-full p-8 text-center border border-[#2C78E4]/20 rounded-xl">
                 <CardContent>
                   <div className="flex flex-col items-center justify-center py-10">
-                    <FileText className="h-16 w-16 text-gray-300 mb-4" />
-                    <h3 className="text-xl font-medium text-gray-700">
+                    <FileText className="h-16 w-16 text-[#2C78E4]/30 mb-4" />
+                    <h3 className="text-xl font-medium text-[#2C78E4]">
                       No Invoice Selected
                     </h3>
-                    <p className="text-gray-500 mt-2">
+                    <p className="text-[#2C78E4]/70 mt-2">
                       Please select an invoice from the list to view its
                       details.
                     </p>

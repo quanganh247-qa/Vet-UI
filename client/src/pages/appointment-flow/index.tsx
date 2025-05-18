@@ -55,6 +55,7 @@ import {
 import { useAuth } from "@/context/auth-context";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useDoctors } from "@/hooks/use-doctor";
+import { cn } from "@/lib/utils";
 
 // Utility function to invalidate related queries
 const invalidateRelatedQueries = async (patterns: string[]) => {
@@ -67,7 +68,6 @@ const AppointmentFlow = () => {
   const { id } = useParams();
   const [, navigate] = useLocation();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  console.log("selectedDate1", selectedDate);
   const [, setShowSidebar] = useState(true);
   const [, setSidebarContent] = useState("queue");
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<
@@ -100,16 +100,6 @@ const AppointmentFlow = () => {
     queryFn: () =>
       getAllAppointments(selectedDate, "false", currentPage, pageSize),
     enabled: true,
-  });
-
-  // Debug logs for appointments
-  console.log("Appointments Query State:", {
-    isLoading: isLoadingAppointments,
-    data: appointmentsData,
-    error: appointmentsError,
-    selectedDate: selectedDate.toISOString(),
-    currentPage,
-    pageSize,
   });
 
   // Fetch rooms data
@@ -160,11 +150,6 @@ const AppointmentFlow = () => {
       setSelectedDate(date);
       setCurrentPage(1); // Reset to first page when changing date
     }
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
   };
 
   const handlePageChange = (newPage: number) => {
@@ -300,9 +285,9 @@ const AppointmentFlow = () => {
   // Show loading state
   if (isLoadingAppointments || isLoadingRooms) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-[#f6fcfe]">
-        <Loader2 className="h-8 w-8 animate-spin text-[#23b3c7] mb-4" />
-        <p className="text-[#23b3c7] font-medium">
+      <div className="h-screen flex flex-col items-center justify-center bg-[#F9FAFB]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#2C78E4] mb-4" />
+        <p className="text-[#2C78E4] font-medium">
           Loading appointment data...
         </p>
       </div>
@@ -312,85 +297,45 @@ const AppointmentFlow = () => {
   // Rendering the mobile menu
   const renderMobileMenu = () => (
     <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between border-b border-[#b6e6f2] pb-3 mb-3">
+      <div className="flex items-center justify-between border-b border-gray-200 pb-3 mb-3">
         <div className="flex items-center">
-          <UserCog className="h-5 w-5 mr-2 text-[#23b3c7]" />
-          <span className="font-medium">Dr. {doctor?.username || "User"}</span>
+          <UserCog className="h-5 w-5 mr-2 text-[#2C78E4]" />
+          <span className="font-medium text-[#111827]">Dr. {doctor?.username || "User"}</span>
         </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setIsMobileMenuOpen(false)}
+          className="rounded-full hover:bg-[#F9FAFB]"
         >
-          <X className="h-5 w-5" />
+          <X className="h-5 w-5 text-[#4B5563]" />
         </Button>
       </div>
 
-      <div className="flex items-center bg-[#eaf7fa] rounded-md p-3 mb-3">
-        <Calendar className="h-4 w-4 text-[#23b3c7] mr-2" />
+      <div className="flex items-center bg-[#F9FAFB] rounded-lg p-3 mb-3">
+        <Calendar className="h-4 w-4 text-[#2C78E4] mr-2" />
         <input
           type="date"
           value={format(selectedDate, "yyyy-MM-dd")}
           onChange={handleDateChange}
-          className="text-sm bg-transparent border-none focus:outline-none w-full"
+          className="text-sm bg-transparent border-none focus:outline-none w-full text-[#111827]"
         />
       </div>
 
-      <div className="border-t border-[#b6e6f2] pt-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start text-left"
-          asChild
-        >
-          <Link href="/dashboard">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Link>
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start text-left mt-1"
-        >
-          <User className="h-4 w-4 mr-2" />
-          Profile Settings
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start text-left mt-1"
-        >
-          <Settings className="h-4 w-4 mr-2" />
-          Preferences
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start text-left text-[#ff5a5f] mt-1"
-          onClick={handleLogout}
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          Logout
-        </Button>
-      </div>
     </div>
   );
 
   return (
     <div className="space-y-6">
-      {/* Header with gradient background */}
-      <div className="bg-[#23b3c7] px-6 py-4 rounded-xl shadow-md">
+            {/* Header with gradient background */}
+            <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md mb-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <div className="flex items-center">
               <Button
                 variant="ghost"
                 size="icon"
-                className="mr-2 h-8 w-8 text-white hover:bg-white/20 md:block hidden"
+                className="mr-2 h-8 w-8 text-white hover:bg-white/20 md:block hidden rounded-full"
                 asChild
               >
                 <Link href="/dashboard">
@@ -411,12 +356,12 @@ const AppointmentFlow = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-white hover:bg-white/10 md:hidden"
+                  className="text-white hover:bg-white/10 md:hidden rounded-full"
                 >
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[280px] sm:max-w-none">
+              <SheetContent side="left" className="w-[280px] sm:max-w-none bg-white">
                 {renderMobileMenu()}
               </SheetContent>
             </Sheet>
@@ -424,7 +369,7 @@ const AppointmentFlow = () => {
             <Button
               variant="outline"
               size="sm"
-              className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
+              className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5 rounded-lg"
               onClick={handleRefreshData}
               disabled={isRefreshing}
             >
@@ -438,15 +383,15 @@ const AppointmentFlow = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        <div className="bg-white rounded-lg border border-[#b6e6f2] shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
           {/* Search and filter section */}
-          <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6 bg-[#eaf7fa] p-3 rounded-md border border-[#b6e6f2]">
+          <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6 bg-[#F9FAFB] p-3 rounded-lg border border-gray-200">
             <div className="flex flex-1 gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#b6e6f2]" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#4B5563]" />
                 <Input
                   placeholder="Search appointments..."
-                  className="pl-10 border-[#b6e6f2] focus:border-[#23b3c7] focus:ring-[#23b3c7]"
+                  className="pl-10 border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] rounded-lg"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -458,10 +403,10 @@ const AppointmentFlow = () => {
                   setStatusFilter(value === "all" ? null : value)
                 }
               >
-                <SelectTrigger className="w-[180px] border-[#b6e6f2]">
+                <SelectTrigger className="w-[180px] border-gray-200 rounded-lg">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white rounded-lg shadow-md border-none">
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="scheduled">Waiting</SelectItem>
                   <SelectItem value="in progress">In Progress</SelectItem>
@@ -475,7 +420,7 @@ const AppointmentFlow = () => {
                   type="date"
                   value={format(selectedDate, "yyyy-MM-dd")}
                   onChange={handleDateChange}
-                  className="border-[#b6e6f2] h-10"
+                  className="border-gray-200 h-10 rounded-lg"
                 />
               </div>
 
@@ -483,34 +428,20 @@ const AppointmentFlow = () => {
                 variant="outline"
                 size="icon"
                 onClick={clearFilters}
-                className="border-[#b6e6f2]"
+                className="border-gray-200 h-10 w-10 rounded-lg hover:bg-[#2C78E4]/5 hover:border-[#2C78E4]/20"
               >
-                <RotateCcw className="h-4 w-4 text-[#23b3c7]" />
+                <RotateCcw className="h-4 w-4 text-[#2C78E4]" />
               </Button>
             </div>
           </div>
 
           {/* Flowboard section */}
           <div className="bg-white rounded-lg overflow-hidden mb-6">
-            <div className="border-b border-[#b6e6f2] p-4 bg-[#eaf7fa]">
-              <h2 className="text-lg font-semibold text-[#1e293b] flex items-center">
-                <Stethoscope className="mr-2 h-5 w-5 text-[#23b3c7]" />
-                Flowboard
-              </h2>
-            </div>
-
-            <div className="p-4 overflow-x-auto">
+            
               <div className="min-w-[600px]">
                 <EnhancedAppointmentFlowboard
                   appointments={filteredAppointments}
-                  doctors={staff?.data?.map((s: any) => ({
-                    doctor_id: s.id,
-                    doctor_name: s.name,
-                    doctor_phone: "",
-                    doctor_email: "",
-                    doctor_specialty: s.role,
-                    doctor_avatar: s.avatar || "",
-                  }))}
+                  doctors={staff?.data}
                   rooms={rooms}
                   onAppointmentUpdate={(appointment) =>
                     handleStatusChange(appointment.id, appointment.state)
@@ -537,40 +468,42 @@ const AppointmentFlow = () => {
 
           {/* Pagination controls */}
           {totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 border-t border-[#b6e6f2] pt-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-[#888]">
-                  Showing{" "}
-                  {Math.min(
-                    (currentPage - 1) * pageSize + 1,
-                    totalAppointments
-                  )}{" "}
-                  to {Math.min(currentPage * pageSize, totalAppointments)} of{" "}
-                  {totalAppointments} appointments
-                </span>
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 border-t border-gray-200 pt-4">
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-[#4B5563]">Show</span>
                 <Select
                   value={pageSize.toString()}
                   onValueChange={handlePageSizeChange}
                 >
-                  <SelectTrigger className="w-20 h-8 text-xs border-[#b6e6f2]">
+                  <SelectTrigger className="w-20 h-8 text-xs border-gray-200 rounded-lg">
                     <SelectValue placeholder="10" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white rounded-lg shadow-md border-none">
                     <SelectItem value="5">5</SelectItem>
                     <SelectItem value="10">10</SelectItem>
                     <SelectItem value="20">20</SelectItem>
                     <SelectItem value="50">50</SelectItem>
                   </SelectContent>
                 </Select>
+                <span className="text-[#4B5563]">entries</span>
+              </div>
+
+              <div className="text-sm text-[#4B5563]">
+                Showing {Math.min((currentPage - 1) * pageSize + 1, totalAppointments)} - {Math.min(currentPage * pageSize, totalAppointments)} of {totalAppointments} appointments
               </div>
 
               <div className="flex gap-1">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage <= 1}
-                  className="h-8 w-8 p-0 flex items-center justify-center border-[#b6e6f2]"
+                  className={cn(
+                    "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                    currentPage <= 1
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
+                  )}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -591,16 +524,15 @@ const AppointmentFlow = () => {
                     return (
                       <Button
                         key={pageNum}
-                        variant={
-                          currentPage === pageNum ? "default" : "outline"
-                        }
+                        variant="ghost"
                         size="sm"
                         onClick={() => handlePageChange(pageNum)}
-                        className={`h-8 w-8 p-0 ${
+                        className={cn(
+                          "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
                           currentPage === pageNum
-                            ? "bg-[#23b3c7] text-white hover:bg-[#23b3c7]"
-                            : "border-[#b6e6f2]"
-                        }`}
+                            ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
+                            : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
+                        )}
                       >
                         {pageNum}
                       </Button>
@@ -609,11 +541,16 @@ const AppointmentFlow = () => {
                 </div>
 
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage >= totalPages}
-                  className="h-8 w-8 p-0 flex items-center justify-center border-[#b6e6f2]"
+                  className={cn(
+                    "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                    currentPage >= totalPages
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
+                  )}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -621,7 +558,6 @@ const AppointmentFlow = () => {
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 };

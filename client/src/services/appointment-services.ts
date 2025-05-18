@@ -27,8 +27,6 @@ export const getAllAppointments = async (
 
   try {
     const formattedDate = date.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
-    console.log("Ngày trong params:", formattedDate);
-
     
     const response = await api.get(`/api/v1/appointments`, {
       params: {

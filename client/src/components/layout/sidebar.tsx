@@ -54,7 +54,7 @@ const navigation = [
   },
   {
     name: "Schedule",
-    href: "/schedule-management",
+    href: "/shift-assignment",
     icon: <CalendarRange className="h-5 w-5" />,
   },
   {
@@ -62,11 +62,6 @@ const navigation = [
     href: "/inventory",
     icon: <Package className="h-5 w-5" />,
   },
-  // {
-  //   name: "Vaccinations",
-  //   href: "/vaccination",
-  //   icon: <Syringe className="h-5 w-5" />,
-  // },
   {
     name: "Billing",
     href: "/billing",
@@ -109,7 +104,7 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
   const auth = useAuth();
   const { doctor, logout, notificationCount } = auth;
 
-  // Hàm kiểm tra URL hiện tại có khớp với href không
+  // Check if current URL matches href
   const isActive = (href: string) => {
     if (href === '/') {
       return location === href;
@@ -125,23 +120,23 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
   return (
     <div
       className={cn(
-        "bg-indigo-600 text-white transition-all duration-300 flex flex-col h-full",
+        "bg-white text-[#111827] border-r border-gray-100 shadow-sm transition-all duration-300 flex flex-col h-full",
         isExpanded ? "w-64" : "w-20",
         className
       )}
     >
       {/* Logo */}
-      <div className={cn("p-4 flex items-center", isExpanded ? "justify-between" : "justify-center")}>
+      <div className={cn("p-5 flex items-center", isExpanded ? "justify-between" : "justify-center")}>
         {isExpanded && (
           <div className="flex items-center">
-            <PawPrint className="h-8 w-8 text-white" />
-            <span className="ml-2 text-xl font-semibold">VetCare</span>
+            <PawPrint className="h-8 w-8 text-[#2C78E4]" />
+            <span className="ml-2 text-xl font-semibold text-[#111827]">VetCare</span>
           </div>
         )}
-        {!isExpanded && <PawPrint className="h-8 w-8 text-white" />}
+        {!isExpanded && <PawPrint className="h-8 w-8 text-[#2C78E4]" />}
         <button
           onClick={toggleSidebar}
-          className="p-2 rounded-full hover:bg-indigo-700 transition-colors"
+          className="p-2 rounded-full hover:bg-[#F9FAFB] text-[#4B5563] transition-colors"
         >
           {isExpanded ? (
             <ChevronLeft className="h-5 w-5" />
@@ -152,8 +147,8 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
       </div>
 
       {/* Main navigation */}
-      <div className="mt-6 flex flex-col flex-1 overflow-y-auto">
-        <nav className="flex-1 px-2 space-y-1">
+      <div className="mt-4 flex flex-col flex-1 overflow-y-auto px-3">
+        <nav className="flex-1 space-y-1.5">
           {navigation.map((item) => {
             const isActiveItem = isActive(item.href);
             return (
@@ -161,15 +156,20 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all",
+                  "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all",
                   isActiveItem
-                    ? "bg-indigo-800 text-white"
-                    : "text-indigo-100 hover:bg-indigo-700 hover:text-white"
+                    ? "bg-[#2C78E4]/10 text-[#2C78E4]"
+                    : "text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#2C78E4]"
                 )}
               >
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center">
-                    {item.icon}
+                    <div className={cn(
+                      isActiveItem ? "text-[#2C78E4]" : "text-[#4B5563] group-hover:text-[#2C78E4]",
+                      "transition-colors"
+                    )}>
+                      {item.icon}
+                    </div>
                     <AnimatePresence>
                       {isExpanded && (
                         <motion.span
@@ -183,7 +183,7 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
                       )}
                     </AnimatePresence>
                   </div>
-                  {item.name === "Thông báo" && notificationCount > 0 && (
+                  {item.name === "Notifications" && notificationCount > 0 && (
                     <Badge className="bg-red-500 text-white">
                       {notificationCount > 99 ? "99+" : notificationCount}
                     </Badge>
@@ -194,7 +194,15 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
           })}
         </nav>
 
-        <div className="px-2 space-y-1 mt-6">
+        <div className="space-y-1.5 mt-6 mb-4">
+          <div className={cn(
+            "py-2 px-3",
+            isExpanded ? "block" : "hidden"
+          )}>
+            <p className="text-xs font-semibold text-[#4B5563] uppercase tracking-wider">
+              Settings
+            </p>
+          </div>
           {secondaryNavigation.map((item) => {
             const isActiveItem = isActive(item.href);
             return (
@@ -202,15 +210,20 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all",
+                  "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all",
                   isActiveItem
-                    ? "bg-indigo-800 text-white"
-                    : "text-indigo-100 hover:bg-indigo-700 hover:text-white"
+                    ? "bg-[#2C78E4]/10 text-[#2C78E4]"
+                    : "text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#2C78E4]"
                 )}
               >
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center">
-                    {item.icon}
+                    <div className={cn(
+                      isActiveItem ? "text-[#2C78E4]" : "text-[#4B5563] group-hover:text-[#2C78E4]",
+                      "transition-colors"
+                    )}>
+                      {item.icon}
+                    </div>
                     <AnimatePresence>
                       {isExpanded && (
                         <motion.span
@@ -224,7 +237,11 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
                       )}
                     </AnimatePresence>
                   </div>
-                 
+                  {item.name === "Notifications" && notificationCount > 0 && (
+                    <Badge className="bg-red-500 text-white">
+                      {notificationCount > 99 ? "99+" : notificationCount}
+                    </Badge>
+                  )}
                 </div>
               </Link>
             );
@@ -235,29 +252,29 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
       {/* User profile */}
       <div
         className={cn(
-          "border-t border-indigo-700 p-4 mt-auto",
+          "border-t border-gray-100 p-4 mt-auto bg-[#F9FAFB]",
           isExpanded ? "" : "flex justify-center"
         )}
       >
         {isExpanded ? (
           <div className="flex items-center">
-            <div className="w-10 h-10 rounded-full bg-indigo-700 flex items-center justify-center">
-              <User className="h-6 w-6" />
+            <div className="w-10 h-10 rounded-full bg-[#2C78E4]/10 flex items-center justify-center text-[#2C78E4]">
+              <User className="h-5 w-5" />
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-white">{doctor?.username || "User"}</p>
+              <p className="text-sm font-medium text-[#111827]">{doctor?.username || "User"}</p>
               <button
                 onClick={logout}
-                className="flex items-center text-xs text-indigo-200 hover:text-white"
+                className="flex items-center text-xs text-[#4B5563] hover:text-[#2C78E4] transition-colors"
               >
-                <LogOut className="h-3 w-3 mr-1" /> Logout
+                <LogOut className="h-3.5 w-3.5 mr-1" /> Logout
               </button>
             </div>
           </div>
         ) : (
           <button
             onClick={logout}
-            className="p-2 rounded-full hover:bg-indigo-700 transition-colors"
+            className="p-2 rounded-full hover:bg-[#2C78E4]/10 text-[#4B5563] hover:text-[#2C78E4] transition-colors"
           >
             <LogOut className="h-5 w-5" />
           </button>
@@ -281,9 +298,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     console.error("Error rendering sidebar:", error);
     // Return a minimal sidebar that doesn't depend on auth
     return (
-      <div className="bg-indigo-600 text-white w-20 flex flex-col h-full">
+      <div className="bg-white text-[#111827] border-r border-gray-100 w-20 flex flex-col h-full">
         <div className="p-4 flex items-center justify-center">
-          <PawPrint className="h-8 w-8 text-white" />
+          <PawPrint className="h-8 w-8 text-[#2C78E4]" />
         </div>
         {/* Empty space where navigation would be */}
         <div className="flex-1"></div>

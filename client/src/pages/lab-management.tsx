@@ -33,6 +33,8 @@ import {
   Save,
   AlertTriangle,
   Receipt,
+  Filter,
+  Plus,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -561,8 +563,8 @@ const LabManagement: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-12 h-12 border-4 border-t-indigo-600 border-b-indigo-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
-          <p className="text-indigo-600 font-medium">Loading data...</p>
+          <div className="w-12 h-12 border-4 border-t-[#2C78E4] border-b-[#2C78E4] border-l-transparent border-r-transparent rounded-full animate-spin"></div>
+          <p className="text-[#2C78E4] font-medium">Loading data...</p>
         </div>
       </div>
     );
@@ -580,7 +582,7 @@ const LabManagement: React.FC = () => {
     return (
       <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
         {/* Header with gradient background */}
-        <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 md:px-8 md:py-5 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 md:px-8 md:py-5 flex items-center justify-between">
           <div className="flex items-center">
             <Button
               variant="ghost"
@@ -606,7 +608,7 @@ const LabManagement: React.FC = () => {
             Please contact your administrator to set up test categories.
           </p>
           <Button
-            className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white"
+            className="mt-6 bg-[#2C78E4] hover:bg-[#1E40AF] text-white"
             onClick={handleBackToExamination}
           >
             Return to Examination
@@ -619,7 +621,7 @@ const LabManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 md:px-8 md:py-5 rounded-xl shadow-md mb-6 text-white">
         <div className="flex justify-between items-center">
           {/* Left Section: Back Button + Title */}
           <div className="flex items-center">
@@ -634,54 +636,46 @@ const LabManagement: React.FC = () => {
             </Button>
             <h1 className="text-white font-semibold text-lg">Lab Tests</h1>
           </div>
-
-          {/* Right Section: Buttons Aligned to Right */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={selectedTestsCount === 0}
-              className="bg-white text-indigo-600 hover:bg-white/90 flex items-center"
-              onClick={() => setShowConfirmDialog(true)}
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              <span>Order ({selectedTestsCount})</span>
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white text-indigo-600 hover:bg-white/90 flex items-center"
-              onClick={() => {
-                const params = new URLSearchParams();
-                if (effectiveAppointmentId)
-                  params.append("appointmentId", effectiveAppointmentId);
-                if (patient?.petid)
-                  params.append("petId", patient.petid.toString());
-                navigate(`/vaccination?${params.toString()}`);
-              }}
-            >
-              <Syringe className="h-4 w-4 mr-2" />
-              <span>Go to Vaccination</span>
-            </Button>
-          </div>
         </div>
       </div>
+
       <WorkflowNavigation
         appointmentId={effectiveAppointmentId}
         petId={patient?.pet_id?.toString()}
         currentStep="diagnostic"
       />
 
+      {/* Header with title and actions */}
+      <div className="px-6 pb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h2 className="text-xl font-semibold text-gray-900">Available Tests</h2>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="text-gray-700 border-gray-200 hover:bg-gray-50"
+          >
+            <Filter className="h-4 w-4 mr-2 text-gray-500" />
+            Filter
+          </Button>
+          <Button 
+            size="sm"
+            className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create Test Plan
+          </Button>
+        </div>
+      </div>
+
       {/* Search Bar */}
-      <div className="p-4 border-b">
-        <div className="relative max-w-md mx-auto">
+      <div className="px-6 pb-4">
+        <div className="relative max-w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search tests by name or description..."
-            className="pl-10 w-full pr-4 py-2 border-gray-300 rounded-md"
+            placeholder="Search tests by name, category or description..."
+            className="pl-10 w-full pr-4 py-2 h-11 border border-gray-200 rounded-lg shadow-sm focus:ring-[#2C78E4] focus:border-[#2C78E4]"
           />
           {searchQuery && (
             <button
@@ -694,127 +688,131 @@ const LabManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Main content - Simplified List View */}
-      <div className="p-4">
-        {(() => {
-          // Collect all tests from all categories with category info
-          const allTests: Array<any> = [];
+      {/* Main content - Modern Card-Based View */}
+      <div className="px-6">
+        {allCategories.length > 0 && (
+          <React.Fragment>
+            {/* Collect tests and filter them */}
+            {(() => {
+              // Collect all tests from all categories with category info
+              const allTests: Array<any> = [];
 
-          allCategories.forEach((category: any) => {
-            const filteredTests = filterTestsBySearch(category.tests);
-            filteredTests.forEach((test: any) => {
-              allTests.push({
-                ...test,
-                category: category.name,
-                categoryIcon: category.icon,
+              allCategories.forEach((category: any) => {
+                const filteredTests = filterTestsBySearch(category.tests);
+                filteredTests.forEach((test: any) => {
+                  allTests.push({
+                    ...test,
+                    category: category.name,
+                    categoryIcon: category.icon,
+                  });
+                });
               });
-            });
-          });
 
-          // No tests found message
-          if (allTests.length === 0 && searchQuery) {
-            return (
-              <div className="py-12 text-center">
-                <SearchX className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                <h3 className="text-gray-700 font-medium mb-1">
-                  No matching tests found
-                </h3>
-                <p className="text-gray-500">
-                  Try different keywords or browse by category
-                </p>
-              </div>
-            );
-          }
+              // Store the result for reference in the JSX below
+              return (
+                <>
+                  {/* No tests found message */}
+                  {allTests.length === 0 && searchQuery ? (
+                    <div className="py-12 text-center">
+                      <SearchX className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                      <h3 className="text-gray-700 font-medium mb-1">
+                        No matching tests found
+                      </h3>
+                      <p className="text-gray-500">
+                        Try different keywords or browse by category
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Test Counter */}
+                      <div className="flex items-center text-sm text-gray-500 mb-2">
+                        <span>
+                          {allTests.length} test{allTests.length !== 1 ? "s" : ""} available
+                          {searchQuery ? ` for "${searchQuery}"` : ""}
+                        </span>
+                      </div>
 
-          return (
-            <div className="space-y-6">
-              {/* Test Counter */}
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">
-                  {allTests.length} test{allTests.length !== 1 ? "s" : ""}{" "}
-                  available
-                  {searchQuery ? ` for "${searchQuery}"` : ""}
-                </span>
-                {selectedTestsCount > 0 && (
-                  <Badge className="bg-indigo-100 text-indigo-800 hover:bg-indigo-200">
-                    {selectedTestsCount} selected
-                  </Badge>
-                )}
-              </div>
-
-              {/* Simple List */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {allTests.map((test) => (
-                  <div
-                    key={test.id}
-                    className={cn(
-                      "border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md",
-                      selectedTests[test.id]
-                        ? "border-indigo-500 bg-indigo-50"
-                        : "border-gray-200 hover:border-indigo-300"
-                    )}
-                    onClick={() => toggleTest(test.id)}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <Checkbox
-                        checked={selectedTests[test.id] || false}
-                        onCheckedChange={() => toggleTest(test.id)}
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          {test.categoryIcon}
-                          <span className="text-xs font-medium text-gray-500">
-                            {test.category}
-                          </span>
-                        </div>
-                        <h3 className="font-medium text-gray-900">
-                          {test.name}
-                        </h3>
-                        {test.description && (
-                          <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                            {test.description}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-3 mt-2">
-                          {test.price && (
-                            <span className="text-xs font-medium bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                              {test.price}
-                            </span>
-                          )}
-                          {test.turnaroundTime && (
-                            <span className="text-xs text-gray-500 flex items-center">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {test.turnaroundTime}
-                            </span>
-                          )}
-                        </div>
+                      {/* Modern Card Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {allTests.map((test) => (
+                          <div
+                            key={test.id}
+                            className={cn(
+                              "border rounded-xl p-4 cursor-pointer transition-all bg-white",
+                              selectedTests[test.id]
+                                ? "border-[#2C78E4] ring-1 ring-[#2C78E4]/20 bg-[#F0F7FF]"
+                                : "border-gray-200 hover:border-[#2C78E4] hover:shadow-sm"
+                            )}
+                            onClick={() => toggleTest(test.id)}
+                          >
+                            <div className="flex items-start space-x-3">
+                              <Checkbox
+                                checked={selectedTests[test.id] || false}
+                                onCheckedChange={() => toggleTest(test.id)}
+                                className="mt-1 border-gray-300 data-[state=checked]:bg-[#2C78E4] data-[state=checked]:border-[#2C78E4]"
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  {test.categoryIcon}
+                                  <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                                    {test.category}
+                                  </span>
+                                </div>
+                                <h3 className="font-medium text-gray-900 mb-1">
+                                  {test.name}
+                                </h3>
+                                {test.description && (
+                                  <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+                                    {test.description}
+                                  </p>
+                                )}
+                                <div className="flex flex-wrap items-center gap-3 mt-1">
+                                  {test.price && (
+                                    <span className="text-xs font-medium text-[#2C78E4] px-2 py-1 rounded-full bg-[#F0F7FF]">
+                                      {test.price}
+                                    </span>
+                                  )}
+                                  {test.turnaroundTime && (
+                                    <span className="text-xs text-gray-500 flex items-center">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      {test.turnaroundTime}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
+                  )}
+                </>
+              );
+            })()}
+          </React.Fragment>
+        )}
       </div>
 
       {/* Action Footer */}
       {selectedTestsCount > 0 && (
-        <div className="sticky bottom-0 p-4 bg-white border-t border-gray-200 shadow-md">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="sticky bottom-0 p-4 bg-white border-t border-gray-200 shadow-md z-10">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <p className="font-medium text-gray-900">
-                {selectedTestsCount} test{selectedTestsCount !== 1 ? "s" : ""}{" "}
-                selected
-              </p>
-              <p className="text-sm text-gray-600">
-                Total: {getTotalPrice().formatted}
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-gray-900">
+                  {selectedTestsCount} test{selectedTestsCount !== 1 ? "s" : ""} selected
+                </span>
+                <Badge className="bg-[#F0F7FF] text-[#2C78E4] hover:bg-[#E3F2FD]">
+                  {getTotalPrice().formatted}
+                </Badge>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                Click tests to add or remove them from your order
               </p>
             </div>
             <Button
               onClick={() => setShowConfirmDialog(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white px-6"
             >
               <ShoppingCart className="h-4 w-4 mr-2" />
               Place Order
@@ -825,7 +823,7 @@ const LabManagement: React.FC = () => {
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent className="max-w-md p-0 overflow-hidden bg-white">
+        <DialogContent className="max-w-md p-0 overflow-hidden bg-white rounded-xl">
           <DialogHeader className="p-6 pb-3">
             <DialogTitle className="text-xl font-semibold">
               Confirm Test Order
@@ -839,7 +837,7 @@ const LabManagement: React.FC = () => {
           <div className="px-6">
             <div className="mb-3 flex justify-between items-center">
               <h4 className="font-medium text-gray-700">Selected Tests</h4>
-              <Badge className="bg-blue-100 text-blue-700">
+              <Badge className="bg-[#F0F7FF] text-[#2C78E4]">
                 {getTotalPrice().formatted}
               </Badge>
             </div>
@@ -883,7 +881,7 @@ const LabManagement: React.FC = () => {
                 placeholder="Add any special instructions..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="mt-1 h-20"
+                className="mt-1 h-20 rounded-lg border-gray-200 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
               />
             </div>
           </div>
@@ -898,7 +896,7 @@ const LabManagement: React.FC = () => {
             </button>
             <button
               onClick={orderTests}
-              className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 font-medium text-white flex items-center justify-center"
+              className="flex-1 py-4 bg-[#2C78E4] hover:bg-[#1E40AF] font-medium text-white flex items-center justify-center"
             >
               <Check className="h-4 w-4 mr-2" />
               Confirm Order

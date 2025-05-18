@@ -18,26 +18,25 @@ export const WalkInDialog: React.FC = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-[#23b3c7] text-white border-[#b6e6f2] hover:bg-[#b6e6f2]">
-          <Plus className="mr-2 h-5 w-5 stroke-[2.5]" />
-          New Appointment
+        <Button className="bg-white text-[#2C78E4] hover:bg-white/90 rounded-lg shadow-sm">
+          <Plus className="h-4 w-4 mr-1" /> New Appointment
         </Button>
       </DialogTrigger>
 
       <DialogContent
         className={cn(
           "p-0 border-none overflow-hidden rounded-2xl shadow-2xl",
-          "backdrop:bg-[#1e293b]/30 backdrop:backdrop-blur-sm",
+          "backdrop:bg-[#111827]/20 backdrop:backdrop-blur-sm",
           isExpanded ? "w-screen h-screen max-w-none" : "max-w-3xl"
         )}
       >
-        <div className="relative bg-white">
+        <div className="relative bg-white rounded-2xl">
           {/* Header */}
-          <div className="sticky top-0 z-20 bg-[#f6fcfe] flex items-center justify-between px-8 py-6 border-b border-[#b6e6f2]">
+          <div className="sticky top-0 z-20 bg-[#F9FAFB] flex items-center justify-between px-8 py-6 border-b border-gray-100">
             <DialogHeader className="space-y-0">
-              <DialogTitle className="text-2xl font-bold text-[#1e293b]">
+              <DialogTitle className="text-2xl font-bold text-[#111827]">
                 New Walk-in Registration
-                <div className="text-sm font-normal text-[#888] mt-1">
+                <div className="text-sm font-normal text-[#4B5563] mt-1">
                   Register a new walk-in appointment
                 </div>
               </DialogTitle>
@@ -47,7 +46,7 @@ export const WalkInDialog: React.FC = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-[#888] hover:bg-[#eaf7fa] rounded-xl"
+                className="text-[#4B5563] hover:bg-[#2C78E4]/10 hover:text-[#2C78E4] rounded-lg"
                 onClick={() => setIsExpanded(!isExpanded)}
               >
                 <Expand className="h-5 w-5" />
@@ -55,7 +54,7 @@ export const WalkInDialog: React.FC = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-[#888] hover:bg-[#eaf7fa] rounded-xl"
+                className="text-[#4B5563] hover:bg-[#2C78E4]/10 hover:text-[#2C78E4] rounded-lg"
                 onClick={() => setOpen(false)}
               >
                 <X className="h-5 w-5" />
@@ -66,7 +65,7 @@ export const WalkInDialog: React.FC = () => {
           {/* Content Area */}
           <div
             className={cn(
-              "overflow-y-auto bg-[#f6fcfe]",
+              "overflow-y-auto bg-white",
               isExpanded ? "h-[calc(100vh-88px)]" : "max-h-[75vh]"
             )}
           >

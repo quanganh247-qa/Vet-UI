@@ -39,6 +39,7 @@ import {
   ArrowUpRight,
   Receipt,
   Syringe,
+  Lock,
 } from "lucide-react";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,7 @@ import {
   CreateTreatmentRequest,
   MedicineTransactionRequest,
   CreateInvoiceRequest,
+  Appointment,
 } from "@/types";
 import { useAppointmentData } from "@/hooks/use-appointment";
 import { usePatientData } from "@/hooks/use-pet";
@@ -193,8 +195,6 @@ const TreatmentManagement: React.FC = () => {
     petId || ""
   );
 
-
-
   const selectedTreatment =
     treatments &&
     treatments.find((t: Treatment) => t.id === selectedTreatmentId);
@@ -234,7 +234,6 @@ const TreatmentManagement: React.FC = () => {
       setActiveView("list");
     }
   };
-
 
   // State for new treatment
   const [newTreatment, setNewTreatment] = useState<
@@ -687,6 +686,19 @@ const TreatmentManagement: React.FC = () => {
 
   // Handle opening medicine modal for a specific phase
   const handleOpenMedicineModal = (phaseId: number) => {
+    // Find the phase to check if it's completed
+    const phase = phases?.find((p: TreatmentPhase) => p.id === phaseId);
+
+    // If phase is completed, show a toast message and don't open the modal
+    if (phase?.status === "Completed") {
+      toast({
+        title: "Phase Locked",
+        description: "Cannot add medications to a completed phase",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSelectedPhaseId(phaseId);
     setSelectedMedicines([]);
     setMedicineSearchTerm("");
@@ -950,6 +962,9 @@ const TreatmentManagement: React.FC = () => {
     }
   };
 
+  // Add state for toast confirmation dialog
+  const [phaseToComplete, setPhaseToComplete] = useState<number | null>(null);
+  
   // Add this handler for updating phase status
   const handleUpdatePhaseStatus = async (
     phaseId: number,
@@ -962,6 +977,16 @@ const TreatmentManagement: React.FC = () => {
         variant: "destructive",
       });
       return;
+    }
+
+    // If changing to Completed, show a confirmation
+    if (newStatus === "Completed") {
+      toast({
+        title: "Warning",
+        description: "Once a phase is marked as Completed, you won't be able to add more medications to it.",
+        variant: "destructive",
+        duration: 5000,
+      });
     }
 
     setIsUpdatingPhaseStatus(true);
@@ -1143,10 +1168,6 @@ const TreatmentManagement: React.FC = () => {
     generatePDF("prescription-pdf-content", "print");
   };
 
-  // const handleUploadPrescription = () => {
-  //   generatePDF("prescription-pdf-content", "upload");
-  // };
-
   // Cập nhật hàm xử lý tải xuống đơn thuốc dưới dạng PDF
   const handleDownloadPrescription = () => {
     // Tạo tên file bao gồm ID treatment và ngày hiện tại
@@ -1162,7 +1183,7 @@ const TreatmentManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 px-6 py-4 md:px-8 md:py-5 rounded-t-xl shadow-md mb-6 text-white">
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 md:px-8 md:py-5 rounded-xl shadow-md mb-6 text-white">
         {/* Header Row */}
         <div className="flex justify-between items-center">
           {/* Left Section: Back Button + Title */}
@@ -1246,12 +1267,20 @@ const TreatmentManagement: React.FC = () => {
       <div className="p-4">
         {/* Treatment List View */}
         {activeView === "list" && (
-          <div>
-            <div className="flex items-center justify-between mb-6">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                <Clipboard className="mr-2 h-5 w-5 text-indigo-600" />
+                <Clipboard className="mr-2 h-5 w-5 text-[#2C78E4]" />
                 Treatment Plans
               </h2>
+              <Button
+                variant="default"
+                className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white"
+                onClick={() => setActiveView("new")}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Treatment
+              </Button>
             </div>
 
             {/* Treatment Cards */}
@@ -1259,8 +1288,8 @@ const TreatmentManagement: React.FC = () => {
               {isTreatmentsLoading ? (
                 <div className="col-span-2 py-8 flex justify-center">
                   <div className="flex flex-col items-center space-y-4">
-                    <div className="w-12 h-12 border-4 border-t-indigo-600 border-b-indigo-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
-                    <p className="text-indigo-600 font-medium">
+                    <div className="w-12 h-12 border-4 border-t-[#2C78E4] border-b-[#2C78E4] border-l-transparent border-r-transparent rounded-full animate-spin"></div>
+                    <p className="text-[#2C78E4] font-medium">
                       Loading treatments...
                     </p>
                   </div>
@@ -1269,15 +1298,15 @@ const TreatmentManagement: React.FC = () => {
                 treatments.map((treatment: Treatment) => (
                   <div
                     key={treatment.id}
-                    className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all cursor-pointer"
                     onClick={() => handleSelectTreatment(treatment.id)}
                   >
-                    <div className="px-5 py-4 bg-gradient-to-r from-indigo-50 to-white border-b flex justify-between items-start">
+                    <div className="px-6 py-5 flex justify-between items-start">
                       <div>
-                        <h3 className="font-semibold text-gray-800">
+                        <h3 className="text-lg font-semibold text-gray-900">
                           {treatment.type}
                         </h3>
-                        <div className="text-sm text-gray-600 mt-1 flex items-center">
+                        <div className="mt-1 flex items-center text-sm text-gray-500">
                           <Calendar
                             size={14}
                             className="mr-1.5 text-gray-400"
@@ -1294,20 +1323,20 @@ const TreatmentManagement: React.FC = () => {
                             ? "bg-blue-100 text-blue-800 border-blue-200"
                             : treatment.status === "Not Started"
                             ? "bg-gray-100 text-gray-800 border-gray-200"
-                            : "bg-indigo-100 text-indigo-800 border-indigo-200" // For Ongoing
+                            : "bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20" // For Active status
                         }
                       >
                         {treatment.status}
                       </Badge>
                     </div>
 
-                    <div className="p-5">
-                      <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="px-6 pb-5 pt-2">
+                      <div className="grid grid-cols-2 gap-4 mb-3">
                         <div>
                           <div className="text-xs text-gray-500 uppercase font-medium">
                             Type
                           </div>
-                          <div className="text-sm font-medium mt-1">
+                          <div className="text-sm font-medium mt-1 text-gray-800">
                             {treatment.type}
                           </div>
                         </div>
@@ -1315,27 +1344,35 @@ const TreatmentManagement: React.FC = () => {
                           <div className="text-xs text-gray-500 uppercase font-medium">
                             Disease
                           </div>
-                          <div className="text-sm font-medium mt-1">
-                            {treatment.disease || "Not specified"}
+                          <div className="text-sm font-medium mt-1 text-gray-800">
+                            {treatment.diseases || "Not specified"}
                           </div>
                         </div>
                       </div>
 
-                      <div className="mt-4 pt-4 border-t border-gray-100">
-                        <div className="flex items-center text-sm text-indigo-600">
-                          <Clipboard className="h-4 w-4 mr-1.5" />
+                      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
+                        <div className="flex items-center text-sm text-[#2C78E4]">
+                          <Layers className="h-4 w-4 mr-1.5" />
                           {treatment.phases
                             ? treatment.phases.length
                             : "0"}{" "}
                           Phase(s)
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-3 text-gray-500 hover:text-[#2C78E4] hover:bg-[#F0F7FF]"
+                        >
+                          <ArrowRight className="h-4 w-4" />
+                          <span className="sr-only">View details</span>
+                        </Button>
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="col-span-2 text-center p-10 border border-dashed border-gray-300 rounded-xl bg-gray-50">
-                  <Clipboard className="h-10 w-10 mx-auto text-gray-400 mb-3" />
+                  <Clipboard className="h-12 w-12 mx-auto text-gray-300 mb-3" />
                   <h3 className="font-medium text-gray-700 mb-1">
                     No treatments found
                   </h3>
@@ -1344,10 +1381,9 @@ const TreatmentManagement: React.FC = () => {
                   </p>
                   <Button
                     onClick={() => setActiveView("new")}
-                    variant="outline"
-                    className="bg-white"
+                    className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white"
                   >
-                    <PlusCircle className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4 mr-2" />
                     Create New Treatment
                   </Button>
                 </div>
@@ -1358,156 +1394,102 @@ const TreatmentManagement: React.FC = () => {
 
         {/* Treatment Detail View */}
         {activeView === "detail" && selectedTreatment && (
-          <div>
-            <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all mb-6">
-              <div className="px-5 py-4 bg-gradient-to-r from-indigo-50 to-white border-b flex justify-between items-start">
-                <div>
-                  <h3 className="font-semibold text-gray-800 text-lg">
-                    {selectedTreatment.type}
-                  </h3>
-                  <div className="text-sm text-gray-600 mt-1 flex items-center gap-4">
-                    <span className="flex items-center">
-                      <Calendar size={14} className="mr-1.5 text-gray-400" />
+          <div className="space-y-6">
+            {/* Main Treatment Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              {/* Header */}
+              <div className="p-6 pb-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900">
+                      {selectedTreatment.type}
+                    </h1>
+                    <div className="flex items-center mt-1.5 text-sm text-gray-500">
+                      <Calendar className="h-4 w-4 mr-1.5 text-gray-400" />
                       Started:{" "}
                       {new Date(
                         selectedTreatment.start_date
                       ).toLocaleDateString()}
-                    </span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex space-x-2">
-                  {/* Treatment status dropdown */}
-                  <Select
-                    defaultValue={selectedTreatment.status}
-                    onValueChange={handleUpdateTreatmentStatus}
-                    disabled={isUpdatingTreatmentStatus}
-                  >
-                    <SelectTrigger
-                      className={`h-9 w-40 ${
-                        selectedTreatment.status === "Completed"
-                          ? "bg-green-100 text-green-800 border-green-200"
-                          : selectedTreatment.status === "In Progress"
-                          ? "bg-blue-100 text-blue-800 border-blue-200"
-                          : selectedTreatment.status === "Not Started"
-                          ? "bg-gray-100 text-gray-800 border-gray-200"
-                          : "bg-indigo-100 text-indigo-800 border-indigo-200"
-                      }`}
+                  <div className="flex items-center space-x-2">
+                    <Select
+                      defaultValue={selectedTreatment.status}
+                      onValueChange={handleUpdateTreatmentStatus}
+                      disabled={isUpdatingTreatmentStatus}
                     >
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Not Started">Not Started</SelectItem>
-                      <SelectItem value="In Progress">In Progress</SelectItem>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <div className="flex space-x-2">
+                      <SelectTrigger
+                        className={`h-10 w-40 ${
+                          selectedTreatment.status === "Completed"
+                            ? "bg-green-100 text-green-800 border-green-200"
+                            : selectedTreatment.status === "In Progress"
+                            ? "bg-blue-100 text-blue-800 border-blue-200"
+                            : selectedTreatment.status === "Not Started"
+                            ? "bg-gray-100 text-gray-800 border-gray-200"
+                            : "bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20" // For Active status
+                        }`}
+                      >
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Not Started">Not Started</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                      </SelectContent>
+                    </Select>
+
                     <Button
                       onClick={() =>
                         handleGeneratePrescription(selectedTreatment)
                       }
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white"
+                      variant="default"
+                      className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white"
                     >
-                      <FileText className="h-4 w-4" />
-                      <span>Generate Prescription</span>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Generate Prescription
                     </Button>
                   </div>
                 </div>
               </div>
 
-              <div className="p-5">
-                <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-xs text-gray-500 uppercase font-medium">
-                    Description
-                  </div>
-                  <div className="text-sm text-gray-700 mt-1">
-                    {selectedTreatment.description}
+              {/* Description */}
+              <div className="px-6 pb-6">
+                <div className="bg-[#F0F7FF]/30 p-4 rounded-xl border border-[#2C78E4]/10">
+                  <h3 className="text-xs uppercase font-medium text-gray-500 mb-2">
+                    DESCRIPTION
+                  </h3>
+                  <div className="text-sm text-gray-700">
+                    {selectedTreatment.description ||
+                      "No description provided for this treatment plan."}
                   </div>
                 </div>
-
-                {/* SOAP Notes Section */}
-                {soapData && (
-                  <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                    {/* Primary Diagnosis */}
-                    <div className="bg-indigo-50 p-2 rounded-md border border-indigo-100">
-                      <h5 className="text-xs font-medium text-indigo-700 mb-1 flex items-center">
-                        <CheckCircle className="h-3.5 w-3.5 mr-1 text-indigo-600" />
-                        Primary Diagnosis
-                      </h5>
-                      <p className="text-gray-800 text-sm pl-5 font-medium">
-                        {soapData.assessment.primary}
-                      </p>
-                    </div>
-
-                    {/* Differential Diagnoses */}
-                    {soapData.assessment.differentials &&
-                      Array.isArray(soapData.assessment.differentials) &&
-                      soapData.assessment.differentials.length > 0 && (
-                        <div className="bg-blue-50 p-2 rounded-md border border-blue-100">
-                          <h5 className="text-xs font-medium text-blue-700 mb-1 flex items-center">
-                            <List className="h-3.5 w-3.5 mr-1 text-blue-600" />
-                            Differential Diagnoses
-                          </h5>
-                          <ul className="space-y-1 pl-5">
-                            {soapData.assessment.differentials.map(
-                              (diff: string, index: number) => (
-                                <li
-                                  key={index}
-                                  className="text-sm text-gray-800 flex items-start"
-                                >
-                                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 mr-2 mt-1.5"></span>
-                                  <span>{diff}</span>
-                                </li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
-
-                    {/* Notes */}
-                    {soapData.assessment.notes && (
-                      <div className="bg-amber-50 p-2 rounded-md border border-amber-100">
-                        <h5 className="text-xs font-medium text-amber-700 mb-1 flex items-center">
-                          <FileText className="h-3.5 w-3.5 mr-1 text-amber-600" />
-                          Clinical Notes
-                        </h5>
-                        <p className="text-gray-800 text-sm pl-5">
-                          {soapData.assessment.notes}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Phases Section */}
-            <div className="mt-6">
+            {/* Treatment Phases Section */}
+            <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <Layers className="mr-2 h-5 w-5 text-indigo-600" />
-                  Treatment Phases
-                </h2>
-
-                <div className="flex space-x-2">
-                  <Button
-                    className="bg-indigo-600 hover:bg-indigo-700 shadow-sm flex items-center gap-1.5"
-                    size="sm"
-                    onClick={() => setIsAddPhaseModalOpen(true)}
-                  >
-                    <PlusCircle size={14} className="mr-1" />
-                    Add Phase
-                  </Button>
+                <div className="flex items-center">
+                  <Layers className="mr-2 h-5 w-5 text-[#2C78E4]" />
+                  <h2 className="text-lg font-bold text-gray-900">
+                    Treatment Phases
+                  </h2>
                 </div>
+
+                <Button
+                  className="bg-[#2C78E4] hover:bg-[#1E40AF] shadow-sm text-white"
+                  onClick={() => setIsAddPhaseModalOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Phase
+                </Button>
               </div>
 
               {isPhasesLoading ? (
                 <div className="text-center py-6">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C78E4] mx-auto"></div>
                   <p className="text-gray-500 mt-2">Loading phases...</p>
                 </div>
               ) : phases && phases.length > 0 ? (
@@ -1515,23 +1497,17 @@ const TreatmentManagement: React.FC = () => {
                   {phases.map((phase: TreatmentPhase) => (
                     <div
                       key={phase.id}
-                      className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all"
+                      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
                     >
                       <div
-                        className={`px-5 py-3 border-b flex justify-between items-center ${
-                          phase.status === "Completed"
-                            ? "bg-gradient-to-r from-green-50 to-white"
-                            : phase.status === "In Progress"
-                            ? "bg-gradient-to-r from-blue-50 to-white"
-                            : "bg-gradient-to-r from-gray-50 to-white"
+                        className={`px-6 py-4 border-b flex justify-between items-center cursor-pointer ${
+                          phase.status === "Completed" ? "bg-green-50/50" : ""
                         }`}
+                        onClick={() => togglePhaseExpansion(phase.id)}
                       >
-                        <div
-                          className="flex items-center cursor-pointer"
-                          onClick={() => togglePhaseExpansion(phase.id)}
-                        >
+                        <div className="flex items-center">
                           <div
-                            className={`p-1.5 rounded-lg mr-3 ${
+                            className={`flex items-center justify-center w-10 h-10 rounded-lg mr-4 ${
                               phase.status === "Completed"
                                 ? "bg-green-100"
                                 : phase.status === "In Progress"
@@ -1548,25 +1524,26 @@ const TreatmentManagement: React.FC = () => {
                             )}
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900">
+                            <h3 className="font-medium text-gray-900 flex items-center">
                               {phase.phase_name}
-                            </div>
-                            <div className="text-sm text-gray-600 flex items-center gap-4">
-                              <span className="flex items-center">
-                                <Calendar
-                                  size={12}
-                                  className="mr-1.5 text-gray-400"
-                                />
-                                {new Date(
-                                  phase.start_date
-                                ).toLocaleDateString()}
-                              </span>
+                              {phase.status === "Completed" && (
+                                <Badge className="ml-2 bg-green-100 text-green-800 border-0">
+                                  <Lock className="h-3 w-3 mr-1" />
+                                  Locked
+                                </Badge>
+                              )}
+                            </h3>
+                            <div className="text-sm text-gray-500 flex items-center">
+                              <Calendar
+                                size={12}
+                                className="mr-1.5 text-gray-400"
+                              />
+                              {new Date(phase.start_date).toLocaleDateString()}
                             </div>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {/* Phase status dropdown */}
                           <Select
                             defaultValue={phase.status}
                             onValueChange={(value) =>
@@ -1598,104 +1575,118 @@ const TreatmentManagement: React.FC = () => {
                             </SelectContent>
                           </Select>
                           <ChevronDown
-                            size={16}
-                            className={`text-gray-400 transition-transform cursor-pointer ${
+                            size={18}
+                            className={`text-gray-400 transition-transform ${
                               expandedPhases[phase.id] ? "rotate-180" : ""
                             }`}
-                            onClick={() => togglePhaseExpansion(phase.id)}
                           />
                         </div>
                       </div>
 
                       {expandedPhases[phase.id] && (
-                        <div className="p-4">
-                          <div className="grid grid-cols-1 gap-5">
-                            {/* Medications Section */}
-                            <div className="rounded-lg border border-gray-200">
-                              <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b flex justify-between items-center">
-                                <h3 className="text-sm font-semibold text-gray-800 flex items-center">
-                                  <Pill className="mr-2 h-4 w-4 text-indigo-600" />
+                        <div className="p-5">
+                          {/* Warning for completed phases */}
+                          {phase.status === "Completed" && (
+                            <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-3 flex items-start">
+                              <AlertCircle className="h-5 w-5 text-green-600 mt-0.5 mr-2 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium text-green-800">
+                                  Phase Completed
+                                </p>
+                                <p className="text-xs text-green-700 mt-1">
+                                  This phase has been marked as completed and is
+                                  now locked for further medication changes.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Medications Section */}
+                          <div className="bg-white border border-gray-100 rounded-xl">
+                            <div className="flex items-center justify-between px-5 py-3 border-b">
+                              <div className="flex items-center">
+                                <Pill className="mr-2 h-4 w-4 text-[#2C78E4]" />
+                                <h3 className="text-sm font-medium text-gray-800">
                                   Medications
                                 </h3>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-8 px-3 py-1 border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
-                                  onClick={() =>
-                                    handleOpenMedicineModal(phase.id)
-                                  }
-                                >
-                                  <Plus size={14} className="mr-1" />
-                                  Add Medicine
-                                </Button>
                               </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-3 py-1 border-[#2C78E4]/20 bg-[#F0F7FF] text-[#2C78E4] hover:bg-[#E3F2FD] disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() =>
+                                  handleOpenMedicineModal(phase.id)
+                                }
+                                disabled={phase.status === "Completed"}
+                              >
+                                <Plus size={14} className="mr-1" />
+                                Add Medicine
+                                {phase.status === "Completed" && " (Locked)"}
+                              </Button>
+                            </div>
 
-                              <div className="p-4">
-                                {phase.medications?.length > 0 ? (
-                                  <div className="space-y-3">
-                                    {phase.medications.map(
-                                      (med: PhaseMedicine, index: number) => (
-                                        <div
-                                          key={`${med.medicine_id}-${index}`}
-                                          className="p-3 rounded-lg border border-indigo-100 bg-indigo-50/30"
-                                        >
-                                          <div className="flex justify-between">
-                                            <div className="font-medium text-gray-900">
+                            <div className="p-5">
+                              {phase.medications?.length > 0 ? (
+                                <div className="space-y-3">
+                                  {phase.medications.map(
+                                    (med: PhaseMedicine, index: number) => (
+                                      <div
+                                        key={`${med.medicine_id}-${index}`}
+                                        className="rounded-xl border border-gray-100 p-4 hover:shadow-sm transition-shadow"
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex-1">
+                                            <div className="font-medium text-gray-900 mb-1">
                                               {med.medicine_name}
                                             </div>
-                                            <div className="mt-2 text-sm text-gray-600 flex flex-wrap gap-3">
-                                              <div className="flex items-center gap-1">
+                                            <div className="flex flex-wrap gap-3 text-sm text-gray-600">
+                                              <div className="flex items-center">
                                                 <Clock
-                                                  size={12}
-                                                  className="text-gray-400"
+                                                  size={14}
+                                                  className="mr-1.5 text-gray-400"
                                                 />
                                                 <span>{med.frequency}</span>
                                               </div>
                                               {med.duration && (
-                                                <div className="flex items-center gap-1">
+                                                <div className="flex items-center">
                                                   <Calendar
-                                                    size={12}
-                                                    className="text-gray-400"
+                                                    size={14}
+                                                    className="mr-1.5 text-gray-400"
                                                   />
                                                   <span>{med.duration}</span>
                                                 </div>
                                               )}
-                                              <div className="flex items-center gap-1">
+                                              <div className="flex items-center">
                                                 <Layers
-                                                  size={12}
-                                                  className="text-gray-400"
+                                                  size={14}
+                                                  className="mr-1.5 text-gray-400"
                                                 />
-                                                <span>
-                                                  Qty: {med.quantity || 1}
-                                                </span>
+                                                Quantity: {med.quantity || 1}
                                               </div>
-                                              {med.notes && (
-                                                <div className="flex items-center gap-1">
-                                                  <FileText
-                                                    size={12}
-                                                    className="text-gray-400"
-                                                  />
-                                                  <span>{med.notes}</span>
-                                                </div>
-                                              )}
                                             </div>
-                                            <Badge
-                                              variant="outline"
-                                              className="bg-white border-indigo-200 text-indigo-800"
-                                            >
-                                              {med.dosage}
-                                            </Badge>
                                           </div>
+                                          <Badge className="ml-2 bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20 px-3 py-1">
+                                            {med.dosage}
+                                          </Badge>
                                         </div>
-                                      )
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div className="text-center py-4">
-                                    No medications in this phase
-                                  </div>
-                                )}
-                              </div>
+                                        {med.notes && (
+                                          <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded-lg">
+                                            <FileText
+                                              size={14}
+                                              className="inline-block mr-1.5 text-gray-400"
+                                            />
+                                            {med.notes}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="text-center py-6 text-gray-500">
+                                  No medications in this phase
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1704,8 +1695,21 @@ const TreatmentManagement: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 text-gray-500">
-                  No phases found for this treatment
+                <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                  <Layers className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                  <h3 className="text-gray-700 font-medium mb-1">
+                    No phases found
+                  </h3>
+                  <p className="text-gray-500 mb-4">
+                    Add phases to organize this treatment plan
+                  </p>
+                  <Button
+                    onClick={() => setIsAddPhaseModalOpen(true)}
+                    className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add First Phase
+                  </Button>
                 </div>
               )}
             </div>
@@ -1714,10 +1718,10 @@ const TreatmentManagement: React.FC = () => {
 
         {/* New Treatment Form */}
         {activeView === "new" && (
-          <div>
-            <div className="flex items-center justify-between mb-6">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                <PlusCircle className="mr-2 h-5 w-5 text-primary" />
+                <Plus className="mr-2 h-5 w-5 text-[#2C78E4]" />
                 Create New Treatment
               </h2>
               <Button
@@ -1725,26 +1729,26 @@ const TreatmentManagement: React.FC = () => {
                 size="sm"
                 onClick={handleBackClick}
                 disabled={isSubmitting}
-                className="border-2 border-gray-300 hover:bg-gray-100"
+                className="border border-gray-200 hover:bg-gray-50"
               >
                 Cancel
               </Button>
             </div>
 
-            <Card className="shadow-md">
-              <CardHeader className="bg-gradient-to-r from-indigo-50 to-white border-b">
+            <Card className="shadow-sm rounded-xl overflow-hidden">
+              <CardHeader className="bg-[#F0F7FF]/60 border-b px-6">
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <FileText className="mr-2 h-5 w-5 text-indigo-600" />
+                    <FileText className="mr-2 h-5 w-5 text-[#2C78E4]" />
                     Treatment Information
                   </div>
 
-                  {/* Simple step indicator */}
-                  <div className="flex items-center gap-2 text-sm bg-white p-2 rounded-md shadow-sm">
+                  {/* Step indicator */}
+                  <div className="flex items-center gap-2 text-sm bg-white p-2 rounded-lg shadow-sm">
                     <span
-                      className={`px-3 py-1 rounded-full font-medium ${
+                      className={`flex items-center justify-center w-7 h-7 rounded-full font-medium ${
                         formStep === 0
-                          ? "bg-indigo-600 text-white"
+                          ? "bg-[#2C78E4] text-white"
                           : "bg-gray-100 text-gray-500"
                       }`}
                     >
@@ -1752,9 +1756,9 @@ const TreatmentManagement: React.FC = () => {
                     </span>
                     <span className="text-gray-300">→</span>
                     <span
-                      className={`px-3 py-1 rounded-full font-medium ${
+                      className={`flex items-center justify-center w-7 h-7 rounded-full font-medium ${
                         formStep === 1
-                          ? "bg-indigo-600 text-white"
+                          ? "bg-[#2C78E4] text-white"
                           : "bg-gray-100 text-gray-500"
                       }`}
                     >
@@ -1762,9 +1766,9 @@ const TreatmentManagement: React.FC = () => {
                     </span>
                     <span className="text-gray-300">→</span>
                     <span
-                      className={`px-3 py-1 rounded-full font-medium ${
+                      className={`flex items-center justify-center w-7 h-7 rounded-full font-medium ${
                         formStep === 2
-                          ? "bg-indigo-600 text-white"
+                          ? "bg-[#2C78E4] text-white"
                           : "bg-gray-100 text-gray-500"
                       }`}
                     >
@@ -1776,21 +1780,21 @@ const TreatmentManagement: React.FC = () => {
                 <div className="flex justify-between text-xs text-gray-500 mt-2">
                   <span
                     className={
-                      formStep === 0 ? "text-indigo-600 font-medium" : ""
+                      formStep === 0 ? "text-[#2C78E4] font-medium" : ""
                     }
                   >
                     Basic Info
                   </span>
                   <span
                     className={
-                      formStep === 1 ? "text-indigo-600 font-medium" : ""
+                      formStep === 1 ? "text-[#2C78E4] font-medium" : ""
                     }
                   >
                     Timeline & Status
                   </span>
                   <span
                     className={
-                      formStep === 2 ? "text-indigo-600 font-medium" : ""
+                      formStep === 2 ? "text-[#2C78E4] font-medium" : ""
                     }
                   >
                     Details
@@ -1798,7 +1802,7 @@ const TreatmentManagement: React.FC = () => {
                 </div>
               </CardHeader>
 
-              <CardContent className="pt-6">
+              <CardContent className="p-6">
                 <form
                   className="space-y-5"
                   onSubmit={(e) => {
@@ -1812,7 +1816,7 @@ const TreatmentManagement: React.FC = () => {
                 >
                   {/* Step 1: Basic Info */}
                   {formStep === 0 && (
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                       <div className="space-y-2">
                         <Label
                           htmlFor="treatment-name"
@@ -1823,7 +1827,7 @@ const TreatmentManagement: React.FC = () => {
                         <Input
                           id="treatment-name"
                           placeholder="Enter treatment name"
-                          className={`h-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${
+                          className={`h-10 border-gray-200 rounded-lg focus:border-[#2C78E4] focus:ring-[#2C78E4] ${
                             formTouched.name && formErrors.name
                               ? "border-red-500 focus-visible:ring-red-500"
                               : ""
@@ -1857,8 +1861,8 @@ const TreatmentManagement: React.FC = () => {
                         </Label>
                         <Input
                           id="treatment-type"
-                          placeholder="e.g., Surgery Recovery, Medication Protocol"
-                          className={`h-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${
+                          placeholder="e.g., Dental, Surgery Recovery, Medication Protocol"
+                          className={`h-10 border-gray-200 rounded-lg focus:border-[#2C78E4] focus:ring-[#2C78E4] ${
                             formTouched.type && formErrors.type
                               ? "border-red-500 focus-visible:ring-red-500"
                               : ""
@@ -1892,7 +1896,7 @@ const TreatmentManagement: React.FC = () => {
                         <Input
                           id="disease"
                           placeholder="e.g., Arthritis, Diabetes"
-                          className="h-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                          className="h-10 rounded-lg border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4]"
                           value={diseaseName}
                           onChange={handleDiseaseChange}
                         />
@@ -1905,7 +1909,7 @@ const TreatmentManagement: React.FC = () => {
 
                   {/* Step 2: Timeline & Status */}
                   {formStep === 1 && (
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                       <div className="space-y-2">
                         <Label
                           htmlFor="treatment-status"
@@ -1921,7 +1925,7 @@ const TreatmentManagement: React.FC = () => {
                         >
                           <SelectTrigger
                             id="treatment-status"
-                            className="h-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                            className="h-10 rounded-lg border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4]"
                           >
                             <SelectValue placeholder="Select status" />
                           </SelectTrigger>
@@ -1948,7 +1952,7 @@ const TreatmentManagement: React.FC = () => {
                         <Input
                           id="start-date"
                           type="date"
-                          className={`h-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${
+                          className={`h-10 rounded-lg border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] ${
                             formTouched.start_date && formErrors.start_date
                               ? "border-red-500 focus-visible:ring-red-500"
                               : ""
@@ -1976,7 +1980,7 @@ const TreatmentManagement: React.FC = () => {
 
                   {/* Step 3: Additional Details */}
                   {formStep === 2 && (
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                       <div className="space-y-2">
                         <Label
                           htmlFor="notes"
@@ -1987,7 +1991,7 @@ const TreatmentManagement: React.FC = () => {
                         <Textarea
                           id="notes"
                           placeholder="Any additional notes or instructions"
-                          className="min-h-[80px] text-sm border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                          className="min-h-[120px] text-sm rounded-lg border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4]"
                           value={newTreatment.notes}
                           onChange={(e) =>
                             handleInputChange("notes", e.target.value)
@@ -2000,7 +2004,7 @@ const TreatmentManagement: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between pt-6 mt-6 border-t-2 border-gray-100">
+                  <div className="flex items-center justify-between pt-6 mt-6 border-t border-gray-100">
                     <div>
                       {formStep > 0 ? (
                         <Button
@@ -2008,9 +2012,9 @@ const TreatmentManagement: React.FC = () => {
                           variant="outline"
                           onClick={handlePrevStep}
                           disabled={isSubmitting}
-                          className="flex items-center gap-1 h-11 px-5 border-2 border-gray-300 hover:bg-gray-100"
+                          className="flex items-center gap-1 h-10 px-4 border border-gray-200 hover:bg-gray-50"
                         >
-                          <ChevronLeft size={18} />
+                          <ChevronLeft size={16} />
                           <span className="font-medium">Back</span>
                         </Button>
                       ) : (
@@ -2019,7 +2023,7 @@ const TreatmentManagement: React.FC = () => {
                           variant="outline"
                           onClick={handleBackClick}
                           disabled={isSubmitting}
-                          className="flex items-center gap-1 h-11 px-5 border-2 border-gray-300 hover:bg-gray-100"
+                          className="flex items-center gap-1 h-10 px-4 border border-gray-200 hover:bg-gray-50"
                         >
                           <span className="font-medium">Cancel</span>
                         </Button>
@@ -2029,7 +2033,7 @@ const TreatmentManagement: React.FC = () => {
                     <div>
                       <Button
                         type="submit"
-                        className="bg-indigo-600 hover:bg-indigo-700 h-11 px-6 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-[#2C78E4] hover:bg-[#1E40AF] h-10 px-5 shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={isSubmitting}
                       >
                         {isSubmitting ? (
@@ -2042,11 +2046,11 @@ const TreatmentManagement: React.FC = () => {
                         ) : formStep < 2 ? (
                           <div className="flex items-center">
                             <span className="font-medium text-white">Next</span>
-                            <ChevronRight size={18} className="ml-1" />
+                            <ChevronRight size={16} className="ml-2" />
                           </div>
                         ) : (
                           <div className="flex items-center">
-                            <PlusCircle size={16} className="mr-1.5" />
+                            <Plus size={16} className="mr-2" />
                             <span className="font-medium text-white">
                               Create Treatment
                             </span>
@@ -2306,7 +2310,7 @@ const TreatmentManagement: React.FC = () => {
         <DialogContent className="sm:max-w-[95%] max-h-[95vh] lg:max-w-[1200px] rounded-lg bg-white overflow-hidden">
           <DialogHeader className="border-b pb-4">
             <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center">
-              <Pill className="mr-2 h-5 w-5 text-indigo-600" />
+              <Pill className="mr-2 h-5 w-5 text-[#2C78E4]" />
               Add Medications to Phase
             </DialogTitle>
             <DialogDescription className="text-gray-600">
@@ -2321,7 +2325,7 @@ const TreatmentManagement: React.FC = () => {
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Search for medicine by name..."
-                  className="pl-10 h-10 border-gray-300 w-full"
+                  className="pl-10 h-10 rounded-lg border-gray-300 w-full focus:border-[#2C78E4] focus:ring-[#2C78E4]"
                   value={medicineSearchTerm}
                   onChange={handleMedicineSearchChange}
                 />
@@ -2774,10 +2778,10 @@ const TreatmentManagement: React.FC = () => {
         open={isPrescriptionDialogOpen}
         onOpenChange={setIsPrescriptionDialogOpen}
       >
-        <DialogContent className="sm:max-w-[850px] max-h-[95vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[850px] max-h-[95vh] overflow-y-auto rounded-xl">
           <DialogHeader className="border-b pb-4">
             <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center">
-              <FileText className="mr-2 h-5 w-5 text-indigo-600" />
+              <FileText className="mr-2 h-5 w-5 text-[#2C78E4]" />
               Prescription
             </DialogTitle>
             <DialogDescription className="text-gray-600">
