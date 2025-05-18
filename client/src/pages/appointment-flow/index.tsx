@@ -94,13 +94,15 @@ const AppointmentFlow = () => {
     queryKey: [
       "appointments",
       selectedDate.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }),
-      currentPage,
-      pageSize,
+      1,
+      99999,
     ],
     queryFn: () =>
-      getAllAppointments(selectedDate, "false", currentPage, pageSize),
+      getAllAppointments(selectedDate, "false", 1, 99999),
     enabled: true,
   });
+
+  console.log("Appointments data:", appointmentsData);
 
   // Fetch rooms data
   const {

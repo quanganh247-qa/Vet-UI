@@ -98,6 +98,8 @@ const Appointments = () => {
 
   const isLoading = appointmentsLoading || patientsLoading;
 
+  console.log("Appointments data:", appointmentsData);
+
   // Cập nhật cách lấy danh sách cuộc hẹn đã lọc
   const filteredAppointments = useMemo(() => {
     if (!appointmentsData || !Array.isArray(appointmentsData.data)) {
@@ -139,6 +141,7 @@ const Appointments = () => {
           appointment.owner?.owner_name,
           appointment.doctor?.doctor_name,
           appointment.service?.service_name,
+          appointment.id?.toString(),
         ];
 
         return searchFields.some(
@@ -297,7 +300,7 @@ const Appointments = () => {
               </div>
               <Input
                 type="search"
-                placeholder="Search appointments..."
+                placeholder="Search by ID, pet, owner, doctor or service..."
                 className="pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm placeholder-[#4B5563] focus:outline-none focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] w-full"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -366,6 +369,9 @@ const Appointments = () => {
               <thead className="bg-[#F9FAFB]">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
+                    ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                     Pet & Owner
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
@@ -391,11 +397,11 @@ const Appointments = () => {
                     .fill(0)
                     .map((_, index) => (
                       <tr key={index} className="hover:bg-[#F9FAFB]">
-                        {[...Array(6)].map((_, i) => (
+                        {[...Array(7)].map((_, i) => (
                           <td key={i} className="px-6 py-4 whitespace-nowrap">
                             <div className="space-y-2">
                               <Skeleton className="h-4 w-3/4 rounded" />
-                              {i === 0 && (
+                              {i === 1 && (
                                 <Skeleton className="h-3 w-1/2 rounded" />
                               )}
                             </div>
@@ -406,9 +412,6 @@ const Appointments = () => {
                 ) : filteredAppointments?.length > 0 ? (
                   paginatedAppointments.map((appointment: Appointment) => {
                     const { pet, doctor, owner, service, state } = appointment;
-
-                    console.log("pet", pet);
-                    console.log("patientsData", patientsData);
                     // Thay vì truy cập trực tiếp vào patientsData, cần truy cập vào mảng data bên trong
                     const patient = patientsData?.data?.find(
                       (p: Patient) => Number(p.petid) === Number(pet.pet_id)
@@ -420,6 +423,11 @@ const Appointments = () => {
                         key={appointment.id}
                         className="hover:bg-[#F9FAFB] transition-colors"
                       >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-[#2C78E4]">
+                            #{appointment.id}
+                          </div>
+                        </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center space-x-3">
                             
@@ -465,11 +473,7 @@ const Appointments = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center space-x-2">
-                            <Avatar className="w-8 h-8 border-2 border-white shadow-sm">
-                              <AvatarFallback className="bg-[#2C78E4]/10 text-[#2C78E4]">
-                                {doctor?.doctor_name[0]}
-                              </AvatarFallback>
-                            </Avatar>
+                            
                             <span className="text-sm text-[#111827] font-medium">
                               {doctor?.doctor_name}
                             </span>
@@ -527,7 +531,7 @@ const Appointments = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center space-y-2">
                         <div className="w-16 h-16 bg-[#F9FAFB] rounded-full flex items-center justify-center">
                           <Inbox className="w-8 h-8 text-[#4B5563]" />

@@ -1,7 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Shift, WorkShift } from '@/types';
-import { getShiftByDoctorId, getShifts, createShift, updateShift, deleteShift } from '@/services/shiftService';
+import { getShiftByDoctorId, getShifts, createShift, updateShift, deleteShift, getTimeSlots } from '@/services/shiftService';
 import { queryClient } from '@/lib/queryClient';
+import api from '@/lib/api';
+
+// Define TimeSlot interface
+export interface TimeSlot {
+  id: number;
+  doctor_id: number;
+  date: string;
+  time: string;
+  status: 'available' | 'booked' | 'blocked';
+}
 
 export const useShifts = (doctorId?: number) => {
   return useQuery<Shift[]>({
@@ -148,3 +158,31 @@ export const useDoctorShiftsByDoctorId = (doctorId: number) => {
       enabled: !!doctorId,
   });
 };
+
+export const useTimeSlots = (date?: string, doctorId?: string) => {
+  return useQuery({
+    queryKey: ['timeSlots', date, doctorId],
+    queryFn: async () => {
+      if (!date || !doctorId) {
+        return [];
+      }
+      
+      try {
+        // Try to get from API first
+        const response = await api.get(`/api/v1/doctor/${doctorId}/time-slot?date=${date}`);
+        if (response.data?.data || response.data) {
+          return response.data?.data || response.data;
+        }
+        
+       
+      } catch (error) {
+        console.error('Error fetching time slots:', error);
+        // Return mock data on error for development
+        throw error;
+      }
+    },
+    enabled: !!date && !!doctorId,
+    staleTime: 1000 * 60 * 5, // 5 minute cache
+  });
+};
+

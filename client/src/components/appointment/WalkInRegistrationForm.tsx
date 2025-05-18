@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
 import {
-  Calendar,
+  Calendar as CalendarIcon,
   CheckCircle2,
   Clock,
   PawPrint,
@@ -35,9 +35,15 @@ import {
   usePatientsData,
   usePetOwnerByPetId,
 } from "@/hooks/use-pet";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 import { Patient, Pet } from "@/types";
 import { AppointmentRequest } from "@/services/appointment-services";
 import { useEffect, useState } from "react";
+import { useTimeSlots } from "@/hooks/use-shifts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 // Form validation schema
 const formSchema = z.object({
@@ -46,6 +52,7 @@ const formSchema = z.object({
   service_id: z.string().min(1, "Please select a service"),
   reason: z.string().min(1, "Please provide a reason for the visit"),
   priority: z.string().optional(),
+  time_slot_id: z.string().min(1, "Please select an available time slot"),
   owner: z.object({
     owner_name: z.string().min(1, "Owner name is required"),
     owner_number: z.string().min(1, "Phone number is required"),
@@ -113,6 +120,8 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
     undefined
   );
   const [isFormValid, setIsFormValid] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [showInlineTimeSlots, setShowInlineTimeSlots] = useState(true);
 
   const { data: servicesData, isLoading: servicesLoading } = useServices();
   const { data: doctorsData, isLoading: doctorsLoading } = useDoctors();
@@ -123,7 +132,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
     data: patientsData,
     isLoading: isLoading,
     isError,
-  } = usePatientsData(currentPage, pageSize);
+  } = usePatientsData(1, 9999);
 
   const { data: petOwnerData, isLoading: isPetOwnerLoading } =
     usePetOwnerByPetId(selectedPetId);
@@ -139,6 +148,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
       pet_id: "",
       doctor_id: "",
       service_id: "",
+      time_slot_id: "",
       reason: "",
       priority: "",
       owner: {
@@ -153,6 +163,9 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
       },
     },
   });
+  
+  const {data: timeSlotsData, isLoading: timeSlotsLoading} = useTimeSlots(selectedDate, form.watch("doctor_id"));
+  console.log("Time slots data:", timeSlotsData);
 
   // Log doctorsData for debugging
   useEffect(() => {
@@ -188,14 +201,15 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
     }
   }, [petOwnerData, selectedPet, form]);
 
-  // New effect to check form validity
+  // New effect to check form validity, including time slot
   useEffect(() => {
     const checkFormValidity = () => {
       const values = form.getValues();
       const commonFieldsValid = 
-        values.doctor_id && 
-        values.service_id && 
-        values.reason;
+        !!values.doctor_id && 
+        !!values.service_id && 
+        !!values.reason &&
+        !!values.time_slot_id;
       
       if (formMode === "new") {
         const newPetFieldsValid = 
@@ -208,6 +222,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
         
         setIsFormValid(!!commonFieldsValid && !!newPetFieldsValid);
       } else {
+        // For existing pets, we need a selected pet as well
         setIsFormValid(!!commonFieldsValid && !!selectedPet);
       }
     };
@@ -236,6 +251,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
               pet_id: 0,
               doctor_id: parseInt(data.doctor_id),
               service_id: parseInt(data.service_id),
+              time_slot_id: parseInt(data.time_slot_id),
               reason: data.reason,
               pet: data.pet
                 ? {
@@ -245,7 +261,6 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                 : {
                     name: "",
                     species: "",
-                   
                   },
               owner: {
                 owner_name: data.owner.owner_name,
@@ -258,23 +273,24 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
               pet_id: selectedPet!.petid,
               doctor_id: parseInt(data.doctor_id),
               service_id: parseInt(data.service_id),
+              time_slot_id: parseInt(data.time_slot_id),
               reason: data.reason,
-
               pet: {
                 name: selectedPet!.name,
                 species: selectedPet!.type,
-
               },
-           
             };
 
       await createWalkInMutation.mutateAsync(appointmentData as AppointmentRequest);
-
+      
+      // Only execute these if the mutation was successful
       toast({
         title: "Success",
         description: "Walk-in appointment created successfully",
+        variant: "default",
         className: "bg-green-50 border-green-200 text-green-800",
       });
+      
       onSuccess?.();
     } catch (error) {
       console.error("Error creating appointment:", error);
@@ -285,16 +301,12 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
         errorMessage = error.message;
       }
       
-      // Check for network errors
-      if (errorMessage.includes("Network Error")) {
-        errorMessage = "Cannot connect to the server. Please check your internet connection.";
-      }
-      
       toast({
         title: "Error",
         description: errorMessage,
         variant: "destructive",
       });
+      // Don't call onSuccess when there's an error
     }
   };
 
@@ -358,6 +370,12 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
       console.error("Error formatting date for display:", error);
       return "Invalid date";
     }
+  };
+
+  // Handle direct time slot selection from buttons
+  const handleTimeSlotClick = (timeSlotId: string) => {
+    console.log("Time slot selected:", timeSlotId);
+    form.setValue("time_slot_id", timeSlotId);
   };
 
   return (
@@ -701,7 +719,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
             {/* Common appointment details section for both tabs */}
             <div className="bg-[#F9FAFB] border border-gray-200 rounded-lg p-4">
               <div className="flex items-center mb-2">
-                <Calendar className="h-5 w-5 text-[#2C78E4] mr-2" />
+                <CalendarIcon className="h-5 w-5 text-[#2C78E4] mr-2" />
                 <h3 className="font-medium text-[#111827]">
                   Appointment Details
                 </h3>
@@ -776,7 +794,11 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                   </Label>
                   <Select
                     value={form.watch("doctor_id")}
-                    onValueChange={(value) => form.setValue("doctor_id", value)}
+                    onValueChange={(value) => {
+                      form.setValue("doctor_id", value);
+                      // Clear time slot when doctor changes
+                      form.setValue("time_slot_id", "");
+                    }}
                   >
                     <SelectTrigger
                       id="doctor_id"
@@ -821,6 +843,70 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                   )}
                 </div>
 
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="appointment_date"
+                    className="text-[#111827] flex items-center"
+                  >
+                    Appointment Date <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="appointment_date"
+                      type="date"
+                      min={new Date().toISOString().split('T')[0]}
+                      value={selectedDate}
+                      onChange={(e) => {
+                        const newDate = e.target.value;
+                        console.log("Selected date from input:", newDate);
+                        setSelectedDate(newDate);
+                        // Clear time slot when date changes
+                        form.setValue("time_slot_id", "");
+                      }}
+                      className="w-full border-gray-200 hover:border-gray-300 focus:border-[#2C78E4] focus:ring-[#2C78E4]"
+                    />
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-gray-200 hover:border-[#2C78E4] hover:text-[#2C78E4]"
+                      onClick={() => {
+                        const today = new Date().toISOString().split('T')[0];
+                        setSelectedDate(today);
+                        // Clear time slot when date changes
+                        form.setValue("time_slot_id", "");
+                      }}
+                    >
+                      Today
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="time_slot_id"
+                    className="text-[#111827] flex items-center"
+                  >
+                    Available Time Slot <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  
+                  {/* Hidden input field for time slot ID */}
+                  <input
+                    type="hidden"
+                    {...form.register("time_slot_id")}
+                  />
+                  
+                  <div className="text-sm text-[#4B5563]">
+                    Please select a time slot from the options below.
+                  </div>
+                  
+                  {form.formState.errors.time_slot_id && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {form.formState.errors.time_slot_id.message}
+                    </p>
+                  )}
+                </div>
+                
                 <div className="col-span-1 md:col-span-2 space-y-2">
                   <Label
                     htmlFor="reason"
@@ -846,6 +932,62 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                 </div>
               </div>
             </div>
+            
+            {/* Time slots displayed inline */}
+            {form.watch("doctor_id") && selectedDate && (
+              <Card className="border-gray-200 rounded-xl">
+                <CardHeader className="pb-3 bg-[#F9FAFB] border-b border-gray-200 rounded-t-xl">
+                  <CardTitle className="text-base flex items-center">
+                    <Clock className="h-4 w-4 text-[#2C78E4] mr-2" />
+                    Available Time Slots
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  {timeSlotsLoading ? (
+                    <div className="flex justify-center items-center py-10">
+                      <div className="animate-spin h-8 w-8 border-2 border-[#2C78E4] border-t-transparent rounded-full"></div>
+                    </div>
+                  ) : timeSlotsData && timeSlotsData.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                      {timeSlotsData.map((slot: any) => (
+                        <Button
+                          key={slot.id}
+                          type="button"
+                          variant="outline"
+                          onClick={() => slot.status === 'available' ? handleTimeSlotClick(slot.id.toString()) : null}
+                          disabled={slot.status !== 'available'}
+                          className={cn(
+                            "h-auto py-3 relative",
+                            slot.status === 'available' 
+                              ? "border-gray-200 hover:bg-[#F9FAFB] hover:border-[#2C78E4] cursor-pointer" 
+                              : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-70",
+                            form.watch("time_slot_id") === slot.id.toString() && "bg-[#2C78E4]/10 border-[#2C78E4] text-[#2C78E4]"
+                          )}
+                        >
+                          <div className="flex flex-col items-center">
+                            <Clock className="h-4 w-4 mb-1" />
+                            <span className="font-medium text-sm">{slot.start_time} - {slot.end_time}</span>
+                            {slot.status !== 'available' && (
+                              <span className="text-xs mt-1 text-gray-500">Unavailable</span>
+                            )}
+                          </div>
+                          {form.watch("time_slot_id") === slot.id.toString() && (
+                            <Badge className="absolute top-0 right-0 transform translate-x-1/3 -translate-y-1/3 bg-[#2C78E4] text-white px-1.5 py-0.5 text-xs">
+                              Selected
+                            </Badge>
+                          )}
+                        </Button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 text-gray-500">
+                      <Clock className="h-10 w-10 mx-auto mb-2 text-gray-300" />
+                      <p>No available time slots for this date</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <div className="flex justify-end space-x-3">
               <Button

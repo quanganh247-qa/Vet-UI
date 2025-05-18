@@ -110,3 +110,14 @@ export const addNewShift = async (data: { start_time: Date; end_time: Date; doct
         throw error;
     }
 };
+
+
+export const getTimeSlots = async (doctor_id: number) => {
+    try {
+        const response = await api.get(`/api/v1/doctor/${doctor_id}/time-slot`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching time slots:", error);
+        throw error;
+    }
+};

@@ -94,12 +94,7 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
   hour12: true,
 });
 
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "long",
-  month: "long",
-  day: "numeric",
-  year: "numeric",
-});
+
 
 // Memoized color utility functions
 const getStatusColorClass = (status: string): string => {
@@ -385,16 +380,7 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
         return isNaN(date.getTime()) ? "" : timeFormatter.format(date);
       }, []);
 
-      // Format date
-      const formatDate = useCallback((date: Date) => {
-        return date.toLocaleDateString("en-US", {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        });
-      }, []);
-
+   
       // Filter appointments based on selected filters
       const filteredAppointments = useMemo(() => {
         return appointments.filter((appointment) => {
@@ -763,6 +749,34 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                       )}
                     </div>
                   </div>
+                  
+                  {/* Confirmed Column */}
+                  <div className="flex-1 min-w-[230px] sm:min-w-[250px] max-w-[450px] shrink-0">
+                    <div className="bg-[#E3F2FD] rounded-t-lg px-3 py-2 border border-[#BFDBFE]">
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-medium text-[#1976D2] flex items-center">
+                          <CheckCircle className="h-4 w-4 text-[#1976D2] mr-1.5" />
+                          Confirmed
+                        </h3>
+                        <span className="bg-white text-xs font-medium px-2 py-1 rounded-lg border border-[#BFDBFE] text-[#1976D2]">
+                          {groupedAppointments.confirmed.length}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-b-lg p-2 border-l border-r border-b border-[#BFDBFE] h-[calc(100vh-280px)] overflow-y-auto">
+                      {groupedAppointments.confirmed.length > 0 ? (
+                        groupedAppointments.confirmed.map((appointment) =>
+                          renderAppointmentCard(appointment)
+                        )
+                      ) : (
+                        <div className="text-center py-8 text-gray-500 bg-[#F9FAFB] rounded-lg mt-2 border border-dashed border-gray-200">
+                          <CheckCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                          No confirmed appointments
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
                   {/* Arrived/Waiting Column */}
                   <div className="flex-1 min-w-[230px] sm:min-w-[250px] max-w-[450px] shrink-0">
                     <div className="bg-[#EBF5FF] rounded-t-lg px-3 py-2 border border-[#BFDBFE]">

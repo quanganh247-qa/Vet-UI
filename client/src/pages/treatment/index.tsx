@@ -720,14 +720,23 @@ const TreatmentManagement: React.FC = () => {
 
   // Handle opening medicine modal for a specific phase
   const handleOpenMedicineModal = (phaseId: number) => {
-    // Find the phase to check if it's completed
+    // Find the phase to check if it's completed or in progress
     const phase = phases?.find((p: TreatmentPhase) => p.id === phaseId);
 
-    // If phase is completed, show a toast message and don't open the modal
+    // If phase is completed or in progress, show a toast message and don't open the modal
     if (phase?.status === "Completed") {
       toast({
         title: "Phase Locked",
         description: "Cannot add medications to a completed phase",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (phase?.status === "In Progress") {
+      toast({
+        title: "Phase Locked",
+        description: "Cannot add medications to a phase that is in progress",
         variant: "destructive",
       });
       return;
@@ -1019,11 +1028,20 @@ const TreatmentManagement: React.FC = () => {
       return;
     }
 
-    // If changing to Completed, show a confirmation
+    // If changing to Completed or In Progress, show a confirmation
     if (newStatus === "Completed") {
       toast({
         title: "Warning",
         description: "Once a phase is marked as Completed, you won't be able to add more medications to it.",
+        variant: "destructive",
+        duration: 5000,
+      });
+    }
+    
+    if (newStatus === "In Progress") {
+      toast({
+        title: "Warning",
+        description: "Once a phase is marked as In Progress, you won't be able to add more medications to it.",
         variant: "destructive",
         duration: 5000,
       });
@@ -1657,11 +1675,12 @@ const TreatmentManagement: React.FC = () => {
                                 onClick={() =>
                                   handleOpenMedicineModal(phase.id)
                                 }
-                                disabled={phase.status === "Completed"}
+                                disabled={phase.status === "Completed" || phase.status === "In Progress"}
                               >
                                 <Plus size={14} className="mr-1" />
                                 Add Medicine
-                                {phase.status === "Completed" && " (Locked)"}
+                                {phase.status === "Completed" && " (Completed)"}
+                                {phase.status === "In Progress" && " (In Progress)"}
                               </Button>
                             </div>
 

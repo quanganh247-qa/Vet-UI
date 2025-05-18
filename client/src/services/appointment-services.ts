@@ -233,8 +233,7 @@ export interface AppointmentRequest {
   doctor_id: number;
   service_id: number;
   reason: string;
-  create_pet?: boolean;
-  create_owner?: boolean;
+  time_slot_id?: number;
   owner?: {
     owner_name: string;
     owner_email: string;
@@ -254,6 +253,7 @@ export const createWalkInAppointment = async (
   appointmentData: AppointmentRequest
 ): Promise<any> => {
   try {
+    console.log("appointmentData", appointmentData);
     const response = await api.post(
       "/api/v1/appointments/walk-in",
       appointmentData,
@@ -263,6 +263,7 @@ export const createWalkInAppointment = async (
         },
       }
     );
+    console.log("response.data", response.data);
     return response.data;
   } catch (error) {
     // Log the detailed error for debugging

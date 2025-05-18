@@ -119,8 +119,39 @@ export const useCreateWalkInAppointment = (): UseMutationResult<
   Error, // error type
   AppointmentRequest // variables type
 > => {
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: createWalkInAppointment,
+    onSuccess: (data) => {
+      // Invalidate relevant queries when a new appointment is created
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['timeSlots'] });
+      queryClient.invalidateQueries({ queryKey: ['appointmentsQueue'] });
+
+      // Show success toast
+      toast({
+        title: "Success",
+        description: "Walk-in appointment created successfully",
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
+
+      return data;
+    },
+    onError: (error: Error) => {
+      console.error("Mutation hook error handler:", error);
+      
+      // Show error toast
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create appointment",
+        variant: "destructive",
+      });
+
+      // Re-throw the error so the component can handle it
+      throw error;
+    },
+    retry: false // Don't retry on failure
   });
 };
 
