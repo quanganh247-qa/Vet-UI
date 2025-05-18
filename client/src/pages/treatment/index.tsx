@@ -276,8 +276,18 @@ const TreatmentManagement: React.FC = () => {
     if (name === "type" && !value) {
       return "Treatment type is required";
     }
-    if (name === "start_date" && !value) {
-      return "Start date is required";
+    if (name === "start_date") {
+      if (!value) {
+        return "Start date is required";
+      }
+      // Validate that start date is not in the past
+      const selectedDate = new Date(value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Remove time component for date comparison
+      
+      if (selectedDate < today) {
+        return "Start date cannot be in the past";
+      }
     }
     if (name === "name" && !value) {
       return "Treatment name is required";
@@ -498,8 +508,19 @@ const TreatmentManagement: React.FC = () => {
     if (name === "phase_name" && !value) {
       return "Phase name is required";
     }
-    if (name === "start_date" && !value) {
-      return "Start date is required";
+    if (name === "start_date") {
+      if (!value) {
+        return "Start date is required";
+      }
+      
+      // Validate that start date is not in the past
+      const selectedDate = new Date(value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Remove time component for date comparison
+      
+      if (selectedDate < today) {
+        return "Start date cannot be in the past";
+      }
     }
     return "";
   };
@@ -652,8 +673,11 @@ const TreatmentManagement: React.FC = () => {
   };
 
   // Determine which medicines to display (search results if searching, otherwise all medicines)
-  const displayMedicines =
-    medicineSearchTerm.length > 0 ? searchResults ?? [] : allMedicines ?? [];
+  const displayMedicines = useMemo(() => {
+    const medicines = medicineSearchTerm.length > 0 ? searchResults ?? [] : allMedicines ?? [];
+    // Filter out medicines with quantity <= 0
+    return medicines.filter(med => med.quantity > 0);
+  }, [medicineSearchTerm, searchResults, allMedicines]);
 
   // Assign medicine to phase mutation
   const assignMedicineMutation = useAssignMedicine(
@@ -664,6 +688,16 @@ const TreatmentManagement: React.FC = () => {
 
   // Handle medicine selection
   const handleMedicineSelect = (medicine: any) => {
+    // Validate medication quantity
+    if (medicine.quantity <= 0) {
+      toast({
+        title: "Cannot add medication",
+        description: "This medicine is out of stock (quantity <= 0)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const alreadySelected = selectedMedicines.some((m) => m.id === medicine.id);
 
     if (!alreadySelected) {
@@ -745,6 +779,12 @@ const TreatmentManagement: React.FC = () => {
       const quantityNum = parseInt(medicine.quantity, 10);
       if (isNaN(quantityNum) || quantityNum <= 0) {
         errors.quantity = "Quantity must be a positive number";
+      }
+      
+      // Check if the requested quantity exceeds available stock
+      const availableMedicine = allMedicines?.find(m => m.id === medicine.id);
+      if (availableMedicine && quantityNum > availableMedicine.quantity) {
+        errors.quantity = `Cannot exceed available stock (${availableMedicine.quantity})`;
       }
     }
 
@@ -2391,11 +2431,18 @@ const TreatmentManagement: React.FC = () => {
                                     (m) => m.id === medicine.id
                                   )
                                     ? "bg-indigo-50/60"
-                                    : "hover:bg-gray-50"
+                                    : medicine.quantity <= 0 
+                                      ? "bg-gray-100 text-gray-400"
+                                      : "hover:bg-gray-50"
                                 }
                               >
                                 <TableCell className="font-medium py-2">
                                   {medicine.medicine_name}
+                                  {medicine.quantity <= 5 && medicine.quantity > 0 && (
+                                    <Badge variant="outline" className="ml-2 text-amber-600 bg-amber-50 border-amber-200">
+                                      Low Stock: {medicine.quantity}
+                                    </Badge>
+                                  )}
                                 </TableCell>
                                 <TableCell className="py-2">
                                   {medicine.dosage}
@@ -2418,19 +2465,24 @@ const TreatmentManagement: React.FC = () => {
                                         (m) => m.id === medicine.id
                                       )
                                         ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                                        : "text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50"
+                                        : medicine.quantity <= 0
+                                          ? "text-gray-400 cursor-not-allowed"
+                                          : "text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50"
                                     }`}
-                                    onClick={() =>
-                                      handleMedicineSelect(medicine)
+                                    onClick={() => handleMedicineSelect(medicine)}
+                                    disabled={
+                                      selectedMedicines.some(
+                                        (m) => m.id === medicine.id
+                                      ) || 
+                                      medicine.quantity <= 0
                                     }
-                                    disabled={selectedMedicines.some(
-                                      (m) => m.id === medicine.id
-                                    )}
                                   >
                                     {selectedMedicines.some(
                                       (m) => m.id === medicine.id
                                     ) ? (
                                       <CheckCircle size={16} className="mr-1" />
+                                    ) : medicine.quantity <= 0 ? (
+                                      <X size={16} className="mr-1" />
                                     ) : (
                                       <Plus size={16} className="mr-1" />
                                     )}
@@ -2438,7 +2490,10 @@ const TreatmentManagement: React.FC = () => {
                                       (m) => m.id === medicine.id
                                     )
                                       ? "Added"
-                                      : "Add"}
+                                      : medicine.quantity <= 0
+                                        ? "Out of Stock"
+                                        : "Add"
+                                    }
                                   </Button>
                                 </TableCell>
                               </TableRow>
