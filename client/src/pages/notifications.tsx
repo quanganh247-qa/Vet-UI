@@ -16,6 +16,7 @@ import {
   User,
   LayoutGrid,
   MessageSquare,
+  ArrowRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,7 +45,7 @@ import {
   SheetContent,
   SheetOverlay,
 } from "@/components/ui/sheet";
-import { useConfirmAppointment, useMarkMessageDelivered } from "@/hooks/use-appointment";
+import { useAppointmentData, useConfirmAppointment, useMarkMessageDelivered } from "@/hooks/use-appointment";
 import { useNotificationsContext } from "@/context/notifications-context";
 import { cn } from "@/lib/utils";
 
@@ -78,6 +79,7 @@ interface Notification {
   };
   reason?: string;
   serviceName?: string;
+  appointmentDetails?: any; // Chi tiết cuộc hẹn từ API
 }
 
 // Pagination configuration
@@ -102,7 +104,18 @@ const NotificationsPage = () => {
   // Selected notification for detail view
   const [selectedNotification, setSelectedNotification] = 
     useState<Notification | null>(null);
-console.log("rawNotifications", selectedNotification)
+  // Lưu trữ ID của cuộc hẹn liên quan
+  console.log("selectedNotification", selectedNotification)
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string>();
+    
+  // Sử dụng hook useAppointmentData
+  const { 
+    data: appointmentData,
+    isLoading: isAppointmentLoading
+  } = useAppointmentData(selectedAppointmentId);
+
+
+  console.log("appointmentData", appointmentData)
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -148,14 +161,21 @@ console.log("rawNotifications", selectedNotification)
   useEffect(() => {
     if (rawNotifications && Array.isArray(rawNotifications)) {
       // Map database fields to UI fields
+      console.log("Processing raw notifications:", rawNotifications);
       const mappedNotifications = rawNotifications.map((notification: any) => {
         let appointmentId = notification.related_id;
         let date = new Date(notification.datetime || notification.created_at);
+        
+        // Log thông tin chi tiết về related_id
+        if (notification.related_id) {
+          console.log(`Notification ${notification.id} has related_id: ${notification.related_id}, type: ${notification.related_type}`);
+        }
         
         // Extract additional info from content if available
         let petInfo = { petName: "Unknown", petId: 0 };
         let doctorInfo = { doctorName: "Unassigned", doctorId: 0 };
         let reason = "General Checkup";
+        let serviceName = "Consultation";
         let timeSlot = {
           startTime: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           endTime: ""
@@ -195,6 +215,12 @@ console.log("rawNotifications", selectedNotification)
                 
                 if (contentObj.reason) {
                   reason = contentObj.reason;
+                }
+                
+                if (contentObj.service_name) {
+                  serviceName = contentObj.service_name;
+                } else if (contentObj.serviceName) {
+                  serviceName = contentObj.serviceName;
                 }
               } else {
                
@@ -260,6 +286,12 @@ console.log("rawNotifications", selectedNotification)
               if (contentObj.reason) {
                 reason = contentObj.reason;
               }
+              
+              if (contentObj.service_name) {
+                serviceName = contentObj.service_name;
+              } else if (contentObj.serviceName) {
+                serviceName = contentObj.serviceName;
+              }
             }
           } catch (e) {
             // If JSON parsing fails, try to extract info from text content
@@ -304,14 +336,14 @@ console.log("rawNotifications", selectedNotification)
         
         return {
           ...notification,
-          message: typeof notification.content === 'string' ? notification.content : JSON.stringify(notification.content),
-          appointmentId: appointmentId || 0,
+          message: notification.content || "",
+          appointmentId,
           date: formattedDate,
           timeSlot,
-          pet: petInfo,
-          doctor: doctorInfo,
+          pet: petInfo.petName ? petInfo : undefined,
+          doctor: doctorInfo.doctorName !== "Unassigned" ? doctorInfo : undefined,
           reason,
-          serviceName: notification.notify_type || "Appointment",
+          serviceName
         };
       });
       
@@ -376,9 +408,30 @@ console.log("rawNotifications", selectedNotification)
   }, [sortedNotifications, searchTerm, filterStatus]);
 
   const handleViewAppointment = async (notification: Notification) => {
-    console.log("Opening notification details:", notification);
     setSelectedNotification(notification);
     setSelectedNotificationID(notification.id);
+    
+    // Debug log to check notification data
+    console.log("Opening notification with data:", notification);
+    
+    // If notification has related_id and related_type is appointment, fetch appointment details
+    if (notification.related_id && notification.related_type === "appointment") {
+      try {
+        // Store appointment ID for useAppointmentData hook to fetch data
+        console.log("Setting selectedAppointmentId to:", notification.related_id.toString());
+        setSelectedAppointmentId(notification.related_id.toString());
+      } catch (error) {
+        console.error("Error handling related appointment:", error);
+      }
+    } else if (notification.appointmentId) {
+      // Fallback to appointmentId if related_id is not available
+      console.log("Using appointmentId as fallback:", notification.appointmentId.toString());
+      setSelectedAppointmentId(notification.appointmentId.toString());
+    } else {
+      // If not an appointment-related notification, reset appointmentId
+      setSelectedAppointmentId(undefined);
+    }
+    
     setIsSheetOpen(true);
 
     // Mark notification as read when opened
@@ -400,6 +453,32 @@ console.log("rawNotifications", selectedNotification)
     }
   };
 
+  // Update selectedNotification when appointmentData is fetched
+  useEffect(() => {
+    if (appointmentData && selectedNotification) {
+      console.log("Updating selectedNotification with appointmentData:", appointmentData);
+      // Store appointmentDetails in a variable, don't update the state directly
+      // This prevents the infinite update cycle
+      selectedNotification.appointmentDetails = appointmentData;
+      // We don't call setSelectedNotification here to avoid the update loop
+    }
+  }, [appointmentData, selectedNotification]);
+
+  // Log dữ liệu cuộc hẹn để debug
+  useEffect(() => {
+    if (appointmentData) {
+      console.log("Appointment details fetched:", appointmentData);
+      console.log("Current selectedAppointmentId:", selectedAppointmentId);
+    }
+  }, [appointmentData, selectedAppointmentId]);
+  
+  // Khi mở sheet xem chi tiết, hiển thị loading nếu đang tải dữ liệu cuộc hẹn
+  useEffect(() => {
+    if (isSheetOpen && selectedAppointmentId && isAppointmentLoading) {
+      console.log("Loading appointment details for ID:", selectedAppointmentId);
+    }
+  }, [isSheetOpen, selectedAppointmentId, isAppointmentLoading]);
+
   const navigateToAppointment = (appointmentId: number) => {
     setIsSheetOpen(false);
     navigate(`/appointment/${appointmentId}`);
@@ -408,48 +487,87 @@ console.log("rawNotifications", selectedNotification)
   const { mutateAsync: confirmAppointmentAsync } = useConfirmAppointment();
 
   const handleConfirmAppointment = async () => {
-    if (!selectedNotification || !selectedNotificationID) return;
+    if (!selectedNotification) return;
 
     setIsConfirming(true);
 
     try {
-      const result = await confirmAppointmentAsync(selectedNotification.appointmentId);
+      // Use appointmentData.id if available, otherwise fall back to related_id or appointmentId from the notification
+      const appointmentId = appointmentData?.id || 
+        selectedNotification.related_id || 
+        selectedNotification.appointmentId;
+      
+      if (!appointmentId) {
+        throw new Error("No appointment ID found for confirmation");
+      }
+
+      const result = await confirmAppointmentAsync(appointmentId);
       
       if (result && result.code !== "E") {
-        // Mark the notification as read
-        await markAsRead(selectedNotificationID);
+        // Mark the notification as read if not already
+        if (selectedNotificationID && !selectedNotification.is_read) {
+          await markAsRead(selectedNotificationID);
+        }
         
         toast({
           title: "Appointment confirmed",
-          description: `Appointment with ${selectedNotification.pet?.petName} has been confirmed.`,
+          description: `Appointment with ${appointmentData?.pet?.pet_name || selectedNotification.pet?.petName || "Unknown Pet"} has been confirmed.`,
           className: "bg-green-500 text-white",
           duration: 5000,
         });
+        
+        // Close the sheet after successful confirmation
+        setIsSheetOpen(false);
+      } else {
+        toast({
+          title: "Confirmation failed",
+          description: result?.message || "An error occurred while confirming the appointment.",
+          variant: "destructive",
+          duration: 5000,
+        });
       }
-      
-      setIsSheetOpen(false);
     } catch (error) {
       console.error("Error confirming appointment:", error);
+      toast({
+        title: "Confirmation failed",
+        description: "An error occurred while confirming the appointment.",
+        variant: "destructive",
+        duration: 5000,
+      });
     } finally {
       setIsConfirming(false);
     }
   };
 
   const handleDeclineAppointment = async () => {
-    if (!selectedNotification || !selectedNotificationID) return;
+    if (!selectedNotification) return;
 
     setIsConfirming(true);
 
     try {
-      // Simulate API call to decline appointment
+      // Use appointmentData.id if available, otherwise fall back to related_id or appointmentId
+      const appointmentId = appointmentData?.id || 
+        selectedNotification.related_id || 
+        selectedNotification.appointmentId;
+      
+      if (!appointmentId) {
+        throw new Error("No appointment ID found for declining");
+      }
+
+      console.log("Declining appointment with ID:", appointmentId);
+      
+      // Here you would call an API to decline the appointment
+      // For now, we'll simulate it with a timeout
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Mark the notification as read
-      await markAsRead(selectedNotificationID);
+      // Mark the notification as read if not already
+      if (selectedNotificationID && !selectedNotification.is_read) {
+        await markAsRead(selectedNotificationID);
+      }
 
       toast({
         title: "Appointment declined",
-        description: `Appointment with ${selectedNotification.pet?.petName} has been declined.`,
+        description: `Appointment with ${appointmentData?.pet?.pet_name || selectedNotification.pet?.petName || "Unknown Pet"} has been declined.`,
         variant: "destructive",
         duration: 5000,
       });
@@ -783,88 +901,142 @@ console.log("rawNotifications", selectedNotification)
 
           {selectedNotification && (
             <div className="flex-1 overflow-y-auto px-6 py-4">
-              <div className="space-y-6">
-                <div className="bg-[#F9FAFB] rounded-2xl p-4 border border-[#F9FAFB]">
-                  <h3 className="font-semibold text-[#111827] mb-4 text-base">
-                    Appointment for {selectedNotification.pet?.petName || "Unknown Pet"} - #{selectedNotification.appointmentId}
-                  </h3>
+              {isAppointmentLoading && selectedAppointmentId ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-8 h-8 border-4 border-t-[#2C78E4] border-[#F9FAFB] rounded-full animate-spin mb-4"></div>
+                  <p className="text-[#4B5563]">Loading appointment details...</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="bg-[#F9FAFB] rounded-2xl p-4 border border-[#F9FAFB]">
+                    <h3 className="font-semibold text-[#111827] mb-4 text-base">
+                      Appointment for {appointmentData?.pet?.pet_name || selectedNotification.pet?.petName || "Unknown Pet"} - 
+                      #{appointmentData?.id || selectedNotification.appointmentId || selectedNotification.related_id || "Unknown"}
+                    </h3>
 
-                  <div className="space-y-4">
-                    <div className="flex items-start">
-                      <User className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-medium text-[#111827]">
-                          Pet
-                        </div>
-                        <div className="text-sm text-[#4B5563]">
-                          {selectedNotification.pet?.petName || "Unknown"}
+                    <div className="space-y-4">
+                      <div className="flex items-start">
+                        <User className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
+                        <div>
+                          <div className="text-sm font-medium text-[#111827]">
+                            Pet
+                          </div>
+                          <div className="text-sm text-[#4B5563]">
+                            {appointmentData?.pet?.pet_name || selectedNotification.pet?.petName || "Unknown"}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-start">
-                      <User className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-medium text-[#111827]">
-                          Doctor
-                        </div>
-                        <div className="text-sm text-[#4B5563]">
-                          {selectedNotification.doctor?.doctorName || "Unassigned"}
+                      <div className="flex items-start">
+                        <User className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
+                        <div>
+                          <div className="text-sm font-medium text-[#111827]">
+                            Doctor
+                          </div>
+                          <div className="text-sm text-[#4B5563]">
+                            {appointmentData?.doctor?.doctor_name || selectedNotification.doctor?.doctorName || "Unassigned"}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-start">
-                      <Calendar className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-medium text-[#111827]">
-                          Time
-                        </div>
-                        <div className="text-sm text-[#4B5563]">
-                          {selectedNotification.date} at {selectedNotification.timeSlot?.startTime || "Unspecified time"}
-                          {selectedNotification.timeSlot?.endTime && ` - ${selectedNotification.timeSlot.endTime}`}
+                      <div className="flex items-start">
+                        <Calendar className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
+                        <div>
+                          <div className="text-sm font-medium text-[#111827]">
+                            Time
+                          </div>
+                          <div className="text-sm text-[#4B5563]">
+                            {appointmentData?.date || selectedNotification.date} at {appointmentData?.time_slot?.time || selectedNotification.timeSlot?.startTime || "Unspecified time"}
+                            {selectedNotification.timeSlot?.endTime && ` - ${selectedNotification.timeSlot.endTime}`}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-start">
-                      <AlertCircle className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-medium text-[#111827]">
-                          Reason
-                        </div>
-                        <div className="text-sm text-[#4B5563]">
-                          {selectedNotification.reason || "Unspecified"}
+                      <div className="flex items-start">
+                        <AlertCircle className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
+                        <div>
+                          <div className="text-sm font-medium text-[#111827]">
+                            Reason
+                          </div>
+                          <div className="text-sm text-[#4B5563]">
+                            {appointmentData?.appointment_reason || selectedNotification.reason || "Unspecified"}
+                          </div>
                         </div>
                       </div>
+                      
+                      <div className="flex items-start">
+                        <AlertCircle className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
+                        <div>
+                          <div className="text-sm font-medium text-[#111827]">
+                            Status
+                          </div>
+                          <div className="text-sm text-[#4B5563]">
+                            {appointmentData?.state || "Pending"}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start">
+                        <AlertCircle className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
+                        <div>
+                          <div className="text-sm font-medium text-[#111827]">
+                            Service
+                          </div>
+                          <div className="text-sm text-[#4B5563]">
+                            {appointmentData?.service?.service_name || selectedNotification.serviceName || "General Service"}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {appointmentData?.notes && (
+                        <div className="flex items-start">
+                          <MessageSquare className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
+                          <div>
+                            <div className="text-sm font-medium text-[#111827]">
+                              Notes
+                            </div>
+                            <div className="text-sm text-[#4B5563]">
+                              {appointmentData.notes}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
 
-                <div className="pt-4 space-y-6">
-           
+                  <div className="pt-4 space-y-6">
+                    <div className="grid grid-cols-2 gap-4 pb-4">
+                      <Button
+                        onClick={() => handleConfirmAppointment()}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white rounded-2xl"
+                        disabled={isConfirming || appointmentData?.state === "Confirmed"}
+                      >
+                        {isConfirming ? "Processing..." : "Confirm"}
+                        {!isConfirming && <Check className="ml-2 h-4 w-4" />}
+                      </Button>
 
-                  <div className="grid grid-cols-2 gap-4 pb-4">
-                    <Button
-                      onClick={() => handleConfirmAppointment()}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white rounded-2xl"
-                      disabled={isConfirming}
-                    >
-                      {isConfirming ? "Processing..." : "Confirm"}
-                      {!isConfirming && <Check className="ml-2 h-4 w-4" />}
-                    </Button>
-
-                    <Button
-                      onClick={handleDeclineAppointment}
-                      className="w-full bg-red-600 hover:bg-red-700 text-white rounded-2xl"
-                      disabled={isConfirming}
-                    >
-                      {isConfirming ? "Processing..." : "Decline"}
-                      {!isConfirming && <X className="ml-2 h-4 w-4" />}
-                    </Button>
+                      <Button
+                        onClick={handleDeclineAppointment}
+                        className="w-full bg-red-600 hover:bg-red-700 text-white rounded-2xl"
+                        disabled={isConfirming || appointmentData?.state === "Declined"}
+                      >
+                        {isConfirming ? "Processing..." : "Decline"}
+                        {!isConfirming && <X className="ml-2 h-4 w-4" />}
+                      </Button>
+                    </div>
+                    
+                    {appointmentData && (
+                      <Button
+                        onClick={() => navigateToAppointment(appointmentData.id)}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl"
+                      >
+                        View Full Details
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
