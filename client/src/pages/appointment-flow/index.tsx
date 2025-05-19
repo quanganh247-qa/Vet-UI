@@ -287,8 +287,8 @@ const AppointmentFlow = () => {
   // Show loading state
   if (isLoadingAppointments || isLoadingRooms) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-[#F9FAFB]">
-        <Loader2 className="h-8 w-8 animate-spin text-[#2C78E4] mb-4" />
+      <div className="h-screen flex flex-col items-center justify-center bg-[#F0F4FC]">
+        <Loader2 className="h-10 w-10 animate-spin text-[#2C78E4] mb-4" />
         <p className="text-[#2C78E4] font-medium">
           Loading appointment data...
         </p>
@@ -298,24 +298,26 @@ const AppointmentFlow = () => {
 
   // Rendering the mobile menu
   const renderMobileMenu = () => (
-    <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between border-b border-gray-200 pb-3 mb-3">
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-4">
         <div className="flex items-center">
-          <UserCog className="h-5 w-5 mr-2 text-[#2C78E4]" />
+          <div className="bg-[#2C78E4]/10 p-2 rounded-full mr-3">
+            <UserCog className="h-5 w-5 text-[#2C78E4]" />
+          </div>
           <span className="font-medium text-[#111827]">Dr. {doctor?.username || "User"}</span>
         </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setIsMobileMenuOpen(false)}
-          className="rounded-full hover:bg-[#F9FAFB]"
+          className="rounded-full hover:bg-[#F0F4FC]"
         >
           <X className="h-5 w-5 text-[#4B5563]" />
         </Button>
       </div>
 
-      <div className="flex items-center bg-[#F9FAFB] rounded-lg p-3 mb-3">
-        <Calendar className="h-4 w-4 text-[#2C78E4] mr-2" />
+      <div className="flex items-center bg-[#F0F4FC] rounded-2xl p-4 mb-4">
+        <Calendar className="h-5 w-5 text-[#2C78E4] mr-3" />
         <input
           type="date"
           value={format(selectedDate, "yyyy-MM-dd")}
@@ -324,20 +326,21 @@ const AppointmentFlow = () => {
         />
       </div>
 
+
     </div>
   );
 
   return (
     <div className="space-y-6">
-            {/* Header with gradient background */}
-            <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md mb-6">
+    {/* Header with gradient background */}
+    <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <div className="flex items-center">
               <Button
                 variant="ghost"
                 size="icon"
-                className="mr-2 h-8 w-8 text-white hover:bg-white/20 md:block hidden rounded-full"
+                className="mr-3 h-9 w-9 text-white hover:bg-white/20 md:block hidden rounded-full"
                 asChild
               >
                 <Link href="/dashboard">
@@ -352,7 +355,7 @@ const AppointmentFlow = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button
@@ -363,7 +366,7 @@ const AppointmentFlow = () => {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[280px] sm:max-w-none bg-white">
+              <SheetContent side="left" className="w-[300px] sm:max-w-none bg-white rounded-r-2xl border-none shadow-lg p-0">
                 {renderMobileMenu()}
               </SheetContent>
             </Sheet>
@@ -371,7 +374,7 @@ const AppointmentFlow = () => {
             <Button
               variant="outline"
               size="sm"
-              className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5 rounded-lg"
+              className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-2 rounded-xl px-4 py-2"
               onClick={handleRefreshData}
               disabled={isRefreshing}
             >
@@ -380,67 +383,80 @@ const AppointmentFlow = () => {
               />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
+
+            <Button
+              variant="default"
+              size="sm"
+              className="bg-white text-[#2C78E4] hover:bg-white/90 flex items-center gap-2 rounded-xl px-4 py-2 shadow-sm"
+              onClick={handleNewAppointment}
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">New Appointment</span>
+            </Button>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-          {/* Search and filter section */}
-          <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6 bg-[#F9FAFB] p-3 rounded-lg border border-gray-200">
-            <div className="flex flex-1 gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#4B5563]" />
-                <Input
-                  placeholder="Search appointments..."
-                  className="pl-10 border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] rounded-lg"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+        <Card className="bg-white rounded-2xl border-none shadow-md overflow-hidden">
+          <CardHeader className="bg-white px-6 py-5 border-b border-gray-100">
+            <CardTitle className="text-lg font-semibold text-[#111827]">Appointments</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {/* Search and filter section */}
+            <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6 bg-[#F0F4FC] p-4 rounded-2xl border border-gray-100">
+              <div className="flex flex-1 gap-3 flex-wrap md:flex-nowrap">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#4B5563]" />
+                  <Input
+                    placeholder="Search appointments..."
+                    className="pl-10 border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] rounded-xl bg-white"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                <Select
+                  value={statusFilter || "all"}
+                  onValueChange={(value) =>
+                    setStatusFilter(value === "all" ? null : value)
+                  }
+                >
+                  <SelectTrigger className="w-[180px] border-gray-200 rounded-xl bg-white">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white rounded-xl shadow-md border-none">
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="scheduled">Waiting</SelectItem>
+                    <SelectItem value="in progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="flex items-center">
+                  <Input
+                    type="date"
+                    value={format(selectedDate, "yyyy-MM-dd")}
+                    onChange={handleDateChange}
+                    className="border-gray-200 h-10 rounded-xl bg-white"
+                  />
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={clearFilters}
+                  className="border-gray-200 h-10 w-10 rounded-xl hover:bg-[#2C78E4]/5 hover:border-[#2C78E4]/20 bg-white"
+                >
+                  <RotateCcw className="h-4 w-4 text-[#2C78E4]" />
+                </Button>
               </div>
-
-              <Select
-                value={statusFilter || "all"}
-                onValueChange={(value) =>
-                  setStatusFilter(value === "all" ? null : value)
-                }
-              >
-                <SelectTrigger className="w-[180px] border-gray-200 rounded-lg">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent className="bg-white rounded-lg shadow-md border-none">
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="scheduled">Waiting</SelectItem>
-                  <SelectItem value="in progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <div className="flex items-center space-x-2">
-                <Input
-                  type="date"
-                  value={format(selectedDate, "yyyy-MM-dd")}
-                  onChange={handleDateChange}
-                  className="border-gray-200 h-10 rounded-lg"
-                />
-              </div>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={clearFilters}
-                className="border-gray-200 h-10 w-10 rounded-lg hover:bg-[#2C78E4]/5 hover:border-[#2C78E4]/20"
-              >
-                <RotateCcw className="h-4 w-4 text-[#2C78E4]" />
-              </Button>
             </div>
-          </div>
 
-          {/* Flowboard section */}
-          <div className="bg-white rounded-lg overflow-hidden mb-6">
-            
-              <div className="min-w-[600px]">
+            {/* Flowboard section */}
+            <div className="bg-white rounded-2xl overflow-hidden mb-6 border border-gray-100">
+              <div className="min-w-[600px] overflow-x-auto">
                 <EnhancedAppointmentFlowboard
                   appointments={filteredAppointments}
                   doctors={staff?.data}
@@ -466,21 +482,21 @@ const AppointmentFlow = () => {
                 />
               </div>
             </div>
-          </div>
+          </CardContent>
 
           {/* Pagination controls */}
           {totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 border-t border-gray-200 pt-4">
+            <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-gray-100 px-6 py-4 bg-white">
               <div className="flex items-center gap-3 text-sm">
                 <span className="text-[#4B5563]">Show</span>
                 <Select
                   value={pageSize.toString()}
                   onValueChange={handlePageSizeChange}
                 >
-                  <SelectTrigger className="w-20 h-8 text-xs border-gray-200 rounded-lg">
+                  <SelectTrigger className="w-20 h-9 text-xs border-gray-200 rounded-xl bg-white">
                     <SelectValue placeholder="10" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white rounded-lg shadow-md border-none">
+                  <SelectContent className="bg-white rounded-xl shadow-md border-none">
                     <SelectItem value="5">5</SelectItem>
                     <SelectItem value="10">10</SelectItem>
                     <SelectItem value="20">20</SelectItem>
@@ -494,14 +510,14 @@ const AppointmentFlow = () => {
                 Showing {Math.min((currentPage - 1) * pageSize + 1, totalAppointments)} - {Math.min(currentPage * pageSize, totalAppointments)} of {totalAppointments} appointments
               </div>
 
-              <div className="flex gap-1">
+              <div className="flex gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage <= 1}
                   className={cn(
-                    "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                    "rounded-xl h-9 w-9 p-0 mx-0.5 text-sm font-medium transition-colors",
                     currentPage <= 1
                       ? "text-gray-400 cursor-not-allowed"
                       : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
@@ -511,7 +527,7 @@ const AppointmentFlow = () => {
                 </Button>
 
                 {/* Page numbers */}
-                <div className="flex gap-1">
+                <div className="flex gap-2">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     // Show pages around current page
                     const pageNum =
@@ -530,7 +546,7 @@ const AppointmentFlow = () => {
                         size="sm"
                         onClick={() => handlePageChange(pageNum)}
                         className={cn(
-                          "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                          "rounded-xl h-9 w-9 p-0 mx-0.5 text-sm font-medium transition-colors",
                           currentPage === pageNum
                             ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
                             : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
@@ -548,7 +564,7 @@ const AppointmentFlow = () => {
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage >= totalPages}
                   className={cn(
-                    "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                    "rounded-xl h-9 w-9 p-0 mx-0.5 text-sm font-medium transition-colors",
                     currentPage >= totalPages
                       ? "text-gray-400 cursor-not-allowed"
                       : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
@@ -557,9 +573,10 @@ const AppointmentFlow = () => {
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
+            </CardFooter>
           )}
-        </div>
+        </Card>
+      </div>
     </div>
   );
 };

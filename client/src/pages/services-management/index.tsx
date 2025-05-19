@@ -46,15 +46,15 @@ const formatCurrency = (amount: number) => {
 
 // EmptyState component for when no services exist
 const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
-    <div className="flex flex-col items-center justify-center p-8 bg-[#F0F7FF]/50 rounded-xl border border-dashed border-[#2C78E4]/20 h-64">
-        <div className="rounded-full bg-[#F0F7FF] p-3 mb-4">
-            <Receipt className="h-6 w-6 text-[#2C78E4]" />
+    <div className="flex flex-col items-center justify-center p-8 bg-[#F9FAFB] rounded-2xl border border-dashed border-[#2C78E4]/20 h-64 transition-all hover:border-[#2C78E4]/40">
+        <div className="rounded-full bg-[#F0F7FF] p-4 mb-5 shadow-sm">
+            <Receipt className="h-7 w-7 text-[#2C78E4]" />
         </div>
-        <h3 className="text-lg font-medium mb-2 text-[#2C78E4]">No services found</h3>
-        <p className="text-sm text-[#2C78E4]/70 text-center mb-4">
-            Get started by creating your first service
+        <h3 className="text-lg font-medium mb-2 text-[#111827]">No services found</h3>
+        <p className="text-sm text-[#4B5563] text-center mb-6 max-w-xs">
+            Get started by creating your first veterinary service
         </p>
-        <Button size="sm" className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-lg" onClick={onAdd}>
+        <Button size="sm" className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-2xl shadow-md transition-all duration-200 hover:shadow-lg" onClick={onAdd}>
             <PlusCircle className="h-4 w-4 mr-2" />
             Add service
         </Button>
@@ -221,8 +221,8 @@ const ServicesManagement: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            {/* Header with gradient background */}
-            <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md mb-6">
+        {/* Header with gradient background */}
+        <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-2xl font-bold text-white">Services Management</h1>
@@ -230,21 +230,21 @@ const ServicesManagement: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-white shadow-sm rounded-xl border border-[#2C78E4]/20 p-5 mb-6">
+            <div className="bg-white shadow-md rounded-2xl border border-[#2C78E4]/10 p-6 mb-8">
                 {/* Search and add section */}
-                <div className="flex justify-between items-center mb-6 bg-[#F0F7FF] p-3 rounded-lg border border-[#2C78E4]/20">
-                    <div className="relative w-64">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#2C78E4]" />
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 bg-[#F9FAFB] p-4 rounded-2xl border border-[#2C78E4]/10">
+                    <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#4B5563]" />
                         <Input
                             placeholder="Search services..."
-                            className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
+                            className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] focus:ring-[#2C78E4]/20 rounded-xl"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
                     <Button
                         onClick={handleOpenAddDialog}
-                        className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-lg"
+                        className="w-full sm:w-auto bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-xl shadow-md transition-all duration-200 hover:shadow-lg"
                     >
                         <PlusCircle className="h-4 w-4 mr-2" />
                         Add New Service
@@ -254,25 +254,29 @@ const ServicesManagement: React.FC = () => {
                 {/* Services listing */}
                 {isLoadingServices ? (
                     <div className="flex justify-center items-center h-64">
-                        <Loader2 className="h-8 w-8 animate-spin text-[#2C78E4]" />
+                        <div className="flex flex-col items-center gap-2">
+                            <Loader2 className="h-10 w-10 animate-spin text-[#2C78E4]" />
+                            <p className="text-[#4B5563]">Loading services...</p>
+                        </div>
                     </div>
                 ) : servicesError ? (
                     <div className="flex flex-col items-center justify-center h-64 text-red-600">
-                        <AlertCircle className="h-10 w-10 mb-2" />
-                        <p>Error loading services. Please try again later.</p>
+                        <AlertCircle className="h-12 w-12 mb-3" />
+                        <p className="text-lg font-medium">Error loading services</p>
+                        <p className="text-sm text-[#4B5563] mt-1">Please try again later</p>
                     </div>
                 ) : filteredServices.length === 0 ? (
                     <EmptyState onAdd={handleOpenAddDialog} />
                 ) : (
                     <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {paginatedServices.map((service: any) => (
-                                <Card key={service.id} className="hover:shadow-md transition-shadow border border-[#2C78E4]/10 rounded-xl overflow-hidden">
-                                    <CardHeader className="pb-2">
+                                <Card key={service.id} className="hover:shadow-lg transition-all duration-300 border border-[#2C78E4]/10 rounded-2xl overflow-hidden">
+                                    <CardHeader className="pb-3 border-b border-[#2C78E4]/5">
                                         <CardTitle className="flex justify-between items-start">
                                             <div>
-                                                <span className="text-lg font-semibold text-[#2C78E4]">{service.name}</span>
-                                                <Badge className="ml-2 bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20 rounded-full">
+                                                <span className="text-lg font-semibold text-[#111827]">{service.name}</span>
+                                                <Badge className="ml-2 bg-[#F0F7FF] text-[#2C78E4] border border-[#2C78E4]/20 rounded-full font-normal">
                                                     {service.category}
                                                 </Badge>
                                             </div>
@@ -280,7 +284,7 @@ const ServicesManagement: React.FC = () => {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="text-[#2C78E4] hover:bg-[#F0F7FF] rounded-lg"
+                                                    className="text-[#2C78E4] hover:bg-[#F0F7FF] rounded-xl"
                                                     onClick={() => handleOpenEditDialog(service)}
                                                 >
                                                     <Edit className="h-4 w-4" />
@@ -288,7 +292,7 @@ const ServicesManagement: React.FC = () => {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="text-red-600 hover:bg-red-50 rounded-lg"
+                                                    className="text-red-600 hover:bg-red-50 rounded-xl"
                                                     onClick={() => handleOpenDeleteDialog(service.id)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
@@ -296,19 +300,19 @@ const ServicesManagement: React.FC = () => {
                                             </div>
                                         </CardTitle>
                                     </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-3">
+                                    <CardContent className="pt-4">
+                                        <div className="space-y-4">
                                             <div className="flex justify-between items-center">
-                                                <div className="flex items-center text-sm text-[#2C78E4]">
-                                                    <Clock className="h-4 w-4 mr-1" />
+                                                <div className="flex items-center text-sm text-[#4B5563]">
+                                                    <Clock className="h-4 w-4 mr-1.5 text-[#2C78E4]" />
                                                     {service.duration} minutes
                                                 </div>
-                                                <span className="font-medium text-green-600">{formatCurrency(service.cost)}</span>
+                                                <span className="font-medium text-[#FFA726] px-2 py-0.5 bg-[#FFA726]/10 rounded-lg">{formatCurrency(service.cost)}</span>
                                             </div>
-                                            <p className="text-sm text-gray-600">{service.description}</p>
+                                            <p className="text-sm text-[#4B5563] leading-relaxed">{service.description}</p>
                                             {service.notes && (
-                                                <div className="bg-[#F0F7FF]/70 p-2 rounded-lg text-xs text-[#2C78E4] border border-[#2C78E4]/20">
-                                                    <strong>Notes:</strong> {service.notes}
+                                                <div className="bg-[#F9FAFB] p-3 rounded-xl text-xs text-[#4B5563] border border-[#2C78E4]/10">
+                                                    <strong className="text-[#2C78E4]">Notes:</strong> {service.notes}
                                                 </div>
                                             )}
                                         </div>
@@ -319,17 +323,17 @@ const ServicesManagement: React.FC = () => {
 
                         {/* Pagination controls */}
                         {totalPages > 1 && (
-                            <div className="flex flex-col items-center space-y-4 mt-8 pb-4">
-                                <p className="text-sm text-[#2C78E4] font-medium">
+                            <div className="flex flex-col items-center space-y-4 mt-10 pb-2">
+                                <p className="text-sm text-[#4B5563] font-medium">
                                     Page {currentPage} / {totalPages} • Showing {startIndex + 1}-{endIndex} of {totalItems} services
                                 </p>
-                                <div className="flex justify-center items-center space-x-2 bg-[#F0F7FF] px-4 py-3 rounded-lg shadow-sm border border-[#2C78E4]/20">
+                                <div className="flex justify-center items-center space-x-2 bg-[#F9FAFB] px-5 py-4 rounded-xl shadow-sm border border-[#2C78E4]/10">
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={() => handlePageChange(currentPage - 1)}
                                         disabled={currentPage === 1}
-                                        className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF]/70 rounded-lg"
+                                        className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] rounded-xl transition-colors"
                                     >
                                         Previous
                                     </Button>
@@ -355,8 +359,8 @@ const ServicesManagement: React.FC = () => {
                                                 onClick={() => handlePageChange(pageNum)}
                                                 className={
                                                     currentPage === pageNum
-                                                        ? "bg-[#2C78E4] text-white font-bold hover:bg-[#1E40AF] rounded-lg"
-                                                        : "border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF]/70 rounded-lg"
+                                                        ? "bg-[#2C78E4] text-white font-bold hover:bg-[#1E40AF] rounded-xl shadow-md"
+                                                        : "border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F0F7FF] hover:text-[#2C78E4] rounded-xl transition-colors"
                                                 }
                                             >
                                                 {pageNum}
@@ -369,7 +373,7 @@ const ServicesManagement: React.FC = () => {
                                         size="sm"
                                         onClick={() => handlePageChange(currentPage + 1)}
                                         disabled={currentPage === totalPages}
-                                        className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF]/70 rounded-lg"
+                                        className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] rounded-xl transition-colors"
                                     >
                                         Next
                                     </Button>
@@ -390,45 +394,45 @@ const ServicesManagement: React.FC = () => {
                     }
                 }}
             >
-                <DialogContent className="sm:max-w-[600px] border border-[#2C78E4]/20 bg-white rounded-xl">
+                <DialogContent className="sm:max-w-[600px] border border-[#2C78E4]/20 bg-white rounded-2xl shadow-lg">
                     <DialogHeader className="border-b border-[#2C78E4]/10 pb-4">
-                        <DialogTitle className="text-[#2C78E4]">
+                        <DialogTitle className="text-[#111827] text-xl font-semibold">
                             {isAddingItem ? "Add New Service" : "Edit Service"}
                         </DialogTitle>
-                        <DialogDescription className="text-[#2C78E4]/70">
+                        <DialogDescription className="text-[#4B5563] mt-1">
                             Fill in the details below to {isAddingItem ? "create" : "update"} this service in your catalog.
                         </DialogDescription>
                     </DialogHeader>
 
                     <ScrollArea className="max-h-[60vh] px-1">
-                        <div className="space-y-4 p-1">
+                        <div className="space-y-5 p-1">
                             <div>
-                                <Label htmlFor="name" className="mb-1.5 block">Service Name*</Label>
+                                <Label htmlFor="name" className="mb-2 block text-[#111827] font-medium">Service Name*</Label>
                                 <Input
                                     id="name"
                                     name="name"
                                     value={formData.name}
                                     onChange={handleInputChange}
                                     placeholder="Enter service name"
-                                    className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
+                                    className="border-[#2C78E4]/20 focus:border-[#2C78E4] focus:ring-[#2C78E4]/20 rounded-xl"
                                 />
                             </div>
 
                             <div>
-                                <Label htmlFor="category" className="mb-1.5 block">Category*</Label>
+                                <Label htmlFor="category" className="mb-2 block text-[#111827] font-medium">Category*</Label>
                                 <Input
                                     id="category"
                                     name="category"
                                     value={formData.category}
                                     onChange={handleInputChange}
                                     placeholder="Service category (e.g., Preventive, Surgical, Dental)"
-                                    className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
+                                    className="border-[#2C78E4]/20 focus:border-[#2C78E4] focus:ring-[#2C78E4]/20 rounded-xl"
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-5">
                                 <div>
-                                    <Label htmlFor="duration" className="mb-1.5 block">Duration (minutes)*</Label>
+                                    <Label htmlFor="duration" className="mb-2 block text-[#111827] font-medium">Duration (minutes)*</Label>
                                     <Input
                                         id="duration"
                                         name="duration"
@@ -436,11 +440,11 @@ const ServicesManagement: React.FC = () => {
                                         value={formData.duration}
                                         onChange={handleInputChange}
                                         placeholder="0"
-                                        className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
+                                        className="border-[#2C78E4]/20 focus:border-[#2C78E4] focus:ring-[#2C78E4]/20 rounded-xl"
                                     />
                                 </div>
                                 <div>
-                                    <Label htmlFor="cost" className="mb-1.5 block">Cost (VND)*</Label>
+                                    <Label htmlFor="cost" className="mb-2 block text-[#111827] font-medium">Cost (VND)*</Label>
                                     <Input
                                         id="cost"
                                         name="cost"
@@ -448,13 +452,13 @@ const ServicesManagement: React.FC = () => {
                                         value={formData.cost}
                                         onChange={handleInputChange}
                                         placeholder="0"
-                                        className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
+                                        className="border-[#2C78E4]/20 focus:border-[#2C78E4] focus:ring-[#2C78E4]/20 rounded-xl"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <Label htmlFor="description" className="mb-1.5 block">Description*</Label>
+                                <Label htmlFor="description" className="mb-2 block text-[#111827] font-medium">Description*</Label>
                                 <Textarea
                                     id="description"
                                     name="description"
@@ -462,12 +466,12 @@ const ServicesManagement: React.FC = () => {
                                     onChange={handleInputChange}
                                     placeholder="Enter service description"
                                     rows={3}
-                                    className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
+                                    className="border-[#2C78E4]/20 focus:border-[#2C78E4] focus:ring-[#2C78E4]/20 rounded-xl"
                                 />
                             </div>
 
                             <div>
-                                <Label htmlFor="notes" className="mb-1.5 block">Additional Notes</Label>
+                                <Label htmlFor="notes" className="mb-2 block text-[#111827] font-medium">Additional Notes</Label>
                                 <Textarea
                                     id="notes"
                                     name="notes"
@@ -475,27 +479,27 @@ const ServicesManagement: React.FC = () => {
                                     onChange={handleInputChange}
                                     placeholder="Enter any additional notes or requirements"
                                     rows={2}
-                                    className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
+                                    className="border-[#2C78E4]/20 focus:border-[#2C78E4] focus:ring-[#2C78E4]/20 rounded-xl"
                                 />
                             </div>
                         </div>
                     </ScrollArea>
 
-                    <DialogFooter className="border-t border-[#2C78E4]/10 pt-4">
+                    <DialogFooter className="border-t border-[#2C78E4]/10 pt-4 gap-3">
                         <Button
                             variant="outline"
                             onClick={() => {
                                 setIsAddingItem(false);
                                 setIsEditingItem(false);
                             }}
-                            className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] rounded-lg"
+                            className="border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#111827] rounded-xl transition-colors"
                         >
                             Cancel
                         </Button>
                         <Button
                             disabled={createService.isPending || updateService.isPending || !formData.name || !formData.description || !formData.category}
                             onClick={handleSubmit}
-                            className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-lg"
+                            className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-xl shadow-md transition-all duration-200 hover:shadow-lg"
                         >
                             {(createService.isPending || updateService.isPending) ? (
                                 <>
@@ -515,24 +519,24 @@ const ServicesManagement: React.FC = () => {
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-                <AlertDialogContent className="border border-red-200 bg-white rounded-xl">
+                <AlertDialogContent className="border border-red-200 bg-white rounded-2xl shadow-lg">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-red-600">Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogTitle className="text-red-600 text-xl">Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-[#4B5563]">
                             This action cannot be undone. This will permanently delete the selected service from your catalog.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
+                    <AlertDialogFooter className="gap-3">
                         <AlertDialogCancel
                             disabled={deleteService.isPending}
-                            className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] rounded-lg"
+                            className="border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#111827] rounded-xl transition-colors"
                         >
                             Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction
                             disabled={deleteService.isPending}
                             onClick={handleDeleteService}
-                            className="bg-red-600 hover:bg-red-700 focus:ring-red-600 rounded-lg"
+                            className="bg-red-600 hover:bg-red-700 focus:ring-red-600 text-white rounded-xl shadow-md transition-all duration-200 hover:shadow-lg"
                         >
                             {deleteService.isPending ? (
                                 <>

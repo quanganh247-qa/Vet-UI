@@ -23,14 +23,42 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const previousNotificationsRef = useRef<any[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   
-  // Sử dụng useLongPollingNotifications thay vì polling thông thường
+  // Kiểm tra xem người dùng đã đăng nhập hay chưa
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('access_token');
+      const isAuth = !!token;
+      setIsAuthenticated(isAuth);
+    };
+    
+    // Kiểm tra khi component được mount
+    checkAuth();
+    
+    // Thiết lập event listener để theo dõi thay đổi trong localStorage
+    const handleStorageChange = () => {
+      checkAuth();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Custom event để lắng nghe đăng nhập/đăng xuất từ AuthContext
+    window.addEventListener('auth-state-changed', checkAuth);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-state-changed', checkAuth);
+    };
+  }, []);
+  
+  // Sử dụng useLongPollingNotifications chỉ khi đã đăng nhập
   const { 
     data: longPollData, 
     isLoading: longPollLoading, 
     error: longPollError,
     invalidate 
-  } = useLongPollingNotifications({ enabled: true });
+  } = useLongPollingNotifications({ enabled: isAuthenticated });
 
   // Get initial notifications and keep as a backup data source
   const { data: dbNotifications, refetch } = useGetNotificationsFromDB();

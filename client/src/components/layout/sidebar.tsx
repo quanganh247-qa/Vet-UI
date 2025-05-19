@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
 import { Badge } from "@/components/ui/badge";
+import { useNotificationsContext } from "@/context/notifications-context";
 import {
   ChevronRight,
   ChevronLeft,
@@ -24,6 +25,9 @@ import {
   CalendarRange,
   Package,
   Syringe,
+  Receipt,
+  Wrench,
+  ShoppingBag,
 } from "lucide-react";
 
 const navigation = [
@@ -70,18 +74,14 @@ const navigation = [
   {
     name: "Services",
     href: "/services-management",
-    icon: <LifeBuoy className="h-5 w-5" />,
+    icon: <Wrench className="h-5 w-5" />,
   },
   {
     name: "Catalog",
     href: "/catalog-management",
-    icon: <LifeBuoy className="h-5 w-5" />,
+    icon: <ShoppingBag className="h-5 w-5" />,
   },
-  // {
-  //   name: "Virtual Assistant",
-  //   href: "/chatbot",
-  //   icon: <Bot className="h-5 w-5" />,
-  // },
+
 ];
 
 const secondaryNavigation = [
@@ -99,10 +99,9 @@ interface SidebarContentProps {
 
 const SidebarContent = ({ className }: SidebarContentProps) => {
   const [location] = useLocation();
+  const { logout, doctor } = useAuth();
+  const { unreadCount } = useNotificationsContext();
   const [isExpanded, setIsExpanded] = useState(true);
-  // Safe context access within the component
-  const auth = useAuth();
-  const { doctor, logout, notificationCount } = auth;
 
   // Check if current URL matches href
   const isActive = (href: string) => {
@@ -127,13 +126,14 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
     >
       {/* Logo */}
       <div className={cn("p-5 flex items-center", isExpanded ? "justify-between" : "justify-center")}>
-        {isExpanded && (
+        {isExpanded ? (
           <div className="flex items-center">
             <PawPrint className="h-8 w-8 text-[#2C78E4]" />
             <span className="ml-2 text-xl font-semibold text-[#111827]">VetCare</span>
           </div>
+        ) : (
+          <PawPrint className="h-8 w-8 text-[#2C78E4]" />
         )}
-        {!isExpanded && <PawPrint className="h-8 w-8 text-[#2C78E4]" />}
         <button
           onClick={toggleSidebar}
           className="p-2 rounded-full hover:bg-[#F9FAFB] text-[#4B5563] transition-colors"
@@ -183,9 +183,9 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
                       )}
                     </AnimatePresence>
                   </div>
-                  {item.name === "Notifications" && notificationCount > 0 && (
+                  {item.name === "Notifications" && unreadCount > 0 && (
                     <Badge className="bg-red-500 text-white">
-                      {notificationCount > 99 ? "99+" : notificationCount}
+                      {unreadCount > 99 ? "99+" : unreadCount}
                     </Badge>
                   )}
                 </div>
@@ -237,9 +237,9 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
                       )}
                     </AnimatePresence>
                   </div>
-                  {item.name === "Notifications" && notificationCount > 0 && (
+                  {item.name === "Notifications" && unreadCount > 0 && (
                     <Badge className="bg-red-500 text-white">
-                      {notificationCount > 99 ? "99+" : notificationCount}
+                      {unreadCount > 99 ? "99+" : unreadCount}
                     </Badge>
                   )}
                 </div>

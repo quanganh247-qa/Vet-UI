@@ -319,6 +319,10 @@ export const useLongPollingNotifications = ({
       isPolling.current = false;
       activeRequestRef.current = false;
       
+      // Continue polling immediately after receiving data
+      if (enabled && isMountedRef.current) {
+        setTimeout(poll, 100); // Small delay to avoid overwhelming the server
+      }
 
     } catch (err: any) {
       // Don't log or handle AbortError and cancellation errors as actual errors

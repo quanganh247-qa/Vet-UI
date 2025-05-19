@@ -5,7 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Receipt, CreditCard } from 'lucide-react';
+import { DollarSign, Receipt, CreditCard, CheckCheck } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+// Add format currency function
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+  }).format(amount);
+};
 
 interface CashPaymentProps {
   invoiceId: string;
@@ -13,8 +22,9 @@ interface CashPaymentProps {
   orderId?: number;
   testOrderId?: number;
   appointmentId?: number;
-  onSuccess?: () => void;
+  onSuccess?: (response: any) => void;
   onCancel?: () => void;
+  disabled?: boolean;
 }
 
 const CashPayment: React.FC<CashPaymentProps> = ({ 
@@ -24,7 +34,8 @@ const CashPayment: React.FC<CashPaymentProps> = ({
   testOrderId = 0,
   appointmentId = 0,
   onSuccess, 
-  onCancel 
+  onCancel,
+  disabled = false
 }) => {
   const [paymentAmount, setPaymentAmount] = useState<number>(amount);
   const [receivedAmount, setReceivedAmount] = useState<number>(amount);
@@ -45,7 +56,7 @@ const CashPayment: React.FC<CashPaymentProps> = ({
     e.preventDefault();
     
     try {
-      await cashPaymentMutation.mutateAsync({
+      const response = await cashPaymentMutation.mutateAsync({
         amount: paymentAmount,
         description: description,
         order_id: orderId,
@@ -58,7 +69,7 @@ const CashPayment: React.FC<CashPaymentProps> = ({
       
       // Call onSuccess callback if provided
       if (onSuccess) {
-        onSuccess();
+        onSuccess(response);
       }
     } catch (error) {
       console.error('Payment error:', error);
@@ -73,7 +84,7 @@ const CashPayment: React.FC<CashPaymentProps> = ({
           Cash Payment
         </CardTitle>
         <CardDescription>
-          Complete payment for invoice #{invoiceId}
+          {disabled ? 'Payment has been confirmed' : `Complete payment for invoice #${invoiceId}`}
         </CardDescription>
       </CardHeader>
       
@@ -91,8 +102,9 @@ const CashPayment: React.FC<CashPaymentProps> = ({
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
                 className="pl-10"
-                step="0.01"
+                step="1000"
                 required
+                disabled={disabled}
               />
             </div>
           </div>
@@ -109,8 +121,9 @@ const CashPayment: React.FC<CashPaymentProps> = ({
                 value={receivedAmount}
                 onChange={handleReceivedAmountChange}
                 className="pl-10"
-                step="0.01"
+                step="1000"
                 required
+                disabled={disabled}
               />
             </div>
           </div>
@@ -118,7 +131,7 @@ const CashPayment: React.FC<CashPaymentProps> = ({
           <div className="bg-gray-50 p-3 rounded border border-gray-200">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Change Amount:</span>
-              <span className="font-medium text-gray-900">${changeAmount.toFixed(2)}</span>
+              <span className="font-medium text-gray-900">{formatCurrency(changeAmount)}</span>
             </div>
           </div>
           
@@ -133,6 +146,7 @@ const CashPayment: React.FC<CashPaymentProps> = ({
               onChange={(e) => setReceivedBy(e.target.value)}
               className="h-10"
               required
+              disabled={disabled}
             />
           </div>
           
@@ -147,6 +161,7 @@ const CashPayment: React.FC<CashPaymentProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               className="resize-none h-24"
               required
+              disabled={disabled}
             />
           </div>
         </CardContent>
@@ -157,19 +172,28 @@ const CashPayment: React.FC<CashPaymentProps> = ({
             variant="outline"
             onClick={onCancel}
             className="border-gray-300"
+            disabled={disabled}
           >
             Cancel
           </Button>
           
           <Button
             type="submit"
-            disabled={cashPaymentMutation.isPending || paymentAmount <= 0}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            disabled={cashPaymentMutation.isPending || paymentAmount <= 0 || disabled}
+            className={cn(
+              "text-white",
+              disabled ? "bg-gray-300" : "bg-green-600 hover:bg-green-700"
+            )}
           >
             {cashPaymentMutation.isPending ? (
               <>
                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
                 Processing...
+              </>
+            ) : disabled ? (
+              <>
+                <CheckCheck className="mr-2 h-4 w-4" />
+                Payment Confirmed
               </>
             ) : (
               <>

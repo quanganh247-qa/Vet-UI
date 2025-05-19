@@ -127,6 +127,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Initialize lastNotificationTime to now
       localStorage.setItem('lastNotificationTime', new Date().getTime().toString());
       
+      // Dispatch custom event for auth state change
+      window.dispatchEvent(new Event('auth-state-changed'));
+      
       setIsLoading(false);
       return true;
     } catch (error) {
@@ -149,6 +152,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setNotificationCount(0);
     setAllNotifications([]);
 
+    // Dispatch custom event for auth state change
+    window.dispatchEvent(new Event('auth-state-changed'));
   }, []);
 
   return (

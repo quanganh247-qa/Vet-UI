@@ -86,6 +86,7 @@ const ITEMS_PER_PAGE = 5;
 const NotificationsPage = () => {
   const [, navigate] = useLocation();
   const { notifications: rawNotifications, markAsRead, clearAll, isLoading: isNotificationsLoading } = useNotificationsContext();
+  
   const previousNotificationsCount = useRef(0);
   
   // Track if this is the first load
@@ -93,8 +94,18 @@ const NotificationsPage = () => {
   
   // Transform notifications to match UI requirements
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [sortOrder, setSortOrder] = useState<string>("unread-first"); // Thêm state cho sắp xếp
-console.log(notifications)
+  const [sortOrder, setSortOrder] = useState<string>("unread-first");
+  const [selectedNotificationID, setSelectedNotificationID] = useState<number>();
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Selected notification for detail view
+  const [selectedNotification, setSelectedNotification] = 
+    useState<Notification | null>(null);
+console.log("rawNotifications", selectedNotification)
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+
   useEffect(() => {
     if (isFirstLoad.current) {
       isFirstLoad.current = false;
@@ -105,7 +116,15 @@ console.log(notifications)
     if (rawNotifications && Array.isArray(rawNotifications)) {
       const unreadCount = rawNotifications.filter(n => !n.is_read).length;
       
-      if (unreadCount > 0 && unreadCount > previousNotificationsCount.current) {
+      // Check if we have new notifications (not just unread ones)
+      const newNotifications = rawNotifications.filter(notification => {
+        // Consider a notification new if it wasn't in our previous set
+        // or if it was updated (e.g., marked as read)
+        return !notifications.some(n => n.id === notification.id) ||
+          notifications.some(n => n.id === notification.id && n.is_read !== notification.is_read);
+      });
+      
+      if (newNotifications.length > 0) {
         // Show toast for new notifications
         reactToastify.info(`You have ${unreadCount} new notifications`, {
           position: "top-right",
@@ -124,58 +143,170 @@ console.log(notifications)
       // Update previous count
       previousNotificationsCount.current = unreadCount;
     }
-  }, [rawNotifications]);
+  }, [rawNotifications, notifications]);
 
   useEffect(() => {
     if (rawNotifications && Array.isArray(rawNotifications)) {
       // Map database fields to UI fields
       const mappedNotifications = rawNotifications.map((notification: any) => {
         let appointmentId = notification.related_id;
-        let date = new Date(notification.datetime);
+        let date = new Date(notification.datetime || notification.created_at);
         
         // Extract additional info from content if available
-        let petInfo;
-        let doctorInfo;
-        let reason;
-        let timeSlot;
+        let petInfo = { petName: "Unknown", petId: 0 };
+        let doctorInfo = { doctorName: "Unassigned", doctorId: 0 };
+        let reason = "General Checkup";
+        let timeSlot = {
+          startTime: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          endTime: ""
+        };
         
-        try {
-          const contentObj = notification.content ? JSON.parse(notification.content) : {};
-          
-          // Extract data from content JSON
-          timeSlot = contentObj.timeSlot || {
-            startTime: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            endTime: ""
-          };
-          
-          petInfo = contentObj.pet || { 
-            petName: contentObj.pet_name || "Unknown",
-            petId: contentObj.pet_id || 0
-          };
-          
-          doctorInfo = contentObj.doctor || {
-            doctorName: contentObj.doctor_name || "Unassigned",
-            doctorId: contentObj.doctor_id || 0
-          };
-          
-          reason = contentObj.reason || "General Checkup";
-          
-        } catch (e) {
-          // Default values if parsing fails
-          timeSlot = {
-            startTime: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            endTime: ""
-          };
-          petInfo = { petName: "Unknown", petId: 0 };
-          doctorInfo = { doctorName: "Unassigned", doctorId: 0 };
-          reason = "General Checkup";
+        // Check if the content is available
+        if (notification.content) {
+          // First try to parse as JSON
+          try {
+            if (typeof notification.content === 'string') {
+              // Check if the content starts with '{' which would indicate JSON
+              if (notification.content.trim().startsWith('{')) {
+                const contentObj = JSON.parse(notification.content);
+                
+                // Extract data from content JSON
+                if (contentObj.timeSlot) {
+                  timeSlot = contentObj.timeSlot;
+                }
+                
+                if (contentObj.pet) {
+                  petInfo = contentObj.pet;
+                } else if (contentObj.pet_name) {
+                  petInfo = { 
+                    petName: contentObj.pet_name,
+                    petId: contentObj.pet_id || 0
+                  };
+                }
+                
+                if (contentObj.doctor) {
+                  doctorInfo = contentObj.doctor;
+                } else if (contentObj.doctor_name) {
+                  doctorInfo = {
+                    doctorName: contentObj.doctor_name,
+                    doctorId: contentObj.doctor_id || 0
+                  };
+                }
+                
+                if (contentObj.reason) {
+                  reason = contentObj.reason;
+                }
+              } else {
+               
+                const petMatch = notification.content.match(/cho\s+([^với]+)\s+với/i);
+                if (petMatch && petMatch[1]) {
+                  petInfo.petName = petMatch[1].trim();
+                }
+                
+                // Extract doctor name
+                const doctorMatch = notification.content.match(/bác\s+sĩ\s+([^ngày]+)/i);
+                if (doctorMatch && doctorMatch[1]) {
+                  doctorInfo.doctorName = doctorMatch[1].trim();
+                }
+                
+                // Extract appointment date
+                const dateMatch = notification.content.match(/ngày\s+(\d{4}-\d{2}-\d{2})/i);
+                if (dateMatch && dateMatch[1]) {
+                  const appointmentDate = new Date(dateMatch[1]);
+                  if (!isNaN(appointmentDate.getTime())) {
+                    // Format the date to be like "May 19, 2025"
+                    const formattedDate = appointmentDate.toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    });
+                    date = appointmentDate;
+                    timeSlot.startTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  }
+                }
+                
+                // Extract reason
+                const reasonMatch = notification.content.match(/Lý do:\s+(.+)$/i);
+                if (reasonMatch && reasonMatch[1]) {
+                  reason = reasonMatch[1].trim();
+                }
+              }
+            } else if (typeof notification.content === 'object') {
+              // Content is already an object
+              const contentObj = notification.content;
+              
+              if (contentObj.timeSlot) {
+                timeSlot = contentObj.timeSlot;
+              }
+              
+              if (contentObj.pet) {
+                petInfo = contentObj.pet;
+              } else if (contentObj.pet_name) {
+                petInfo = { 
+                  petName: contentObj.pet_name,
+                  petId: contentObj.pet_id || 0
+                };
+              }
+              
+              if (contentObj.doctor) {
+                doctorInfo = contentObj.doctor;
+              } else if (contentObj.doctor_name) {
+                doctorInfo = {
+                  doctorName: contentObj.doctor_name,
+                  doctorId: contentObj.doctor_id || 0
+                };
+              }
+              
+              if (contentObj.reason) {
+                reason = contentObj.reason;
+              }
+            }
+          } catch (e) {
+            // If JSON parsing fails, try to extract info from text content
+            const content = notification.content;
+            
+            // Extract pet name
+            const petMatch = content.match(/cho\s+([^với]+)\s+với/i);
+            if (petMatch && petMatch[1]) {
+              petInfo.petName = petMatch[1].trim();
+            }
+            
+            // Extract doctor name
+            const doctorMatch = content.match(/bác\s+sĩ\s+([^ngày]+)/i);
+            if (doctorMatch && doctorMatch[1]) {
+              doctorInfo.doctorName = doctorMatch[1].trim();
+            }
+            
+            // Extract appointment date
+            const dateMatch = content.match(/ngày\s+(\d{4}-\d{2}-\d{2})/i);
+            if (dateMatch && dateMatch[1]) {
+              const appointmentDate = new Date(dateMatch[1]);
+              if (!isNaN(appointmentDate.getTime())) {
+                date = appointmentDate;
+                timeSlot.startTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              }
+            }
+            
+            // Extract reason
+            const reasonMatch = content.match(/Lý do:\s+(.+)$/i);
+            if (reasonMatch && reasonMatch[1]) {
+              reason = reasonMatch[1].trim();
+            }
+          }
         }
+        
+        // Create formatted date string (e.g., "May 19, 2025")
+        const formattedDate = date.toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
         
         return {
           ...notification,
-          message: notification.content || "",
+          message: typeof notification.content === 'string' ? notification.content : JSON.stringify(notification.content),
           appointmentId: appointmentId || 0,
-          date: date.toLocaleDateString(),
+          date: formattedDate,
           timeSlot,
           pet: petInfo,
           doctor: doctorInfo,
@@ -194,16 +325,6 @@ console.log(notifications)
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const [selectedNotificationID, setSelectedNotificationID] = useState<number>();
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // Selected notification for detail view
-  const [selectedNotification, setSelectedNotification] = 
-    useState<Notification | null>(null);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false);
 
   // Sắp xếp thông báo dựa trên trạng thái đã đọc/chưa đọc và thời gian
   const sortedNotifications = useMemo(() => {
@@ -255,16 +376,17 @@ console.log(notifications)
   }, [sortedNotifications, searchTerm, filterStatus]);
 
   const handleViewAppointment = async (notification: Notification) => {
+    console.log("Opening notification details:", notification);
     setSelectedNotification(notification);
     setSelectedNotificationID(notification.id);
     setIsSheetOpen(true);
 
-    // Đánh dấu thông báo là đã đọc khi mở xem chi tiết
+    // Mark notification as read when opened
     if (!notification.is_read) {
       try {
         await markAsRead(notification.id);
         
-        // Cập nhật UI ngay lập tức để hiển thị thông báo đã đọc
+        // Update UI immediately to show notification as read
         setNotifications(prev => 
           prev.map(item => 
             item.id === notification.id 
@@ -298,9 +420,10 @@ console.log(notifications)
         await markAsRead(selectedNotificationID);
         
         toast({
-          title: "Đã xác nhận cuộc hẹn",
-          description: `Cuộc hẹn với ${selectedNotification.pet?.petName} đã được xác nhận.`,
-          variant: "default",
+          title: "Appointment confirmed",
+          description: `Appointment with ${selectedNotification.pet?.petName} has been confirmed.`,
+          className: "bg-green-500 text-white",
+          duration: 5000,
         });
       }
       
@@ -328,6 +451,7 @@ console.log(notifications)
         title: "Appointment declined",
         description: `Appointment with ${selectedNotification.pet?.petName} has been declined.`,
         variant: "destructive",
+        duration: 5000,
       });
 
       // Close the sheet after confirmation
@@ -338,6 +462,7 @@ console.log(notifications)
         title: "Operation failed",
         description: "Cannot decline appointment. Please try again.",
         variant: "destructive",
+        duration: 5000,
       });
     } finally {
       setIsConfirming(false);
@@ -384,72 +509,66 @@ console.log(notifications)
       />
       
       {/* Header with status indicator showing if polling is active */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md mb-6">
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-white">Notifications</h1>
-            <p className="text-indigo-100 text-sm">
+            <h1 className="text-xl font-semibold">Notifications</h1>
+            <p className="text-white/90 text-sm">
               View and manage all your notifications
             </p>
           </div>
-
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-              onClick={() => navigate("/")}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
+          <div className="flex items-center">
+            <span className="flex items-center text-sm">
+              <span className={`h-2 w-2 rounded-full mr-2 ${isNotificationsLoading ? 'bg-yellow-300 animate-pulse' : 'bg-green-300'}`}></span>
+              {isNotificationsLoading ? 'Checking for notifications...' : 'Real-time updates active'}
+            </span>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto">
-        <div className="bg-white rounded-lg border border-indigo-100 shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-2xl border border-[#F9FAFB] shadow-sm p-6 mb-6">
           {/* Search and filter bar */}
           <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
             <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#4B5563]" />
               <Input
                 placeholder="Search notifications..."
-                className="pl-10 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
+                className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-2xl"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
             <div className="flex gap-2">
-              {/* Thêm dropdown sắp xếp */}
+              {/* Sort dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-indigo-200 text-indigo-600"
+                    className="border-[#2C78E4]/20 text-[#2C78E4] rounded-2xl"
                   >
                     <LayoutGrid className="h-4 w-4 mr-2" />
                     Sort
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-56 rounded-xl">
                   <DropdownMenuItem 
-                    className={cn(sortOrder === "unread-first" && "bg-indigo-50 font-medium")}
+                    className={cn(sortOrder === "unread-first" && "bg-[#F9FAFB] font-medium text-[#2C78E4]")}
                     onClick={() => setSortOrder("unread-first")}
                   >
                     Unread first
                   </DropdownMenuItem>
                   <DropdownMenuItem 
-                    className={cn(sortOrder === "newest-first" && "bg-indigo-50 font-medium")}
+                    className={cn(sortOrder === "newest-first" && "bg-[#F9FAFB] font-medium text-[#2C78E4]")}
                     onClick={() => setSortOrder("newest-first")}
                   >
                     Newest first
                   </DropdownMenuItem>
                   <DropdownMenuItem 
-                    className={cn(sortOrder === "oldest-first" && "bg-indigo-50 font-medium")}
+                    className={cn(sortOrder === "oldest-first" && "bg-[#F9FAFB] font-medium text-[#2C78E4]")}
                     onClick={() => setSortOrder("oldest-first")}
                   >
                     Oldest first
@@ -457,68 +576,13 @@ console.log(notifications)
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-indigo-200 text-indigo-600"
-                  >
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filter
-                    <ChevronDown className="h-4 w-4 ml-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem onClick={() => setFilterStatus([])}>
-                    Clear filters
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuCheckboxItem
-                    checked={filterStatus.includes("upcoming")}
-                    onCheckedChange={(checked) => {
-                      setFilterStatus((prev) =>
-                        checked
-                          ? [...prev, "upcoming"]
-                          : prev.filter((status) => status !== "upcoming")
-                      );
-                    }}
-                  >
-                    Upcoming
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={filterStatus.includes("starting_soon")}
-                    onCheckedChange={(checked) => {
-                      setFilterStatus((prev) =>
-                        checked
-                          ? [...prev, "starting_soon"]
-                          : prev.filter((status) => status !== "starting_soon")
-                      );
-                    }}
-                  >
-                    Starting soon
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={filterStatus.includes("completed")}
-                    onCheckedChange={(checked) => {
-                      setFilterStatus((prev) =>
-                        checked
-                          ? [...prev, "completed"]
-                          : prev.filter((status) => status !== "completed")
-                      );
-                    }}
-                  >
-                    Completed
-                  </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
 
               {(notifications.length > 0 ||
                 lowStockNotifications.length > 0) && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-2xl"
                   onClick={handleClearAll}
                 >
                   Clear all
@@ -528,54 +592,47 @@ console.log(notifications)
           </div>
 
           {/* Notifications list */}
-          <Card className="border border-indigo-100">
-            <CardHeader className="pb-3 border-b border-indigo-100">
-              <CardTitle className="text-lg text-indigo-900 flex items-center justify-between">
+          <Card className="border border-[#F9FAFB] rounded-2xl">
+            <CardHeader className="pb-3 border-b border-[#F9FAFB]">
+              <CardTitle className="text-lg text-[#111827] flex items-center justify-between">
                 <div className="flex items-center">
                   All notifications
-                  {/* Hiển thị số lượng thông báo chưa đọc */}
+                  {/* Show unread notification count */}
                   {notifications.filter(n => !n.is_read).length > 0 && (
-                    <Badge className="ml-3 bg-red-100 text-red-700 border-red-200">
+                    <Badge className="ml-3 bg-red-100 text-red-700 border-red-200 rounded-full">
                       {notifications.filter(n => !n.is_read).length} unread
                     </Badge>
                   )}
                 </div>
-                {/* <Badge
-                  variant="outline"
-                  className="bg-green-50 text-green-700 border-green-200"
-                >
-                  <span className="h-2 w-2 rounded-full bg-green-500 mr-1.5"></span>
-                  Real-time update
-                </Badge> */}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              {isLoading ? (
+              {isLoading || isNotificationsLoading ? (
                 <div className="flex justify-center items-center py-20">
-                  <div className="w-8 h-8 border-4 border-t-indigo-600 border-indigo-200 rounded-full animate-spin"></div>
+                  <div className="w-8 h-8 border-4 border-t-[#2C78E4] border-[#F9FAFB] rounded-full animate-spin"></div>
                 </div>
               ) : filteredNotifications.length === 0 &&
                 lowStockNotifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 px-4">
-                  <div className="bg-indigo-50 p-4 rounded-full mb-4">
-                    <Bell className="h-8 w-8 text-indigo-500" />
+                  <div className="bg-[#F9FAFB] p-4 rounded-full mb-4">
+                    <Bell className="h-8 w-8 text-[#2C78E4]" />
                   </div>
-                  <p className="text-indigo-900 font-medium text-lg mb-1">
+                  <p className="text-[#111827] font-medium text-lg mb-1">
                     No notifications found
                   </p>
-                  <p className="text-gray-500 text-sm text-center max-w-md">
+                  <p className="text-[#4B5563] text-sm text-center max-w-md">
                     No notifications match your criteria or you have no notifications
                   </p>
                 </div>
               ) : (
                 <ScrollArea className="h-[500px] min-h-[400px] max-h-[70vh] w-full overflow-y-auto">
-                  <div className="divide-y divide-indigo-100">
+                  <div className="divide-y divide-[#F9FAFB]">
                     {paginatedNotifications.map((notification: Notification, index: number) => (
                       <div
                         key={`${notification.id}-${index}`}
                         className={cn(
-                          "px-6 py-4 hover:bg-indigo-50/50 cursor-pointer transition-colors",
-                          !notification.is_read && "bg-indigo-50/30 border-l-4 border-indigo-500"
+                          "px-6 py-4 hover:bg-[#F9FAFB]/50 cursor-pointer transition-colors",
+                          !notification.is_read && "bg-[#F9FAFB]/30 border-l-4 border-[#2C78E4]"
                         )}
                         onClick={() => handleViewAppointment(notification)}
                       >
@@ -583,7 +640,7 @@ console.log(notifications)
                           <div className="flex items-center">
                             <div className={cn(
                               "flex items-center justify-center rounded-full mr-3 flex-shrink-0",
-                              !notification.is_read ? "text-indigo-600" : "text-gray-400"
+                              !notification.is_read ? "text-[#2C78E4]" : "text-[#4B5563]"
                             )}>
                               {notification.notify_type === "appointment" ? (
                                 <Calendar className="h-5 w-5" />
@@ -596,37 +653,37 @@ console.log(notifications)
                                 <span className={cn(
                                   "text-sm",
                                   !notification.is_read 
-                                    ? "font-semibold text-indigo-900" 
-                                    : "font-medium text-gray-700"
+                                    ? "font-semibold text-[#111827]" 
+                                    : "font-medium text-[#4B5563]"
                                 )}>
                                   {notification.title}
                                   {!notification.is_read && (
                                     <span className="ml-2 inline-flex items-center">
-                                      <span className="h-2 w-2 rounded-full bg-indigo-500"></span>
+                                      <span className="h-2 w-2 rounded-full bg-[#2C78E4]"></span>
                                     </span>
                                   )}
                                 </span>
-                                <span className="text-indigo-500 mx-2">•</span>
-                                <span className="text-sm text-indigo-600">
+                                <span className="text-[#2C78E4] mx-2">•</span>
+                                <span className="text-sm text-[#2C78E4]">
                                   {new Date(notification.datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                               </div>
                               <p className={cn(
                                 "text-sm mt-1",
-                                !notification.is_read ? "text-gray-700" : "text-gray-500"
+                                !notification.is_read ? "text-[#111827]" : "text-[#4B5563]"
                               )}>
-                                {notification.pet?.petName} -{" "}
-                                  {notification.reason || "General Checkup"}
+                                {notification.pet?.petName ? `${notification.pet.petName} - ` : ""}
+                                {notification.reason || "General Checkup"}
                               </p>
                             </div>
                           </div>
 
                           <Badge
                             className={cn(
-                              "ml-4 mt-1",
+                              "ml-4 mt-1 rounded-full",
                               !notification.is_read 
-                                ? "bg-indigo-100 text-indigo-800 border-indigo-200 font-medium" 
-                                : "bg-gray-100 text-gray-700 border-gray-200"
+                                ? "bg-[#2C78E4]/10 text-[#2C78E4] border-[#2C78E4]/20 font-medium" 
+                                : "bg-gray-100 text-[#4B5563] border-gray-200"
                             )}
                           >
                             {notification.serviceName}
@@ -637,8 +694,8 @@ console.log(notifications)
 
                     {lowStockNotifications.length > 0 && (
                       <>
-                        <div className="px-6 py-3 bg-indigo-50">
-                          <h3 className="text-xs font-medium text-indigo-800 uppercase tracking-wide">
+                        <div className="px-6 py-3 bg-[#F9FAFB]">
+                          <h3 className="text-xs font-medium text-[#2C78E4] uppercase tracking-wide">
                             Low Stock Alert
                           </h3>
                         </div>
@@ -646,26 +703,26 @@ console.log(notifications)
                         {lowStockNotifications.map((notification, index) => (
                           <div
                             key={`${notification.medicine_id}-${index}`}
-                            className="px-6 py-4 hover:bg-indigo-50/50 cursor-pointer transition-colors"
+                            className="px-6 py-4 hover:bg-[#F9FAFB]/50 cursor-pointer transition-colors"
                           >
                             <div className="flex justify-between items-start">
                               <div className="flex items-center">
                                 <AlertCircle className="h-5 w-5 text-amber-500 mr-3 flex-shrink-0" />
                                 <div>
                                   <div className="flex items-center">
-                                    <span className="text-sm font-medium text-indigo-900">
+                                    <span className="text-sm font-medium text-[#111827]">
                                       Low Stock Alert:{" "}
                                       {notification.medicine_name}
                                     </span>
                                   </div>
-                                  <p className="text-sm text-gray-600 mt-1">
+                                  <p className="text-sm text-[#4B5563] mt-1">
                                     Current stock: {notification.current_stock}{" "}
                                     units (reorder level: {notification.reorder_level})
                                   </p>
                                 </div>
                               </div>
 
-                              <Badge className="bg-amber-100 text-amber-800 border-amber-200 ml-4 mt-1">
+                              <Badge className="bg-amber-100 text-amber-800 border-amber-200 ml-4 mt-1 rounded-full">
                                 Low Stock Alert
                               </Badge>
                             </div>
@@ -680,9 +737,9 @@ console.log(notifications)
 
             {/* Pagination controls */}
             {totalPages > 1 && (
-              <CardFooter className="flex justify-between items-center px-6 py-3 border-t border-indigo-100">
-                <div className="text-sm text-gray-500">
-                  Trang {currentPage} / {totalPages}
+              <CardFooter className="flex justify-between items-center px-6 py-3 border-t border-[#F9FAFB]">
+                <div className="text-sm text-[#4B5563]">
+                  Page {currentPage} / {totalPages}
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -690,6 +747,7 @@ console.log(notifications)
                     size="sm"
                     onClick={goToPrevPage}
                     disabled={currentPage === 1}
+                    className="rounded-2xl border-[#2C78E4]/20"
                   >
                     <ChevronLeft className="h-4 w-4 mr-1" />
                     Previous
@@ -699,6 +757,7 @@ console.log(notifications)
                     size="sm"
                     onClick={goToNextPage}
                     disabled={currentPage === totalPages}
+                    className="rounded-2xl border-[#2C78E4]/20"
                   >
                     Next
                     <ChevronRight className="h-4 w-4 ml-1" />
@@ -712,58 +771,69 @@ console.log(notifications)
       {/* Appointment Detail Sheet */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetOverlay className="bg-gray-400/30" />
-        <SheetContent className="sm:max-w-md bg-white p-0 flex flex-col">
-          <div className="px-6 py-3 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">
+        <SheetContent className="sm:max-w-md bg-white p-0 flex flex-col rounded-l-2xl">
+          <div className="px-6 py-4 border-b border-[#F9FAFB]">
+            <h2 className="text-lg font-semibold text-[#111827]">
               Appointment Details
             </h2>
-            <p className="text-xs text-gray-500 mt-1">
-              Review and confirm appointment
+            <p className="text-xs text-[#4B5563] mt-1">
+              Review and manage appointment
             </p>
           </div>
 
           {selectedNotification && (
             <div className="flex-1 overflow-y-auto px-6 py-4">
               <div className="space-y-6">
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <h3 className="font-semibold text-gray-900 mb-4 text-base">
-                    Appointment for {selectedNotification.pet?.petName} - #
-                    {selectedNotification.id}
+                <div className="bg-[#F9FAFB] rounded-2xl p-4 border border-[#F9FAFB]">
+                  <h3 className="font-semibold text-[#111827] mb-4 text-base">
+                    Appointment for {selectedNotification.pet?.petName || "Unknown Pet"} - #{selectedNotification.appointmentId}
                   </h3>
 
                   <div className="space-y-4">
                     <div className="flex items-start">
-                      <User className="h-4 w-4 text-indigo-600 mr-2 mt-0.5" />
+                      <User className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
                       <div>
-                        <div className="text-sm font-medium text-gray-700">
+                        <div className="text-sm font-medium text-[#111827]">
                           Pet
                         </div>
-                        <div className="text-sm text-gray-600">
-                          {selectedNotification.pet?.petName}
+                        <div className="text-sm text-[#4B5563]">
+                          {selectedNotification.pet?.petName || "Unknown"}
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-start">
-                      <User className="h-4 w-4 text-indigo-600 mr-2 mt-0.5" />
+                      <User className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
                       <div>
-                        <div className="text-sm font-medium text-gray-700">
+                        <div className="text-sm font-medium text-[#111827]">
                           Doctor
                         </div>
-                        <div className="text-sm text-gray-600">
-                          {selectedNotification.doctor?.doctorName ||
-                            "Unassigned"}
+                        <div className="text-sm text-[#4B5563]">
+                          {selectedNotification.doctor?.doctorName || "Unassigned"}
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-start">
-                      <AlertCircle className="h-4 w-4 text-indigo-600 mr-2 mt-0.5" />
+                      <Calendar className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
                       <div>
-                        <div className="text-sm font-medium text-gray-700">
+                        <div className="text-sm font-medium text-[#111827]">
+                          Time
+                        </div>
+                        <div className="text-sm text-[#4B5563]">
+                          {selectedNotification.date} at {selectedNotification.timeSlot?.startTime || "Unspecified time"}
+                          {selectedNotification.timeSlot?.endTime && ` - ${selectedNotification.timeSlot.endTime}`}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start">
+                      <AlertCircle className="h-4 w-4 text-[#2C78E4] mr-2 mt-0.5" />
+                      <div>
+                        <div className="text-sm font-medium text-[#111827]">
                           Reason
                         </div>
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-[#4B5563]">
                           {selectedNotification.reason || "Unspecified"}
                         </div>
                       </div>
@@ -772,20 +842,12 @@ console.log(notifications)
                 </div>
 
                 <div className="pt-4 space-y-6">
-                  <Button
-                    onClick={() =>
-                      navigateToAppointment(selectedNotification.appointmentId)
-                    }
-                    className="w-full border-gray-300"
-                    variant="outline"
-                  >
-                    View details
-                  </Button>
+           
 
                   <div className="grid grid-cols-2 gap-4 pb-4">
                     <Button
                       onClick={() => handleConfirmAppointment()}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      className="w-full bg-green-600 hover:bg-green-700 text-white rounded-2xl"
                       disabled={isConfirming}
                     >
                       {isConfirming ? "Processing..." : "Confirm"}
@@ -794,7 +856,7 @@ console.log(notifications)
 
                     <Button
                       onClick={handleDeclineAppointment}
-                      className="w-full bg-red-600 hover:bg-red-700 text-white"
+                      className="w-full bg-red-600 hover:bg-red-700 text-white rounded-2xl"
                       disabled={isConfirming}
                     >
                       {isConfirming ? "Processing..." : "Decline"}
@@ -806,15 +868,7 @@ console.log(notifications)
             </div>
           )}
 
-          <div className="px-6 py-3 border-t border-gray-100 bg-gray-50">
-            <Button
-              variant="outline"
-              onClick={() => setIsSheetOpen(false)}
-              className="w-full justify-center"
-            >
-              Close
-            </Button>
-          </div>
+         
         </SheetContent>
       </Sheet>
     </div>

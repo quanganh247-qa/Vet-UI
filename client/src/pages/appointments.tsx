@@ -209,19 +209,19 @@ const Appointments = () => {
 
   return (
     <div className="space-y-6">
-            {/* Header with gradient background */}
-            <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md mb-6">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <Button
               variant="ghost"
               size="icon"
-              className="mr-2 h-8 w-8 text-white hover:bg-white/20 rounded-full"
+              className="mr-2 h-8 w-8 text-white hover:bg-white/20 rounded-xl"
               onClick={() => window.history.back()}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-white">Appointments</h1>
+            <h1 className="text-xl font-semibold">Appointments</h1>
             {doctor && (
               <Badge className="ml-4 bg-white/20 text-white hover:bg-white/30 rounded-full">
                 Dr. {doctor.username}
@@ -230,7 +230,7 @@ const Appointments = () => {
           </div>
 
           <div className="flex items-center space-x-3">
-            <div className="flex items-center bg-white/10 text-white border-white/20 rounded-lg px-3 py-1 transition-all hover:bg-white/15">
+            <div className="flex items-center bg-white/10 text-white border-white/20 rounded-xl px-3 py-1 transition-all hover:bg-white/15">
               <Calendar className="h-4 w-4 text-white/80 mr-2" />
               <input
                 type="date"
@@ -245,7 +245,7 @@ const Appointments = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-white hover:bg-white/20 relative rounded-full"
+                  className="text-white hover:bg-white/20 relative rounded-xl"
                 >
                   <Bell className="h-5 w-5" />
                   {notifications &&
@@ -254,9 +254,9 @@ const Appointments = () => {
                     )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-64 bg-white rounded-lg shadow-md border-none">
+              <DropdownMenuContent className="w-64 bg-white rounded-xl shadow-md border-none">
                 <DropdownMenuLabel className="text-[#111827]">Notifications</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-gray-100" />
+                <DropdownMenuSeparator className="bg-[#F9FAFB]" />
                 {notifications?.length > 0 ? (
                   notifications.map((notification: any) => (
                     <DropdownMenuItem
@@ -277,7 +277,7 @@ const Appointments = () => {
                     No notifications
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuSeparator className="bg-gray-100" />
+                <DropdownMenuSeparator className="bg-[#F9FAFB]" />
                 <DropdownMenuItem
                   onClick={handleMarkAllNotificationsAsRead}
                   className="text-[#2C78E4] cursor-pointer hover:bg-[#F9FAFB]"
@@ -291,7 +291,7 @@ const Appointments = () => {
       </div>
 
       {/* Filters */}
-      <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
+      <Card className="border border-[#F9FAFB] shadow-sm rounded-2xl overflow-hidden bg-white">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row md:items-center gap-4">
             <div className="relative flex-grow md:max-w-md">
@@ -301,34 +301,22 @@ const Appointments = () => {
               <Input
                 type="search"
                 placeholder="Search by ID, pet, owner, doctor or service..."
-                className="pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm placeholder-[#4B5563] focus:outline-none focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] w-full"
+                className="pl-10 pr-3 py-2 border border-[#2C78E4]/20 rounded-xl text-sm placeholder-[#4B5563] focus:outline-none focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] w-full"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
             <div className="flex flex-wrap gap-3">
-              {/* <div className="flex items-center space-x-2">
-                <div className="p-2 bg-[#2C78E4]/10 rounded-lg">
-                  <Calendar className="h-4 w-4 text-[#2C78E4]" />
-                </div>
-                <Input
-                  type="date"
-                  className="border border-gray-200 rounded-lg text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] w-36"
-                  value={format(selectedDate, "yyyy-MM-dd")}
-                  onChange={handleDateChange}
-                />
-              </div> */}
-
               <div className="flex items-center space-x-2">
-                <div className="p-2 bg-[#2C78E4]/10 rounded-lg">
+                <div className="p-2 bg-[#2C78E4]/10 rounded-xl">
                   <Filter className="h-4 w-4 text-[#2C78E4]" />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="border border-gray-200 rounded-lg text-sm h-10 w-44 focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4]">
+                  <SelectTrigger className="border border-[#2C78E4]/20 rounded-xl text-sm h-10 w-44 focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4]">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white rounded-lg shadow-md border-none">
+                  <SelectContent className="bg-white rounded-xl shadow-md border-none">
                     <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="scheduled">Scheduled</SelectItem>
                     <SelectItem value="confirmed">Confirmed</SelectItem>
@@ -345,8 +333,8 @@ const Appointments = () => {
       </Card>
 
       {/* Appointments Table */}
-      <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
-        <CardHeader className="bg-white pb-3 border-b border-gray-100">
+      <Card className="border border-[#F9FAFB] shadow-sm rounded-2xl overflow-hidden bg-white">
+        <CardHeader className="bg-white pb-3 border-b border-[#F9FAFB]">
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg font-semibold text-[#111827] flex items-center">
               <Clock className="mr-2 h-5 w-5 text-[#2C78E4]" />
@@ -391,7 +379,7 @@ const Appointments = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
+              <tbody className="divide-y divide-[#F9FAFB] bg-white">
                 {isLoading ? (
                   Array(6)
                     .fill(0)
@@ -412,9 +400,10 @@ const Appointments = () => {
                 ) : filteredAppointments?.length > 0 ? (
                   paginatedAppointments.map((appointment: Appointment) => {
                     const { pet, doctor, owner, service, state } = appointment;
+                    console.log("appointment", appointment);
                     // Thay vì truy cập trực tiếp vào patientsData, cần truy cập vào mảng data bên trong
                     const patient = patientsData?.data?.find(
-                      (p: Patient) => Number(p.petid) === Number(pet.pet_id)
+                      (p: any) => Number(p.petid) === Number(pet.pet_id)
                     );
                     const statusColors = getStatusColor(state);
 
@@ -459,9 +448,6 @@ const Appointments = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-[#111827] font-medium">
-                            {formatAppointmentTime(appointment.time_slot)}
-                          </div>
                           <div className="text-xs text-[#4B5563]">
                             {format(selectedDate, "MMM d, yyyy")}
                           </div>
@@ -516,7 +502,7 @@ const Appointments = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-gray-200 hover:bg-[#2C78E4]/5 hover:text-[#2C78E4] hover:border-[#2C78E4]/20 transition-colors rounded-lg shadow-sm"
+                            className="border-[#2C78E4]/20 hover:bg-[#2C78E4]/5 hover:text-[#2C78E4] hover:border-[#2C78E4]/20 transition-colors rounded-xl shadow-sm"
                             onClick={() =>
                               setLocation(
                                 `appointment/${appointment.id}/check-in`
@@ -551,7 +537,7 @@ const Appointments = () => {
           </div>
           {/* Pagination Controls */}
           {!isLoading && appointmentsData && (
-            <div className="border-t border-gray-100 px-4 py-3 sm:px-6">
+            <div className="border-t border-[#F9FAFB] px-4 py-3 sm:px-6">
               <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-3 text-sm">
                   <span className="text-[#4B5563]">Show</span>
@@ -560,7 +546,7 @@ const Appointments = () => {
                     onChange={(e) =>
                       handlePageSizeChange(parseInt(e.target.value))
                     }
-                    className="rounded-lg border border-gray-200 bg-white text-sm py-1 px-2 text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
+                    className="rounded-xl border border-[#2C78E4]/20 bg-white text-sm py-1 px-2 text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
                   >
                     <option value="5">5</option>
                     <option value="10">10</option>
@@ -582,9 +568,9 @@ const Appointments = () => {
                     size="sm"
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className={cn("bg-white border border-gray-200 rounded-lg transition-colors px-2.5 py-1.5 text-sm",
+                    className={cn("bg-white border border-[#2C78E4]/20 rounded-xl transition-colors px-2.5 py-1.5 text-sm",
                       currentPage === 1 
-                        ? "text-gray-400 cursor-not-allowed" 
+                        ? "text-[#4B5563]/50 cursor-not-allowed" 
                         : "text-[#2C78E4] hover:bg-[#2C78E4]/5 hover:border-[#2C78E4]/20"
                     )}
                   >
@@ -610,7 +596,7 @@ const Appointments = () => {
                             size="sm"
                             onClick={() => handlePageChange(page)}
                             className={cn(
-                              "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                              "rounded-xl h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
                               currentPage === page
                                 ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
                                 : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
@@ -627,7 +613,7 @@ const Appointments = () => {
                             size="sm"
                             onClick={() => handlePageChange(1)}
                             className={cn(
-                              "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                              "rounded-xl h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
                               currentPage === 1
                                 ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
                                 : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
@@ -665,7 +651,7 @@ const Appointments = () => {
                                   size="sm"
                                   onClick={() => handlePageChange(pageNum)}
                                   className={cn(
-                                    "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                                    "rounded-xl h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
                                     currentPage === pageNum
                                       ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
                                       : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
@@ -696,7 +682,7 @@ const Appointments = () => {
                                 )
                               }
                               className={cn(
-                                "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                                "rounded-xl h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
                                 currentPage === Math.ceil(filteredAppointments.length / pageSize)
                                   ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
                                   : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
@@ -721,9 +707,9 @@ const Appointments = () => {
                         Math.ceil(filteredAppointments.length / pageSize) ||
                       filteredAppointments.length === 0
                     }
-                    className={cn("bg-white border border-gray-200 rounded-lg transition-colors px-2.5 py-1.5 text-sm",
+                    className={cn("bg-white border border-[#2C78E4]/20 rounded-xl transition-colors px-2.5 py-1.5 text-sm",
                       currentPage >= Math.ceil(filteredAppointments.length / pageSize) || filteredAppointments.length === 0
-                        ? "text-gray-400 cursor-not-allowed"
+                        ? "text-[#4B5563]/50 cursor-not-allowed"
                         : "text-[#2C78E4] hover:bg-[#2C78E4]/5 hover:border-[#2C78E4]/20"
                     )}
                   >

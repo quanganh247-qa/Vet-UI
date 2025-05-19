@@ -13,6 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNotificationsContext } from "@/context/notifications-context";
+import { Badge } from "@/components/ui/badge";
 
 interface TopbarProps {
   openSidebar: () => void;
@@ -21,6 +23,7 @@ interface TopbarProps {
 // Inner component that safely uses auth context
 const TopbarContent = ({ openSidebar }: TopbarProps) => {
   const { doctor, logout } = useAuth();
+  const { unreadCount } = useNotificationsContext();
   const [, navigate] = useLocation();
 
   const handleLogout = () => {
@@ -54,6 +57,20 @@ const TopbarContent = ({ openSidebar }: TopbarProps) => {
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* Thông báo */}
+          <div className="relative">
+            <button 
+              className="p-2 text-white hover:bg-white/10 rounded-md transition-colors"
+              onClick={() => navigate('/notifications')}
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Badge>
+              )}
+            </button>
+          </div>
           
           <button className="p-2 text-white hover:bg-white/10 rounded-md transition-colors">
             <MessageSquare className="h-5 w-5" />
@@ -86,6 +103,15 @@ const TopbarContent = ({ openSidebar }: TopbarProps) => {
               <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/settings')}>
                 <Settings className="h-4 w-4 mr-2" />
                 Tùy chọn
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/notifications')}>
+                <Bell className="h-4 w-4 mr-2" />
+                Thông báo
+                {unreadCount > 0 && (
+                  <Badge className="ml-2 h-5 px-1 bg-red-500 text-white">
+                    {unreadCount}
+                  </Badge>
+                )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600">

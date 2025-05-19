@@ -17,7 +17,8 @@ interface CashPaymentDialogProps {
   orderId?: number;
   testOrderId?: number;
   appointmentId?: number;
-  onSuccess?: () => void;
+  onSuccess?: (paymentData?: any) => void;
+  isPaymentConfirmed?: boolean;
 }
 
 const CashPaymentDialog: React.FC<CashPaymentDialogProps> = ({
@@ -29,14 +30,15 @@ const CashPaymentDialog: React.FC<CashPaymentDialogProps> = ({
   testOrderId = 0,
   appointmentId = 0,
   onSuccess,
+  isPaymentConfirmed = false,
 }) => {
   const handleCancel = () => {
     onOpenChange(false);
   };
 
-  const handleSuccess = () => {
+  const handleSuccess = (paymentData?: any) => {
     if (onSuccess) {
-      onSuccess();
+      onSuccess(paymentData);
     }
     onOpenChange(false);
   };
@@ -52,6 +54,7 @@ const CashPaymentDialog: React.FC<CashPaymentDialogProps> = ({
           appointmentId={appointmentId}
           onSuccess={handleSuccess}
           onCancel={handleCancel}
+          disabled={isPaymentConfirmed}
         />
       </DialogContent>
     </Dialog>

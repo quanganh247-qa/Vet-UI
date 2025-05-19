@@ -226,36 +226,36 @@ const Settings = () => {
   return (
     <div className="space-y-6">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md mb-6">
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <Link href="/">
-              <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+              <Button variant="ghost" size="sm" className="text-white hover:bg-white/20 rounded-xl">
                 <ArrowLeft className="h-4 w-4 mr-1" />
                 Back
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold text-white">Settings</h1>
+            <h1 className="text-xl font-semibold">Settings</h1>
           </div>
         </div>
       </div>
 
       <Tabs defaultValue="mail" className="space-y-6">
-        <TabsList className="bg-white/5 p-1 rounded-lg border border-gray-100 shadow-sm">
-          <TabsTrigger value="mail" className="text-sm font-medium">Mail Settings</TabsTrigger>
-          <TabsTrigger value="smtp" className="text-sm font-medium">SMTP Configurations</TabsTrigger>
+        <TabsList className="bg-white/5 p-1 rounded-xl border border-[#F9FAFB] shadow-sm">
+          <TabsTrigger value="mail" className="text-sm font-medium rounded-lg data-[state=active]:bg-[#2C78E4] data-[state=active]:text-white">Mail Settings</TabsTrigger>
+          <TabsTrigger value="smtp" className="text-sm font-medium rounded-lg data-[state=active]:bg-[#2C78E4] data-[state=active]:text-white">SMTP Configurations</TabsTrigger>
         </TabsList>
 
         <TabsContent value="mail">
-          <Card className="border-none shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-4 border-b">
-              <CardTitle className="text-lg font-semibold text-indigo-900">Mail Settings</CardTitle>
-              <CardDescription className="text-indigo-600/70">
+          <Card className="border-none shadow-lg rounded-2xl">
+            <CardHeader className="bg-gradient-to-r from-[#F9FAFB] to-white pb-4 border-b">
+              <CardTitle className="text-lg font-semibold text-[#111827]">Mail Settings</CardTitle>
+              <CardDescription className="text-[#2C78E4]/70">
                 Configure common settings for sending emails.
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="flex items-center space-x-2 py-4 px-4 bg-gray-50 rounded-lg mb-6">
+              <div className="flex items-center space-x-2 py-4 px-4 bg-[#F9FAFB] rounded-xl mb-6">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -264,7 +264,7 @@ const Settings = () => {
                         <span className="font-medium">Using SMTP Configuration:</span>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="bg-white border border-gray-200 shadow-lg">
+                    <TooltipContent className="bg-white border border-gray-200 shadow-lg rounded-xl">
                       <p className="w-80 text-sm">
                         This is the current default SMTP configuration being used for sending emails.
                       </p>
@@ -273,22 +273,22 @@ const Settings = () => {
                 </TooltipProvider>
                 
                 {defaultConfig ? (
-                  <div className="ml-2 p-2 bg-white rounded-lg border border-gray-200 flex-1">
+                  <div className="ml-2 p-2 bg-white rounded-xl border border-[#F9FAFB] flex-1">
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="font-medium">{defaultConfig.name}</p>
-                        <p className="text-sm text-gray-500">{defaultConfig.email}</p>
+                        <p className="text-sm text-[#4B5563]">{defaultConfig.email}</p>
                       </div>
-                      <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+                      <Badge className="bg-green-100 text-green-800 hover:bg-green-200 rounded-full">
                         Default
                       </Badge>
                     </div>
-                    <div className="mt-2 text-xs text-gray-500">
+                    <div className="mt-2 text-xs text-[#4B5563]">
                       SMTP Server: {defaultConfig.smtp_host}:{defaultConfig.smtp_port}
                     </div>
                   </div>
                 ) : (
-                  <div className="ml-2 p-4 bg-yellow-50 rounded-lg border border-yellow-100 flex-1">
+                  <div className="ml-2 p-4 bg-yellow-50 rounded-xl border border-yellow-100 flex-1">
                     <p className="text-yellow-700 flex items-center">
                       <HelpCircle className="h-4 w-4 mr-1" />
                       No default SMTP configuration set. Please add a configuration in the SMTP tab.
@@ -302,12 +302,12 @@ const Settings = () => {
         </TabsContent>
 
         <TabsContent value="smtp" id="smtp">
-          <Card className="border-none shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-4 border-b">
+          <Card className="border-none shadow-lg rounded-2xl">
+            <CardHeader className="bg-gradient-to-r from-[#F9FAFB] to-white pb-4 border-b">
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle className="text-lg font-semibold text-indigo-900">SMTP Configurations</CardTitle>
-                  <CardDescription className="text-indigo-600/70">
+                  <CardTitle className="text-lg font-semibold text-[#111827]">SMTP Configurations</CardTitle>
+                  <CardDescription className="text-[#2C78E4]/70">
                     Manage email server configurations for sending emails from the system.
                   </CardDescription>
                 </div>
@@ -316,7 +316,7 @@ const Settings = () => {
                     addConfigForm.reset();
                     setShowAddDialog(true);
                   }}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  className="bg-[#2C78E4] hover:bg-[#2C78E4]/90 text-white rounded-xl"
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Configuration
@@ -326,12 +326,12 @@ const Settings = () => {
             <CardContent className="p-6">
               {isLoadingConfigs ? (
                 <div className="flex justify-center items-center h-40">
-                  <Loader2 className="h-8 w-8 text-indigo-500 animate-spin" />
+                  <Loader2 className="h-8 w-8 text-[#2C78E4] animate-spin" />
                 </div>
               ) : !smtpConfigs || smtpConfigs.length === 0 ? (
-                <div className="bg-gray-50 p-8 text-center rounded-lg border border-dashed border-gray-200">
-                  <h3 className="text-lg font-medium text-gray-600 mb-2">No SMTP Configurations</h3>
-                  <p className="text-gray-500 mb-4">
+                <div className="bg-[#F9FAFB] p-8 text-center rounded-xl border border-dashed border-gray-200">
+                  <h3 className="text-lg font-medium text-[#4B5563] mb-2">No SMTP Configurations</h3>
+                  <p className="text-[#4B5563] mb-4">
                     Add your first SMTP configuration to start sending emails.
                   </p>
                   <Button 
@@ -339,7 +339,7 @@ const Settings = () => {
                       addConfigForm.reset();
                       setShowAddDialog(true);
                     }}
-                    className="bg-indigo-600 hover:bg-indigo-700"
+                    className="bg-[#2C78E4] hover:bg-[#2C78E4]/90 rounded-xl"
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Add Configuration
@@ -350,25 +350,25 @@ const Settings = () => {
                   {smtpConfigs.map((config) => (
                     <div 
                       key={config.id} 
-                      className={`border rounded-lg p-4 ${
-                        config.is_default ? 'border-green-300 bg-green-50' : 'border-gray-200'
+                      className={`border rounded-xl p-4 ${
+                        config.is_default ? 'border-green-300 bg-green-50' : 'border-[#F9FAFB]'
                       }`}
                     >
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="flex items-center">
-                            <h3 className="font-medium text-gray-900">{config.name}</h3>
+                            <h3 className="font-medium text-[#111827]">{config.name}</h3>
                             {config.is_default && (
-                              <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-200">
+                              <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-200 rounded-full">
                                 Default
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-gray-500 mt-1">{config.email}</p>
-                          <p className="text-xs text-gray-500 mt-2">
+                          <p className="text-sm text-[#4B5563] mt-1">{config.email}</p>
+                          <p className="text-xs text-[#4B5563] mt-2">
                             Server: {config.smtp_host}:{config.smtp_port}
                           </p>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-xs text-[#4B5563]/70 mt-1">
                             Last updated: {new Date(config.updated_at).toLocaleString()}
                           </p>
                         </div>
@@ -377,7 +377,7 @@ const Settings = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => openTestDialog(config)}
-                            className="text-xs py-1 px-2 h-auto"
+                            className="text-xs py-1 px-2 h-auto rounded-lg"
                           >
                             <Send className="h-3 w-3 mr-1" />
                             Test
@@ -386,7 +386,7 @@ const Settings = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="text-xs py-1 px-2 h-auto text-green-700 hover:text-green-800 hover:bg-green-50"
+                              className="text-xs py-1 px-2 h-auto text-green-700 hover:text-green-800 hover:bg-green-50 rounded-lg"
                               onClick={() => handleSetAsDefault(config)}
                               disabled={isSettingDefault}
                             >
@@ -397,7 +397,7 @@ const Settings = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-xs py-1 px-2 h-auto text-amber-700 hover:text-amber-800 hover:bg-amber-50"
+                            className="text-xs py-1 px-2 h-auto text-amber-700 hover:text-amber-800 hover:bg-amber-50 rounded-lg"
                             onClick={() => openEditDialog(config)}
                           >
                             <Pencil className="h-3 w-3 mr-1" />
@@ -407,7 +407,7 @@ const Settings = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="text-xs py-1 px-2 h-auto text-red-700 hover:text-red-800 hover:bg-red-50"
+                              className="text-xs py-1 px-2 h-auto text-red-700 hover:text-red-800 hover:bg-red-50 rounded-lg"
                               onClick={() => openDeleteDialog(config)}
                             >
                               <Trash className="h-3 w-3 mr-1" />
@@ -427,7 +427,7 @@ const Settings = () => {
 
       {/* Add SMTP Config Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] rounded-2xl">
           <DialogHeader>
             <DialogTitle>Add SMTP Configuration</DialogTitle>
             <DialogDescription>
@@ -443,6 +443,7 @@ const Settings = () => {
                     id="name"
                     {...addConfigForm.register("name")}
                     placeholder="Gmail SMTP"
+                    className="rounded-xl border-[#2C78E4]/20 focus:border-[#2C78E4]"
                   />
                   {addConfigForm.formState.errors.name && (
                     <p className="text-xs text-red-500">{addConfigForm.formState.errors.name.message}</p>
@@ -455,6 +456,7 @@ const Settings = () => {
                     type="email"
                     {...addConfigForm.register("email")}
                     placeholder="your@email.com"
+                    className="rounded-xl border-[#2C78E4]/20 focus:border-[#2C78E4]"
                   />
                   {addConfigForm.formState.errors.email && (
                     <p className="text-xs text-red-500">{addConfigForm.formState.errors.email.message}</p>
@@ -468,10 +470,11 @@ const Settings = () => {
                   type="password"
                   {...addConfigForm.register("password")}
                   placeholder="••••••••"
+                  className="rounded-xl border-[#2C78E4]/20 focus:border-[#2C78E4]"
                 />
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[#4B5563]">
                   For Gmail, you may need to use an App Password. 
-                  <a href="https://support.google.com/accounts/answer/185833" target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline ml-1">
+                  <a href="https://support.google.com/accounts/answer/185833" target="_blank" rel="noreferrer" className="text-[#2C78E4] hover:underline ml-1">
                     Learn more
                   </a>
                 </p>
@@ -486,6 +489,7 @@ const Settings = () => {
                     id="smtp_host"
                     {...addConfigForm.register("smtp_host")}
                     placeholder="smtp.gmail.com"
+                    className="rounded-xl border-[#2C78E4]/20 focus:border-[#2C78E4]"
                   />
                   {addConfigForm.formState.errors.smtp_host && (
                     <p className="text-xs text-red-500">{addConfigForm.formState.errors.smtp_host.message}</p>
@@ -497,6 +501,7 @@ const Settings = () => {
                     id="smtp_port"
                     {...addConfigForm.register("smtp_port")}
                     placeholder="587"
+                    className="rounded-xl border-[#2C78E4]/20 focus:border-[#2C78E4]"
                   />
                   {addConfigForm.formState.errors.smtp_port && (
                     <p className="text-xs text-red-500">{addConfigForm.formState.errors.smtp_port.message}</p>
@@ -517,10 +522,10 @@ const Settings = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)} className="rounded-xl border-[#2C78E4]/20">
                 Cancel
               </Button>
-              <Button type="submit" disabled={isCreating}>
+              <Button type="submit" className="rounded-xl bg-[#2C78E4] hover:bg-[#2C78E4]/90" disabled={isCreating}>
                 {isCreating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                 Save Configuration
               </Button>
@@ -531,7 +536,7 @@ const Settings = () => {
 
       {/* Edit SMTP Config Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] rounded-2xl">
           <DialogHeader>
             <DialogTitle>Edit SMTP Configuration</DialogTitle>
             <DialogDescription>
@@ -547,6 +552,7 @@ const Settings = () => {
                     id="edit_name"
                     {...editConfigForm.register("name")}
                     placeholder="Gmail SMTP"
+                    className="rounded-xl border-[#2C78E4]/20 focus:border-[#2C78E4]"
                   />
                   {editConfigForm.formState.errors.name && (
                     <p className="text-xs text-red-500">{editConfigForm.formState.errors.name.message}</p>
@@ -559,6 +565,7 @@ const Settings = () => {
                     type="email"
                     {...editConfigForm.register("email")}
                     placeholder="your@email.com"
+                    className="rounded-xl border-[#2C78E4]/20 focus:border-[#2C78E4]"
                   />
                   {editConfigForm.formState.errors.email && (
                     <p className="text-xs text-red-500">{editConfigForm.formState.errors.email.message}</p>
@@ -567,13 +574,14 @@ const Settings = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit_password">
-                  Password / App Password <span className="text-xs text-gray-500">(Leave empty to keep current)</span>
+                  Password / App Password <span className="text-xs text-[#4B5563]">(Leave empty to keep current)</span>
                 </Label>
                 <Input
                   id="edit_password"
                   type="password"
                   {...editConfigForm.register("password")}
                   placeholder="••••••••"
+                  className="rounded-xl border-[#2C78E4]/20 focus:border-[#2C78E4]"
                 />
                 {editConfigForm.formState.errors.password && (
                   <p className="text-xs text-red-500">{editConfigForm.formState.errors.password.message}</p>
@@ -586,6 +594,7 @@ const Settings = () => {
                     id="edit_smtp_host"
                     {...editConfigForm.register("smtp_host")}
                     placeholder="smtp.gmail.com"
+                    className="rounded-xl border-[#2C78E4]/20 focus:border-[#2C78E4]"
                   />
                   {editConfigForm.formState.errors.smtp_host && (
                     <p className="text-xs text-red-500">{editConfigForm.formState.errors.smtp_host.message}</p>
@@ -597,11 +606,11 @@ const Settings = () => {
                     id="edit_smtp_port"
                     {...editConfigForm.register("smtp_port")}
                     placeholder="587"
-                    className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 bg-gray-100"
+                    className="border-[#F9FAFB] focus:border-[#2C78E4] focus:ring-[#2C78E4] bg-[#F9FAFB] rounded-xl"
                     disabled
                     readOnly
                   />
-                  <p className="text-xs text-gray-500 italic">Port cannot be changed</p>
+                  <p className="text-xs text-[#4B5563] italic">Port cannot be changed</p>
                   {editConfigForm.formState.errors.smtp_port && (
                     <p className="text-xs text-red-500">{editConfigForm.formState.errors.smtp_port.message}</p>
                   )}
@@ -616,17 +625,17 @@ const Settings = () => {
                   }}
                   disabled={selectedConfig?.is_default}
                 />
-                <Label htmlFor="edit_is_default" className={`cursor-pointer ${selectedConfig?.is_default ? 'text-gray-500' : ''}`}>
+                <Label htmlFor="edit_is_default" className={`cursor-pointer ${selectedConfig?.is_default ? 'text-[#4B5563]' : ''}`}>
                   Set as default configuration
                   {selectedConfig?.is_default && <span className="text-xs ml-2">(Already default)</span>}
                 </Label>
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>
+              <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)} className="rounded-xl border-[#2C78E4]/20">
                 Cancel
               </Button>
-              <Button type="submit" disabled={isUpdating}>
+              <Button type="submit" className="rounded-xl bg-[#2C78E4] hover:bg-[#2C78E4]/90" disabled={isUpdating}>
                 {isUpdating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                 Update Configuration
               </Button>
@@ -637,7 +646,7 @@ const Settings = () => {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -646,10 +655,10 @@ const Settings = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl border-[#2C78E4]/20">Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDeleteConfig}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
               disabled={isDeleting}
             >
               {isDeleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
@@ -661,14 +670,14 @@ const Settings = () => {
 
       {/* Test SMTP Dialog */}
       <Dialog open={showTestDialog} onOpenChange={setShowTestDialog}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] rounded-2xl">
           <DialogHeader>
             <DialogTitle>Test SMTP Configuration</DialogTitle>
             <DialogDescription>
               Send a test email to verify your SMTP configuration works correctly.
             </DialogDescription>
           </DialogHeader>
-          <div className="bg-gray-50 p-3 rounded-md mb-4">
+          <div className="bg-[#F9FAFB] p-3 rounded-xl mb-4">
             <div className="text-sm">
               <div><span className="font-semibold">Configuration:</span> {selectedConfig?.name}</div>
               <div><span className="font-semibold">Email:</span> {selectedConfig?.email}</div>
@@ -677,7 +686,7 @@ const Settings = () => {
           </div>
           
           {testResult && (
-            <div className={`p-3 rounded-md mb-4 ${
+            <div className={`p-3 rounded-xl mb-4 ${
               testResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
             }`}>
               <div className="flex items-start">
@@ -707,21 +716,22 @@ const Settings = () => {
                   type="email"
                   {...testEmailForm.register("test_email")}
                   placeholder="recipient@example.com"
+                  className="rounded-xl border-[#2C78E4]/20 focus:border-[#2C78E4]"
                 />
                 {testEmailForm.formState.errors.test_email && (
                   <p className="text-xs text-red-500">{testEmailForm.formState.errors.test_email.message}</p>
                 )}
               </div>
               
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-[#4B5563]">
                 A test email will be sent to verify your SMTP configuration is working correctly.
               </div>
             </div>
             <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => setShowTestDialog(false)}>
+              <Button type="button" variant="outline" onClick={() => setShowTestDialog(false)} className="rounded-xl border-[#2C78E4]/20">
                 Close
               </Button>
-              <Button type="submit" disabled={testLoading}>
+              <Button type="submit" className="rounded-xl bg-[#2C78E4] hover:bg-[#2C78E4]/90" disabled={testLoading}>
                 {testLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                 Send Test Email
               </Button>

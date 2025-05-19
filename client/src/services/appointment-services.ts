@@ -263,7 +263,6 @@ export const createWalkInAppointment = async (
         },
       }
     );
-    console.log("response.data", response.data);
     return response.data;
   } catch (error) {
     // Log the detailed error for debugging
@@ -385,7 +384,15 @@ export const waitForNotifications = async (signal?: AbortSignal) => {
   } catch (error: any) {
     // Handle timeout errors specifically
     if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-      return []; // Return empty array to continue polling
+      // Instead of returning empty array, fetch current notifications
+      try {
+        // Get current notifications from DB as fallback
+        const fallbackResponse = await api.get("/api/v1/appointment/notifications/db");
+        return fallbackResponse.data;
+      } catch (fallbackError) {
+        console.warn("Failed to fetch fallback notifications:", fallbackError);
+        return []; // Return empty array as last resort
+      }
     }
     
     // Don't treat cancellation as an error that needs to be logged

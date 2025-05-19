@@ -115,3 +115,16 @@ export function debounce<T extends (...args: any[]) => any>(
     timeout = setTimeout(later, wait);
   };
 }
+
+export const formatTime = (time: string): string => {
+  try {
+    // Split time string into hours and minutes
+    const [hours, minutes] = time.split(':').map(Number);
+    
+    // Format as 24-hour time
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  } catch (error) {
+    console.error('Error formatting time:', error);
+    return time; // Return original time if formatting fails
+  }
+};

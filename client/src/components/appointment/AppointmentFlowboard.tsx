@@ -55,6 +55,7 @@ import { updateAppointmentById } from "@/services/appointment-services";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { usePatientData } from "@/hooks/use-pet";
+import { formatTime } from "@/lib/utils";
 
 interface EnhancedAppointmentFlowboardProps {
   appointments: Appointment[];
@@ -89,12 +90,10 @@ const statusIds = {
 
 // Memoized formatter functions for reuse across components
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
-  hour: "numeric",
+  hour: "2-digit",
   minute: "2-digit",
-  hour12: true,
+  hour12: false,
 });
-
-
 
 // Memoized color utility functions
 const getStatusColorClass = (status: string): string => {
@@ -182,14 +181,71 @@ const AppointmentCard = memo(
       onClick(appointment.id);
     }, [appointment.id, onClick]);
 
-    // Handle start exam button click
-    const handleStartExam = useCallback(
+    // Handle action button click based on status
+    const handleActionClick = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        onStatusChange(appointment.id, 5, true); // Update status and navigate to patient info
+
+        // Different actions based on the appointment state
+        if (appointment.state === "Scheduled") {
+          // Confirm appointment (change status to Confirmed - status_id: 2)
+          onStatusChange(appointment.id, 2, false);
+        } else if (appointment.state === "Confirmed") {
+          // Check-in appointment
+          onCheckIn(appointment.id, 2, false);
+        } else if (
+          appointment.state === "Checked In" ||
+          appointment.state === "Waiting"
+        ) {
+          // Start exam (change status to In Progress - status_id: 5)
+          onStatusChange(appointment.id, 5, true);
+        } else if (appointment.state === "In Progress") {
+          // Do nothing or show a disabled button
+          return;
+        } else {
+          // For other states
+          onStatusChange(appointment.id, 2, false);
+        }
       },
-      [appointment.id, onStatusChange]
+      [appointment.id, appointment.state, onStatusChange, onCheckIn]
     );
+
+    // Get button text based on status
+    const getActionButtonText = () => {
+      switch (appointment.state) {
+        case "Scheduled":
+          return "Confirm";
+        case "Confirmed":
+          return "Check-in";
+        case "Checked In":
+        case "Waiting":
+          return appointment.service?.service_name?.toString() ===
+            "Body Grooming"
+            ? "Start Service"
+            : "Start Exam";
+        case "In Progress":
+          return "In Progress";
+        default:
+          return "Check-out";
+      }
+    };
+
+    // Get button style based on status
+    const getActionButtonStyle = () => {
+      switch (appointment.state) {
+        case "Scheduled":
+          return "bg-[#2C78E4] text-white border-[#2C78E4] hover:bg-[#2C78E4]/90";
+        case "Confirmed":
+          return "bg-[#10B981] text-white border-[#10B981] hover:bg-[#10B981]/90";
+        case "Checked In":
+        case "Waiting":
+          return "bg-[#7C3AED] text-white border-[#7C3AED] hover:bg-[#7C3AED]/90";
+        case "In Progress":
+          return "bg-gray-400 text-white border-gray-400 hover:bg-gray-400/90 cursor-not-allowed";
+        default:
+          return "border-gray-200 text-gray-700 hover:bg-gray-50";
+      }
+    };
 
     // Format date for display
     const formatDate = (dateStr: string) => {
@@ -198,13 +254,8 @@ const AppointmentCard = memo(
       return date.toLocaleDateString("en-US", {
         month: "numeric",
         day: "numeric",
-        year: "numeric",
       });
     };
-
-    // Generate random tasks count for demo
-    const tasksTotal = Math.floor(Math.random() * 5) + 1;
-    const tasksCompleted = Math.floor(Math.random() * tasksTotal);
 
     // Get service type color class
     const getServiceBgColor = () => {
@@ -236,13 +287,15 @@ const AppointmentCard = memo(
 
     return (
       <div
-        className={`${getServiceBgColor()} rounded-xl shadow-sm border border-gray-100 p-4 mb-3 hover:shadow-md transition-shadow cursor-pointer`}
+        className={`${getServiceBgColor()} rounded-lg shadow-sm border border-gray-100 p-2 mb-2 hover:shadow-md transition-shadow cursor-pointer`}
         onClick={handleClick}
       >
         {/* Service type and time */}
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex justify-between items-center mb-2">
           <div className="flex items-center">
-            <span className={`text-sm font-medium ${getServiceTextColor()}`}>
+            <span
+              className={`text-xs font-medium truncate max-w-[120px] ${getServiceTextColor()}`}
+            >
               {appointment.service?.service_name || "Service"}
             </span>
           </div>
@@ -252,51 +305,29 @@ const AppointmentCard = memo(
         </div>
 
         {/* Action button */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-2">
           <button
-            className={`text-sm px-3 py-1.5 border rounded-lg ${
-              appointment.state === "Checked In" ||
-              appointment.state === "Waiting"
-                ? "bg-[#2C78E4] text-white border-[#2C78E4] hover:bg-[#2C78E4]/90"
-                : "border-gray-200 text-gray-700 hover:bg-gray-50"
-            }`}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (
-                appointment.state === "Checked In" ||
-                appointment.state === "Waiting"
-              ) {
-                handleStartExam(e);
-              }
-            }}
+            className={`text-xs px-2 py-1 border rounded-md ${getActionButtonStyle()}`}
+            onClick={handleActionClick}
+            disabled={appointment.state === "In Progress"}
           >
-            {appointment.state === "Checked In" ||
-            appointment.state === "Waiting"
-              ? appointment.service?.service_name?.toString() ===
-                "Body Grooming"
-                ? "Start Service"
-                : "Start Exam"
-              : appointment.state === "In Progress"
-              ? "In Progress"
-              : "Check out"}
+            {getActionButtonText()}
           </button>
-          <div className="text-sm font-medium text-gray-700">
+          <div className="text-xs font-medium text-gray-700">
             {formatTime(appointment.time_slot?.start_time || "")}
           </div>
         </div>
 
         {/* People section with avatars */}
-        <div className="flex items-center gap-1.5 mt-5 border-t pt-3 border-gray-200">
-          <div className="w-6 h-6 rounded-full bg-[#E8F5E9] flex items-center justify-center text-[#2E7D32] text-xs font-medium border border-white z-10">
-            {appointment.pet?.pet_name?.substring(0, 1) || "P"}
+        <div className="flex items-center gap-1 mt-2 border-t pt-2 border-gray-200">
+          <div className="w-4 h-4 rounded-full bg-[#E8F5E9] flex items-center justify-center text-[#2E7D32] text-xs font-medium border border-white z-10">
+            {appointment.doctor?.doctor_name
+              ? appointment.doctor.doctor_name.charAt(0)
+              : ""}
           </div>
-          <div className="w-6 h-6 rounded-full bg-[#E3F2FD] flex items-center justify-center text-[#1565C0] text-xs font-medium border border-white z-0 -ml-2">
-            {appointment.doctor?.doctor_name?.substring(0, 1) || "D"}
-          </div>
-          <div className="ml-2 text-xs text-gray-600">
-            <div className="font-medium">{appointment.pet?.pet_name}</div>
-            <div className="text-gray-500">{appointment.pet?.pet_breed}</div>
-          </div>
+          <span className="text-sm text-gray-700">
+            {appointment.doctor?.doctor_name}
+          </span>
         </div>
       </div>
     );
@@ -344,6 +375,7 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
       // Queue data (patients waiting, estimated times)
       const { data: queueData } = useListAppointmentsQueue();
 
+      // Log the structure to help with debugging
       // Memoize the found queue item to prevent unnecessary calculations
       const queueItem = useMemo(
         () =>
@@ -376,11 +408,34 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
       // Memoize expensive calculations and formatting functions
       const formatTime = useCallback((time: Date | string): string => {
         if (!time) return "";
-        const date = typeof time === "string" ? new Date(time) : time;
-        return isNaN(date.getTime()) ? "" : timeFormatter.format(date);
+
+        // If it already has a simple time format like "10:20", just return it
+        if (typeof time === "string" && /^\d{1,2}:\d{2}$/.test(time)) {
+          return time;
+        }
+
+        // If time includes full date, parse it as Date
+        if (typeof time === "string" && time.includes("-")) {
+          const date = new Date(time);
+          return isNaN(date.getTime())
+            ? time
+            : timeFormatter.format(date).replace(/^24:/, "00:");
+        }
+
+        // If it's just a time string with seconds (like "15:04:00"), return without seconds
+        if (typeof time === "string" && time.includes(":")) {
+          // Remove seconds if present
+          const parts = time.split(":");
+          if (parts.length > 1) {
+            return `${parts[0]}:${parts[1]}`;
+          }
+          return time;
+        }
+
+        // Handle Date objects
+        return timeFormatter.format(time as Date).replace(/^24:/, "00:");
       }, []);
 
-   
       // Filter appointments based on selected filters
       const filteredAppointments = useMemo(() => {
         return appointments.filter((appointment) => {
@@ -452,7 +507,7 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
 
       // Refresh queue when an appointment status changes
       const handleStatusChange = useCallback(
-        (
+        async (
           appointmentId: number,
           newStatus: number,
           navigateToDetail: boolean = false
@@ -460,30 +515,28 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
           const appointment = appointments.find((a) => a.id === appointmentId);
 
           if (appointment) {
-            // Use the mutation we defined at the component level
-            updateStatusMutation.mutate(
-              { id: appointmentId, state_id: newStatus },
-              {
-                onSuccess: () => {
-                  // Update local state
-                  const updatedAppointment = {
-                    ...appointment,
-                    state_id: newStatus,
-                  };
-                  onAppointmentUpdate(updatedAppointment);
-                  if (navigateToDetail) {
-                    console.log("Navigating to health card with params:", {
-                      appointmentId: appointment.id,
-                      petId: appointment.pet?.pet_id,
-                    });
-                    setLocation(
-                      `/patient/health-card?appointmentId=${appointment.id}`
-                    );
-                    // setLocation(`/examination?appointmentId=${appointment.id}&petId=${appointment.pet?.pet_id}`);
-                  }
-                },
+            try {
+              await updateStatusMutation.mutateAsync(
+                { id: appointmentId, state_id: newStatus },
+                {
+                  onSuccess: () => {
+                    // Update local state
+                    const updatedAppointment = {
+                      ...appointment,
+                      state_id: newStatus,
+                    };
+                    onAppointmentUpdate(updatedAppointment);
+                  },
+                }
+              );
+              
+              // Navigate after successful status update
+              if (navigateToDetail) {
+                setLocation(`/patient/health-card?appointmentId=${appointmentId}`);
               }
-            );
+            } catch (error) {
+              console.error('Error updating appointment status:', error);
+            }
           }
         },
         [appointments, onAppointmentUpdate, setLocation, updateStatusMutation]
@@ -605,7 +658,7 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
       return (
         <div className="flex flex-col h-screen max-w-full w-full overflow-x-hidden bg-white">
           {/* Toolbar */}
-          <div className="p-3 sm:p-4 bg-white border-b flex flex-wrap justify-between items-center gap-3">
+          <div className="p-2.5 sm:p-3 bg-white border-b flex flex-wrap justify-between items-center gap-2">
             {/* Date & Calendar Controls */}
             <div className="flex items-center gap-2">
               <div className="whitespace-nowrap text-sm font-medium text-gray-700 mr-1">
@@ -614,20 +667,20 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
               <div className="flex items-center">
                 <button
                   onClick={onPreviousDay}
-                  className="p-1.5 rounded-l-lg border border-gray-200 text-gray-600 hover:bg-[#F9FAFB] hover:text-[#2C78E4] hover:border-[#2C78E4]/30 transition-colors"
+                  className="p-1 rounded-l-lg border border-gray-200 text-gray-600 hover:bg-[#F9FAFB] hover:text-[#2C78E4] hover:border-[#2C78E4]/30 transition-colors"
                 >
                   <ChevronLeft size={16} />
                 </button>
                 <button
                   onClick={onToday}
-                  className="p-1.5 border-t border-b border-gray-200 text-gray-600 hover:bg-[#F9FAFB] hover:text-[#2C78E4] hover:border-[#2C78E4]/30 flex items-center px-2 transition-colors"
+                  className="p-1 border-t border-b border-gray-200 text-gray-600 hover:bg-[#F9FAFB] hover:text-[#2C78E4] hover:border-[#2C78E4]/30 flex items-center px-2 transition-colors"
                 >
                   <Calendar size={14} className="mr-1" />
                   <span className="text-xs">Today</span>
                 </button>
                 <button
                   onClick={onNextDay}
-                  className="p-1.5 rounded-r-lg border border-gray-200 text-gray-600 hover:bg-[#F9FAFB] hover:text-[#2C78E4] hover:border-[#2C78E4]/30 transition-colors"
+                  className="p-1 rounded-r-lg border border-gray-200 text-gray-600 hover:bg-[#F9FAFB] hover:text-[#2C78E4] hover:border-[#2C78E4]/30 transition-colors"
                 >
                   <ChevronRight size={16} />
                 </button>
@@ -635,12 +688,12 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
             </div>
 
             {/* View Controls & Actions */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               {/* View Mode Toggle */}
-              <div className="flex mb-0 mr-0 sm:mr-4">
+              <div className="flex mb-0 mr-0 sm:mr-3">
                 <div className="flex border border-gray-200 rounded-lg overflow-hidden">
                   <button
-                    className={`px-2 sm:px-3 py-1.5 text-sm font-medium flex items-center ${
+                    className={`px-2 sm:px-2.5 py-1 text-xs font-medium flex items-center ${
                       viewMode === "columns"
                         ? "bg-[#2C78E4] text-white"
                         : "bg-white text-gray-700 hover:bg-[#F9FAFB] hover:text-[#2C78E4]"
@@ -652,7 +705,7 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                   </button>
 
                   <button
-                    className={`px-2 sm:px-3 py-1.5 text-sm font-medium flex items-center ${
+                    className={`px-2 sm:px-2.5 py-1 text-xs font-medium flex items-center ${
                       viewMode === "list"
                         ? "bg-[#2C78E4] text-white"
                         : "bg-white text-gray-700 hover:bg-[#F9FAFB] hover:text-[#2C78E4]"
@@ -668,7 +721,7 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
               {/* Filters */}
               <div className="flex flex-wrap items-center">
                 <select
-                  className="mr-2 px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white hover:border-gray-300 focus:border-[#2C78E4] focus:outline-none focus:ring-1 focus:ring-[#2C78E4]"
+                  className="mr-2 px-2 py-1 border border-gray-200 rounded-lg text-xs bg-white hover:border-gray-300 focus:border-[#2C78E4] focus:outline-none focus:ring-1 focus:ring-[#2C78E4]"
                   value={filterDoctor}
                   onChange={(e) => setFilterDoctor(e.target.value)}
                 >
@@ -679,25 +732,10 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                     </option>
                   ))}
                 </select>
-
-                <select
-                  className="mr-2 px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white hover:border-gray-300 focus:border-[#2C78E4] focus:outline-none focus:ring-1 focus:ring-[#2C78E4]"
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                >
-                  <option value="all">All Types</option>
-                  <option value="check-up">General Check-up</option>
-                  <option value="surgery">Surgery</option>
-                  <option value="sick visit">Sick Visit</option>
-                  <option value="vaccination">Vaccination</option>
-                  <option value="grooming">Grooming</option>
-                  <option value="new patient">New Patient</option>
-                </select>
-
                 {/* Show/Hide Sidebar Button */}
                 <div className="hidden sm:block">
                   <button
-                    className="p-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-[#F9FAFB] hover:text-[#2C78E4] hover:border-[#2C78E4]/30 transition-colors"
+                    className="p-1.5 border border-gray-200 rounded-lg text-gray-600 hover:bg-[#F9FAFB] hover:text-[#2C78E4] hover:border-[#2C78E4]/30 transition-colors"
                     onClick={() => setShowSidebar(!showSidebar)}
                   >
                     {showSidebar ? (
@@ -716,141 +754,147 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
             {/* Main Appointments Area */}
             <div
               className={`flex-1 overflow-y-auto overflow-x-hidden bg-[#F9FAFB] transition-all duration-300 ${
-                showSidebar ? "w-3/5 lg:w-2/3" : "w-full"
+                showSidebar ? "w-3/5 lg:w-2/3 xl:w-3/4" : "w-full"
               }`}
             >
               {/* Appointments View - Column View (Kanban style) */}
               {viewMode === "columns" && (
-                <div className="px-2 sm:px-4 flex gap-3 sm:gap-4 h-[calc(100vh-150px)] pb-24 overflow-x-auto">
+                <div className="px-1 sm:px-2 flex gap-1.5 sm:gap-2 h-[calc(100vh-110px)] pb-8 overflow-x-auto">
                   {" "}
                   {/* Scheduled Column */}
-                  <div className="flex-1 min-w-[230px] sm:min-w-[250px] max-w-[450px] shrink-0">
-                    <div className="bg-[#F9FAFB] rounded-t-lg px-3 py-2 border border-gray-200">
+                  <div className="flex-1 min-w-[200px] sm:min-w-[230px] max-w-[380px] shrink-0 border-r border-gray-100">
+                    <div className="bg-[#F9FAFB] rounded-t-lg px-3 py-1.5 border border-gray-200 sticky top-0 z-10">
                       <div className="flex justify-between items-center">
-                        <h3 className="font-medium text-gray-800 flex items-center">
-                          <Calendar className="h-4 w-4 text-[#2C78E4] mr-1.5" />
+                        <h3 className="font-medium text-gray-800 flex items-center text-sm">
+                          <Calendar className="h-3.5 w-3.5 text-[#2C78E4] mr-1" />
                           Scheduled
                         </h3>
-                        <span className="bg-white text-xs font-medium px-2 py-1 rounded-lg border border-gray-200 text-[#2C78E4]">
+                        <span className="bg-white text-xs font-medium px-1.5 py-0.5 rounded-lg border border-gray-200 text-[#2C78E4]">
                           {groupedAppointments.scheduled.length}
                         </span>
                       </div>
                     </div>
-                    <div className="bg-white rounded-b-lg p-2 border-l border-r border-b border-gray-200 h-[calc(100vh-280px)] overflow-y-auto">
+                    <div className="bg-white rounded-b-lg p-2 border-l border-r border-b border-gray-200 h-[calc(100vh-140px)] overflow-y-auto">
                       {groupedAppointments.scheduled.length > 0 ? (
                         groupedAppointments.scheduled.map((appointment) =>
                           renderAppointmentCard(appointment)
                         )
                       ) : (
-                        <div className="text-center py-8 text-gray-500 bg-[#F9FAFB] rounded-lg mt-2 border border-dashed border-gray-200">
-                          <Calendar className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                          No appointments scheduled
+                        <div className="text-center py-6 text-gray-500 bg-[#F9FAFB] rounded-lg mt-2 border border-dashed border-gray-200">
+                          <Calendar className="h-7 w-7 mx-auto mb-2 text-gray-400" />
+                          <div className="text-sm">
+                            No appointments scheduled
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
-                  
                   {/* Confirmed Column */}
-                  <div className="flex-1 min-w-[230px] sm:min-w-[250px] max-w-[450px] shrink-0">
-                    <div className="bg-[#E3F2FD] rounded-t-lg px-3 py-2 border border-[#BFDBFE]">
+                  <div className="flex-1 min-w-[200px] sm:min-w-[230px] max-w-[380px] shrink-0 border-r border-gray-100">
+                    <div className="bg-[#E3F2FD] rounded-t-lg px-3 py-1.5 border border-[#BFDBFE] sticky top-0 z-10">
                       <div className="flex justify-between items-center">
-                        <h3 className="font-medium text-[#1976D2] flex items-center">
-                          <CheckCircle className="h-4 w-4 text-[#1976D2] mr-1.5" />
+                        <h3 className="font-medium text-[#1976D2] flex items-center text-sm">
+                          <CheckCircle className="h-3.5 w-3.5 text-[#1976D2] mr-1" />
                           Confirmed
                         </h3>
-                        <span className="bg-white text-xs font-medium px-2 py-1 rounded-lg border border-[#BFDBFE] text-[#1976D2]">
+                        <span className="bg-white text-xs font-medium px-1.5 py-0.5 rounded-lg border border-[#BFDBFE] text-[#1976D2]">
                           {groupedAppointments.confirmed.length}
                         </span>
                       </div>
                     </div>
-                    <div className="bg-white rounded-b-lg p-2 border-l border-r border-b border-[#BFDBFE] h-[calc(100vh-280px)] overflow-y-auto">
+                    <div className="bg-white rounded-b-lg p-2 border-l border-r border-b border-[#BFDBFE] h-[calc(100vh-140px)] overflow-y-auto">
                       {groupedAppointments.confirmed.length > 0 ? (
                         groupedAppointments.confirmed.map((appointment) =>
                           renderAppointmentCard(appointment)
                         )
                       ) : (
-                        <div className="text-center py-8 text-gray-500 bg-[#F9FAFB] rounded-lg mt-2 border border-dashed border-gray-200">
-                          <CheckCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                          No confirmed appointments
+                        <div className="text-center py-4 text-gray-500 bg-[#F9FAFB] rounded-lg mt-2 border border-dashed border-gray-200">
+                          <CheckCircle className="h-6 w-6 mx-auto mb-1" />
+                          <div className="text-xs">
+                            No confirmed appointments
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
-                  
                   {/* Arrived/Waiting Column */}
-                  <div className="flex-1 min-w-[230px] sm:min-w-[250px] max-w-[450px] shrink-0">
-                    <div className="bg-[#EBF5FF] rounded-t-lg px-3 py-2 border border-[#BFDBFE]">
+                  <div className="flex-1 min-w-[200px] sm:min-w-[230px] max-w-[380px] shrink-0 border-r border-gray-100">
+                    <div className="bg-[#EBF5FF] rounded-t-lg px-3 py-1.5 border border-[#BFDBFE] sticky top-0 z-10">
                       <div className="flex justify-between items-center">
-                        <h3 className="font-medium text-[#1E40AF] flex items-center">
-                          <Clock className="h-4 w-4 text-[#2C78E4] mr-1.5" />
+                        <h3 className="font-medium text-[#1E40AF] flex items-center text-sm">
+                          <Clock className="h-3.5 w-3.5 text-[#2C78E4] mr-1" />
                           Waiting
                         </h3>
-                        <span className="bg-white text-xs font-medium px-2 py-1 rounded-lg border border-[#BFDBFE] text-[#2C78E4]">
+                        <span className="bg-white text-xs font-medium px-1.5 py-0.5 rounded-lg border border-[#BFDBFE] text-[#2C78E4]">
                           {groupedAppointments.arrived.length}
                         </span>
                       </div>
                     </div>
-                    <div className="bg-white rounded-b-lg p-2 border-l border-r border-b border-[#BFDBFE] h-[calc(100vh-280px)] overflow-y-auto">
+                    <div className="bg-white rounded-b-lg p-2 border-l border-r border-b border-[#BFDBFE] h-[calc(100vh-140px)] overflow-y-auto">
                       {groupedAppointments.arrived.length > 0 ? (
                         groupedAppointments.arrived.map((appointment) =>
                           renderAppointmentCard(appointment)
                         )
                       ) : (
-                        <div className="text-center py-8 text-gray-500 bg-[#F9FAFB] rounded-lg mt-2 border border-dashed border-gray-200">
-                          <Clock className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                          No patients waiting
+                        <div className="text-center py-4 text-gray-500 bg-[#F9FAFB] rounded-lg mt-2 border border-dashed border-gray-200">
+                          <Clock className="h-6 w-6 mx-auto mb-1" />
+                          <div className="text-xs">No patients waiting</div>
                         </div>
                       )}
                     </div>
                   </div>
                   {/* In Progress Column */}
-                  <div className="flex-1 min-w-[230px] sm:min-w-[250px] max-w-[450px] shrink-0">
-                    <div className="bg-[#F3E8FF] rounded-t-lg px-3 py-2 border border-[#E9D5FF]">
+                  <div className="flex-1 min-w-[200px] sm:min-w-[230px] max-w-[380px] shrink-0 border-r border-gray-100">
+                    <div className="bg-[#F3E8FF] rounded-t-lg px-3 py-1.5 border border-[#E9D5FF] sticky top-0 z-10">
                       <div className="flex justify-between items-center">
-                        <h3 className="font-medium text-[#6B21A8] flex items-center">
-                          <Stethoscope className="h-4 w-4 text-[#7C3AED] mr-1.5" />
+                        <h3 className="font-medium text-[#6B21A8] flex items-center text-sm">
+                          <Stethoscope className="h-3.5 w-3.5 text-[#7C3AED] mr-1" />
                           In Progress
                         </h3>
-                        <span className="bg-white text-xs font-medium px-2 py-1 rounded-lg border border-[#E9D5FF] text-[#7C3AED]">
+                        <span className="bg-white text-xs font-medium px-1.5 py-0.5 rounded-lg border border-[#E9D5FF] text-[#7C3AED]">
                           {groupedAppointments.inProgress.length}
                         </span>
                       </div>
                     </div>
-                    <div className="bg-white rounded-b-lg p-2 border-l border-r border-b border-[#E9D5FF] h-[calc(100vh-280px)] overflow-y-auto">
+                    <div className="bg-white rounded-b-lg p-2 border-l border-r border-b border-[#E9D5FF] h-[calc(100vh-140px)] overflow-y-auto">
                       {groupedAppointments.inProgress.length > 0 ? (
                         groupedAppointments.inProgress.map((appointment) =>
                           renderAppointmentCard(appointment)
                         )
                       ) : (
-                        <div className="text-center py-8 text-gray-500 bg-[#F9FAFB] rounded-lg mt-2 border border-dashed border-gray-200">
-                          <Stethoscope className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                          No appointments in progress
+                        <div className="text-center py-4 text-gray-500 bg-[#F9FAFB] rounded-lg mt-2 border border-dashed border-gray-200">
+                          <Stethoscope className="h-6 w-6 mx-auto mb-1" />
+                          <div className="text-xs">
+                            No appointments in progress
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
                   {/* Completed Column */}
-                  <div className="flex-1 min-w-[230px] sm:min-w-[250px] max-w-[450px] shrink-0">
-                    <div className="bg-[#ECFDF5] rounded-t-lg px-3 py-2 border border-[#A7F3D0]">
+                  <div className="flex-1 min-w-[200px] sm:min-w-[230px] max-w-[380px] shrink-0">
+                    <div className="bg-[#ECFDF5] rounded-t-lg px-3 py-1.5 border border-[#A7F3D0] sticky top-0 z-10">
                       <div className="flex justify-between items-center">
-                        <h3 className="font-medium text-[#065F46] flex items-center">
-                          <CheckCircle className="h-4 w-4 text-[#10B981] mr-1.5" />
+                        <h3 className="font-medium text-[#065F46] flex items-center text-sm">
+                          <CheckCircle className="h-3.5 w-3.5 text-[#10B981] mr-1" />
                           Completed
                         </h3>
-                        <span className="bg-white text-xs font-medium px-2 py-1 rounded-lg border border-[#A7F3D0] text-[#10B981]">
+                        <span className="bg-white text-xs font-medium px-1.5 py-0.5 rounded-lg border border-[#A7F3D0] text-[#10B981]">
                           {groupedAppointments.completed.length}
                         </span>
                       </div>
                     </div>
-                    <div className="bg-white rounded-b-lg p-2 border-l border-r border-b border-[#A7F3D0] h-[calc(100vh-280px)] overflow-y-auto">
+                    <div className="bg-white rounded-b-lg p-2 border-l border-r border-b border-[#A7F3D0] h-[calc(100vh-140px)] overflow-y-auto">
                       {groupedAppointments.completed.length > 0 ? (
                         groupedAppointments.completed.map((appointment) =>
                           renderAppointmentCard(appointment)
                         )
                       ) : (
-                        <div className="text-center py-8 text-gray-500 bg-[#F9FAFB] rounded-lg mt-2 border border-dashed border-gray-200">
-                          <CheckCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                          No completed appointments
+                        <div className="text-center py-4 text-gray-500 bg-[#F9FAFB] rounded-lg mt-2 border border-dashed border-gray-200">
+                          <CheckCircle className="h-6 w-6 mx-auto mb-1 text-gray-400" />
+                          <div className="text-xs">
+                            No completed appointments
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1109,25 +1153,6 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="flex items-center">
-                                    <img
-                                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                        appointment.pet.pet_name
-                                      )}`}
-                                      alt={appointment.pet.pet_name}
-                                      className="h-8 w-8 rounded-full mr-2"
-                                    />
-                                    <div>
-                                      <div className="text-sm font-medium text-gray-900">
-                                        {appointment.pet.pet_name}
-                                      </div>
-                                      <div className="text-xs text-gray-500">
-                                        {appointment.pet.pet_breed}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
                                   <span
                                     className={`px-2 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${getTypeColorClass(
                                       appointment.service.service_name
@@ -1248,11 +1273,11 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
 
             {/* Sidebar */}
             {showSidebar && (
-              <div className="border-l border-gray-200 bg-white w-2/5 lg:w-1/3 min-w-[350px] max-w-[500px] flex flex-col overflow-hidden">
+              <div className="border-l border-gray-200 bg-white w-2/5 lg:w-1/3 xl:w-1/4 min-w-[320px] max-w-[450px] flex flex-col overflow-hidden">
                 {/* Sidebar Header */}
-                <div className="p-3 border-b flex justify-between items-center">
+                <div className="p-2.5 border-b flex justify-between items-center">
                   <button
-                    className={`p-2 rounded ${
+                    className={`p-1.5 rounded ${
                       sidebarContent === "queue"
                         ? "bg-indigo-50 text-indigo-700"
                         : "text-gray-600 hover:bg-gray-100"
@@ -1270,7 +1295,7 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                     )}
                   </button>
                   <button
-                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+                    className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
                     onClick={() => setShowSidebar(false)}
                   >
                     <X size={16} />
@@ -1280,23 +1305,19 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                 {/* Sidebar Content */}
                 <div className="flex-1 overflow-y-auto">
                   {sidebarContent === "queue" && (
-                    <div className="p-4">
-                      <div className="mb-4 flex justify-between items-center">
-                        <h4 className="font-medium text-lg flex items-center">
-                          <Users className="h-5 w-5 text-indigo-500 mr-2" />
+                    <div className="p-3">
+                      <div className="mb-3 flex justify-between items-center">
+                        <h4 className="font-medium text-base flex items-center">
+                          <Users className="h-4 w-4 text-indigo-500 mr-2" />
                           Patients waiting
-                          <span className="ml-2 bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full">
+                          <span className="ml-2 bg-indigo-100 text-indigo-800 text-xs px-2 py-0.5 rounded-full">
                             {queueData?.length || 0}
                           </span>
                         </h4>
-                        {/* <button className="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-2 py-1 rounded-md flex items-center">
-                      <ExternalLink size={12} className="mr-1" />
-                      Show waiting screen
-                    </button> */}
                       </div>
 
                       {queueData?.length > 0 ? (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                           {queueData
                             .sort((a: QueueItem, b: QueueItem) => {
                               if (
@@ -1309,25 +1330,147 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                                 b.priority === "high"
                               )
                                 return 1;
-                              return a.position - b.position;
+                              return (a.position || 0) - (b.position || 0);
                             })
                             .map((queueItem: QueueItem) => {
+                              // Find matching appointment
                               const appointment = appointments.find(
                                 (a) => a.id === queueItem.id
                               );
 
-                              return appointment ? (
+                              // If no matching appointment is found, create a fallback display with queue data
+                              if (!appointment) {
+                                return (
+                                  <div
+                                    key={queueItem.id}
+                                    className={`border rounded-lg overflow-hidden shadow-sm transition-all hover:shadow-md ${
+                                      queueItem.priority === "high" ||
+                                      queueItem.priority === "Urgent"
+                                        ? "border-red-200 bg-red-50"
+                                        : "border-gray-200 bg-white"
+                                    }`}
+                                  >
+                                    <div
+                                      className={`px-4 py-3 flex justify-between items-center ${
+                                        queueItem.priority === "high" ||
+                                        queueItem.priority === "Urgent"
+                                          ? "bg-red-100 border-b border-red-200"
+                                          : getStatusColorClass(
+                                              queueItem.status
+                                            )
+                                      }`}
+                                    >
+                                      <div className="flex items-center">
+                                        <div>
+                                          <div className="font-medium text-sm">
+                                            {queueItem.patientName}
+                                          </div>
+                                          <div className="text-xs opacity-70">
+                                            {queueItem.appointmentType}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <span
+                                        className={`text-xs px-2 py-1 rounded-full flex items-center ${getPriorityColorClass(
+                                          queueItem.priority
+                                        )}`}
+                                      >
+                                        <Flag className="h-3 w-3 mr-1" />
+                                        {queueItem.priority
+                                          ? queueItem.priority
+                                              .charAt(0)
+                                              .toUpperCase() +
+                                            queueItem.priority.slice(1)
+                                          : "Normal"}
+                                      </span>
+                                    </div>
+
+                                    <div className="p-2.5">
+                                      <div className="grid grid-cols-2 gap-2 bg-white rounded-lg p-2 mb-2 shadow-sm">
+                                        <div>
+                                          <div className="text-gray-500 text-xs">
+                                            Doctor
+                                          </div>
+                                          <div className="text-sm font-medium truncate">
+                                            {queueItem.doctor || "Not assigned"}
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <div className="text-gray-500 text-xs">
+                                            Service
+                                          </div>
+                                          <div className="text-sm font-medium truncate">
+                                            {queueItem.appointmentType}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div className="grid grid-cols-2 gap-2 bg-white rounded-lg p-2 shadow-sm">
+                                        <div>
+                                          <div className="text-gray-500 text-xs">
+                                            Status
+                                          </div>
+                                          <div className="text-sm font-medium truncate">
+                                            {queueItem.status || "Waiting"}
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <div className="text-gray-500 text-xs">
+                                            Waiting
+                                          </div>
+                                          <div
+                                            className={
+                                              queueItem.actualWaitTime >
+                                              "15 min"
+                                                ? "text-red-600 text-sm font-medium"
+                                                : "text-sm font-medium"
+                                            }
+                                          >
+                                            {queueItem.actualWaitTime ||
+                                              "0 min"}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div className="mt-2.5 flex justify-end space-x-2">
+                                        <button
+                                          className="px-2.5 py-1.5 bg-purple-600 text-white text-xs rounded-md hover:bg-purple-700 flex items-center shadow-sm"
+                                          onClick={async (e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            if (queueItem && queueItem.id) {
+                                              await handleStatusChange(
+                                                queueItem.id,
+                                                statusIds.in_progress,
+                                                true
+                                              );
+                                            }
+                                          }}
+                                        >
+                                          <Play className="h-3 w-3 mr-1" />
+                                          Start Exam
+                                          <ArrowRight className="h-3 w-3 ml-1" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              return (
                                 <div
                                   key={queueItem.id}
                                   className={`border rounded-lg overflow-hidden shadow-sm transition-all hover:shadow-md ${
-                                    queueItem.priority === "high"
+                                    queueItem.priority === "high" ||
+                                    queueItem.priority === "Urgent"
                                       ? "border-red-200 bg-red-50"
                                       : "border-gray-200 bg-white"
                                   }`}
                                 >
                                   <div
                                     className={`px-4 py-3 flex justify-between items-center ${
-                                      queueItem.priority === "high"
+                                      queueItem.priority === "high" ||
+                                      queueItem.priority === "Urgent"
                                         ? "bg-red-100 border-b border-red-200"
                                         : getStatusColorClass(queueItem.status)
                                     }`}
@@ -1335,10 +1478,10 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                                     <div className="flex items-center">
                                       <div>
                                         <div className="font-medium text-sm">
-                                          {appointment.pet.pet_name}
+                                          {queueItem.patientName}
                                         </div>
                                         <div className="text-xs opacity-70">
-                                          {appointment.pet.pet_breed}
+                                          {queueItem.appointmentType}
                                         </div>
                                       </div>
                                     </div>
@@ -1357,13 +1500,13 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                                     </span>
                                   </div>
 
-                                  <div className="p-3">
-                                    <div className="grid grid-cols-2 gap-2 bg-white rounded-lg p-2 mb-3 shadow-sm">
+                                  <div className="p-2.5">
+                                    <div className="grid grid-cols-2 gap-2 bg-white rounded-lg p-2 mb-2 shadow-sm">
                                       <div>
                                         <div className="text-gray-500 text-xs">
                                           Doctor
                                         </div>
-                                        <div className="text-sm font-medium">
+                                        <div className="text-sm font-medium truncate">
                                           {appointment.doctor.doctor_name}
                                         </div>
                                       </div>
@@ -1371,7 +1514,7 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                                         <div className="text-gray-500 text-xs">
                                           Service
                                         </div>
-                                        <div className="text-sm font-medium">
+                                        <div className="text-sm font-medium truncate">
                                           {appointment.service.service_name}
                                         </div>
                                       </div>
@@ -1380,12 +1523,10 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                                     <div className="grid grid-cols-2 gap-2 bg-white rounded-lg p-2 shadow-sm">
                                       <div>
                                         <div className="text-gray-500 text-xs">
-                                          Appointment
+                                          Status
                                         </div>
-                                        <div className="text-sm font-medium">
-                                          {formatTime(
-                                            appointment.time_slot.start_time
-                                          )}
+                                        <div className="text-sm font-medium truncate">
+                                          {appointment.state}
                                         </div>
                                       </div>
                                       <div>
@@ -1399,23 +1540,25 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                                               : "text-sm font-medium"
                                           }
                                         >
-                                          {queueItem.waitingSince
-                                            ? formatTime(queueItem.waitingSince)
-                                            : "0 min"}
+                                          {queueItem.actualWaitTime || "0 min"}
                                         </div>
                                       </div>
                                     </div>
 
-                                    <div className="mt-3 flex justify-end space-x-2">
+                                    <div className="mt-2.5 flex justify-end space-x-2">
                                       <button
-                                        className="px-3 py-1.5 bg-purple-600 text-white text-xs rounded-md hover:bg-purple-700 flex items-center shadow-sm"
-                                        onClick={() =>
-                                          handleStatusChange(
-                                            queueItem.id,
-                                            5,
-                                            true // Navigate to patient details
-                                          )
-                                        }
+                                        className="px-2.5 py-1.5 bg-purple-600 text-white text-xs rounded-md hover:bg-purple-700 flex items-center shadow-sm"
+                                        onClick={async (e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          if (queueItem && queueItem.id) {
+                                            await handleStatusChange(
+                                              queueItem.id,
+                                              statusIds.in_progress,
+                                              true
+                                            );
+                                          }
+                                        }}
                                       >
                                         <Play className="h-3 w-3 mr-1" />
                                         Start Exam
@@ -1428,7 +1571,7 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                                     </div>
                                   </div>
                                 </div>
-                              ) : null;
+                              );
                             })}
                         </div>
                       ) : (
@@ -1446,36 +1589,49 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                   )}
 
                   {sidebarContent === "details" && selectedAppointment && (
-                    <div className="p-4">
+                    <div className="p-3">
                       {/* Patient Info */}
-                      <div className="mb-5 bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                      <div className="mb-4 bg-white rounded-lg shadow-sm p-3 border border-gray-100">
                         <div className="flex items-start">
                           <div className="relative">
-                            <img
-                              src={`data:image/png;base64,${patientData?.data_image}`}
-                              alt={selectedAppointment.pet.pet_name}
-                              className="h-16 w-16 rounded-full mr-4 border-2 border-blue-100"
-                            />
-                            {selectedAppointment.priority === "urgent" && (
-                              <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-1">
-                                <AlertCircle size={10} className="text-white" />
+                            <div className="flex items-start">
+                              <div className="relative h-16 w-16 rounded-full mr-4 border-2 border-blue-100 overflow-hidden">
+                                {patientData?.data_image ? (
+                                  <img
+                                    src={`data:image/png;base64,${patientData.data_image}`}
+                                    alt={selectedAppointment.pet.pet_name}
+                                    className="h-full w-full object-cover"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = "none";
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="flex items-center justify-center h-full w-full bg-blue-50">
+                                    <PawPrint className="h-8 w-8 text-[#2C78E4]/40" />
+                                  </div>
+                                )}
+                                {selectedAppointment.priority === "urgent" && (
+                                  <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-1">
+                                    <AlertCircle size={10} className="text-white" />
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-lg">
-                              {selectedAppointment.pet.pet_name}
-                            </h3>
-                            <div className="text-sm text-gray-600 flex items-center">
-                              <PawPrint className="h-3.5 w-3.5 text-gray-400 mr-1" />
-                              {selectedAppointment.pet.pet_breed}
+                              <div>
+                                <h3 className="font-bold text-lg">
+                                  {selectedAppointment.pet.pet_name}
+                                </h3>
+                                <div className="text-sm text-gray-600 flex items-center">
+                                  <PawPrint className="h-3.5 w-3.5 text-gray-400 mr-1" />
+                                  {selectedAppointment.pet.pet_breed}
+                                </div>
+                                {/* <div className="mt-1 flex items-center">
+                              <button className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center">
+                                <ExternalLink size={14} className="mr-1" />
+                                View patient profile
+                              </button>
+                            </div> */}
+                              </div>
                             </div>
-                            {/* <div className="mt-1 flex items-center">
-                          <button className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center">
-                            <ExternalLink size={14} className="mr-1" />
-                            View patient profile
-                          </button>
-                        </div> */}
                           </div>
                         </div>
                       </div>
@@ -1622,8 +1778,8 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                       </div>
 
                       {/* Quick Actions */}
-                      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                        <h4 className="font-medium mb-3 flex items-center">
+                      <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                        <h4 className="font-medium mb-2.5 flex items-center">
                           <Play className="h-4 w-4 text-indigo-500 mr-1.5" />
                           Quick Actions
                         </h4>
@@ -1690,6 +1846,18 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
 
                           <div className="grid grid-cols-2 gap-2 mt-2">
                             {selectedAppointment.state === "Scheduled" && (
+                              <button
+                                className="px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 flex items-center justify-center shadow-sm"
+                                onClick={() =>
+                                  handleCheckIn(selectedAppointment.id)
+                                }
+                              >
+                                <CheckCircle size={14} className="mr-1.5" />
+                                Check-in
+                              </button>
+                            )}
+
+                            {selectedAppointment.state === "Confirmed" && (
                               <button
                                 className="px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 flex items-center justify-center shadow-sm"
                                 onClick={() =>
@@ -1797,31 +1965,6 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                         </div>
 
                         {/* Date & Time */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Date
-                            </label>
-                            <input
-                              type="date"
-                              className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Time
-                            </label>
-                            <select className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                              <option value="">Select time</option>
-                              <option>08:00 AM</option>
-                              <option>08:30 AM</option>
-                              <option>09:00 AM</option>
-                              <option>09:30 AM</option>
-                              <option>10:00 AM</option>
-                              {/* More time options... */}
-                            </select>
-                          </div>
-                        </div>
 
                         {/* Duration & Doctor */}
                         <div className="grid grid-cols-2 gap-4">

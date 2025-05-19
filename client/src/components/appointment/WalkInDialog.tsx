@@ -7,7 +7,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Expand, Plus, X } from "lucide-react";
+import { Expand, Plus, PlusCircle, X } from "lucide-react";
 import { WalkInRegistrationForm } from "./WalkInRegistrationForm";
 import { cn } from "@/lib/utils";
 
@@ -18,8 +18,14 @@ export const WalkInDialog: React.FC = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-white text-[#2C78E4] hover:bg-white/90 rounded-lg shadow-sm">
-          <Plus className="h-4 w-4 mr-1" /> New Appointment
+        <Button
+          variant="default"
+          size="sm"
+          className="bg-white text-[#2C78E4] hover:bg-white/90 flex items-center gap-2 rounded-xl px-4 py-2 shadow-sm"
+          onClick={() => setOpen(true)}
+        >
+          <PlusCircle className="h-4 w-4" />
+          <span className="hidden sm:inline">New Appointment</span>
         </Button>
       </DialogTrigger>
 

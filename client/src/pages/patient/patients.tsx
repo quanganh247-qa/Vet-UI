@@ -181,17 +181,17 @@ export const PatientsPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mb-4" />
-        <p className="text-indigo-600 font-medium">Loading patient data...</p>
+      <div className="h-screen flex flex-col items-center justify-center bg-[#F0F4FC]">
+        <Loader2 className="h-10 w-10 animate-spin text-[#2C78E4] mb-4" />
+        <p className="text-[#2C78E4] font-medium">Loading patient data...</p>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500 dark:text-red-400">
+      <div className="flex items-center justify-center min-h-screen bg-[#F0F4FC]">
+        <div className="text-red-500 p-6 bg-white rounded-2xl shadow-md">
           Failed to fetch patients
         </div>
       </div>
@@ -201,17 +201,9 @@ export const PatientsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md mb-6">
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="mr-2 h-8 w-8 text-white hover:bg-white/20 rounded-full"
-              onClick={() => window.history.back()}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
             <h1 className="text-2xl font-bold text-white">Patients</h1>
             {doctor && (
               <Badge className="ml-4 bg-white/20 text-white hover:bg-white/30 rounded-full">
@@ -221,7 +213,7 @@ export const PatientsPage: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-3">
-            <div className="flex items-center bg-white/10 text-white border-white/20 rounded-lg px-3 py-1 transition-all hover:bg-white/15">
+            <div className="flex items-center bg-white/10 text-white border-white/20 rounded-xl px-4 py-2 transition-all hover:bg-white/15">
               <Calendar className="h-4 w-4 text-white/80 mr-2" />
               <input
                 type="date"
@@ -232,23 +224,17 @@ export const PatientsPage: React.FC = () => {
             </div>
             <Button
               onClick={() => setLocation("/patients/new")}
-              className="bg-white text-[#2C78E4] hover:bg-white/90 rounded-lg shadow-sm"
+              className="bg-white text-[#2C78E4] hover:bg-white/90 rounded-xl shadow-sm"
               size="sm"
             >
-              <Plus className="h-4 w-4 mr-1" /> New Patient
+              <Plus className="h-4 w-4 mr-2" /> New Patient
             </Button>
           </div>
         </div>
       </div>
 
       {/* Search and filter section */}
-      <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
-        <CardHeader className="bg-white pb-3 border-b border-gray-100">
-          <CardTitle className="text-lg font-semibold text-[#111827] flex items-center">
-            <Search className="h-5 w-5 mr-2 text-[#2C78E4]" />
-            Search & Filters
-          </CardTitle>
-        </CardHeader>
+      <Card className="border-none shadow-md rounded-2xl overflow-hidden bg-white">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="relative w-full md:w-96">
@@ -257,7 +243,7 @@ export const PatientsPage: React.FC = () => {
                 placeholder="Search patients by name, owner, or species..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 border-gray-200 rounded-lg focus:ring-[#2C78E4] focus:border-[#2C78E4]"
+                className="pl-10 border-gray-200 rounded-xl focus:ring-[#2C78E4] focus:border-[#2C78E4]"
               />
             </div>
 
@@ -268,8 +254,8 @@ export const PatientsPage: React.FC = () => {
                 onClick={() => setViewMode("list")}
                 className={
                   viewMode === "list"
-                    ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
-                    : "border-gray-200 text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4] hover:border-[#2C78E4]/20"
+                    ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90 rounded-xl"
+                    : "border-gray-200 text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4] hover:border-[#2C78E4]/20 rounded-xl"
                 }
               >
                 <List className="h-4 w-4 mr-1" />
@@ -281,7 +267,7 @@ export const PatientsPage: React.FC = () => {
       </Card>
 
       {/* Patients data display */}
-      <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
+      <Card className="border-none shadow-md rounded-2xl overflow-hidden bg-white">
         <CardHeader className="bg-white pb-3 border-b border-gray-100">
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg font-semibold text-[#111827] flex items-center">
@@ -302,7 +288,7 @@ export const PatientsPage: React.FC = () => {
           {viewMode === "list" && (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-100">
-                <thead className="bg-[#F9FAFB]">
+                <thead className="bg-[#F0F4FC]">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                       Pet Name
@@ -338,22 +324,29 @@ export const PatientsPage: React.FC = () => {
                     filteredPatients.map((patient: Pet) => (
                       <tr
                         key={patient.petid}
-                        className="hover:bg-[#F9FAFB] transition-colors"
+                        className="hover:bg-[#F0F4FC] transition-colors"
                       >
                         <td
                           className="px-6 py-4 whitespace-nowrap cursor-pointer"
                           onClick={() => handlePatientClick(patient.petid)}
                         >
                           <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-[#2C78E4]/10 flex items-center justify-center">
+                            <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-gray-100">
                               {patient.data_image ? (
                                 <img
                                   src={`data:image/png;base64,${patient.data_image}`}
                                   alt={patient.name}
-                                  className="h-10 w-10 rounded-full object-cover"
+                                  className="h-full w-full object-cover"
+                                  onError={(e) => {
+                                    (
+                                      e.target as HTMLImageElement
+                                    ).style.display = "none";
+                                  }}
                                 />
                               ) : (
-                                <PawPrint className="h-5 w-5 text-[#2C78E4]" />
+                                <div className="flex items-center justify-center h-full w-full bg-[#F0F4FC]">
+                                  <PawPrint className="h-6 w-6 text-[#2C78E4]/40" />
+                                </div>
                               )}
                             </div>
                             <div className="ml-4">
@@ -407,7 +400,7 @@ export const PatientsPage: React.FC = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-[#4B5563] hover:bg-[#F9FAFB] rounded-full"
+                                className="h-8 w-8 text-[#4B5563] hover:bg-[#F0F4FC] rounded-full"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <MoreHorizontal className="h-4 w-4" />
@@ -416,13 +409,13 @@ export const PatientsPage: React.FC = () => {
                             <DropdownMenuContent
                               align="end"
                               onClick={(e) => e.stopPropagation()}
-                              className="bg-white rounded-lg shadow-md border-none"
+                              className="bg-white rounded-xl shadow-md border-none"
                             >
                               <DropdownMenuItem
                                 onClick={() =>
                                   handlePatientClick(patient.petid)
                                 }
-                                className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer"
+                                className="text-[#4B5563] hover:bg-[#F0F4FC] cursor-pointer"
                               >
                                 <User className="mr-2 h-4 w-4 text-[#2C78E4]" />
                                 <span>View Details</span>
@@ -431,7 +424,7 @@ export const PatientsPage: React.FC = () => {
                                 onClick={(e) =>
                                   handleEditPatient(patient.petid, e)
                                 }
-                                className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer"
+                                className="text-[#4B5563] hover:bg-[#F0F4FC] cursor-pointer"
                               >
                                 <Pencil className="mr-2 h-4 w-4 text-[#2C78E4]" />
                                 <span>Edit</span>
@@ -441,7 +434,7 @@ export const PatientsPage: React.FC = () => {
                                 onClick={(e) =>
                                   handleVaccination(patient.petid, e)
                                 }
-                                className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer"
+                                className="text-[#4B5563] hover:bg-[#F0F4FC] cursor-pointer"
                               >
                                 <Syringe className="mr-2 h-4 w-4 text-[#FFA726]" />
                                 <span>Vaccination</span>
@@ -471,14 +464,14 @@ export const PatientsPage: React.FC = () => {
       </Card>
 
       {/* Pagination Controls */}
-      <div className="border-t border-gray-100 px-4 py-3 bg-white rounded-xl shadow-sm">
+      <div className="border-none px-6 py-4 bg-white rounded-2xl shadow-md">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3 text-sm">
             <span className="text-[#4B5563]">Show</span>
             <select
               value={pageSize}
               onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-              className="rounded-lg border border-gray-200 bg-white text-sm py-1 px-2 text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
+              className="rounded-xl border border-gray-200 bg-white text-sm py-1 px-2 text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4]"
             >
               <option value="5">5</option>
               <option value="10">10</option>
@@ -498,14 +491,14 @@ export const PatientsPage: React.FC = () => {
             {patientsData?.total || 0} patients
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className={cn(
-                "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                "rounded-xl h-9 w-9 p-0 mx-0.5 text-sm font-medium transition-colors",
                 currentPage === 1
                   ? "text-gray-400 cursor-not-allowed"
                   : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
@@ -526,7 +519,7 @@ export const PatientsPage: React.FC = () => {
                   size="sm"
                   onClick={() => handlePageChange(page)}
                   className={cn(
-                    "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                    "rounded-xl h-9 w-9 p-0 mx-0.5 text-sm font-medium transition-colors",
                     currentPage === page
                       ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
                       : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
@@ -544,7 +537,7 @@ export const PatientsPage: React.FC = () => {
                   size="sm"
                   onClick={() => handlePageChange(1)}
                   className={cn(
-                    "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                    "rounded-xl h-9 w-9 p-0 mx-0.5 text-sm font-medium transition-colors",
                     currentPage === 1
                       ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
                       : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
@@ -577,7 +570,7 @@ export const PatientsPage: React.FC = () => {
                           size="sm"
                           onClick={() => handlePageChange(pageNum)}
                           className={cn(
-                            "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                            "rounded-xl h-9 w-9 p-0 mx-0.5 text-sm font-medium transition-colors",
                             currentPage === pageNum
                               ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
                               : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
@@ -604,7 +597,7 @@ export const PatientsPage: React.FC = () => {
                     size="sm"
                     onClick={() => handlePageChange(patientsData.totalPages)}
                     className={cn(
-                      "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                      "rounded-xl h-9 w-9 p-0 mx-0.5 text-sm font-medium transition-colors",
                       currentPage === patientsData.totalPages
                         ? "bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90"
                         : "text-[#4B5563] hover:bg-[#2C78E4]/5 hover:text-[#2C78E4]"
@@ -626,7 +619,7 @@ export const PatientsPage: React.FC = () => {
                   : true
               }
               className={cn(
-                "rounded-lg h-8 w-8 p-0 mx-0.5 text-sm font-medium transition-colors",
+                "rounded-xl h-9 w-9 p-0 mx-0.5 text-sm font-medium transition-colors",
                 (
                   patientsData?.total
                     ? currentPage >= Math.ceil(patientsData.total / pageSize)

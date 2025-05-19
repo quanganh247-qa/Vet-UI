@@ -83,7 +83,6 @@ export const getMedicinesByPhaseId = async (
 export const getAllMedicines = async (page: number, pageSize: number) => {
   try {
     const response = await api.get(`/api/v1/medicines?page=${page}&pageSize=${pageSize}`);
-    console.log("response", response.data);
     return response.data;
   } catch (error) {
     throw error;

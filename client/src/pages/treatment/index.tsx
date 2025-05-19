@@ -205,7 +205,6 @@ const TreatmentManagement: React.FC = () => {
     refetch: refetchPhases,
   } = useTreatmentPhasesData(selectedTreatment?.id?.toString() || "");
 
-  console.log("phases", phases);
   // Add the useAddTreatmentPhase hook after phases is loaded
   const addTreatmentPhaseMutation = useAddTreatmentPhase(
     selectedTreatment?.id?.toString() || ""

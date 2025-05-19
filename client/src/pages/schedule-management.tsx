@@ -481,12 +481,7 @@ const ScheduleManagement = () => {
 
       {/* Search and filters section */}
       <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
-        <CardHeader className="bg-white pb-3 border-b border-gray-100">
-          <CardTitle className="text-lg font-semibold text-[#111827] flex items-center">
-            <Search className="h-5 w-5 mr-2 text-[#2C78E4]" />
-            Search & Filters
-          </CardTitle>
-        </CardHeader>
+        
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="relative w-full md:w-96">

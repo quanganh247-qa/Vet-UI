@@ -3,7 +3,7 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSa
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, formatTime } from '@/lib/utils';
 import { Doctor, WorkShift } from '@/types';
 
 interface CustomCalendarProps {
@@ -277,7 +277,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
         >
           <div className="font-medium truncate">{shift.title || `Shift #${shift.id}`}</div>
           <div className="text-xs">
-            {startTime && endTime ? `${startTime} - ${endTime}` : 'Time not set'} 
+            {startTime && endTime ? `${formatTime(startTime)} - ${formatTime(endTime)}` : 'Time not set'} 
             {doctor ? ` | ${doctor.doctor_name}` : ''}
           </div>
         </div>

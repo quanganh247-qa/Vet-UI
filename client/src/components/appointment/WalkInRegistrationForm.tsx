@@ -43,7 +43,7 @@ import { AppointmentRequest } from "@/services/appointment-services";
 import { useEffect, useState } from "react";
 import { useTimeSlots } from "@/hooks/use-shifts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatTime } from "@/lib/utils";
 
 // Form validation schema
 const formSchema = z.object({
@@ -356,21 +356,6 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
     form.reset();
   };
 
-  // Function to format date for display in a readable format
-  const formatDateDisplay = (dateString: string): string => {
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return "Invalid date";
-      }
-
-      // Format as MM/DD/YYYY or localized date
-      return date.toLocaleDateString();
-    } catch (error) {
-      console.error("Error formatting date for display:", error);
-      return "Invalid date";
-    }
-  };
 
   // Handle direct time slot selection from buttons
   const handleTimeSlotClick = (timeSlotId: string) => {
@@ -966,7 +951,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                         >
                           <div className="flex flex-col items-center">
                             <Clock className="h-4 w-4 mb-1" />
-                            <span className="font-medium text-sm">{slot.start_time} - {slot.end_time}</span>
+                            <span className="font-medium text-sm">{formatTime(slot.start_time)} - {formatTime(slot.end_time)}</span>
                             {slot.status !== 'available' && (
                               <span className="text-xs mt-1 text-gray-500">Unavailable</span>
                             )}

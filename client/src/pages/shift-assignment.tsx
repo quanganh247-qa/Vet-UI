@@ -15,6 +15,8 @@ import {
   Filter,
   Loader2,
   Stethoscope,
+  CheckCircle,
+  Tag,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -301,6 +303,36 @@ const ShiftAssignmentPage = () => {
       0
     );
 
+    // Check for time overlaps with existing shifts
+    const dateStr = format(date, "yyyy-MM-dd");
+    const existingShifts = assignments.filter(
+      (a) =>
+        a.date === dateStr &&
+        (a.doctorId === doctor.doctor_id ||
+          a.doctorId?.toString() === doctor.doctor_id?.toString())
+    );
+
+    const hasOverlap = existingShifts.some((shift) => {
+      const existingStart = new Date(`${shift.date} ${shift.startTime}`);
+      const existingEnd = new Date(`${shift.date} ${shift.endTime}`);
+
+      return (
+        (shiftStartTime >= existingStart && shiftStartTime < existingEnd) ||
+        (shiftEndTime > existingStart && shiftEndTime <= existingEnd) ||
+        (shiftStartTime <= existingStart && shiftEndTime >= existingEnd)
+      );
+    });
+
+    if (hasOverlap) {
+      toast({
+        title: "Time Conflict",
+        description:
+          "This shift overlaps with an existing shift for this doctor",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const shiftData = {
       start_time: shiftStartTime,
       end_time: shiftEndTime,
@@ -432,12 +464,12 @@ const ShiftAssignmentPage = () => {
         // Find the earliest date in assignments that is valid and not in the past
         const now = new Date();
         now.setHours(0, 0, 0, 0); // Set to midnight for comparison
-        
+
         // Filter valid dates and those not in the past
         const validDates = assignments
           .map((a) => new Date(a.date))
-          .filter(date => !isNaN(date.getTime()) && date >= now);
-        
+          .filter((date) => !isNaN(date.getTime()) && date >= now);
+
         if (validDates.length > 0) {
           // Sort dates in ascending order and take the earliest
           const earliestFutureDate = new Date(
@@ -533,14 +565,22 @@ const ShiftAssignmentPage = () => {
                 const dayStr = format(day, "yyyy-MM-dd");
 
                 // Get assignments for this day/doctor
-                const dayAssignments = assignments.filter(
-                  (a) =>
-                    a.date === dayStr &&
-                    (a.doctorId === doctor.doctor_id ||
-                      a.doctorId?.toString() === doctor.doctor_id?.toString() ||
-                      (a.doctorName === doctor.doctor_name &&
-                        a.doctorName === "DHQA RCC")) // Special handling for test data
-                );
+                const dayAssignments = assignments
+                  .filter(
+                    (a) =>
+                      a.date === dayStr &&
+                      (a.doctorId === doctor.doctor_id ||
+                        a.doctorId?.toString() ===
+                          doctor.doctor_id?.toString() ||
+                        (a.doctorName === doctor.doctor_name &&
+                          a.doctorName === "DHQA RCC")) // Special handling for test data
+                  )
+                  .sort((a, b) => {
+                    // Sort by start time
+                    const timeA = a.startTime || "00:00";
+                    const timeB = b.startTime || "00:00";
+                    return timeA.localeCompare(timeB);
+                  });
 
                 return (
                   <div
@@ -549,40 +589,43 @@ const ShiftAssignmentPage = () => {
                       isSameDay(day, new Date()) ? "bg-[#2C78E4]/5" : ""
                     }`}
                   >
-                    {dayAssignments.length > 0 ? (
-                      <div className="space-y-1">
-                        {dayAssignments.map((assignment) => {
-                          const template = getTemplateForAssignment(assignment);
-                          return (
-                            <div
-                              key={assignment.id}
-                              className={`p-2 rounded-lg border text-xs ${
-                                template?.color || "bg-gray-100"
-                              } relative group`}
-                            >
-                              <div className="font-medium">
-                                {template?.name}
+                    <div className="space-y-1">
+                      {dayAssignments.length > 0
+                        ? dayAssignments.map((assignment) => {
+                            const template =
+                              getTemplateForAssignment(assignment);
+                            return (
+                              <div
+                                key={assignment.id}
+                                className={`p-2 rounded-lg border text-xs ${
+                                  template?.color || "bg-gray-100"
+                                } relative group hover:shadow-md transition-shadow`}
+                              >
+                                <div className="font-medium">
+                                  {template?.name}
+                                </div>
+                                <div className="text-xs mt-1">
+                                  {assignment.startTime} - {assignment.endTime}
+                                </div>
+                                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                  <Trash2
+                                    className="h-4 w-4 text-red-500 hover:text-red-700"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteAssignment(assignment.id);
+                                    }}
+                                  />
+                                </div>
                               </div>
-                              <div className="text-xs mt-1">
-                                {assignment.startTime} - {assignment.endTime}
-                              </div>
-                              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                <Trash2
-                                  className="h-4 w-4 text-red-500 hover:text-red-700"
-                                  onClick={() =>
-                                    handleDeleteAssignment(assignment.id)
-                                  }
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
+                            );
+                          })
+                        : null}
+
+                      {/* Always show the Assign button, even when there are existing assignments */}
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full h-full flex flex-col items-center justify-center text-[#4B5563] hover:text-[#2C78E4] hover:bg-[#F9FAFB]"
+                        className="w-full flex flex-col items-center justify-center text-[#4B5563] hover:text-[#2C78E4] hover:bg-[#F9FAFB] mt-1"
                         onClick={() => {
                           setCurrentDate(day);
                           setSelectedDoctor(doctor.doctor_id.toString());
@@ -590,9 +633,9 @@ const ShiftAssignmentPage = () => {
                         }}
                       >
                         <Plus className="h-4 w-4 mb-1" />
-                        <span className="text-xs">Assign</span>
+                        {/* <span className="text-xs">Assign Shift</span> */}
                       </Button>
-                    )}
+                    </div>
                   </div>
                 );
               })}
@@ -607,7 +650,7 @@ const ShiftAssignmentPage = () => {
   const renderListView = () => {
     // Sort by parsing date strings - ensure valid dates
     const sortedAssignments = [...assignments]
-      .filter(a => {
+      .filter((a) => {
         const date = new Date(a.date);
         return !isNaN(date.getTime()); // Filter out invalid dates
       })
@@ -649,10 +692,10 @@ const ShiftAssignmentPage = () => {
                 const template = getTemplateForAssignment(assignment);
                 const assignmentDate = new Date(assignment.date);
                 // Use current date as fallback if date is invalid
-                const displayDate = !isNaN(assignmentDate.getTime()) 
+                const displayDate = !isNaN(assignmentDate.getTime())
                   ? format(assignmentDate, "MMM dd, yyyy")
                   : format(new Date(), "MMM dd, yyyy");
-                
+
                 return (
                   <TableRow key={assignment.id} className="hover:bg-[#F9FAFB]">
                     <TableCell className="font-medium text-[#111827]">
@@ -705,55 +748,18 @@ const ShiftAssignmentPage = () => {
 
   return (
     <div className="space-y-6">
-            {/* Header with gradient background */}
-            <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md mb-6">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
         <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="mr-2 h-8 w-8 text-white hover:bg-white/20 rounded-full"
-              onClick={() => window.history.back()}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-white">
-                Shift Assignment
-              </h1>
-              {/* <p className="text-white/80 text-sm">
-                Efficiently assign and manage shifts for your medical staff
-              </p> */}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowTemplateDialog(true)}
-              className="bg-white/10 text-white border-white/20 hover:bg-white/20 rounded-lg"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Template
-            </Button>
-
-            <Button
-              onClick={handlePublishAssignments}
-              disabled={
-                assignments.length === 0 ||
-                assignments.every((a) => a.status === "published")
-              }
-              className="bg-white hover:bg-white/90 text-[#2C78E4] rounded-lg"
-            >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Publish Shifts
-            </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Shift Assignment</h1>
+            
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="md:col-span-3">
+        <div className="md:col-span-4">
           <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
             <CardHeader className="bg-white pb-3 border-b border-gray-100">
               <div className="flex justify-between items-center">
@@ -834,20 +840,6 @@ const ShiftAssignmentPage = () => {
                 </TabsContent>
 
                 <TabsContent value="list" className="mt-0 p-0">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium text-[#111827]">
-                      All Assignments
-                    </h3>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowAssignDialog(true)}
-                      className="border-gray-200 rounded-lg hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20 text-[#4B5563]"
-                    >
-                      <Plus className="h-4 w-4 mr-2 text-[#2C78E4]" />
-                      New Assignment
-                    </Button>
-                  </div>
                   {renderListView()}
                 </TabsContent>
               </Tabs>
@@ -855,7 +847,7 @@ const ShiftAssignmentPage = () => {
           </Card>
         </div>
 
-        <div>
+        {/* <div>
           <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
             <CardHeader className="bg-white pb-3 border-b border-gray-100">
               <CardTitle className="text-lg font-semibold text-[#111827] flex items-center">
@@ -863,45 +855,50 @@ const ShiftAssignmentPage = () => {
                 Shift Templates
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 md:p-6">
+            <CardContent className="p-4 md:p-">
               <div className="space-y-3">
                 {templates.map((template) => (
                   <div
                     key={template.id}
-                    className="flex justify-between items-center p-3 border rounded-lg hover:border-[#2C78E4]/20 transition-colors"
+                    className="flex flex-col p-4 border rounded-xl hover:border-[#2C78E4]/20 transition-colors bg-white"
                   >
-                    <div>
-                      <div className="font-medium text-[#111827]">
-                        {template.name}
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <div className="font-medium text-[#111827] mb-1">
+                          {template.name}
+                        </div>
+                        <div className="text-sm text-[#4B5563] flex items-center">
+                          <Clock className="h-3.5 w-3.5 mr-1.5 text-[#2C78E4]" />
+                          {template.startTime} - {template.endTime}
+                        </div>
                       </div>
-                      <div className="text-sm text-[#4B5563] flex items-center">
-                        <Clock className="h-3 w-3 mr-1 text-[#2C78E4]" />
-                        {template.startTime} - {template.endTime}
-                      </div>
+                    
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteTemplate(template.id)}
-                      className="h-8 w-8 rounded-full hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+
+                    {template.recurring && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
+                          (day, index) => (
+                            template.days?.includes(index) && (
+                              <span
+                                key={day}
+                                className="px-2 py-0.5 text-xs rounded-full bg-[#2C78E4]/10 text-[#2C78E4]"
+                              >
+                                {day}
+                              </span>
+                            )
+                          )
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
 
-                <Button
-                  variant="outline"
-                  className="w-full border-gray-200 hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20 rounded-lg text-[#4B5563]"
-                  onClick={() => setShowTemplateDialog(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2 text-[#2C78E4]" />
-                  Add Template
-                </Button>
+          
               </div>
             </CardContent>
           </Card>
-        </div>
+        </div> */}
       </div>
 
       {/* New Template Dialog */}
@@ -928,7 +925,7 @@ const ShiftAssignmentPage = () => {
                 onChange={(e) =>
                   setNewTemplate({ ...newTemplate, name: e.target.value })
                 }
-                className="border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] rounded-lg"
+                className="border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] rounded-xl"
               />
             </div>
 
@@ -947,7 +944,7 @@ const ShiftAssignmentPage = () => {
                       startTime: e.target.value,
                     })
                   }
-                  className="border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] rounded-lg"
+                  className="border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] rounded-xl"
                 />
               </div>
               <div>
@@ -961,64 +958,66 @@ const ShiftAssignmentPage = () => {
                   onChange={(e) =>
                     setNewTemplate({ ...newTemplate, endTime: e.target.value })
                   }
-                  className="border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] rounded-lg"
+                  className="border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] rounded-xl"
                 />
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="recurring"
-                checked={newTemplate.recurring}
-                onCheckedChange={(checked) =>
-                  setNewTemplate({
-                    ...newTemplate,
-                    recurring: checked === true,
-                  })
-                }
-                className="text-[#2C78E4] border-gray-300 rounded focus:ring-[#2C78E4]"
-              />
-              <Label htmlFor="recurring" className="text-[#111827]">
-                Recurring Shift
-              </Label>
-            </div>
-
-            {newTemplate.recurring && (
-              <div>
-                <Label className="mb-2 block text-[#111827]">
-                  Repeat on days
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="recurring"
+                  checked={newTemplate.recurring}
+                  onCheckedChange={(checked) =>
+                    setNewTemplate({
+                      ...newTemplate,
+                      recurring: checked === true,
+                    })
+                  }
+                  className="text-[#2C78E4] border-gray-300 rounded focus:ring-[#2C78E4]"
+                />
+                <Label htmlFor="recurring" className="text-[#111827]">
+                  Recurring Shift
                 </Label>
-                <div className="flex flex-wrap gap-2">
-                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
-                    (day, index) => (
-                      <div key={day} className="flex items-center space-x-1">
-                        <Checkbox
-                          id={`day-${index}`}
-                          checked={newTemplate.days?.includes(index)}
-                          onCheckedChange={(checked) => {
-                            const days = [...(newTemplate.days || [])];
-                            if (checked) {
-                              if (!days.includes(index)) days.push(index);
-                            } else {
-                              const dayIndex = days.indexOf(index);
-                              if (dayIndex !== -1) days.splice(dayIndex, 1);
-                            }
-                            setNewTemplate({ ...newTemplate, days });
-                          }}
-                          className="text-[#2C78E4] border-gray-300 rounded focus:ring-[#2C78E4]"
-                        />
-                        <Label
-                          htmlFor={`day-${index}`}
-                          className="text-[#4B5563]"
-                        >
-                          {day}
-                        </Label>
-                      </div>
-                    )
-                  )}
-                </div>
               </div>
-            )}
+
+              {newTemplate.recurring && (
+                <div className="bg-[#F9FAFB] p-4 rounded-xl border border-gray-200">
+                  <Label className="mb-3 block text-[#111827] font-medium">
+                    Repeat on days
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
+                      (day, index) => (
+                        <div key={day} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`day-${index}`}
+                            checked={newTemplate.days?.includes(index)}
+                            onCheckedChange={(checked) => {
+                              const days = [...(newTemplate.days || [])];
+                              if (checked) {
+                                if (!days.includes(index)) days.push(index);
+                              } else {
+                                const dayIndex = days.indexOf(index);
+                                if (dayIndex !== -1) days.splice(dayIndex, 1);
+                              }
+                              setNewTemplate({ ...newTemplate, days });
+                            }}
+                            className="text-[#2C78E4] border-gray-300 rounded focus:ring-[#2C78E4]"
+                          />
+                          <Label
+                            htmlFor={`day-${index}`}
+                            className="text-[#4B5563]"
+                          >
+                            {day}
+                          </Label>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div>
               <Label htmlFor="template-notes" className="text-[#111827]">

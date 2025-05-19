@@ -41,6 +41,7 @@ const PatientDetailsPage = lazy(() => import("@/pages/patient/patient-details"))
 const ProductManagement = lazy(() => import("@/pages/catalog-management/product-management"));
 const InventoryPage = lazy(() => import("@/pages/inventory"));
 const HealthCard = lazy(() => import("@/pages/patient/health-card"));
+const PaymentListPage = lazy(() => import("@/pages/payment-list"));
 
 // Create LoginPage component that uses LoginForm
 const LoginPage = () => {
@@ -63,6 +64,7 @@ function Router() {
         <Route path="/inventory" component={InventoryPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment-flow" component={AppointmentFlow as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/walk-in" component={WalkInDialog as React.ComponentType<RouteComponentProps>} />
+        <Route path="/payment-list" component={PaymentListPage as React.ComponentType<RouteComponentProps>} />
 
         {/* Workflow routes - updated to use query params instead of route params */}
         <Route path="/check-in" component={CheckIn as React.ComponentType<RouteComponentProps>} />
@@ -72,10 +74,10 @@ function Router() {
         <Route path="/soap" component={SoapNotes as React.ComponentType<RouteComponentProps>} />
         <Route path="/treatment" component={TreatmentManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/invoice" component={PrescriptionInvoice as React.ComponentType<RouteComponentProps>} />
-        <Route path="/follow-up" component={FollowUp as React.ComponentType<RouteComponentProps>} />
+        {/* <Route path="/follow-up" component={FollowUp as React.ComponentType<RouteComponentProps>} /> */}
         <Route path="/examination" component={Examination as React.ComponentType<RouteComponentProps>} />
         <Route path="/lab-management" component={LabManagement as React.ComponentType<RouteComponentProps>} />
-        <Route path="/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} />
+        {/* <Route path="/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} /> */}
 
         {/* Maintain legacy routes for backward compatibility */}
         <Route path="/appointment/:id/check-in" component={CheckIn as React.ComponentType<RouteComponentProps>} />
@@ -83,14 +85,13 @@ function Router() {
         <Route path="/appointment/:id/soap" component={SoapNotes as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/treatment" component={TreatmentManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/prescription/invoice" component={PrescriptionInvoice as React.ComponentType<RouteComponentProps>} />
-        <Route path="/appointment/:id/follow-up" component={FollowUp as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/examination" component={Examination as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment/:id/lab-management" component={LabManagement as React.ComponentType<RouteComponentProps>} />
-        <Route path="/appointment/:id/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} />
+        {/* <Route path="/appointment/:id/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} /> */}
         <Route path="/appointment/:id/health-card" component={HealthCard as React.ComponentType<RouteComponentProps>} />
 
         <Route path="/patient/:patientId/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
-        <Route path="/patient/:patientId/health-card" component={HealthCard as React.ComponentType<RouteComponentProps>} />
+        {/* <Route path="/patient/:patientId/health-card" component={HealthCard as React.ComponentType<RouteComponentProps>} /> */}
         <Route path="/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
         <Route path="/notifications" component={NotificationsPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/chatbot" component={Chatbot as React.ComponentType<RouteComponentProps>} />
@@ -98,8 +99,8 @@ function Router() {
         <Route path="/billing" component={Billing as React.ComponentType<RouteComponentProps>} />
         <Route path="/catalog-management" component={ProductManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/services-management" component={ServicesManagement as React.ComponentType<RouteComponentProps>} />
-        <Route path="/schedule-management" component={ScheduleManagement as React.ComponentType<RouteComponentProps>} />
-        <Route path="/shift-management" component={ShiftManagement as React.ComponentType<RouteComponentProps>} />
+        {/* <Route path="/schedule-management" component={ScheduleManagement as React.ComponentType<RouteComponentProps>} /> */}
+        {/* <Route path="/shift-management" component={ShiftManagement as React.ComponentType<RouteComponentProps>} /> */}
         <Route path="/shift-assignment" component={ShiftAssignment as React.ComponentType<RouteComponentProps>} />
         <Route path="/staff/new" component={StaffPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/staff" component={StaffPage as React.ComponentType<RouteComponentProps>} />
@@ -133,19 +134,17 @@ function App() {
 
   // Otherwise render the main layout with sidebar and content
   return (
-    <NotificationsProvider>
-      <div className="flex h-screen overflow-hidden bg-background text-darkText">
-        <Sidebar
-          open={sidebarOpen}
-          setOpen={setSidebarOpen}
-        />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
-            <Router />
-          </main>
-        </div>
+    <div className="flex h-screen overflow-hidden bg-background text-darkText">
+      <Sidebar
+        open={sidebarOpen}
+        setOpen={setSidebarOpen}
+      />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 overflow-y-auto bg-[#F9FBFD] p-4">
+          <Router />
+        </main>
       </div>
-    </NotificationsProvider>
+    </div>
   );
 }
 

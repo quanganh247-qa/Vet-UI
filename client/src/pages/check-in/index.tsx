@@ -291,6 +291,7 @@ const CheckIn = () => {
   const [isCashPaymentOpen, setIsCashPaymentOpen] = useState(false);
   const createSoapMutation = useCreateSOAP();
   const [paymentID, setPaymentID] = useState(0);
+  const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
   
   const { toast } = useToast();
 
@@ -330,9 +331,16 @@ const CheckIn = () => {
       payment_id: paymentID,
       payment_status: "successful",
       notes: "Payment confirmed",
+    }, {
+      onSuccess: () => {
+        setIsPaymentConfirmed(true);
+        toast({
+          title: "Payment Confirmed",
+          description: "Payment has been successfully confirmed.",
+          className: "bg-green-50 border-green-200 text-green-800",
+        });
+      }
     });
-    // setLocation("/appointment-flow");
-
   };
 
   // Format currency for VND
@@ -449,15 +457,16 @@ const CheckIn = () => {
   };
 
   // Handle cash payment success
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = (paymentData: any) => {
+    if (paymentData && paymentData.payment_id) {
+      setPaymentID(paymentData.payment_id);
+    }
+    
     toast({
       title: "Payment Successful",
       description: "Cash payment has been recorded successfully.",
       className: "bg-green-50 border-green-200 text-green-800",
     });
-    
-    // Redirect to appointment flow after payment
-    // setLocation("/appointment-flow");
   };
 
   return (
@@ -933,12 +942,22 @@ const CheckIn = () => {
                   <div className="mt-6">
                     <Button
                       onClick={handleConfirmPayment}
-                      disabled={isConfirmingPayment}
-                      className="bg-[#FDD835] hover:bg-[#FDD835]/90 text-gray-800 w-full flex items-center justify-center gap-1.5 shadow-sm rounded-xl py-3 font-medium"
+                      disabled={isConfirmingPayment || isPaymentConfirmed || !paymentID}
+                      className={cn(
+                        "w-full flex items-center justify-center gap-1.5 shadow-sm rounded-xl py-3 font-medium",
+                        isPaymentConfirmed 
+                          ? "bg-green-100 text-green-800 cursor-not-allowed"
+                          : "bg-[#FDD835] hover:bg-[#FDD835]/90 text-gray-800"
+                      )}
                     >
                       {isConfirmingPayment ? (
                         <>
                           Confirming...
+                        </>
+                      ) : isPaymentConfirmed ? (
+                        <>
+                          <CheckCheck className="w-4 h-4" />
+                          Payment Confirmed
                         </>
                       ) : (
                         <>
@@ -964,6 +983,7 @@ const CheckIn = () => {
         amount={total}
         appointmentId={parseInt(id || "0")}
         onSuccess={handlePaymentSuccess}
+        isPaymentConfirmed={isPaymentConfirmed}
       />
     </div>
   );
