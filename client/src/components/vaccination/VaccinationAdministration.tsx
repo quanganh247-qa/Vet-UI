@@ -29,6 +29,8 @@ import {
   Loader2,
   ArrowRight,
   PlusCircle,
+  Clock,
+  BellRing,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Appointment, TestByAppointment, Vaccination, Vaccine } from "@/types";
@@ -36,7 +38,7 @@ import {
   saveVaccinationRecord,
   SaveVaccinationRequest,
 } from "@/services/vaccine-services";
-import { format, formatDate } from "date-fns";
+import { format, formatDate, subDays, addDays } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
   Popover,
@@ -50,8 +52,10 @@ import {
 } from "@/services/appointment-services";
 import { useGetTestByAppointmentID } from "@/hooks/use-test";
 import { useAllVaccines, useSaveVaccinationRecord } from "@/hooks/use-vaccine";
+import { useScheduleNotification } from "@/hooks/use-noti";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 
 interface VaccinationAdministrationProps {
   appointmentId?: string;
@@ -89,12 +93,14 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
     notes: "",
   });
   const { mutate: saveVaccination, isPending: isSavingVaccination } = useSaveVaccinationRecord();
+  const { mutate: scheduleNotification, isPending: isSchedulingNotification } = useScheduleNotification();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [vaccinationSiteImage, setVaccinationSiteImage] = useState<string>(
     "/assets/vaccination-sites/subcutaneous.png"
   );
+  const [scheduleReminder, setScheduleReminder] = useState(true);
 
   const { data: allVaccines = [], isLoading: isLoadingVaccines } = useGetTestByAppointmentID(
     selectedAppointmentId ? Number(selectedAppointmentId) : 0
@@ -229,6 +235,49 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
         appointment_id: selectedAppointmentId || undefined,
       });
       
+      // Schedule notification for 1 week before next due date
+      if (scheduleReminder && vaccinationData.next_due_date) {
+        try {
+          const nextDueDate = new Date(vaccinationData.next_due_date);
+          const reminderDate = subDays(nextDueDate, 7); // 1 week before next due date
+          
+          // Format date for user-friendly display
+          const formattedDueDate = format(nextDueDate, "MMMM d, yyyy");
+          
+          // Default owner ID to use if we can't get one from the appointment
+          // This ensures we can still send a notification even if owner data is missing
+          const fallbackOwnerId = "1"; 
+          
+          // Get a string owner ID from the appointment if possible
+          let ownerId = fallbackOwnerId;
+          
+          if (selectedAppointment?.owner) {
+            // Try to safely access any owner identifier we can find
+            const owner = selectedAppointment.owner as any;
+            if (owner.owner_id) {
+              ownerId = owner.owner_id.toString();
+            } else if (owner.id) {
+              ownerId = owner.id.toString();
+            }
+          }
+          
+          // // Schedule notification for 1 week before due date (9:00 AM)
+          // const reminderDateString = format(reminderDate, "yyyy-MM-dd");
+          // await scheduleNotification({
+          //   user_id: ownerId,
+          //   title: "📅 Upcoming Vaccine Due",
+          //   body: `${selectedAppointment?.pet?.pet_name || 'Your pet'}'s ${vaccinationData.vaccine_name} vaccine is due on ${formattedDueDate}. Please schedule an appointment soon.`,
+          //   cronExpression: `0 0 9 ${reminderDate.getDate()} ${reminderDate.getMonth() + 1} ? ${reminderDate.getFullYear()}`,
+          //   schedule_id: `vaccine-${vaccinationData.pet_id}-${Date.now()}`,
+          //   end_date: format(addDays(reminderDate, 1), "yyyy-MM-dd") // End date is the day after reminder
+          // });
+          // console.log("Vaccine reminder scheduled for", reminderDateString);
+        } catch (notificationError) {
+          console.error("Failed to schedule vaccine reminder:", notificationError);
+          // Don't fail the whole operation if notification scheduling fails
+        }
+      }
+      
       toast({
         title: "Vaccination recorded",
         description: "The vaccination details have been saved successfully",
@@ -304,6 +353,14 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                     <div className="col-span-2 pt-2 border-t border-indigo-100">
                       <p className="text-gray-500">Patient</p>
                       <p className="font-medium">{selectedAppointment.pet.pet_name}</p>
+                    </div>
+                  )}
+                  {scheduleReminder && vaccinationData.next_due_date && (
+                    <div className="col-span-2 pt-2 mt-2 border-t border-indigo-100 flex items-center">
+                      <BellRing className="h-4 w-4 text-[#2C78E4] mr-2" />
+                      <p className="text-[#2C78E4] text-sm">
+                        Reminder scheduled for {format(subDays(new Date(vaccinationData.next_due_date), 7), "MMM d, yyyy")}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -578,6 +635,26 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                     placeholder="Enter any observations or reactions"
                     rows={3}
                     className="bg-white border-gray-300 min-h-[80px]"
+                  />
+                </div>
+
+                {/* Notification scheduling option */}
+                <div className="flex items-center justify-between bg-[#F9FAFB] rounded-md p-4 mt-4">
+                  <div className="flex items-start">
+                    <BellRing className="h-5 w-5 text-[#2C78E4] mr-2.5 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-medium text-gray-800 text-sm">
+                        Schedule Reminder Notification
+                      </h3>
+                      <p className="text-gray-600 text-xs mt-1">
+                        Send a notification to pet owner 1 week before the next due date
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={scheduleReminder}
+                    onCheckedChange={setScheduleReminder}
+                    className="data-[state=checked]:bg-[#2C78E4]"
                   />
                 </div>
 

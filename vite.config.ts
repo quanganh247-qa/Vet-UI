@@ -16,6 +16,10 @@ export default defineConfig(async ({ mode }) => {
   const apiUrl = env.API_URL || env.VITE_API_URL || 'https://go-pet-care-production.up.railway.app';
   console.log(`Using API URL: ${apiUrl} in ${mode} mode`);
 
+  // Use PUSH_NOTI from environment variables or fall back to API URL
+  const pushNotiUrl = env.PUSH_NOTI || env.VITE_PUSH_NOTI || apiUrl;
+  console.log(`Using Push Notification URL: ${pushNotiUrl} in ${mode} mode`);
+
   return {
     plugins: [
       react(),
@@ -38,6 +42,11 @@ export default defineConfig(async ({ mode }) => {
         }
       },
       cors: true
+    },
+    define: {
+      // Make environment variables available to client code
+      'import.meta.env.VITE_API_URL': JSON.stringify(apiUrl),
+      'import.meta.env.VITE_PUSH_NOTI': JSON.stringify(pushNotiUrl),
     },
     resolve: {
       alias: {
