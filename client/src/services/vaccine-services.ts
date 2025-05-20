@@ -49,3 +49,15 @@ export const saveVaccinationRecord = async (
     throw error;
   }
 };
+
+// permsRoute([]perms.Permission{perms.ManageTest}).GET("/test-categories", controller.ListTestCategories)
+
+export const getTestCategories = async () => {
+  try {
+    const response = await api.get("/api/v1/test-categories");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching test categories:", error);
+    throw error;
+  }
+};

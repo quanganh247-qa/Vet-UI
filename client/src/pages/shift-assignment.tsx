@@ -390,71 +390,6 @@ const ShiftAssignmentPage = () => {
     });
   };
 
-  const handlePublishAssignments = () => {
-    // Update status for all draft assignments
-    const draftAssignments = assignments.filter((a) => a.status === "draft");
-
-    if (draftAssignments.length === 0) {
-      toast({
-        title: "No Drafts",
-        description: "No draft assignments to publish",
-        variant: "default",
-      });
-      return;
-    }
-
-    // Update each draft assignment to published
-    const updatePromises = draftAssignments.map((assignment) => {
-      // Parse date string back to Date object for API call
-      const parsedDate = new Date(assignment.date);
-
-      const startTime = new Date(parsedDate);
-      startTime.setHours(
-        parseInt(assignment.startTime.split(":")[0]),
-        parseInt(assignment.startTime.split(":")[1]),
-        0,
-        0
-      );
-
-      const endTime = new Date(parsedDate);
-      endTime.setHours(
-        parseInt(assignment.endTime.split(":")[0]),
-        parseInt(assignment.endTime.split(":")[1]),
-        0,
-        0
-      );
-
-      return new Promise((resolve, reject) => {
-        updateMutation.mutate(
-          {
-            id: parseInt(assignment.id),
-            data: {
-              doctor_id: assignment.doctorId,
-              start_time: startTime,
-              end_time: endTime,
-              status: "scheduled",
-            },
-          },
-          {
-            onSuccess: () => resolve(assignment.id),
-            onError: reject,
-          }
-        );
-      });
-    });
-
-    // Wait for all updates to complete
-    Promise.allSettled(updatePromises).then((results) => {
-      const successful = results.filter((r) => r.status === "fulfilled").length;
-
-      toast({
-        title: "Shifts Published",
-        description: `${successful} of ${draftAssignments.length} shifts have been published`,
-        className: "bg-green-50 text-green-800 border-green-200",
-      });
-    });
-  };
-
   // Get template info for an assignment
   const getTemplateForAssignment = (assignment: DoctorAssignment) => {
     return templates.find((t) => t.id === assignment.shiftTemplateId);
@@ -850,58 +785,6 @@ const ShiftAssignmentPage = () => {
           </Card>
         </div>
 
-        {/* <div>
-          <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
-            <CardHeader className="bg-white pb-3 border-b border-gray-100">
-              <CardTitle className="text-lg font-semibold text-[#111827] flex items-center">
-                <Clock className="h-5 w-5 mr-2 text-[#2C78E4]" />
-                Shift Templates
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 md:p-">
-              <div className="space-y-3">
-                {templates.map((template) => (
-                  <div
-                    key={template.id}
-                    className="flex flex-col p-4 border rounded-xl hover:border-[#2C78E4]/20 transition-colors bg-white"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <div className="font-medium text-[#111827] mb-1">
-                          {template.name}
-                        </div>
-                        <div className="text-sm text-[#4B5563] flex items-center">
-                          <Clock className="h-3.5 w-3.5 mr-1.5 text-[#2C78E4]" />
-                          {template.startTime} - {template.endTime}
-                        </div>
-                      </div>
-                    
-                    </div>
-
-                    {template.recurring && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
-                          (day, index) => (
-                            template.days?.includes(index) && (
-                              <span
-                                key={day}
-                                className="px-2 py-0.5 text-xs rounded-full bg-[#2C78E4]/10 text-[#2C78E4]"
-                              >
-                                {day}
-                              </span>
-                            )
-                          )
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-          
-              </div>
-            </CardContent>
-          </Card>
-        </div> */}
       </div>
 
       {/* New Template Dialog */}

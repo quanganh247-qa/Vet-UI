@@ -1,6 +1,6 @@
 import { toast } from "@/components/ui/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import { getVaccinations, getAllVaccines, saveVaccinationRecord, SaveVaccinationRequest } from "@/services/vaccine-services";
+import { getVaccinations, getAllVaccines, saveVaccinationRecord, SaveVaccinationRequest, getTestCategories } from "@/services/vaccine-services";
 import { Vaccination } from "@/types";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
@@ -53,6 +53,16 @@ export const useSaveVaccinationRecord = () => {
         description: "Failed to save vaccination record",
         variant: "destructive",
       });
+    },
+  });
+};
+
+
+export const useTestCategories = () => {
+  return useQuery({
+    queryKey: ["test-categories"],
+    queryFn: async () => {
+      return await getTestCategories();
     },
   });
 };

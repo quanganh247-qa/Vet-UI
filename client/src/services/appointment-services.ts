@@ -375,10 +375,10 @@ export const registerUserRole = async (role: string) => {
 
 export const waitForNotifications = async (signal?: AbortSignal) => {
   try {
-    // Use a slightly shorter timeout to ensure client timeout happens before server timeout
+    // Reduce timeout from 25s to 10s for faster initial loading
     const response = await api.get('/api/v1/appointment/notifications/wait', {
       signal,
-      timeout: 25000, // 25 second timeout (shorter than the server's expected 30s)
+      timeout: 10000, // 10 second timeout (shorter than the server's expected 30s)
     });
     return response.data;
   } catch (error: any) {

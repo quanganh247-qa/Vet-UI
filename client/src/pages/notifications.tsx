@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo, memo, Suspense } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  memo,
+  Suspense,
+} from "react";
 import { useLocation } from "wouter";
 import { LowStockNotification } from "@/types";
 import {
@@ -91,118 +98,115 @@ interface Notification {
 const ITEMS_PER_PAGE = 5;
 
 // Create a memoized notification item component to prevent unnecessary re-renders
-const NotificationItem = memo(({ 
-  notification, 
-  onClick 
-}: { 
-  notification: Notification, 
-  onClick: (notification: Notification) => void 
-}) => {
-  // Memoize formatted date strings to avoid recalculations
-  const formattedTime = useMemo(() => {
-    return new Date(notification.created_at).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }, [notification.created_at]);
+const NotificationItem = memo(
+  ({
+    notification,
+    onClick,
+  }: {
+    notification: Notification;
+    onClick: (notification: Notification) => void;
+  }) => {
+    // Memoize formatted date strings to avoid recalculations
+    const formattedTime = useMemo(() => {
+      return new Date(notification.created_at).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }, [notification.created_at]);
 
-  return (
-    <div
-      className={cn(
-        "px-6 py-4 hover:bg-[#F9FAFB]/50 cursor-pointer transition-colors",
-        !notification.is_read &&
-          "bg-[#F9FAFB]/30 border-l-4 border-[#2C78E4]"
-      )}
-      onClick={() => onClick(notification)}
-    >
-      <div className="flex justify-between items-start mb-1">
-        <div className="flex items-center">
-          <div
-            className={cn(
-              "flex items-center justify-center rounded-full mr-3 flex-shrink-0",
-              !notification.is_read
-                ? "text-[#2C78E4]"
-                : "text-[#4B5563]"
-            )}
-          >
-            {notification.notify_type === "appointment" ? (
-              <Calendar className="h-5 w-5" />
-            ) : (
-              <MessageSquare className="h-5 w-5" />
-            )}
-          </div>
-          <div>
-            <div className="flex items-center">
-              <span
-                className={cn(
-                  "text-sm",
-                  !notification.is_read
-                    ? "font-semibold text-[#111827]"
-                    : "font-medium text-[#4B5563]"
-                )}
-              >
-                {notification.title}
-                {!notification.is_read && (
-                  <span className="ml-2 inline-flex items-center">
-                    <span className="h-2 w-2 rounded-full bg-[#2C78E4]"></span>
-                  </span>
-                )}
-              </span>
-              <span className="text-[#2C78E4] mx-2">•</span>
-              <span className="text-sm text-[#2C78E4]">
-                {formattedTime}
-              </span>
-            </div>
-            <p
+    return (
+      <div
+        className={cn(
+          "px-6 py-4 hover:bg-[#F9FAFB]/50 cursor-pointer transition-colors",
+          !notification.is_read && "bg-[#F9FAFB]/30 border-l-4 border-[#2C78E4]"
+        )}
+        onClick={() => onClick(notification)}
+      >
+        <div className="flex justify-between items-start mb-1">
+          <div className="flex items-center">
+            <div
               className={cn(
-                "text-sm mt-1",
-                !notification.is_read
-                  ? "text-[#111827]"
-                  : "text-[#4B5563]"
+                "flex items-center justify-center rounded-full mr-3 flex-shrink-0",
+                !notification.is_read ? "text-[#2C78E4]" : "text-[#4B5563]"
               )}
             >
-              {notification.content}
-            </p>
+              {notification.notify_type === "appointment" ? (
+                <Calendar className="h-5 w-5" />
+              ) : (
+                <MessageSquare className="h-5 w-5" />
+              )}
+            </div>
+            <div>
+              <div className="flex items-center">
+                <span
+                  className={cn(
+                    "text-sm",
+                    !notification.is_read
+                      ? "font-semibold text-[#111827]"
+                      : "font-medium text-[#4B5563]"
+                  )}
+                >
+                  {notification.title}
+                  {!notification.is_read && (
+                    <span className="ml-2 inline-flex items-center">
+                      <span className="h-2 w-2 rounded-full bg-[#2C78E4]"></span>
+                    </span>
+                  )}
+                </span>
+                <span className="text-[#2C78E4] mx-2">•</span>
+                <span className="text-sm text-[#2C78E4]">{formattedTime}</span>
+              </div>
+              <p
+                className={cn(
+                  "text-sm mt-1",
+                  !notification.is_read ? "text-[#111827]" : "text-[#4B5563]"
+                )}
+              >
+                {notification.content}
+              </p>
+            </div>
           </div>
-        </div>
 
-        <Badge
-          className={cn(
-            "ml-4 mt-1 rounded-full",
-            !notification.is_read
-              ? "bg-[#2C78E4]/10 text-[#2C78E4] border-[#2C78E4]/20 font-medium"
-              : "bg-gray-100 text-[#4B5563] border-gray-200"
-          )}
-        >
-          {notification.serviceName}
-        </Badge>
+          <Badge
+            className={cn(
+              "ml-4 mt-1 rounded-full",
+              !notification.is_read
+                ? "bg-[#2C78E4]/10 text-[#2C78E4] border-[#2C78E4]/20 font-medium"
+                : "bg-gray-100 text-[#4B5563] border-gray-200"
+            )}
+          >
+            {notification.serviceName}
+          </Badge>
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
 NotificationItem.displayName = "NotificationItem";
 
 // Create a memoized notification list component
-const NotificationsList = memo(({ 
-  notifications, 
-  onItemClick 
-}: { 
-  notifications: Notification[], 
-  onItemClick: (notification: Notification) => void 
-}) => {
-  return (
-    <div className="divide-y divide-[#F9FAFB]">
-      {notifications.map((notification, index) => (
-        <NotificationItem
-          key={`${notification.id}-${index}`}
-          notification={notification}
-          onClick={onItemClick}
-        />
-      ))}
-    </div>
-  );
-});
+const NotificationsList = memo(
+  ({
+    notifications,
+    onItemClick,
+  }: {
+    notifications: Notification[];
+    onItemClick: (notification: Notification) => void;
+  }) => {
+    return (
+      <div className="divide-y divide-[#F9FAFB]">
+        {notifications.map((notification, index) => (
+          <NotificationItem
+            key={`${notification.id}-${index}`}
+            notification={notification}
+            onClick={onItemClick}
+          />
+        ))}
+      </div>
+    );
+  }
+);
 
 NotificationsList.displayName = "NotificationsList";
 
@@ -227,25 +231,38 @@ const NotificationsPage = () => {
     useState<number>();
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // Cache notifications mapping for better performance
   const processedNotifications = useMemo(() => {
-    if (!rawNotifications || !Array.isArray(rawNotifications) || rawNotifications.length === 0) return [];
-    
-    console.log("Processing raw notifications, count:", rawNotifications.length);
-    
+    if (
+      !rawNotifications ||
+      !Array.isArray(rawNotifications) ||
+      rawNotifications.length === 0
+    )
+      return [];
+
+    console.log(
+      "Processing raw notifications, count:",
+      rawNotifications.length
+    );
+
     // Map database fields to UI fields - this is a heavy operation that we should memoize
     return rawNotifications
-      .filter(notification => {
+      .filter((notification) => {
         // Ensure we only process valid notifications
         // Check for required fields and valid state (state = 1 or undefined)
-        return notification && notification.id && 
-          (notification.state === undefined || notification.state === 1);
+        return (
+          notification &&
+          notification.id &&
+          (notification.state === undefined || notification.state === 1)
+        );
       })
       .map((notification: any) => {
         try {
           let appointmentId = notification.related_id;
-          let date = notification.datetime ? new Date(notification.datetime) : new Date();
+          let date = notification.datetime
+            ? new Date(notification.datetime)
+            : new Date();
 
           // Default values that will be overridden if data is available
           let petInfo = { petName: "Unknown", petId: 0 };
@@ -263,14 +280,17 @@ const NotificationsPage = () => {
 
           // Process content efficiently based on type
           if (notification.content) {
-            if (typeof notification.content === "string" && notification.content.trim().startsWith("{")) {
+            if (
+              typeof notification.content === "string" &&
+              notification.content.trim().startsWith("{")
+            ) {
               try {
                 // Parse JSON only once
                 const contentObj = JSON.parse(notification.content);
-                
+
                 // Extract all needed data in a single pass
                 if (contentObj.timeSlot) timeSlot = contentObj.timeSlot;
-                
+
                 if (contentObj.pet) {
                   petInfo = contentObj.pet;
                 } else if (contentObj.pet_name) {
@@ -279,7 +299,7 @@ const NotificationsPage = () => {
                     petId: contentObj.pet_id || 0,
                   };
                 }
-                
+
                 if (contentObj.doctor) {
                   doctorInfo = contentObj.doctor;
                 } else if (contentObj.doctor_name) {
@@ -288,28 +308,31 @@ const NotificationsPage = () => {
                     doctorId: contentObj.doctor_id || 0,
                   };
                 }
-                
+
                 if (contentObj.reason) reason = contentObj.reason;
-                
+
                 if (contentObj.service_name) {
                   serviceName = contentObj.service_name;
                 } else if (contentObj.serviceName) {
                   serviceName = contentObj.serviceName;
                 }
-                
+
                 if (contentObj.owner) {
                   owner = contentObj.owner;
                 }
               } catch (e) {
                 // If JSON parsing fails, don't attempt text extraction if not necessary
-                console.warn("Failed to parse notification content as JSON:", e);
+                console.warn(
+                  "Failed to parse notification content as JSON:",
+                  e
+                );
               }
             } else if (typeof notification.content === "object") {
               // Content is already an object - directly use properties
               const contentObj = notification.content;
-              
+
               if (contentObj.timeSlot) timeSlot = contentObj.timeSlot;
-              
+
               if (contentObj.pet) {
                 petInfo = contentObj.pet;
               } else if (contentObj.pet_name) {
@@ -318,7 +341,7 @@ const NotificationsPage = () => {
                   petId: contentObj.pet_id || 0,
                 };
               }
-              
+
               if (contentObj.doctor) {
                 doctorInfo = contentObj.doctor;
               } else if (contentObj.doctor_name) {
@@ -327,15 +350,15 @@ const NotificationsPage = () => {
                   doctorId: contentObj.doctor_id || 0,
                 };
               }
-              
+
               if (contentObj.reason) reason = contentObj.reason;
-              
+
               if (contentObj.service_name) {
                 serviceName = contentObj.service_name;
               } else if (contentObj.serviceName) {
                 serviceName = contentObj.serviceName;
               }
-              
+
               if (contentObj.owner) {
                 owner = contentObj.owner;
               }
@@ -356,19 +379,26 @@ const NotificationsPage = () => {
             date: formattedDate,
             timeSlot,
             pet: petInfo.petName ? petInfo : undefined,
-            doctor: doctorInfo.doctorName !== "Unassigned" ? doctorInfo : undefined,
+            doctor:
+              doctorInfo.doctorName !== "Unassigned" ? doctorInfo : undefined,
             reason,
             serviceName,
             owner,
           };
         } catch (error) {
           // Handle any unexpected errors to prevent breaking the entire notification list
-          console.error('Error processing notification:', notification.id, error);
+          console.error(
+            "Error processing notification:",
+            notification.id,
+            error
+          );
           return {
             ...notification,
             message: notification.content || "",
             appointmentId: notification.related_id,
-            date: new Date(notification.datetime || new Date()).toLocaleDateString(),
+            date: new Date(
+              notification.datetime || new Date()
+            ).toLocaleDateString(),
             pet: undefined,
             doctor: undefined,
             reason: "General Checkup",
@@ -455,43 +485,54 @@ const NotificationsPage = () => {
     if (!sortedNotifications || sortedNotifications.length === 0) {
       return [];
     }
-    
-    console.log("Filtering notifications, count before filter:", sortedNotifications.length);
-    
-    const filtered = sortedNotifications.filter((notification: Notification) => {
-      // Make sure we have a valid notification object
-      if (!notification || !notification.id) {
-        return false;
+
+    console.log(
+      "Filtering notifications, count before filter:",
+      sortedNotifications.length
+    );
+
+    const filtered = sortedNotifications.filter(
+      (notification: Notification) => {
+        // Make sure we have a valid notification object
+        if (!notification || !notification.id) {
+          return false;
+        }
+
+        // Apply text search - lowercase done only once
+        const searchTermLower = searchTerm.toLowerCase();
+        const matchesSearch =
+          searchTerm === "" ||
+          (notification.title &&
+            notification.title.toLowerCase().includes(searchTermLower)) ||
+          (notification.message &&
+            notification.message.toLowerCase().includes(searchTermLower));
+
+        // Apply status filter - to be implemented based on your status requirements
+        const matchesStatus =
+          filterStatus.length === 0 ||
+          (notification.notify_type &&
+            filterStatus.includes(notification.notify_type.toLowerCase()));
+
+        // Only show notifications with state = 1
+        // Skip this filter if state is undefined to avoid filtering out valid notifications
+        const stateFilter =
+          notification.state === undefined || notification.state === 1;
+
+        const shouldInclude = matchesSearch && matchesStatus && stateFilter;
+        return shouldInclude;
       }
-      
-      // Apply text search - lowercase done only once
-      const searchTermLower = searchTerm.toLowerCase();
-      const matchesSearch =
-        searchTerm === "" ||
-        (notification.title && notification.title.toLowerCase().includes(searchTermLower)) ||
-        (notification.message && notification.message.toLowerCase().includes(searchTermLower));
+    );
 
-      // Apply status filter - to be implemented based on your status requirements
-      const matchesStatus =
-        filterStatus.length === 0 ||
-        (notification.notify_type &&
-          filterStatus.includes(notification.notify_type.toLowerCase()));
-
-      // Only show notifications with state = 1
-      // Skip this filter if state is undefined to avoid filtering out valid notifications
-      const stateFilter = notification.state === undefined || notification.state === 1;
-
-      const shouldInclude = matchesSearch && matchesStatus && stateFilter;
-      return shouldInclude;
-    });
-    
     console.log("After filtering, count:", filtered.length);
     return filtered;
   }, [sortedNotifications, searchTerm, filterStatus]);
 
   // Paginate notifications - use useMemo to avoid recalculating on every render
-  const totalPages = useMemo(() => Math.ceil(filteredNotifications.length / ITEMS_PER_PAGE), [filteredNotifications.length]);
-  
+  const totalPages = useMemo(
+    () => Math.ceil(filteredNotifications.length / ITEMS_PER_PAGE),
+    [filteredNotifications.length]
+  );
+
   const paginatedNotifications = useMemo(() => {
     return filteredNotifications.slice(
       (currentPage - 1) * ITEMS_PER_PAGE,
@@ -601,10 +642,11 @@ const NotificationsPage = () => {
         // Send notification about confirmation
         try {
           // Get owner_id preferably from appointmentData first
-          const ownerId = appointmentData?.owner?.owner_id || 
-            selectedNotification?.owner?.owner_id || 
+          const ownerId =
+            appointmentData?.owner?.owner_id ||
+            selectedNotification?.owner?.owner_id ||
             8; // Fallback to a default ID (use a valid user ID from your system)
-          
+
           await sendNotificationAsync({
             user_id: ownerId,
             title: "✅ Appointment Confirmed",
@@ -647,10 +689,11 @@ const NotificationsPage = () => {
         // Send notification about the booking error
         try {
           // Get owner_id preferably from appointmentData first
-          const ownerId = appointmentData?.owner?.owner_id || 
-            selectedNotification?.owner?.owner_id || 
+          const ownerId =
+            appointmentData?.owner?.owner_id ||
+            selectedNotification?.owner?.owner_id ||
             8; // Fallback to a default ID (use a valid user ID from your system)
-          
+
           await sendNotificationAsync({
             user_id: ownerId.toString(),
             title: "⚠️ Appointment Booking Issue",
@@ -687,10 +730,11 @@ const NotificationsPage = () => {
       // Send notification about the booking error
       try {
         // Get owner_id preferably from appointmentData first
-        const ownerId = appointmentData?.owner?.owner_id || 
-          selectedNotification?.owner?.owner_id || 
+        const ownerId =
+          appointmentData?.owner?.owner_id ||
+          selectedNotification?.owner?.owner_id ||
           8; // Fallback to a default ID (use a valid user ID from your system)
-        
+
         await sendNotificationAsync({
           user_id: ownerId,
           title: "⚠️ Appointment Booking Issue",
@@ -747,11 +791,12 @@ const NotificationsPage = () => {
 
       // Send notification about declination
       try {
-        // Get owner_id preferably from appointmentData first  
-        const ownerId = appointmentData?.owner?.owner_id || 
-          selectedNotification?.owner?.owner_id || 
+        // Get owner_id preferably from appointmentData first
+        const ownerId =
+          appointmentData?.owner?.owner_id ||
+          selectedNotification?.owner?.owner_id ||
           8; // Fallback to a default ID (use a valid user ID from your system)
-        
+
         await sendNotificationAsync({
           user_id: ownerId,
           title: "❌ Appointment Declined",
@@ -805,10 +850,21 @@ const NotificationsPage = () => {
 
   // Show loading state immediately when the page loads
   useEffect(() => {
-    // Only show loading state if notifications are still loading and we don't already have data
-    if (!isNotificationsLoading && processedNotifications.length > 0) {
+    // Set default loading state to true initially
+    const timer = setTimeout(() => {
+      // If we still don't have data after 5 seconds, show a loading indicator
+      if (isNotificationsLoading && processedNotifications.length === 0) {
+        setIsLoading(true);
+      }
+    }, 500);
+
+    // If we have data or loading has finished, hide loading state
+    if (!isNotificationsLoading || processedNotifications.length > 0) {
+      clearTimeout(timer);
       setIsLoading(false);
     }
+
+    return () => clearTimeout(timer);
   }, [isNotificationsLoading, processedNotifications]);
 
   return (
@@ -960,11 +1016,10 @@ const NotificationsPage = () => {
                 </div>
               ) : (
                 <ScrollArea className="h-[500px] min-h-[400px] max-h-[70vh] w-full overflow-y-auto">
-                  <NotificationsList 
-                    notifications={paginatedNotifications} 
-                    onItemClick={handleViewAppointment} 
+                  <NotificationsList
+                    notifications={paginatedNotifications}
+                    onItemClick={handleViewAppointment}
                   />
-
                 </ScrollArea>
               )}
             </CardContent>
@@ -1166,18 +1221,6 @@ const NotificationsPage = () => {
                         {!isConfirming && <X className="ml-2 h-4 w-4" />}
                       </Button>
                     </div>
-
-                    {appointmentData && (
-                      <Button
-                        onClick={() =>
-                          navigateToAppointment(appointmentData.id)
-                        }
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl"
-                      >
-                        View Full Details
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 </div>
               )}

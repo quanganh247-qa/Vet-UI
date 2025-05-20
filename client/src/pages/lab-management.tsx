@@ -89,20 +89,23 @@ import { useAppointmentData } from "@/hooks/use-appointment";
 import { useGetTestByAppointmentID } from "@/hooks/use-test";
 import { Textarea } from "@/components/ui/textarea";
 
-interface TestCategory {
-  id: string;
-  name: string;
-  icon: React.ReactNode;
-  description: string;
-  tests: Test[];
-}
-
 interface Test {
   id: string;
   name: string;
   description: string;
   price?: string;
   turnaroundTime?: string;
+  type?: string;
+}
+
+// Add interface for the API item
+interface ApiItem {
+  id: number;
+  name: string;
+  description?: string;
+  price?: number;
+  turnaround_time?: string;
+  type?: string;
 }
 
 const LabManagement: React.FC = () => {
@@ -169,9 +172,9 @@ const LabManagement: React.FC = () => {
     appointment?.pet?.pet_id
   );
 
-  // Fetch all items (tests and vaccines) from API
-  const { data: apiCategories, isLoading: isItemsLoading } =
-    useListTests("all");
+  // Fetch all items (tests and vaccines) with type="all"
+  const { data: apiItems, isLoading: isItemsLoading } = useListTests("all");
+  
   // Create test mutations
   const createTest = useCreateTest();
   const createTestOrders = useCreateTestOrder();
@@ -199,111 +202,45 @@ const LabManagement: React.FC = () => {
     }
   }, [effectiveAppointmentId, notes, toast]);
 
+  // Transform API items to a flat list of tests
+  const allTests = React.useMemo(() => {
+    if (!apiItems) return [];
+
+    // Extract all items from all categories
+    const items: Test[] = [];
+    
+    // Handle different response formats
+    const categories = Array.isArray(apiItems) ? apiItems : [apiItems];
+    
+    categories.forEach(category => {
+      if (category.items && Array.isArray(category.items)) {
+        category.items.forEach((item: ApiItem) => {
+          items.push({
+            id: item.id.toString(),
+            name: item.name,
+            description: item.description || "",
+            price: item.price ? `${item.price.toLocaleString("vi-VN")} đ` : undefined,
+            turnaroundTime: item.turnaround_time,
+            type: item.type
+          });
+        });
+      }
+    });
+    
+    return items;
+  }, [apiItems]);
+
   // Filter tests based on search query
-  const filterTestsBySearch = (tests: Test[] = []): Test[] => {
-    if (!searchQuery) return tests;
+  const filteredTests = React.useMemo(() => {
+    if (!searchQuery) return allTests;
 
     const query = searchQuery.toLowerCase();
-    return tests.filter(
+    return allTests.filter(
       (test) =>
         test.name.toLowerCase().includes(query) ||
         (test.description && test.description.toLowerCase().includes(query))
     );
-  };
-
-  // Map API test categories to UI format with icons
-  const testCategories = React.useMemo(() => {
-    if (!apiCategories) return [];
-
-    // Check if apiCategories is an array
-    const categories = Array.isArray(apiCategories)
-      ? apiCategories
-      : [apiCategories];
-
-    return categories.map((category: any) => {
-      // Map icon_name to react component
-      let icon;
-      switch (category.icon) {
-        case "blood":
-          icon = <Beaker className="h-5 w-5 text-red-500" />;
-          break;
-        case "stool-urine":
-          icon = <Microscope className="h-5 w-5 text-amber-500" />;
-          break;
-        case "imaging":
-          icon = <ScanLine className="h-5 w-5 text-blue-500" />;
-          break;
-        case "quicktest":
-          icon = <Tablet className="h-5 w-5 text-green-500" />;
-          break;
-        default:
-          icon = <FlaskConical className="h-5 w-5 text-indigo-500" />;
-      }
-
-      // Get the items array and filter for type === 'test'
-      const items = category.items || [];
-      const testItems = items.filter((item: any) => item.type === "test");
-
-      // Map test fields to match UI component expectations
-      const mappedTests = testItems.map((test: any) => ({
-        id: test.id.toString(),
-        name: test.name,
-        description: test.description,
-        price: test.price
-          ? `${test.price.toLocaleString("vi-VN")} đ`
-          : undefined,
-        turnaroundTime: test.turnaround_time,
-      }));
-
-      return {
-        id: category.id,
-        name: category.name,
-        icon,
-        description: category.description,
-        tests: mappedTests,
-      };
-    });
-  }, [apiCategories]);
-
-  // Map API vaccines to UI format
-  const vaccineCategory = React.useMemo(() => {
-    if (!apiCategories) return null;
-
-    // Check if apiCategories is an array
-    const categories = Array.isArray(apiCategories)
-      ? apiCategories
-      : [apiCategories];
-
-    // Collect all vaccine items from all categories
-    const allVaccineItems: any[] = [];
-
-    categories.forEach((category: any) => {
-      const items = category.items || [];
-      const vaccineItems = items.filter((item: any) => item.type === "vaccine");
-      allVaccineItems.push(...vaccineItems);
-    });
-
-    if (allVaccineItems.length === 0) return null;
-
-    // Map vaccines to match UI component expectations
-    const mappedVaccines = allVaccineItems.map((vaccine: any) => ({
-      id: vaccine.id.toString(),
-      name: vaccine.name,
-      description: vaccine.description || "Vaccine for preventative care",
-      price: vaccine.price
-        ? `${vaccine.price.toLocaleString("vi-VN")} đ`
-        : undefined,
-      turnaroundTime: vaccine.turnaround_time || "Immediate",
-    }));
-
-    return {
-      id: "vaccines",
-      name: "Vaccines",
-      icon: <Syringe className="h-5 w-5 text-green-600" />,
-      description: "Preventative vaccines for your pet",
-      tests: mappedVaccines,
-    };
-  }, [apiCategories]);
+  }, [allTests, searchQuery]);
 
   // Count selected tests
   const selectedTestsCount =
@@ -311,27 +248,7 @@ const LabManagement: React.FC = () => {
 
   // Get all selected test objects
   const getSelectedTestObjects = () => {
-    const result: Test[] = [];
-
-    // Add selected tests from test categories
-    testCategories.forEach((category: any) => {
-      category.tests?.forEach((test: any) => {
-        if (selectedTests[test.id]) {
-          result.push(test);
-        }
-      });
-    });
-
-    // Add selected vaccinespl
-    if (vaccineCategory) {
-      vaccineCategory.tests.forEach((vaccine: any) => {
-        if (selectedTests[vaccine.id]) {
-          result.push(vaccine);
-        }
-      });
-    }
-
-    return result;
+    return allTests.filter(test => selectedTests[test.id]);
   };
 
   const getTotalPrice = () => {
@@ -402,12 +319,7 @@ const LabManagement: React.FC = () => {
       const testIDs = selectedTestObjects.map((test) => test.id);
 
       // Determine if we're ordering tests or vaccines
-      // The vaccineCategory has id 'vaccines', so we can check if any selected tests are from this category
-      const isVaccineOrder =
-        vaccineCategory &&
-        selectedTestObjects.some((test) =>
-          vaccineCategory.tests.some((vaccine) => vaccine.id === test.id)
-        );
+      const isVaccineOrder = selectedTestObjects.some(test => test.type === "vaccine");
 
       const payload = {
         appointmentID: parseInt(effectiveAppointmentId),
@@ -517,12 +429,6 @@ const LabManagement: React.FC = () => {
         });
       }
 
-      // // Navigate using the workflow parameters
-      // const params = {
-      //   appointmentId: effectiveAppointmentId,
-      //   petId: patient?.petid,
-      // };
-      // navigate(`/soap${buildUrlParams(params)}`);
     } catch (error) {
       console.error("Error ordering tests:", error);
       toast({
@@ -568,16 +474,8 @@ const LabManagement: React.FC = () => {
       </div>
     );
   }
-  const validTestCategories = testCategories.filter(
-    (category) => category && category.tests && category.tests.length > 0
-  );
-
-  const allCategories =
-    vaccineCategory && vaccineCategory.tests && vaccineCategory.tests.length > 0
-      ? [...validTestCategories, vaccineCategory]
-      : validTestCategories;
-
-  if (allCategories.length === 0) {
+  
+  if (filteredTests.length === 0 && !searchQuery) {
     return (
       <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
         {/* Header with gradient background */}
@@ -600,11 +498,11 @@ const LabManagement: React.FC = () => {
         <div className="p-8 text-center">
           <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2">
-            No Test Categories Available
+            No Tests Available
           </h2>
           <p className="text-gray-600">
-            There are no laboratory test categories configured in the system.
-            Please contact your administrator to set up test categories.
+            There are no laboratory tests configured in the system.
+            Please contact your administrator to set up tests.
           </p>
           <Button
             className="mt-6 bg-[#2C78E4] hover:bg-[#1E40AF] text-white"
@@ -621,20 +519,18 @@ const LabManagement: React.FC = () => {
     <div className="space-y-6">
       {/* Header with gradient background */}
       <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 md:px-8 md:py-5 rounded-xl shadow-md mb-6 text-white">
-        <div className="flex justify-between items-center">
-          {/* Left Section: Back Button + Title */}
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-white flex items-center hover:bg-white/10 rounded-lg mr-4"
-              onClick={handleBackToExamination}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              <span>Back</span>
-            </Button>
-            <h1 className="text-white font-semibold text-lg">Lab Tests</h1>
-          </div>
+        {/* Header Row */}
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white flex items-center hover:bg-white/10 rounded-lg mr-4"
+            onClick={handleBackToExamination}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            <span>Back</span>
+          </Button>
+          <h1 className="text-white font-semibold text-lg">Lab Tests</h1>
         </div>
       </div>
 
@@ -644,27 +540,7 @@ const LabManagement: React.FC = () => {
         currentStep="diagnostic"
       />
 
-      {/* Header with title and actions */}
-      <div className="px-6 pb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h2 className="text-xl font-semibold text-gray-900">Available Tests</h2>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="text-gray-700 border-gray-200 hover:bg-gray-50"
-          >
-            <Filter className="h-4 w-4 mr-2 text-gray-500" />
-            Filter
-          </Button>
-          <Button 
-            size="sm"
-            className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create Test Plan
-          </Button>
-        </div>
-      </div>
+    
 
       {/* Search Bar */}
       <div className="px-6 pb-4">
@@ -673,7 +549,7 @@ const LabManagement: React.FC = () => {
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search tests by name, category or description..."
+            placeholder="Search tests by name or description..."
             className="pl-10 w-full pr-4 py-2 h-11 border border-gray-200 rounded-lg shadow-sm focus:ring-[#2C78E4] focus:border-[#2C78E4]"
           />
           {searchQuery && (
@@ -689,106 +565,78 @@ const LabManagement: React.FC = () => {
 
       {/* Main content - Modern Card-Based View */}
       <div className="px-6">
-        {allCategories.length > 0 && (
-          <React.Fragment>
-            {/* Collect tests and filter them */}
-            {(() => {
-              // Collect all tests from all categories with category info
-              const allTests: Array<any> = [];
+        {filteredTests.length > 0 ? (
+          <div className="space-y-4">
+            {/* Test Counter */}
+            <div className="flex items-center text-sm text-gray-500 mb-2">
+              <span>
+                {filteredTests.length} test{filteredTests.length !== 1 ? "s" : ""} available
+                {searchQuery ? ` for "${searchQuery}"` : ""}
+              </span>
+            </div>
 
-              allCategories.forEach((category: any) => {
-                const filteredTests = filterTestsBySearch(category.tests);
-                filteredTests.forEach((test: any) => {
-                  allTests.push({
-                    ...test,
-                    category: category.name,
-                    categoryIcon: category.icon,
-                  });
-                });
-              });
-
-              // Store the result for reference in the JSX below
-              return (
-                <>
-                  {/* No tests found message */}
-                  {allTests.length === 0 && searchQuery ? (
-                    <div className="py-12 text-center">
-                      <SearchX className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                      <h3 className="text-gray-700 font-medium mb-1">
-                        No matching tests found
-                      </h3>
-                      <p className="text-gray-500">
-                        Try different keywords or browse by category
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Test Counter */}
-                      <div className="flex items-center text-sm text-gray-500 mb-2">
-                        <span>
-                          {allTests.length} test{allTests.length !== 1 ? "s" : ""} available
-                          {searchQuery ? ` for "${searchQuery}"` : ""}
+            {/* Modern Card Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredTests.map((test) => (
+                <div
+                  key={test.id}
+                  className={cn(
+                    "border rounded-xl p-4 cursor-pointer transition-all bg-white",
+                    selectedTests[test.id]
+                      ? "border-[#2C78E4] ring-1 ring-[#2C78E4]/20 bg-[#F0F7FF]"
+                      : "border-gray-200 hover:border-[#2C78E4] hover:shadow-sm"
+                  )}
+                  onClick={() => toggleTest(test.id)}
+                >
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      checked={selectedTests[test.id] || false}
+                      onCheckedChange={() => toggleTest(test.id)}
+                      className="mt-1 border-gray-300 data-[state=checked]:bg-[#2C78E4] data-[state=checked]:border-[#2C78E4]"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                          {test.type || "Test"}
                         </span>
                       </div>
-
-                      {/* Modern Card Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {allTests.map((test) => (
-                          <div
-                            key={test.id}
-                            className={cn(
-                              "border rounded-xl p-4 cursor-pointer transition-all bg-white",
-                              selectedTests[test.id]
-                                ? "border-[#2C78E4] ring-1 ring-[#2C78E4]/20 bg-[#F0F7FF]"
-                                : "border-gray-200 hover:border-[#2C78E4] hover:shadow-sm"
-                            )}
-                            onClick={() => toggleTest(test.id)}
-                          >
-                            <div className="flex items-start space-x-3">
-                              <Checkbox
-                                checked={selectedTests[test.id] || false}
-                                onCheckedChange={() => toggleTest(test.id)}
-                                className="mt-1 border-gray-300 data-[state=checked]:bg-[#2C78E4] data-[state=checked]:border-[#2C78E4]"
-                              />
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  {test.categoryIcon}
-                                  <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                                    {test.category}
-                                  </span>
-                                </div>
-                                <h3 className="font-medium text-gray-900 mb-1">
-                                  {test.name}
-                                </h3>
-                                {test.description && (
-                                  <p className="text-sm text-gray-500 mb-3 line-clamp-2">
-                                    {test.description}
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap items-center gap-3 mt-1">
-                                  {test.price && (
-                                    <span className="text-xs font-medium text-[#2C78E4] px-2 py-1 rounded-full bg-[#F0F7FF]">
-                                      {test.price}
-                                    </span>
-                                  )}
-                                  {test.turnaroundTime && (
-                                    <span className="text-xs text-gray-500 flex items-center">
-                                      <Clock className="h-3 w-3 mr-1" />
-                                      {test.turnaroundTime}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                      <h3 className="font-medium text-gray-900 mb-1">
+                        {test.name}
+                      </h3>
+                      {test.description && (
+                        <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+                          {test.description}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-3 mt-1">
+                        {test.price && (
+                          <span className="text-xs font-medium text-[#2C78E4] px-2 py-1 rounded-full bg-[#F0F7FF]">
+                            {test.price}
+                          </span>
+                        )}
+                        {test.turnaroundTime && (
+                          <span className="text-xs text-gray-500 flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {test.turnaroundTime}
+                          </span>
+                        )}
                       </div>
                     </div>
-                  )}
-                </>
-              );
-            })()}
-          </React.Fragment>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="py-12 text-center">
+            <SearchX className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+            <h3 className="text-gray-700 font-medium mb-1">
+              No matching tests found
+            </h3>
+            <p className="text-gray-500">
+              Try different keywords or clear your search
+            </p>
+          </div>
         )}
       </div>
 

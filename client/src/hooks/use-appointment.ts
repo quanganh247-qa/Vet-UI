@@ -213,6 +213,8 @@ export const useGetNotificationsFromDB = () => {
   return useQuery({
     queryKey: ["notificationsFromDB"],
     queryFn: getNotificationsFromDB,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Cache for 5 minutes (formerly cacheTime)
   });
 };
 

@@ -4,7 +4,7 @@ export interface CreateProductRequest {
     name: string;              // Product name (required)
     description?: string;      // Product description (optional)
     price: number;             // Product price (required)
-    stockQuantity?: number;    // Stock quantity (optional, default 0)
+    stock_quantity?: number;    // Stock quantity (optional, default 0)
     category?: string;         // Product category (optional)
     dataImage?: Uint8Array;    // Binary image data (optional)
     originalImage?: string;    // Image file name or URL (optional)
@@ -16,7 +16,7 @@ export interface ProductResponse {
     name: string;
     description?: string; // Add optional description
     price: number;
-    stock: number;
+    stock_quantity: number;
     category: string;
     dataImage?: Uint8Array; // Make optional if not always present
     originalImage?: string; // Make optional if not always present
@@ -57,7 +57,8 @@ export const createProduct = async (
         const response = await api.post('/api/v1/products', formData, {
             headers: {
                 // Don't set Content-Type - axios will set it automatically with boundary
-                'Content-Type': undefined
+                'Content-Type': 'multipart/form-data',
+                'Accept': 'application/json'
             }
         });
 
@@ -85,16 +86,13 @@ export const getProducts = async (
                 pageSize
             }
         });
-
-        console.log("Raw API response:", response.data);
-
         // Transform snake_case to camelCase
-        const transformProduct = (product: any): ProductResponse => ({
+        const transformProduct = (product: any) => ({
             productId: product.product_id,
             name: product.name,
             description: product.description,
             price: product.price,
-            stock: product.stock,
+            stock_quantity: product.stock,
             category: product.category,
             dataImage: product.data_image,
             originalImage: product.original_image,

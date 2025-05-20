@@ -72,7 +72,7 @@ interface Product {
   name: string;
   description?: string;
   price: number;
-  stock: number;
+  stock_quantity: number;
   category: string;
   dataImage?: Uint8Array;
   originalImage?: string;
@@ -87,25 +87,57 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+// Format date
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("vi-VN", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+  }).format(date);
+};
+
+// Handle movement type badge color
+const getMovementTypeBadge = (type: string) => {
+  switch (type) {
+    case "import":
+      return (
+        <Badge className="bg-green-100 text-green-800 border-green-200">
+          Import
+        </Badge>
+      );
+    case "export":
+      return (
+        <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+          Export
+        </Badge>
+      );
+    default:
+      return <Badge>{type}</Badge>;
+  }
+};
+
 // EmptyState component for when no products exist
 const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
-  <div className="flex flex-col items-center justify-center p-8 bg-[#F0F7FF]/50 rounded-xl border border-dashed border-[#2C78E4]/20 h-64">
-    <div className="rounded-full bg-[#F0F7FF] p-3 mb-4">
-      <Package className="h-6 w-6 text-[#2C78E4]" />
+  <div className="flex flex-col items-center justify-center p-8 bg-[#F9FAFB] rounded-2xl border border-dashed border-[#2C78E4]/20 h-64 transition-all hover:border-[#2C78E4]/40">
+    <div className="rounded-full bg-[#F0F7FF] p-4 mb-5 shadow-sm">
+      <Package className="h-7 w-7 text-[#2C78E4]" />
     </div>
-    <h3 className="text-lg font-medium mb-2 text-[#2C78E4]">
+    <h3 className="text-lg font-medium mb-2 text-[#111827]">
       No products found
     </h3>
-    <p className="text-sm text-[#2C78E4]/70 text-center mb-4">
-      Start by creating your first product
+    <p className="text-sm text-[#4B5563] text-center mb-6 max-w-xs">
+      Get started by creating your first product in your catalog
     </p>
     <Button
       size="sm"
-      className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-lg"
+      className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-2xl shadow-md transition-all duration-200 hover:shadow-lg"
       onClick={onAdd}
     >
       <PlusCircle className="h-4 w-4 mr-2" />
-      Add Product
+      Add product
     </Button>
   </div>
 );
@@ -245,38 +277,6 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
         variant: "destructive",
       });
     }
-  };
-
-  // Handle movement type badge color
-  const getMovementTypeBadge = (type: string) => {
-    switch (type) {
-      case "import":
-        return (
-          <Badge className="bg-green-100 text-green-800 border-green-200">
-            Import
-          </Badge>
-        );
-      case "export":
-        return (
-          <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-            Export
-          </Badge>
-        );
-      default:
-        return <Badge>{type}</Badge>;
-    }
-  };
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("vi-VN", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-    }).format(date);
   };
 
   return (
@@ -590,7 +590,7 @@ const ProductManagement: React.FC = () => {
     name: "",
     description: "",
     price: 0,
-    stockQuantity: 0,
+    stock_quantity: 0,
     category: "",
     isAvailable: true,
   });
@@ -627,7 +627,7 @@ const ProductManagement: React.FC = () => {
       name: "",
       description: "",
       price: 0,
-      stockQuantity: 0,
+      stock_quantity: 0,
       category: "",
       isAvailable: true,
     });
@@ -643,10 +643,9 @@ const ProductManagement: React.FC = () => {
       name: product.name,
       description: product.description || "",
       price: product.price,
-      stockQuantity: product.stock,
+      stock_quantity: product.stock_quantity,
       category: product.category,
-      isAvailable:
-        product.isAvailable !== undefined ? product.isAvailable : true,
+      isAvailable: product.isAvailable !== undefined ? product.isAvailable : true,
     });
     setImagePreview(product.originalImage || null);
     setIsEditingItem(true);
@@ -669,11 +668,15 @@ const ProductManagement: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]:
-        name === "price" || name === "stockQuantity" ? Number(value) : value,
-    }));
+    console.log('Input Change:', name, value, typeof value);
+    setFormData((prev) => {
+      const newValue = name === "price" || name === "stock_quantity" ? Number(value) : value;
+      console.log('Setting formData:', name, newValue, typeof newValue);
+      return {
+        ...prev,
+        [name]: newValue,
+      };
+    });
   };
 
   // Handle checkbox change
@@ -699,13 +702,40 @@ const ProductManagement: React.FC = () => {
     }
   };
 
-  // Handle create product submission
+  // Handle form submission
   const handleSubmit = () => {
     if (isAddingItem) {
+      console.log('Form Data before submission:', formData);
+
+      if (!selectedImage) {
+        toast({
+          title: "Image required",
+          description: "Please select a product image",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!formData.name || formData.price <= 0) {
+        toast({
+          title: "Invalid data",
+          description: "Please fill in all required fields with valid values",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Transform the data to match API expectations
+      const apiFormData = {
+        ...formData,
+        stock: formData.stock_quantity, // Use stock_quantity directly
+      };
+      console.log('API Form Data:', apiFormData);
+
       createProduct(
         {
-          productData: formData,
-          imageFile: selectedImage || undefined,
+          productData: apiFormData,
+          imageFile: selectedImage,
         },
         {
           onSuccess: () => {
@@ -715,6 +745,8 @@ const ProductManagement: React.FC = () => {
               className: "bg-green-50 text-green-800 border-green-200",
             });
             setIsAddingItem(false);
+            setSelectedImage(null);
+            setImagePreview(null);
             refetch();
           },
           onError: (error) => {
@@ -730,7 +762,6 @@ const ProductManagement: React.FC = () => {
         }
       );
     }
-    // For now, we only handle adding products
   };
 
   // Handle pagination
@@ -740,30 +771,30 @@ const ProductManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-    {/* Header with gradient background */}
-    <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold">Product Management</h1>
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold text-white">Product Management</h1>
+          </div>
         </div>
       </div>
-    </div>
 
-      <div className="bg-white rounded-xl border border-[#2C78E4]/20 shadow-sm p-6 mb-6">
+      <div className="bg-white rounded-2xl border border-[#2C78E4]/20 shadow-sm p-6 mb-6">
         {/* Search and add section */}
-        <div className="flex justify-between items-center mb-6 bg-[#F0F7FF] p-3 rounded-lg border border-[#2C78E4]/20">
+        <div className="flex justify-between items-center mb-6 bg-[#F9FAFB] p-4 rounded-xl border border-[#2C78E4]/20">
           <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#2C78E4]" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#4B5563]" />
             <Input
-              placeholder="Search product..."
-              className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
+              placeholder="Search products..."
+              className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl bg-white"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <Button
             onClick={handleOpenAddDialog}
-            className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-lg"
+            className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
           >
             <PlusCircle className="h-4 w-4 mr-2" />
             Add new product
@@ -788,23 +819,23 @@ const ProductManagement: React.FC = () => {
               {filteredProducts.map((product) => (
                 <Card
                   key={product.productId}
-                  className="hover:shadow-md transition-shadow border border-[#2C78E4]/10 rounded-xl overflow-hidden"
+                  className="hover:shadow-lg transition-all duration-200 border border-[#2C78E4]/10 rounded-2xl overflow-hidden bg-white"
                 >
-                  <CardHeader className="pb-2">
+                  <CardHeader className="pb-2 space-y-1">
                     <CardTitle className="flex justify-between items-start">
-                      <div>
-                        <span className="text-lg font-semibold text-[#2C78E4]">
+                      <div className="space-y-1">
+                        <span className="text-lg font-semibold text-[#111827]">
                           {product.name}
                         </span>
-                        <Badge className="ml-2 bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20 rounded-full">
+                        <Badge className="bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20 rounded-full">
                           {product.category}
                         </Badge>
                       </div>
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-1">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-[#2C78E4] hover:bg-[#F0F7FF] rounded-lg"
+                          className="text-[#4B5563] hover:text-[#2C78E4] hover:bg-[#F0F7FF] rounded-xl h-8 w-8 p-0"
                           onClick={() => handleOpenEditDialog(product)}
                         >
                           <Edit className="h-4 w-4" />
@@ -812,10 +843,8 @@ const ProductManagement: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-red-600 hover:bg-red-50 rounded-lg"
-                          onClick={() =>
-                            handleOpenDeleteDialog(product.productId)
-                          }
+                          className="text-[#4B5563] hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
+                          onClick={() => handleOpenDeleteDialog(product.productId)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -823,9 +852,9 @@ const ProductManagement: React.FC = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {product.originalImage && (
-                        <div className="h-32 rounded-lg overflow-hidden bg-[#F0F7FF]/40 flex items-center justify-center">
+                        <div className="h-32 rounded-xl overflow-hidden bg-[#F9FAFB] flex items-center justify-center border border-[#2C78E4]/10">
                           <img
                             src={product.originalImage}
                             alt={product.name}
@@ -834,34 +863,35 @@ const ProductManagement: React.FC = () => {
                         </div>
                       )}
                       <div className="flex justify-between items-center">
-                        <div className="flex items-center text-sm text-[#2C78E4]">
+                        <div className="flex items-center text-sm text-[#4B5563]">
                           <span
-                            className={`w-3 h-3 rounded-full mr-2 ${
+                            className={`w-2 h-2 rounded-full mr-2 ${
                               product.isAvailable ? "bg-green-500" : "bg-red-500"
                             }`}
                           ></span>
                           {product.isAvailable ? "Available" : "Not available"}
                         </div>
-                        <span className="font-medium text-green-600">
+                        <span className="font-medium text-[#111827]">
                           {formatCurrency(product.price)}
                         </span>
                       </div>
                       {product.description && (
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-[#4B5563] line-clamp-2">
                           {product.description}
                         </p>
                       )}
-                      <div className="bg-[#F0F7FF] p-2 rounded-lg text-xs text-[#2C78E4] border border-[#2C78E4]/20">
-                        <strong>Stock:</strong> {product.stock} units
+                      <div className="bg-[#F9FAFB] p-3 rounded-xl text-sm text-[#4B5563] border border-[#2C78E4]/10 flex items-center justify-between">
+                        <span className="font-medium">Stock</span>
+                        <span>{product.stock_quantity} units</span>
                       </div>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] mt-2 rounded-lg w-full"
+                        className="w-full border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] rounded-xl transition-colors"
                         onClick={() => handleOpenStockDialog(product)}
                       >
                         <ShoppingBag className="h-4 w-4 mr-2" />
-                        Stock Management
+                        Manage Stock
                       </Button>
                     </div>
                   </CardContent>
@@ -869,65 +899,6 @@ const ProductManagement: React.FC = () => {
               ))}
             </div>
 
-            {/* Pagination Controls */}
-            {pagination && pagination.totalPages > 0 && (
-              <div className="flex flex-col items-center space-y-4 mt-8 pb-4">
-                <p className="text-sm text-[#2C78E4] font-medium">
-                  Page {pagination.page} / {pagination.totalPages} • Showing {filteredProducts.length} / {pagination.total} products
-                </p>
-                <div className="flex justify-center items-center space-x-2 bg-[#F0F7FF] px-4 py-3 rounded-lg shadow-sm border border-[#2C78E4]/20">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page === 1}
-                    className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF]/70 rounded-lg"
-                  >
-                    Previous
-                  </Button>
-                  
-                  {Array.from({ length: Math.min(5, pagination.totalPages) }).map((_, index) => {
-                    // Calculate which page numbers to show
-                    let pageNum;
-                    if (pagination.totalPages <= 5) {
-                      pageNum = index + 1;
-                    } else if (pagination.page <= 3) {
-                      pageNum = index + 1;
-                    } else if (pagination.page >= pagination.totalPages - 2) {
-                      pageNum = pagination.totalPages - 4 + index;
-                    } else {
-                      pageNum = pagination.page - 2 + index;
-                    }
-                    
-                    return (
-                      <Button
-                        key={index}
-                        variant={pagination.page === pageNum ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handlePageChange(pageNum)}
-                        className={
-                          pagination.page === pageNum
-                            ? "bg-[#2C78E4] text-white font-bold hover:bg-[#1E40AF] rounded-lg"
-                            : "border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF]/70 rounded-lg"
-                        }
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={pagination.page === pagination.totalPages}
-                    className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF]/70 rounded-lg"
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
           </>
         )}
       </div>
@@ -944,21 +915,21 @@ const ProductManagement: React.FC = () => {
           }
         }}
       >
-        <DialogContent className="sm:max-w-[600px] border border-[#2C78E4]/20 bg-white rounded-xl">
+        <DialogContent className="sm:max-w-[600px] border border-[#2C78E4]/20 bg-white rounded-2xl">
           <DialogHeader className="border-b border-[#2C78E4]/10 pb-4">
-            <DialogTitle className="text-[#2C78E4]">
+            <DialogTitle className="text-[#111827] text-xl">
               {isAddingItem ? "Add new product" : "Edit product"}
             </DialogTitle>
-            <DialogDescription className="text-[#2C78E4]/70">
-              Fill in the details below to {isAddingItem ? "create" : "update"}{" "}
-              this product in your catalog.
+            <DialogDescription className="text-[#4B5563]">
+              Fill in the details below to {isAddingItem ? "create" : "update"} this product in your catalog.
+              {isAddingItem && <span className="text-red-500"> * Image is required</span>}
             </DialogDescription>
           </DialogHeader>
 
           <ScrollArea className="max-h-[60vh] px-1">
             <div className="space-y-4 p-1">
               <div>
-                <Label htmlFor="name" className="mb-1.5 block">
+                <Label htmlFor="name" className="text-[#111827] font-medium">
                   Product name*
                 </Label>
                 <Input
@@ -967,12 +938,12 @@ const ProductManagement: React.FC = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="Enter product name"
-                  className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
+                  className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
                 />
               </div>
 
               <div>
-                <Label htmlFor="category" className="mb-1.5 block">
+                <Label htmlFor="category" className="text-[#111827] font-medium">
                   Category*
                 </Label>
                 <Input
@@ -981,13 +952,13 @@ const ProductManagement: React.FC = () => {
                   value={formData.category}
                   onChange={handleInputChange}
                   placeholder="Product category (e.g. Medicine, Food, Toys)"
-                  className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
+                  className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="price" className="mb-1.5 block">
+                  <Label htmlFor="price" className="text-[#111827] font-medium">
                     Price (VND)*
                   </Label>
                   <Input
@@ -997,27 +968,27 @@ const ProductManagement: React.FC = () => {
                     value={formData.price}
                     onChange={handleInputChange}
                     placeholder="0"
-                    className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
+                    className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="stockQuantity" className="mb-1.5 block">
+                  <Label htmlFor="stock_quantity" className="text-[#111827] font-medium">
                     Stock quantity*
                   </Label>
                   <Input
-                    id="stockQuantity"
-                    name="stockQuantity"
+                    id="stock_quantity"
+                    name="stock_quantity"
                     type="number"
-                    value={formData.stockQuantity}
+                    value={formData.stock_quantity}
                     onChange={handleInputChange}
                     placeholder="0"
-                    className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
+                    className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
                   />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="description" className="mb-1.5 block">
+                <Label htmlFor="description" className="text-[#111827] font-medium">
                   Description
                 </Label>
                 <Textarea
@@ -1027,33 +998,39 @@ const ProductManagement: React.FC = () => {
                   onChange={handleInputChange}
                   placeholder="Enter product description"
                   rows={3}
-                  className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
+                  className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
                 />
               </div>
 
-              <div className="flex items-center space-x-2">
+              {/* <div className="flex items-center space-x-2">
                 <Checkbox
                   id="isAvailable"
                   checked={formData.isAvailable}
                   onCheckedChange={handleCheckboxChange}
+                  className="border-[#2C78E4]/20 data-[state=checked]:bg-[#2C78E4] data-[state=checked]:border-[#2C78E4]"
                 />
-                <Label htmlFor="isAvailable">Product available</Label>
-              </div>
+                <Label htmlFor="isAvailable" className="text-[#4B5563]">
+                  Product available
+                </Label>
+              </div> */}
 
               <div>
-                <Label htmlFor="image" className="mb-1.5 block">
-                  Product image
+                <Label htmlFor="image" className="text-[#111827] font-medium">
+                  Product image{isAddingItem && <span className="text-red-500">*</span>}
                 </Label>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 mt-1.5">
                   <Input
                     id="image"
                     type="file"
                     accept="image/*"
                     onChange={handleImageChange}
-                    className="flex-1 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-lg"
+                    className={`flex-1 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl ${
+                      isAddingItem && !selectedImage ? 'border-red-300' : ''
+                    }`}
+                    required={isAddingItem}
                   />
                   {imagePreview && (
-                    <div className="w-16 h-16 border border-[#2C78E4]/20 rounded-lg overflow-hidden bg-[#F0F7FF]/40 flex items-center justify-center">
+                    <div className="w-16 h-16 border border-[#2C78E4]/20 rounded-xl overflow-hidden bg-[#F9FAFB] flex items-center justify-center">
                       <img
                         src={imagePreview}
                         alt="Preview"
@@ -1062,6 +1039,9 @@ const ProductManagement: React.FC = () => {
                     </div>
                   )}
                 </div>
+                {isAddingItem && !selectedImage && (
+                  <p className="text-xs text-red-500 mt-1">Please select a product image</p>
+                )}
               </div>
             </div>
           </ScrollArea>
@@ -1072,15 +1052,22 @@ const ProductManagement: React.FC = () => {
               onClick={() => {
                 setIsAddingItem(false);
                 setIsEditingItem(false);
+                setSelectedImage(null);
+                setImagePreview(null);
               }}
-              className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] rounded-lg"
+              className="border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F9FAFB] rounded-xl"
             >
               Cancel
             </Button>
             <Button
-              disabled={isCreating || !formData.name || formData.price <= 0}
+              disabled={
+                isCreating ||
+                !formData.name ||
+                formData.price <= 0 ||
+                (isAddingItem && !selectedImage)
+              }
               onClick={handleSubmit}
-              className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-lg"
+              className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
             >
               {isCreating ? (
                 <>
@@ -1100,38 +1087,26 @@ const ProductManagement: React.FC = () => {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent className="border border-red-200 bg-white rounded-xl">
+        <AlertDialogContent className="border border-red-200 bg-white rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-red-600">
-              Are you sure?
+            <AlertDialogTitle className="text-red-600 text-xl">
+              Delete Product
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              selected product from your catalog.
+            <AlertDialogDescription className="text-[#4B5563]">
+              Are you sure you want to delete this product? This action cannot be undone and will permanently remove the product from your catalog.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] rounded-lg">
+          <AlertDialogFooter className="border-t border-red-100 pt-4">
+            <AlertDialogCancel className="border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F9FAFB] rounded-xl">
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 focus:ring-red-600 rounded-lg">
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-sm transition-all duration-200 hover:shadow-md">
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete
+              Delete Product
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Stock Management Dialog */}
-      {stockDialogProduct && (
-        <StockManagementDialog
-          open={stockDialogOpen}
-          onOpenChange={setStockDialogOpen}
-          productId={stockDialogProduct.productId}
-          productName={stockDialogProduct.name}
-          currentStock={stockDialogProduct.stock}
-        />
-      )}
     </div>
   );
 };

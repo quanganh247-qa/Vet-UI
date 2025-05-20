@@ -56,6 +56,7 @@ import { useScheduleNotification } from "@/hooks/use-noti";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { useAppointmentData } from "@/hooks/use-appointment";
 
 interface VaccinationAdministrationProps {
   appointmentId?: string;
@@ -83,8 +84,12 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
     useState<Appointment | null>(null);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
 
+  const { data: appointment, isLoading: isLoadingAppointment } = useAppointmentData(
+    selectedAppointmentId 
+  );
+
   const [vaccinationData, setVaccinationData] = useState<Partial<Vaccination>>({
-    pet_id: initialPetId ? Number(initialPetId) : undefined,
+    pet_id: appointment?.pet.pet_id ? Number(appointment.pet.pet_id) : undefined,
     vaccine_name: "",
     date_administered: new Date().toISOString().split("T")[0],
     next_due_date: "",
@@ -92,14 +97,12 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
     batch_number: "",
     notes: "",
   });
+  console.log(vaccinationData);
   const { mutate: saveVaccination, isPending: isSavingVaccination } = useSaveVaccinationRecord();
   const { mutate: scheduleNotification, isPending: isSchedulingNotification } = useScheduleNotification();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [vaccinationSiteImage, setVaccinationSiteImage] = useState<string>(
-    "/assets/vaccination-sites/subcutaneous.png"
-  );
   const [scheduleReminder, setScheduleReminder] = useState(true);
 
   const { data: allVaccines = [], isLoading: isLoadingVaccines } = useGetTestByAppointmentID(
@@ -260,18 +263,7 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
               ownerId = owner.id.toString();
             }
           }
-          
-          // // Schedule notification for 1 week before due date (9:00 AM)
-          // const reminderDateString = format(reminderDate, "yyyy-MM-dd");
-          // await scheduleNotification({
-          //   user_id: ownerId,
-          //   title: "📅 Upcoming Vaccine Due",
-          //   body: `${selectedAppointment?.pet?.pet_name || 'Your pet'}'s ${vaccinationData.vaccine_name} vaccine is due on ${formattedDueDate}. Please schedule an appointment soon.`,
-          //   cronExpression: `0 0 9 ${reminderDate.getDate()} ${reminderDate.getMonth() + 1} ? ${reminderDate.getFullYear()}`,
-          //   schedule_id: `vaccine-${vaccinationData.pet_id}-${Date.now()}`,
-          //   end_date: format(addDays(reminderDate, 1), "yyyy-MM-dd") // End date is the day after reminder
-          // });
-          // console.log("Vaccine reminder scheduled for", reminderDateString);
+     
         } catch (notificationError) {
           console.error("Failed to schedule vaccine reminder:", notificationError);
           // Don't fail the whole operation if notification scheduling fails
@@ -380,12 +372,12 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
       ) : (
         <form className="space-y-6">
           <Card className="border-none shadow-md overflow-hidden bg-white">
-            <CardHeader className="bg-gradient-to-r from-indigo-50 to-white border-b pb-4">
-              <CardTitle className="text-lg font-semibold text-indigo-900 flex items-center">
-                <Syringe className="h-5 w-5 mr-2 text-indigo-600" />
+            <CardHeader className="bg-gradient-to-r from-[#2C78E4]/10 to-white border-b pb-4">
+              <CardTitle className="text-lg font-semibold text-[#111827] flex items-center">
+                <Syringe className="h-5 w-5 mr-2 text-[#2C78E4]" />
                 Vaccine Administration
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-[#4B5563]">
                 Record a new vaccination for this patient
               </CardDescription>
             </CardHeader>
@@ -393,14 +385,14 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
             <CardContent className="py-6 px-6">
               {/* Appointment Selection Section */}
               {!initialAppointmentId && (
-                <div className="mb-6 bg-indigo-50 rounded-lg p-5">
-                  <h3 className="font-medium text-indigo-700 mb-3 flex items-center">
-                    <Calendar className="h-4 w-4 mr-2 text-indigo-600" />
+                <div className="mb-6 bg-[#F9FAFB] rounded-2xl p-5 border border-[#2C78E4]/20">
+                  <h3 className="font-medium text-[#111827] mb-3 flex items-center">
+                    <Calendar className="h-4 w-4 mr-2 text-[#2C78E4]" />
                     Select Appointment
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="appointment-date" className="mb-1.5 block text-sm font-medium text-indigo-900">
+                      <Label htmlFor="appointment-date" className="mb-1.5 block text-sm font-medium text-[#111827]">
                         Appointment Date
                       </Label>
                       <Popover>
@@ -409,11 +401,11 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                             id="appointment-date"
                             variant="outline"
                             className={cn(
-                              "w-full justify-start text-left font-normal border-gray-300 bg-white hover:bg-gray-50",
-                              !selectedDate && "text-muted-foreground"
+                              "w-full justify-start text-left font-normal border-[#2C78E4]/20 bg-white hover:bg-[#F9FAFB] rounded-xl",
+                              !selectedDate && "text-[#4B5563]"
                             )}
                           >
-                            <Calendar className="mr-2 h-4 w-4 text-indigo-500" />
+                            <Calendar className="mr-2 h-4 w-4 text-[#2C78E4]" />
                             {selectedDate ? (
                               format(selectedDate, "PPP")
                             ) : (
@@ -433,7 +425,7 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                     </div>
 
                     <div>
-                      <Label htmlFor="appointment-select" className="mb-1.5 block text-sm font-medium text-indigo-900">
+                      <Label htmlFor="appointment-select" className="mb-1.5 block text-sm font-medium text-[#111827]">
                         Appointment
                       </Label>
                       <Select
@@ -441,7 +433,7 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                         value={selectedAppointmentId}
                         disabled={isLoadingAppointments}
                       >
-                        <SelectTrigger id="appointment-select" className="bg-white border-gray-300">
+                        <SelectTrigger id="appointment-select" className="bg-white border-[#2C78E4]/20 rounded-xl">
                           <SelectValue
                             placeholder={
                               isLoadingAppointments
@@ -473,29 +465,29 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                   </div>
 
                   {selectedAppointment && (
-                    <div className="mt-4 bg-white rounded-md p-3 border border-indigo-100">
+                    <div className="mt-4 bg-white rounded-xl p-4 border border-[#2C78E4]/20 shadow-sm">
                       <div className="flex items-center mb-2">
-                        <User className="h-4 w-4 text-indigo-500 mr-1.5" />
-                        <h4 className="font-medium text-indigo-700">
+                        <User className="h-4 w-4 text-[#2C78E4] mr-1.5" />
+                        <h4 className="font-medium text-[#111827]">
                           Appointment Details
                         </h4>
                       </div>
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         <div>
-                          <p className="text-gray-500">Patient</p>
-                          <p className="font-medium">
+                          <p className="text-[#4B5563]">Patient</p>
+                          <p className="font-medium text-[#111827]">
                             {selectedAppointment.pet.pet_name}
                           </p>
                         </div>
                         <div>
-                          <p className="text-gray-500">Owner</p>
-                          <p className="font-medium">
+                          <p className="text-[#4B5563]">Owner</p>
+                          <p className="font-medium text-[#111827]">
                             {selectedAppointment.owner.owner_name}
                           </p>
                         </div>
                         <div>
-                          <p className="text-gray-500">Time</p>
-                          <p className="font-medium">
+                          <p className="text-[#4B5563]">Time</p>
+                          <p className="font-medium text-[#111827]">
                             {(() => {
                               try {
                                 return formatDate(selectedAppointment.arrival_time, "HH:mm");
@@ -506,8 +498,8 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                           </p>
                         </div>
                         <div>
-                          <p className="text-gray-500">Reason</p>
-                          <p className="font-medium">
+                          <p className="text-[#4B5563]">Reason</p>
+                          <p className="font-medium text-[#111827]">
                             {selectedAppointment.reason}
                           </p>
                         </div>
@@ -521,7 +513,7 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
               <div className="space-y-5 pt-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                   <div className="space-y-2.5">
-                    <Label htmlFor="vaccine" className="text-sm font-medium text-gray-700">
+                    <Label htmlFor="vaccine" className="text-sm font-medium text-[#111827]">
                       Select Vaccine <span className="text-red-500">*</span>
                     </Label>
                     <Select
@@ -529,7 +521,7 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                       value={vaccinationData.vaccine_name}
                       disabled={isLoadingVaccines || !allVaccines?.length}
                     >
-                      <SelectTrigger id="vaccine" className="w-full bg-white border-gray-300">
+                      <SelectTrigger id="vaccine" className="w-full bg-white border-[#2C78E4]/20 rounded-xl">
                         <SelectValue 
                           placeholder={
                             isLoadingVaccines 
@@ -567,7 +559,7 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                   </div>
 
                   <div className="space-y-2.5">
-                    <Label htmlFor="batch_number" className="text-sm font-medium text-gray-700">
+                    <Label htmlFor="batch_number" className="text-sm font-medium text-[#111827]">
                       Batch Number <span className="text-red-500">*</span>
                     </Label>
                     <Input
@@ -576,12 +568,12 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                       value={vaccinationData.batch_number}
                       onChange={handleInputChange}
                       placeholder="Enter vaccine batch number"
-                      className="bg-white border-gray-300"
+                      className="bg-white border-[#2C78E4]/20 rounded-xl"
                     />
                   </div>
 
                   <div className="space-y-2.5">
-                    <Label htmlFor="date_administered" className="text-sm font-medium text-gray-700">
+                    <Label htmlFor="date_administered" className="text-sm font-medium text-[#111827]">
                       Administration Date <span className="text-red-500">*</span>
                     </Label>
                     <Input
@@ -590,12 +582,12 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                       type="date"
                       value={vaccinationData.date_administered}
                       onChange={handleInputChange}
-                      className="bg-white border-gray-300"
+                      className="bg-white border-[#2C78E4]/20 rounded-xl"
                     />
                   </div>
 
                   <div className="space-y-2.5">
-                    <Label htmlFor="next_due_date" className="text-sm font-medium text-gray-700">
+                    <Label htmlFor="next_due_date" className="text-sm font-medium text-[#111827]">
                       Next Due Date
                     </Label>
                     <Input
@@ -604,13 +596,13 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                       type="date"
                       value={vaccinationData.next_due_date || ""}
                       onChange={handleInputChange}
-                      className="bg-white border-gray-300"
+                      className="bg-white border-[#2C78E4]/20 rounded-xl"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2.5 pt-1">
-                  <Label htmlFor="vaccine_provider" className="text-sm font-medium text-gray-700">
+                  <Label htmlFor="vaccine_provider" className="text-sm font-medium text-[#111827]">
                     Vaccine Provider
                   </Label>
                   <Input
@@ -619,12 +611,12 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                     value={vaccinationData.vaccine_provider || ""}
                     onChange={handleInputChange}
                     placeholder="Enter vaccine provider or manufacturer"
-                    className="bg-white border-gray-300"
+                    className="bg-white border-[#2C78E4]/20 rounded-xl"
                   />
                 </div>
 
                 <div className="space-y-2.5 pt-1">
-                  <Label htmlFor="notes" className="text-sm font-medium text-gray-700">
+                  <Label htmlFor="notes" className="text-sm font-medium text-[#111827]">
                     Notes
                   </Label>
                   <Textarea
@@ -634,19 +626,19 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                     onChange={handleInputChange}
                     placeholder="Enter any observations or reactions"
                     rows={3}
-                    className="bg-white border-gray-300 min-h-[80px]"
+                    className="bg-white border-[#2C78E4]/20 rounded-xl min-h-[80px]"
                   />
                 </div>
 
                 {/* Notification scheduling option */}
-                <div className="flex items-center justify-between bg-[#F9FAFB] rounded-md p-4 mt-4">
+                <div className="flex items-center justify-between bg-[#F9FAFB] rounded-xl p-4 mt-4 border border-[#2C78E4]/20">
                   <div className="flex items-start">
                     <BellRing className="h-5 w-5 text-[#2C78E4] mr-2.5 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h3 className="font-medium text-gray-800 text-sm">
+                      <h3 className="font-medium text-[#111827] text-sm">
                         Schedule Reminder Notification
                       </h3>
-                      <p className="text-gray-600 text-xs mt-1">
+                      <p className="text-[#4B5563] text-xs mt-1">
                         Send a notification to pet owner 1 week before the next due date
                       </p>
                     </div>
@@ -658,30 +650,16 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                   />
                 </div>
 
-                <div className="bg-amber-50 border border-amber-200 rounded-md p-4 mt-4">
-                  <div className="flex">
-                    <AlertCircle className="h-5 w-5 text-amber-500 mr-2.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-medium text-amber-800 text-sm">
-                        Important Notes
-                      </h3>
-                      <p className="text-amber-700 text-xs mt-1">
-                        Always monitor the patient for at least 15-30 minutes
-                        after vaccination to observe for any immediate adverse
-                        reactions.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+          
               </div>
             </CardContent>
 
-            <CardFooter className="flex justify-end py-4 bg-gray-50 border-t gap-3">
+            <CardFooter className="flex justify-end py-4 bg-[#F9FAFB] border-t border-[#2C78E4]/20 gap-3">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onCancel}
-                className="border-gray-300"
+                className="border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F9FAFB] rounded-xl"
                 disabled={isSubmitting}
               >
                 Cancel
@@ -690,7 +668,7 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting || !selectedAppointmentId}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5"
+                className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-xl shadow-sm transition-all duration-200 hover:shadow-md gap-1.5"
               >
                 {isSubmitting ? (
                   <>

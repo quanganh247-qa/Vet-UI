@@ -91,6 +91,8 @@ const VaccinationPage: React.FC = () => {
     isValidPetId ? effectivePetId : undefined
   );
 
+  console.log("Valid id", patient);
+
   // Vaccination history for the selected patient
   const {
     data: vaccinationHistory = [],
