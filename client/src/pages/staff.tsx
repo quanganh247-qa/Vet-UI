@@ -230,8 +230,8 @@ const StaffPage = () => {
   if (isNewStaffPage) {
     return (
       <div className="space-y-6">
-      {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
+        {/* Header with gradient background */}
+        <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-white">
@@ -441,13 +441,10 @@ const StaffPage = () => {
                               <SelectValue placeholder="Select a role" />
                             </SelectTrigger>
                             <SelectContent className="rounded-2xl">
-                             <SelectItem value="Doctor">
-                                Doctor
-                              </SelectItem>
-                              <SelectItem value="Receptionist">
+                              <SelectItem value="doctor">Doctor</SelectItem>
+                              <SelectItem value="receptionist">
                                 Receptionist
                               </SelectItem>
-                              
                             </SelectContent>
                           </Select>
                         </div>
@@ -531,9 +528,7 @@ const StaffPage = () => {
                       </span>
                     </div>
                     <div className="grid grid-cols-3 text-sm">
-                      <span className="font-medium text-[#2C78E4]">
-                        Phone:
-                      </span>
+                      <span className="font-medium text-[#2C78E4]">Phone:</span>
                       <span className="col-span-2 text-[#4B5563]">
                         {newStaff.phone_number || "-"}
                       </span>
@@ -623,16 +618,6 @@ const StaffPage = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <div className="flex items-center">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="mr-2 h-8 w-8 text-white hover:bg-white/20 rounded-xl"
-                asChild
-              >
-                <Link href="/dashboard">
-                  <ArrowLeft className="h-5 w-5" />
-                </Link>
-              </Button>
               <h1 className="text-2xl font-bold text-white">
                 Staff Management
               </h1>
@@ -650,269 +635,270 @@ const StaffPage = () => {
         </div>
       </div>
 
-      {/* Search and filter section */}
-      <div className="bg-white shadow-md rounded-2xl border border-[#F9FAFB] p-5 mb-6">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-[#F9FAFB] p-3 rounded-2xl border border-[#2C78E4]/10">
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#2C78E4] h-4 w-4" />
-            <Input
-              placeholder="Search staff by name, role, or specialty..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-2xl"
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-[#2C78E4]" />
-              <Select defaultValue="all" onValueChange={setRoleFilter}>
-                <SelectTrigger className="border border-[#2C78E4]/20 rounded-2xl h-9 w-40 bg-white">
-                  <SelectValue placeholder="Filter by role" />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl">
-                  <SelectItem value="all">All Roles</SelectItem>
-                  {uniqueRoles.map((role) => (
-                    <SelectItem key={role as string} value={role as string}>
-                      {role as string}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      <Card className="border border-[#F9FAFB] shadow-sm rounded-2xl overflow-hidden bg-white">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="relative w-full md:w-96">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#2C78E4] h-4 w-4" />
+              <Input
+                placeholder="Search staff by name, role, or specialty..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-2xl"
+              />
             </div>
 
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-[#4B5563]">View:</span>
-              <div className="flex bg-[#F9FAFB] rounded-2xl p-1">
-                <Button
-                  size="sm"
-                  variant={viewMode === "list" ? "default" : "ghost"}
-                  onClick={() => setViewMode("list")}
-                  className={cn(
-                    "h-8 w-8 p-0 rounded-2xl",
-                    viewMode === "list"
-                      ? "bg-white shadow-md"
-                      : "bg-transparent hover:bg-[#F9FAFB]"
-                  )}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant={viewMode === "grid" ? "default" : "ghost"}
-                  onClick={() => setViewMode("grid")}
-                  className={cn(
-                    "h-8 w-8 p-0 rounded-2xl",
-                    viewMode === "grid"
-                      ? "bg-white shadow-md"
-                      : "bg-transparent hover:bg-[#F9FAFB]"
-                  )}
-                >
-                  <Grid className="h-4 w-4" />
-                </Button>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-[#2C78E4]" />
+                <Select defaultValue="all" onValueChange={setRoleFilter}>
+                  <SelectTrigger className="border border-[#2C78E4]/20 rounded-2xl h-9 w-40 bg-white">
+                    <SelectValue placeholder="Filter by role" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl">
+                    <SelectItem value="all">All Roles</SelectItem>
+                    {uniqueRoles.map((role) => (
+                      <SelectItem key={role as string} value={role as string}>
+                        {role as string}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Staff List/Grid Views */}
-        {filteredStaff.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-8 bg-[#F9FAFB] rounded-2xl border border-dashed border-[#2C78E4]/20 h-64 mt-6">
-            <div className="rounded-full bg-[#F9FAFB] p-3 mb-4">
-              <UserCircle className="h-6 w-6 text-[#2C78E4]" />
-            </div>
-            <h3 className="text-lg font-medium mb-2 text-[#111827]">
-              No staff members found
-            </h3>
-            <p className="text-sm text-[#4B5563] text-center mb-4">
-              {searchTerm || roleFilter !== "all"
-                ? "Try adjusting your search filters"
-                : "Get started by adding your first staff member"}
-            </p>
-            {!searchTerm && roleFilter === "all" && (
-              <Button
-                size="sm"
-                className="bg-[#2C78E4] hover:bg-[#2C78E4]/90 text-white rounded-2xl"
-                onClick={() => setLocation("/staff/new")}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add staff member
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="mt-6">
-            {viewMode === "grid" ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredStaff.map((staff: DoctorDetail) => (
-                  <Card
-                    key={staff.doctor_id}
-                    className="border border-[#F9FAFB] hover:shadow-lg transition-shadow cursor-pointer rounded-2xl"
-                    onClick={() => handleStaffClick(staff.doctor_id)}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-[#4B5563]">View:</span>
+                <div className="flex bg-[#F9FAFB] rounded-2xl p-1">
+                  <Button
+                    size="sm"
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    onClick={() => setViewMode("list")}
+                    className={cn(
+                      "h-8 w-8 p-0 rounded-2xl",
+                      viewMode === "list"
+                        ? "bg-white shadow-md"
+                        : "bg-transparent hover:bg-[#F9FAFB]"
+                    )}
                   >
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg text-[#111827]">
-                          {staff.doctor_name}
-                        </CardTitle>
-                        <Badge className="bg-[#F9FAFB] text-[#2C78E4] border-[#2C78E4]/20 rounded-full">
-                          {staff.role}
-                        </Badge>
-                      </div>
-                      <CardDescription className="flex items-center gap-1 text-[#4B5563]">
-                        <Briefcase className="h-3.5 w-3.5 text-[#4B5563]" />
-                        <span>{staff.specialization || "Staff Member"}</span>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center mb-4">
-                        <div className="h-16 w-16 rounded-full overflow-hidden bg-[#F9FAFB] flex-shrink-0 flex items-center justify-center mr-3">
-                          {staff.data_image ? (
-                            <img
-                              src={`data:image/png;base64,${staff.data_image}`}
-                              alt={staff.doctor_name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <UserCircle className="h-8 w-8 text-[#2C78E4]" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="grid grid-cols-1 gap-y-1 text-sm">
-                            {staff.email && (
-                              <div className="flex items-center gap-2">
-                                <Mail className="h-4 w-4 text-[#2C78E4]" />
-                                <span className="text-[#4B5563]">
-                                  {staff.email}
-                                </span>
-                              </div>
-                            )}
-                            {staff.certificate_number && (
-                              <div className="flex items-center gap-2">
-                                <Award className="h-4 w-4 text-[#2C78E4]" />
-                                <span className="text-[#4B5563]">
-                                  {staff.certificate_number}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-[#2C78E4] hover:bg-[#F9FAFB] rounded-2xl"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleStaffClick(staff.doctor_id);
-                          }}
-                        >
-                          View Profile <ChevronRight className="h-4 w-4 ml-1" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="overflow-hidden border border-[#F9FAFB] rounded-2xl shadow-md">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead className="bg-[#F9FAFB]">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
-                          Staff Member
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
-                          Role
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
-                          Contact
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
-                          Certifications
-                        </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-[#4B5563] uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-[#F9FAFB]">
-                      {filteredStaff.map((staff: DoctorDetail) => (
-                        <tr
-                          key={staff.doctor_id}
-                          className="hover:bg-[#F9FAFB] cursor-pointer transition-colors"
-                          onClick={() => handleStaffClick(staff.doctor_id)}
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden border border-[#F9FAFB]">
-                                {staff.data_image ? (
-                                  <img
-                                    src={`data:image/png;base64,${staff.data_image}`}
-                                    alt={staff.doctor_name}
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="flex items-center justify-center h-full w-full bg-[#F9FAFB]">
-                                    <UserCircle className="h-6 w-6 text-[#2C78E4]" />
-                                  </div>
-                                )}
-                              </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-[#111827]">
-                                  {staff.doctor_name}
-                                </div>
-                                {staff.specialization && (
-                                  <div className="text-sm text-[#4B5563]">
-                                    {staff.specialization}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge
-                              variant="outline"
-                              className="bg-[#F9FAFB] text-[#2C78E4] border-[#2C78E4]/20 rounded-full"
-                            >
-                              {staff.role}
-                            </Badge>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-[#4B5563]">
-                              {staff.email || "N/A"}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-[#4B5563]">
-                              {staff.certificate_number || "N/A"}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-[#2C78E4] hover:bg-[#F9FAFB] h-8 rounded-2xl"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStaffClick(staff.doctor_id);
-                              }}
-                            >
-                              View <ChevronRight className="w-4 h-4 ml-1" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={viewMode === "grid" ? "default" : "ghost"}
+                    onClick={() => setViewMode("grid")}
+                    className={cn(
+                      "h-8 w-8 p-0 rounded-2xl",
+                      viewMode === "grid"
+                        ? "bg-white shadow-md"
+                        : "bg-transparent hover:bg-[#F9FAFB]"
+                    )}
+                  >
+                    <Grid className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-            )}
+            </div>
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
+
+      {/* Staff List/Grid Views */}
+      {filteredStaff.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-8 bg-[#F9FAFB] rounded-2xl border border-dashed border-[#2C78E4]/20 h-64 mt-6">
+          <div className="rounded-full bg-[#F9FAFB] p-3 mb-4">
+            <UserCircle className="h-6 w-6 text-[#2C78E4]" />
+          </div>
+          <h3 className="text-lg font-medium mb-2 text-[#111827]">
+            No staff members found
+          </h3>
+          <p className="text-sm text-[#4B5563] text-center mb-4">
+            {searchTerm || roleFilter !== "all"
+              ? "Try adjusting your search filters"
+              : "Get started by adding your first staff member"}
+          </p>
+          {!searchTerm && roleFilter === "all" && (
+            <Button
+              size="sm"
+              className="bg-[#2C78E4] hover:bg-[#2C78E4]/90 text-white rounded-2xl"
+              onClick={() => setLocation("/staff/new")}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add staff member
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="mt-6">
+          {viewMode === "grid" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredStaff.map((staff: DoctorDetail) => (
+                <Card
+                  key={staff.doctor_id}
+                  className="border border-[#F9FAFB] hover:shadow-lg transition-shadow cursor-pointer rounded-2xl"
+                  onClick={() => handleStaffClick(staff.doctor_id)}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg text-[#111827]">
+                        {staff.doctor_name}
+                      </CardTitle>
+                      <Badge className="bg-[#F9FAFB] text-[#2C78E4] border-[#2C78E4]/20 rounded-full">
+                        {staff.role}
+                      </Badge>
+                    </div>
+                    <CardDescription className="flex items-center gap-1 text-[#4B5563]">
+                      <Briefcase className="h-3.5 w-3.5 text-[#4B5563]" />
+                      <span>{staff.specialization || "Staff Member"}</span>
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center mb-4">
+                      <div className="h-16 w-16 rounded-full overflow-hidden bg-[#F9FAFB] flex-shrink-0 flex items-center justify-center mr-3">
+                        {staff.data_image ? (
+                          <img
+                            src={`data:image/png;base64,${staff.data_image}`}
+                            alt={staff.doctor_name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <UserCircle className="h-8 w-8 text-[#2C78E4]" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="grid grid-cols-1 gap-y-1 text-sm">
+                          {staff.email && (
+                            <div className="flex items-center gap-2">
+                              <Mail className="h-4 w-4 text-[#2C78E4]" />
+                              <span className="text-[#4B5563]">
+                                {staff.email}
+                              </span>
+                            </div>
+                          )}
+                          {staff.certificate_number && (
+                            <div className="flex items-center gap-2">
+                              <Award className="h-4 w-4 text-[#2C78E4]" />
+                              <span className="text-[#4B5563]">
+                                {staff.certificate_number}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-[#2C78E4] hover:bg-[#F9FAFB] rounded-2xl"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStaffClick(staff.doctor_id);
+                        }}
+                      >
+                        View Profile <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-hidden border border-[#F9FAFB] rounded-2xl shadow-md">
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead className="bg-[#F9FAFB]">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
+                        Staff Member
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
+                        Role
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
+                        Contact
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
+                        Certifications
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-[#4B5563] uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-[#F9FAFB]">
+                    {filteredStaff.map((staff: DoctorDetail) => (
+                      <tr
+                        key={staff.doctor_id}
+                        className="hover:bg-[#F9FAFB] cursor-pointer transition-colors"
+                        onClick={() => handleStaffClick(staff.doctor_id)}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden border border-[#F9FAFB]">
+                              {staff.data_image ? (
+                                <img
+                                  src={`data:image/png;base64,${staff.data_image}`}
+                                  alt={staff.doctor_name}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center h-full w-full bg-[#F9FAFB]">
+                                  <UserCircle className="h-6 w-6 text-[#2C78E4]" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-[#111827]">
+                                {staff.doctor_name}
+                              </div>
+                              {staff.specialization && (
+                                <div className="text-sm text-[#4B5563]">
+                                  {staff.specialization}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge
+                            variant="outline"
+                            className="bg-[#F9FAFB] text-[#2C78E4] border-[#2C78E4]/20 rounded-full"
+                          >
+                            {staff.role}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-[#4B5563]">
+                            {staff.email || "N/A"}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-[#4B5563]">
+                            {staff.certificate_number || "N/A"}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-[#2C78E4] hover:bg-[#F9FAFB] h-8 rounded-2xl"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStaffClick(staff.doctor_id);
+                            }}
+                          >
+                            View <ChevronRight className="w-4 h-4 ml-1" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog

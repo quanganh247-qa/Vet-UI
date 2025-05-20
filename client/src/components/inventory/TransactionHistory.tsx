@@ -21,6 +21,8 @@ import {
   Search,
   FileDownIcon,
   ShoppingBag,
+  Download,
+  Filter,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -115,111 +117,144 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
       case "import":
         return "bg-green-100 text-green-800 border-green-200";
       case "export":
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "bg-[#2C78E4]/10 text-[#2C78E4] border-[#2C78E4]/20";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   return (
-    <div className="p-6">
-  
-      <div className="flex flex-wrap gap-3 mb-6 bg-indigo-50 p-3 rounded-md border border-indigo-100">
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-400" />
-          <Input
-            placeholder="Search transactions..."
-            className="pl-10 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
-            value={localSearchTerm}
-            onChange={(e) => setLocalSearchTerm(e.target.value)}
-          />
-        </div>
-
-        {/* Transaction Type Filter */}
-        <div className="w-40">
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="h-9 border-indigo-200">
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent className="bg-white">
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="import">Import</SelectItem>
-              <SelectItem value="export">Export</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Date Range Picker */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-[240px] justify-start text-left font-normal h-9 border-indigo-200",
-                !dateRange.from && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateRange.from ? (
-                dateRange.to ? (
-                  <>
-                    {format(dateRange.from, "MMM d, yyyy")} -{" "}
-                    {format(dateRange.to, "MMM d, yyyy")}
-                  </>
-                ) : (
-                  format(dateRange.from, "MMM d, yyyy")
-                )
-              ) : (
-                <span>Select date range</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-white" align="start">
-            <Calendar
-              initialFocus
-              mode="range"
-              selected={dateRange}
-              onSelect={setDateRange as any}
-              numberOfMonths={2}
-              className="border rounded-md"
+    <div className="space-y-6 font-['Open_Sans',_sans-serif]">
+    
+      {/* Filters */}
+      <div className="bg-white rounded-2xl shadow-md border border-[#F9FAFB] p-5">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#4B5563]" />
+            <Input
+              placeholder="Search transactions..."
+              className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] focus:ring-[#2C78E4]/20 rounded-xl transition-all duration-200"
+              value={localSearchTerm}
+              onChange={(e) => setLocalSearchTerm(e.target.value)}
             />
-          </PopoverContent>
-        </Popover>
+          </div>
 
-        {/* Clear Filters Button */}
+          {/* Transaction Type Filter */}
+          <div className="w-40">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="border-[#2C78E4]/20 rounded-xl hover:border-[#2C78E4]/40 transition-all duration-200">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent className="bg-white rounded-xl shadow-lg">
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="import">Import</SelectItem>
+                <SelectItem value="export">Export</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Date Range Picker */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "justify-start text-left font-normal border-[#2C78E4]/20 rounded-xl hover:border-[#2C78E4]/40 transition-all duration-200",
+                  !dateRange.from && "text-[#4B5563]"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4 text-[#2C78E4]" />
+                {dateRange.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, "MMM d, yyyy")} -{" "}
+                      {format(dateRange.to, "MMM d, yyyy")}
+                    </>
+                  ) : (
+                    format(dateRange.from, "MMM d, yyyy")
+                  )
+                ) : (
+                  <span>Select date range</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-white rounded-xl shadow-lg" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                selected={dateRange}
+                onSelect={setDateRange as any}
+                numberOfMonths={2}
+                className="border rounded-lg"
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* Clear Filters Button */}
+          {(typeFilter !== "all" || dateRange.from || localSearchTerm) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setTypeFilter("all");
+                setDateRange({ from: undefined, to: undefined });
+                setLocalSearchTerm("");
+              }}
+              className="text-[#2C78E4] hover:text-[#2C78E4] hover:bg-[#2C78E4]/10 rounded-xl transition-all duration-200"
+            >
+              Clear Filters
+            </Button>
+          )}
+        </div>
+
+        {/* Active Filters Display */}
         {(typeFilter !== "all" || dateRange.from || localSearchTerm) && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setTypeFilter("all");
-              setDateRange({ from: undefined, to: undefined });
-              setLocalSearchTerm("");
-            }}
-            className="h-9 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-          >
-            Clear Filters
-          </Button>
+          <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-[#F9FAFB]">
+            <span className="text-sm text-[#4B5563] flex items-center">
+              <Filter className="h-3.5 w-3.5 mr-1.5 text-[#2C78E4]" />
+              Active filters:
+            </span>
+            
+            {localSearchTerm && (
+              <Badge className="bg-[#F9FAFB] text-[#4B5563] border-[#F9FAFB] font-normal rounded-full px-3 py-1 hover:bg-[#F9FAFB]/80 transition-all duration-200">
+                Search: {localSearchTerm}
+              </Badge>
+            )}
+            
+            {typeFilter !== "all" && (
+              <Badge className="bg-[#F9FAFB] text-[#4B5563] border-[#F9FAFB] font-normal rounded-full px-3 py-1 hover:bg-[#F9FAFB]/80 transition-all duration-200">
+                Type: {typeFilter}
+              </Badge>
+            )}
+            
+            {dateRange.from && (
+              <Badge className="bg-[#F9FAFB] text-[#4B5563] border-[#F9FAFB] font-normal rounded-full px-3 py-1 hover:bg-[#F9FAFB]/80 transition-all duration-200">
+                Date: {format(dateRange.from, "MMM d")}
+                {dateRange.to && ` - ${format(dateRange.to, "MMM d")}`}
+              </Badge>
+            )}
+          </div>
         )}
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-48">
-          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-        </div>
-      ) : (
-        <>
-          <div className="rounded-md border border-indigo-100 overflow-hidden">
+      {/* Transactions Table */}
+      <div className="bg-white rounded-2xl shadow-md border border-[#F9FAFB] overflow-hidden">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-48">
+            <Loader2 className="h-8 w-8 animate-spin text-[#2C78E4]" />
+          </div>
+        ) : (
+          <>
             <Table>
               <TableHeader>
-                <TableRow className="bg-indigo-50">
-                  <TableHead>Date</TableHead>
-                  <TableHead>Medicine</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Unit Price</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Supplier/Prescription</TableHead>
+                <TableRow className="bg-[#F9FAFB]">
+                  <TableHead className="text-[#111827] font-medium">Date</TableHead>
+                  <TableHead className="text-[#111827] font-medium">Medicine</TableHead>
+                  <TableHead className="text-[#111827] font-medium">Type</TableHead>
+                  <TableHead className="text-[#111827] font-medium">Quantity</TableHead>
+                  <TableHead className="text-[#111827] font-medium">Unit Price</TableHead>
+                  <TableHead className="text-[#111827] font-medium">Total</TableHead>
+                  <TableHead className="text-[#111827] font-medium">Supplier/Prescription</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -227,48 +262,53 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                   <TableRow>
                     <TableCell
                       colSpan={7}
-                      className="text-center py-8 text-gray-500"
+                      className="text-center py-12 text-[#4B5563]"
                     >
-                      No transactions found with the current filters.
+                      <div className="flex flex-col items-center">
+                        <ShoppingBag className="h-12 w-12 text-[#2C78E4]/30 mb-4" />
+                        <p className="font-medium text-[#111827] mb-2">No transactions found</p>
+                        <p className="text-sm">Try adjusting your filters or search term</p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   transactions?.map((transaction) => (
-                    <TableRow key={transaction.id} className="hover:bg-gray-50">
-                      <TableCell>
-                        {new Date(transaction.transaction_date).toLocaleDateString("vi-VN")}
+                    <TableRow key={transaction.id} className="hover:bg-[#F9FAFB]/50 border-b border-[#F9FAFB] transition-colors duration-200">
+                      <TableCell className="text-[#4B5563]">
+                        {format(new Date(transaction.transaction_date), "MMM d, yyyy")}
                       </TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium text-[#111827]">
                         {transaction.medicine_name}
                       </TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"
                           className={cn(
+                            "rounded-full font-medium px-3 py-1",
                             getTransactionTypeColor(transaction.transaction_type)
                           )}
                         >
                           {transaction.transaction_type}
                         </Badge>
                       </TableCell>
-                      <TableCell>{transaction.quantity}</TableCell>
-                      <TableCell>
+                      <TableCell className="text-[#4B5563]">{transaction.quantity}</TableCell>
+                      <TableCell className="text-[#4B5563]">
                         {new Intl.NumberFormat("vi-VN", {
                           style: "currency",
                           currency: "VND"
                         }).format(transaction.unit_price)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium text-[#111827]">
                         {new Intl.NumberFormat("vi-VN", {
                           style: "currency",
                           currency: "VND"
                         }).format(transaction.total_amount)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-[#4B5563]">
                         {transaction.transaction_type.toLowerCase() === "import"
                           ? transaction.supplier_name
                           : transaction.appointment_id > 0
-                          ? `Appointment #${transaction.appointment_id}`
+                          ? <span className="text-[#2C78E4] hover:underline transition-all duration-200">Appointment #{transaction.appointment_id}</span>
                           : "-"}
                       </TableCell>
                     </TableRow>
@@ -276,17 +316,19 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                 )}
               </TableBody>
             </Table>
-          </div>
 
-          {totalPages > 1 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          )}
-        </>
-      )}
+            {/* {totalPages > 1 && (
+              <div className="py-4 px-6 border-t border-[#F9FAFB]">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )} */}
+          </>
+        )}
+      </div>
     </div>
   );
 };

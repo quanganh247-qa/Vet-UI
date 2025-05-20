@@ -61,12 +61,10 @@ const InventoryPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-5 rounded-xl shadow-md mb-6">
-        <div className="flex justify-between items-center">
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">
-              Inventory Management
-            </h1>
+            <h1 className="text-xl font-semibold">Inventory Management</h1>
           </div>
         </div>
       </div>
@@ -106,7 +104,6 @@ const InventoryPage: React.FC = () => {
               <Users className="w-4 h-4 mr-2" />
               Suppliers
             </TabsTrigger>
-
           </TabsList>
 
           <TabsContent value="transactions" className="p-0">
@@ -141,8 +138,6 @@ const InventoryPage: React.FC = () => {
               key={`suppliers-${supplierOperationComplete}`}
             />
           </TabsContent>
-
-
         </Tabs>
       </div>
     </div>

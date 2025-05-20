@@ -240,68 +240,7 @@ const Settings = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="mail" className="space-y-6">
-        <TabsList className="bg-white/5 p-1 rounded-xl border border-[#F9FAFB] shadow-sm">
-          <TabsTrigger value="mail" className="text-sm font-medium rounded-lg data-[state=active]:bg-[#2C78E4] data-[state=active]:text-white">Mail Settings</TabsTrigger>
-          <TabsTrigger value="smtp" className="text-sm font-medium rounded-lg data-[state=active]:bg-[#2C78E4] data-[state=active]:text-white">SMTP Configurations</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="mail">
-          <Card className="border-none shadow-lg rounded-2xl">
-            <CardHeader className="bg-gradient-to-r from-[#F9FAFB] to-white pb-4 border-b">
-              <CardTitle className="text-lg font-semibold text-[#111827]">Mail Settings</CardTitle>
-              <CardDescription className="text-[#2C78E4]/70">
-                Configure common settings for sending emails.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2 py-4 px-4 bg-[#F9FAFB] rounded-xl mb-6">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center">
-                        <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                        <span className="font-medium">Using SMTP Configuration:</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent className="bg-white border border-gray-200 shadow-lg rounded-xl">
-                      <p className="w-80 text-sm">
-                        This is the current default SMTP configuration being used for sending emails.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                {defaultConfig ? (
-                  <div className="ml-2 p-2 bg-white rounded-xl border border-[#F9FAFB] flex-1">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">{defaultConfig.name}</p>
-                        <p className="text-sm text-[#4B5563]">{defaultConfig.email}</p>
-                      </div>
-                      <Badge className="bg-green-100 text-green-800 hover:bg-green-200 rounded-full">
-                        Default
-                      </Badge>
-                    </div>
-                    <div className="mt-2 text-xs text-[#4B5563]">
-                      SMTP Server: {defaultConfig.smtp_host}:{defaultConfig.smtp_port}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="ml-2 p-4 bg-yellow-50 rounded-xl border border-yellow-100 flex-1">
-                    <p className="text-yellow-700 flex items-center">
-                      <HelpCircle className="h-4 w-4 mr-1" />
-                      No default SMTP configuration set. Please add a configuration in the SMTP tab.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="smtp" id="smtp">
+    
           <Card className="border-none shadow-lg rounded-2xl">
             <CardHeader className="bg-gradient-to-r from-[#F9FAFB] to-white pb-4 border-b">
               <div className="flex justify-between items-center">
@@ -422,8 +361,7 @@ const Settings = () => {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+     
 
       {/* Add SMTP Config Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>

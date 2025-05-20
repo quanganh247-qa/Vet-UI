@@ -212,22 +212,17 @@ const Appointments = () => {
       {/* Header with gradient background */}
       <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
         <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="mr-2 h-8 w-8 text-white hover:bg-white/20 rounded-xl"
-              onClick={() => window.history.back()}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-semibold">Appointments</h1>
+          <div className="flex items-center space-x-4">
+            <h1 className="text-xl font-semibold">
+              Appointments
+            </h1>
             {doctor && (
-              <Badge className="ml-4 bg-white/20 text-white hover:bg-white/30 rounded-full">
-                Dr. {doctor.username}
+              <Badge className="bg-white/20 text-white hover:bg-white/30 rounded-full">
+                {doctor.username}
               </Badge>
             )}
           </div>
+
 
           <div className="flex items-center space-x-3">
             <div className="flex items-center bg-white/10 text-white border-white/20 rounded-xl px-3 py-1 transition-all hover:bg-white/15">

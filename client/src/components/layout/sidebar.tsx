@@ -62,15 +62,16 @@ const navigation = [
     icon: <CalendarRange className="h-5 w-5" />,
   },
   {
-    name: "Inventory",
-    href: "/inventory",
-    icon: <Package className="h-5 w-5" />,
-  },
-  {
     name: "Billing",
     href: "/billing",
     icon: <CreditCard className="h-5 w-5" />,
   },
+  {
+    name: "Inventory",
+    href: "/inventory",
+    icon: <Package className="h-5 w-5" />,
+  },
+
   {
     name: "Services",
     href: "/services-management",

@@ -93,12 +93,13 @@ const AppointmentFlow = () => {
   } = useQuery({
     queryKey: [
       "appointments",
-      selectedDate.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }),
+      selectedDate.toLocaleDateString("en-CA", {
+        timeZone: "Asia/Ho_Chi_Minh",
+      }),
       1,
       99999,
     ],
-    queryFn: () =>
-      getAllAppointments(selectedDate, "false", 1, 99999),
+    queryFn: () => getAllAppointments(selectedDate, "false", 1, 99999),
     enabled: true,
   });
 
@@ -304,7 +305,9 @@ const AppointmentFlow = () => {
           <div className="bg-[#2C78E4]/10 p-2 rounded-full mr-3">
             <UserCog className="h-5 w-5 text-[#2C78E4]" />
           </div>
-          <span className="font-medium text-[#111827]">Dr. {doctor?.username || "User"}</span>
+          <span className="font-medium text-[#111827]">
+            Dr. {doctor?.username || "User"}
+          </span>
         </div>
         <Button
           variant="ghost"
@@ -325,34 +328,21 @@ const AppointmentFlow = () => {
           className="text-sm bg-transparent border-none focus:outline-none w-full text-[#111827]"
         />
       </div>
-
-
     </div>
   );
 
   return (
     <div className="space-y-6">
-    {/* Header with gradient background */}
-    <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="mr-3 h-9 w-9 text-white hover:bg-white/20 md:block hidden rounded-full"
-                asChild
-              >
-                <Link href="/dashboard">
-                  <ArrowLeft className="h-5 w-5" />
-                </Link>
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-white">
-                  Appointment Flowboard
-                </h1>
-              </div>
-            </div>
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-xl font-semibold">Appointments Flowboard</h1>
+            {doctor && (
+              <Badge className="bg-white/20 text-white hover:bg-white/30 rounded-full">
+                {doctor.username}
+              </Badge>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -366,7 +356,10 @@ const AppointmentFlow = () => {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[300px] sm:max-w-none bg-white rounded-r-2xl border-none shadow-lg p-0">
+              <SheetContent
+                side="left"
+                className="w-[300px] sm:max-w-none bg-white rounded-r-2xl border-none shadow-lg p-0"
+              >
                 {renderMobileMenu()}
               </SheetContent>
             </Sheet>
@@ -397,65 +390,120 @@ const AppointmentFlow = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        <Card className="bg-white rounded-2xl border-none shadow-md overflow-hidden">
-          <CardHeader className="bg-white px-6 py-5 border-b border-gray-100">
-            <CardTitle className="text-lg font-semibold text-[#111827]">Appointments</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {/* Search and filter section */}
-            <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6 bg-[#F0F4FC] p-4 rounded-2xl border border-gray-100">
-              <div className="flex flex-1 gap-3 flex-wrap md:flex-nowrap">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#4B5563]" />
-                  <Input
-                    placeholder="Search appointments..."
-                    className="pl-10 border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] rounded-xl bg-white"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
+      {/* Search and filter section
+      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6 bg-white p-4 rounded-2xl border border-gray-100">
+        <div className="flex flex-1 gap-3 flex-wrap md:flex-nowrap">
+          <div className="relative flex-grow md:max-w-md">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+              <Search className="h-4 w-4 text-[#4B5563]" />
+            </div>
+            <Input
+              type="search"
+              placeholder="Search appointments..."
+              className="pl-10 pr-3 py-2 border border-[#2C78E4]/20 rounded-xl text-sm placeholder-[#4B5563] focus:outline-none focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
 
-                <Select
-                  value={statusFilter || "all"}
-                  onValueChange={(value) =>
-                    setStatusFilter(value === "all" ? null : value)
-                  }
-                >
-                  <SelectTrigger className="w-[180px] border-gray-200 rounded-xl bg-white">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white rounded-xl shadow-md border-none">
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="scheduled">Waiting</SelectItem>
-                    <SelectItem value="in progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
+          <Select
+            value={statusFilter || "all"}
+            onValueChange={(value) =>
+              setStatusFilter(value === "all" ? null : value)
+            }
+          >
+            <SelectTrigger className="w-[180px] border-gray-200 rounded-xl bg-white">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent className="bg-white rounded-xl shadow-md border-none">
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="scheduled">Waiting</SelectItem>
+              <SelectItem value="in progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
 
-                <div className="flex items-center">
-                  <Input
-                    type="date"
-                    value={format(selectedDate, "yyyy-MM-dd")}
-                    onChange={handleDateChange}
-                    className="border-gray-200 h-10 rounded-xl bg-white"
-                  />
-                </div>
+          <div className="flex items-center">
+            <Input
+              type="date"
+              value={format(selectedDate, "yyyy-MM-dd")}
+              onChange={handleDateChange}
+              className="border-gray-200 h-10 rounded-xl bg-white"
+            />
+          </div>
 
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={clearFilters}
-                  className="border-gray-200 h-10 w-10 rounded-xl hover:bg-[#2C78E4]/5 hover:border-[#2C78E4]/20 bg-white"
-                >
-                  <RotateCcw className="h-4 w-4 text-[#2C78E4]" />
-                </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={clearFilters}
+            className="border-gray-200 h-10 w-10 rounded-xl hover:bg-[#2C78E4]/5 hover:border-[#2C78E4]/20 bg-white"
+          >
+            <RotateCcw className="h-4 w-4 text-[#2C78E4]" />
+          </Button>
+        </div>
+      </div> */}
+
+      {/* Search and filter section */}
+      <Card className="border-none shadow-md rounded-2xl overflow-hidden bg-white">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="relative flex-grow md:max-w-md">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+                <Search className="h-4 w-4 text-[#4B5563]" />
               </div>
+              <Input
+                type="search"
+                placeholder="Search appointments..."
+                className="pl-10 pr-3 py-2 border border-[#2C78E4]/20 rounded-xl text-sm placeholder-[#4B5563] focus:outline-none focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
 
-            {/* Flowboard section */}
-            <div className="bg-white rounded-2xl overflow-hidden mb-6 border border-gray-100">
+            <Select
+              value={statusFilter || "all"}
+              onValueChange={(value) =>
+                setStatusFilter(value === "all" ? null : value)
+              }
+            >
+              <SelectTrigger className="w-[180px] border-gray-200 rounded-xl bg-white">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent className="bg-white rounded-xl shadow-md border-none">
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="scheduled">Waiting</SelectItem>
+                <SelectItem value="in progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center">
+              <Input
+                type="date"
+                value={format(selectedDate, "yyyy-MM-dd")}
+                onChange={handleDateChange}
+                className="border-gray-200 h-10 rounded-xl bg-white"
+              />
+            </div>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={clearFilters}
+              className="border-gray-200 h-10 w-10 rounded-xl hover:bg-[#2C78E4]/5 hover:border-[#2C78E4]/20 bg-white"
+            >
+              <RotateCcw className="h-4 w-4 text-[#2C78E4]" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+        <Card className="bg-white rounded-2xl border-none shadow-md overflow-hidden">
+          
+          {/* Flowboard section */}
+          <div className="bg-white rounded-2xl overflow-hidden mb-6 border border-gray-100">
               <div className="min-w-[600px] overflow-x-auto">
                 <EnhancedAppointmentFlowboard
                   appointments={filteredAppointments}
@@ -482,7 +530,6 @@ const AppointmentFlow = () => {
                 />
               </div>
             </div>
-          </CardContent>
 
           {/* Pagination controls */}
           {totalPages > 1 && (
@@ -507,7 +554,10 @@ const AppointmentFlow = () => {
               </div>
 
               <div className="text-sm text-[#4B5563]">
-                Showing {Math.min((currentPage - 1) * pageSize + 1, totalAppointments)} - {Math.min(currentPage * pageSize, totalAppointments)} of {totalAppointments} appointments
+                Showing{" "}
+                {Math.min((currentPage - 1) * pageSize + 1, totalAppointments)}{" "}
+                - {Math.min(currentPage * pageSize, totalAppointments)} of{" "}
+                {totalAppointments} appointments
               </div>
 
               <div className="flex gap-2">
@@ -577,7 +627,6 @@ const AppointmentFlow = () => {
           )}
         </Card>
       </div>
-    </div>
   );
 };
 

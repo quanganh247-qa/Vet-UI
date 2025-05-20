@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Search, FileDownIcon, Package } from "lucide-react";
+import { Loader2, Search, Download, Package, Filter, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -75,7 +75,7 @@ const AllStockMovements: React.FC = () => {
       case "import":
         return "bg-green-100 text-green-800 border-green-200";
       case "export":
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "bg-[#2C78E4]/10 text-[#2C78E4] border-[#2C78E4]/20";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
@@ -91,7 +91,7 @@ const AllStockMovements: React.FC = () => {
     if (!dateString) return "-";
     try {
       const date = new Date(dateString);
-      return new Intl.DateTimeFormat('vi-VN', {
+      return new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -123,79 +123,103 @@ const AllStockMovements: React.FC = () => {
   const totalPages = Math.ceil(filteredMovements.length / itemsPerPage);
 
   return (
-    <div className="p-6">
+    <div className="space-y-6">
+      {/* Filters */}
+      <div className="bg-white rounded-2xl shadow-sm border border-[#F9FAFB] p-5">
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#4B5563]" />
+            <Input
+              placeholder="Search by ID or reason..."
+              className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] focus:ring-[#2C78E4]/20 rounded-xl"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
 
-      {/* Search and filters section */}
-      <div className="flex flex-wrap gap-3 mb-6 bg-indigo-50 p-3 rounded-md border border-indigo-100">
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-400" />
-          <Input
-            placeholder="Search by ID or reason..."
-            className="pl-10 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          {/* Movement Type Filter */}
+          <div className="w-40">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="border-[#2C78E4]/20 rounded-xl">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent className="bg-white rounded-xl">
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="import">Import</SelectItem>
+                <SelectItem value="export">Export</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Clear Filters Button */}
+          {(typeFilter !== "all" || searchTerm) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setTypeFilter("all");
+                setSearchTerm("");
+              }}
+              className="text-[#2C78E4] hover:text-[#2C78E4] hover:bg-[#2C78E4]/10 rounded-xl"
+            >
+              Clear Filters
+            </Button>
+          )}
+
+          <div className="ml-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#2C78E4]/10 rounded-xl"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </div>
         </div>
 
-        {/* Movement Type Filter */}
-        <div className="w-40">
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="h-9 border-indigo-200">
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent className="bg-white">
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="import">Import</SelectItem>
-              <SelectItem value="export">Export</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Clear Filters Button */}
+        {/* Active Filters Display */}
         {(typeFilter !== "all" || searchTerm) && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setTypeFilter("all");
-              setSearchTerm("");
-            }}
-            className="h-9 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-          >
-            Clear Filters
-          </Button>
+          <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-[#F9FAFB]">
+            <span className="text-sm text-[#4B5563] flex items-center">
+              <Filter className="h-3.5 w-3.5 mr-1.5 text-[#2C78E4]" />
+              Active filters:
+            </span>
+            
+            {searchTerm && (
+              <Badge className="bg-[#F9FAFB] text-[#4B5563] border-[#F9FAFB] font-normal rounded-full">
+                Search: {searchTerm}
+              </Badge>
+            )}
+            
+            {typeFilter !== "all" && (
+              <Badge className="bg-[#F9FAFB] text-[#4B5563] border-[#F9FAFB] font-normal rounded-full">
+                Type: {typeFilter}
+              </Badge>
+            )}
+          </div>
         )}
-
-        <div className="ml-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExport}
-            className="h-9 border-indigo-200 text-indigo-600 hover:bg-indigo-50"
-          >
-            <FileDownIcon className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-48">
-          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-        </div>
-      ) : (
-        <>
-          <div className="rounded-md border border-indigo-100 overflow-hidden">
+      {/* Stock Movements Table */}
+      <div className="bg-white rounded-2xl shadow-sm border border-[#F9FAFB] overflow-hidden">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-48">
+            <Loader2 className="h-8 w-8 animate-spin text-[#2C78E4]" />
+          </div>
+        ) : (
+          <>
             <Table>
               <TableHeader>
-                <TableRow className="bg-indigo-50">
-                  <TableHead>Product ID</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Current Stock</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Date</TableHead>
+                <TableRow className="bg-[#F9FAFB]">
+                  <TableHead className="text-[#111827] font-medium">Product ID</TableHead>
+                  <TableHead className="text-[#111827] font-medium">Type</TableHead>
+                  <TableHead className="text-[#111827] font-medium">Quantity</TableHead>
+                  <TableHead className="text-[#111827] font-medium">Price</TableHead>
+                  <TableHead className="text-[#111827] font-medium">Current Stock</TableHead>
+                  <TableHead className="text-[#111827] font-medium">Reason</TableHead>
+                  <TableHead className="text-[#111827] font-medium">Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -203,34 +227,40 @@ const AllStockMovements: React.FC = () => {
                   <TableRow>
                     <TableCell
                       colSpan={7}
-                      className="text-center py-8 text-gray-500"
+                      className="text-center py-12 text-[#4B5563]"
                     >
-                      No stock movements found with the current filters.
+                      <div className="flex flex-col items-center">
+                        <Package className="h-10 w-10 text-[#2C78E4]/30 mb-3" />
+                        <p className="font-medium text-[#111827] mb-1">No stock movements found</p>
+                        <p className="text-sm">Try adjusting your filters or search term</p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   paginatedMovements().map((movement: ProductStockMovementResponse) => (
-                    <TableRow key={movement.id} className="hover:bg-gray-50">
-                      <TableCell className="font-medium">
+                    <TableRow key={movement.id} className="hover:bg-[#F9FAFB]/50 border-b border-[#F9FAFB]">
+                      <TableCell className="font-medium text-[#111827]">
                         {movement.product_id}
                       </TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"
                           className={cn(
+                            "rounded-full font-medium",
                             getMovementTypeColor(movement.movement_type)
                           )}
                         >
                           {movement.movement_type}
                         </Badge>
                       </TableCell>
-                      <TableCell>{movement.quantity}</TableCell>
-                      <TableCell>{formatCurrency(movement.price)}</TableCell>
-                      <TableCell className="font-medium">{movement.current_stock}</TableCell>
-                      <TableCell className="max-w-[150px] truncate">
+                      <TableCell className="text-[#4B5563]">{movement.quantity}</TableCell>
+                      <TableCell className="text-[#4B5563]">{formatCurrency(movement.price)}</TableCell>
+                      <TableCell className="font-medium text-[#111827]">{movement.current_stock}</TableCell>
+                      <TableCell className="max-w-[150px] truncate text-[#4B5563]">
                         {movement.reason || "-"}
                       </TableCell>
-                      <TableCell className="text-gray-500 text-sm">
+                      <TableCell className="text-[#4B5563] text-sm flex items-center">
+                        <Calendar className="h-3.5 w-3.5 mr-1.5 text-[#2C78E4]/60" />
                         {formatDate(movement.movement_date)}
                       </TableCell>
                     </TableRow>
@@ -238,17 +268,19 @@ const AllStockMovements: React.FC = () => {
                 )}
               </TableBody>
             </Table>
-          </div>
-          
-          {totalPages > 1 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          )}
-        </>
-      )}
+            
+            {totalPages > 1 && (
+              <div className="py-4 px-6 border-t border-[#F9FAFB]">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

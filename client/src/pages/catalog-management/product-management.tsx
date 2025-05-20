@@ -740,16 +740,14 @@ const ProductManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 rounded-xl shadow-md mb-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-white">
-              Product Management
-            </h1>
-          </div>
+    {/* Header with gradient background */}
+    <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold">Product Management</h1>
         </div>
       </div>
+    </div>
 
       <div className="bg-white rounded-xl border border-[#2C78E4]/20 shadow-sm p-6 mb-6">
         {/* Search and add section */}

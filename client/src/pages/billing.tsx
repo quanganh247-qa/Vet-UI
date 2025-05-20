@@ -364,9 +364,6 @@ const BillingPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold">Billing & Payments</h1>
-            <p className="text-white/90 text-sm">
-              Manage invoices and payment methods
-            </p>
           </div>
         </div>
       </div>

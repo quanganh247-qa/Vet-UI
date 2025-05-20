@@ -137,7 +137,10 @@ const ShiftAssignmentPage = () => {
   // Format doctors data
   const doctors = useMemo(() => {
     if (!doctorsData?.data) return [];
-    return doctorsData.data;
+    // Filter to only include doctors with role "doctor" or "Doctor"
+    return doctorsData.data.filter((doc: Doctor) => 
+      doc.role?.toLowerCase() === "doctor"
+    );
   }, [doctorsData]);
 
   // Convert API shifts to assignment format
