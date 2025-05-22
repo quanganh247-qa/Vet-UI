@@ -493,7 +493,7 @@ const CheckIn = () => {
               </div>
             </div>
 
-            <div className="flex gap-3">
+            {/* <div className="flex gap-3">
               <Button
                 onClick={handleCompleteCheckIn}
                 className="bg-white hover:bg-white/90 text-[#2C78E4] border-transparent font-medium px-5 py-2.5 rounded-xl shadow-sm transition-all duration-200"
@@ -501,7 +501,7 @@ const CheckIn = () => {
                 <CheckCircle className="w-4 h-4 mr-2" />
                 Complete Check-in
               </Button>
-            </div>
+            </div> */}
           </div>
         </div>
 

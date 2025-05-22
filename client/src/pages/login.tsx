@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { LogIn, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { LogIn, Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useLocation } from "wouter";
 
@@ -90,20 +90,20 @@ export const LoginForm: React.FC = () => {
             
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-[#111827] mb-1">Email</label>
+              <label htmlFor="username" className="block text-sm font-medium text-[#111827] mb-1">Username</label>
               <div className="relative">
                 <input
-                  id="email"
+                  id="username"
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] pr-10 bg-white text-[#111827] placeholder-[#9CA3AF]"
-                  placeholder="Enter your email address"
+                  placeholder="Enter your username"
                   required
-                  aria-label="Email"
+                  aria-label="Username"
                   tabIndex={0}
                 />
-                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <User className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               </div>
             </div>
             

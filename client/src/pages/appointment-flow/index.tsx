@@ -363,86 +363,9 @@ const AppointmentFlow = () => {
                 {renderMobileMenu()}
               </SheetContent>
             </Sheet>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-2 rounded-xl px-4 py-2"
-              onClick={handleRefreshData}
-              disabled={isRefreshing}
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-              />
-              <span className="hidden sm:inline">Refresh</span>
-            </Button>
-
-            <Button
-              variant="default"
-              size="sm"
-              className="bg-white text-[#2C78E4] hover:bg-white/90 flex items-center gap-2 rounded-xl px-4 py-2 shadow-sm"
-              onClick={handleNewAppointment}
-            >
-              <PlusCircle className="h-4 w-4" />
-              <span className="hidden sm:inline">New Appointment</span>
-            </Button>
           </div>
         </div>
       </div>
-
-      {/* Search and filter section
-      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6 bg-white p-4 rounded-2xl border border-gray-100">
-        <div className="flex flex-1 gap-3 flex-wrap md:flex-nowrap">
-          <div className="relative flex-grow md:max-w-md">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-              <Search className="h-4 w-4 text-[#4B5563]" />
-            </div>
-            <Input
-              type="search"
-              placeholder="Search appointments..."
-              className="pl-10 pr-3 py-2 border border-[#2C78E4]/20 rounded-xl text-sm placeholder-[#4B5563] focus:outline-none focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          <Select
-            value={statusFilter || "all"}
-            onValueChange={(value) =>
-              setStatusFilter(value === "all" ? null : value)
-            }
-          >
-            <SelectTrigger className="w-[180px] border-gray-200 rounded-xl bg-white">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent className="bg-white rounded-xl shadow-md border-none">
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="scheduled">Waiting</SelectItem>
-              <SelectItem value="in progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <div className="flex items-center">
-            <Input
-              type="date"
-              value={format(selectedDate, "yyyy-MM-dd")}
-              onChange={handleDateChange}
-              className="border-gray-200 h-10 rounded-xl bg-white"
-            />
-          </div>
-
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={clearFilters}
-            className="border-gray-200 h-10 w-10 rounded-xl hover:bg-[#2C78E4]/5 hover:border-[#2C78E4]/20 bg-white"
-          >
-            <RotateCcw className="h-4 w-4 text-[#2C78E4]" />
-          </Button>
-        </div>
-      </div> */}
 
       {/* Search and filter section */}
       <Card className="border-none shadow-md rounded-2xl overflow-hidden bg-white">
@@ -479,23 +402,7 @@ const AppointmentFlow = () => {
               </SelectContent>
             </Select>
 
-            <div className="flex items-center">
-              <Input
-                type="date"
-                value={format(selectedDate, "yyyy-MM-dd")}
-                onChange={handleDateChange}
-                className="border-gray-200 h-10 rounded-xl bg-white"
-              />
-            </div>
-
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={clearFilters}
-              className="border-gray-200 h-10 w-10 rounded-xl hover:bg-[#2C78E4]/5 hover:border-[#2C78E4]/20 bg-white"
-            >
-              <RotateCcw className="h-4 w-4 text-[#2C78E4]" />
-            </Button>
+            
           </div>
         </CardContent>
       </Card>

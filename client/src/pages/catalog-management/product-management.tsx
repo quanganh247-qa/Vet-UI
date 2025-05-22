@@ -884,7 +884,7 @@ const ProductManagement: React.FC = () => {
                         <span className="font-medium">Stock</span>
                         <span>{product.stock_quantity} units</span>
                       </div>
-                      <Button
+                      {/* <Button
                         variant="outline"
                         size="sm"
                         className="w-full border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] rounded-xl transition-colors"
@@ -892,7 +892,7 @@ const ProductManagement: React.FC = () => {
                       >
                         <ShoppingBag className="h-4 w-4 mr-2" />
                         Manage Stock
-                      </Button>
+                      </Button> */}
                     </div>
                   </CardContent>
                 </Card>

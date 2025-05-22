@@ -103,14 +103,19 @@ const AllStockMovements: React.FC = () => {
       return dateString;
     }
   };
+  
+  console.log(movements);
 
   // Format currency
   const formatCurrency = (amount: number | null | undefined) => {
     if (amount == null) return "-";
+    // Convert to whole numbers (remove decimal places)
+    const wholeAmount = Math.round(amount);
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
-      currency: "VND"
-    }).format(amount);
+      currency: "VND",
+      maximumFractionDigits: 0
+    }).format(wholeAmount);
   };
 
   // Get paginated data

@@ -617,8 +617,8 @@ const HealthCard: React.FC<HealthCardProps> = ({
         currentStep="health-card"
       />
 
-      <div className="container mx-auto px-4 pb-8">
-        {isLoading ? (
+    <div className="container max-w-[2500px] mx-auto px-6 md:px-8 pb-8">
+    {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 border-4 border-t-[#2C78E4] border-b-[#2C78E4] border-l-transparent border-r-transparent rounded-full animate-spin"></div>
@@ -750,21 +750,7 @@ const HealthCard: React.FC<HealthCardProps> = ({
                         <Edit3 className="h-4 w-4 mr-2 text-[#2C78E4]" />
                         Edit Patient
                       </DropdownMenuItem>
-                      {/* <DropdownMenuItem
-                        onClick={() => handleButtonClick("archive-patient")}
-                        className="flex items-center cursor-pointer"
-                      >
-                        <Archive className="h-4 w-4 mr-2 text-[#2C78E4]" />
-                        Archive Patient
-                      </DropdownMenuItem> */}
-                      {/* <DropdownMenuItem
-                        onClick={() => handleButtonClick("change-owner")}
-                        className="flex items-center cursor-pointer"
-                      >
-                        <Users className="h-4 w-4 mr-2 text-[#2C78E4]" />
-                        Change Owner
-                      </DropdownMenuItem> */}
-                     
+                      
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -825,14 +811,14 @@ const HealthCard: React.FC<HealthCardProps> = ({
                       kg
                     </Button>
                   </div>
-                  <Button
+                  {/* <Button
                     size="sm"
                     className="bg-[#2C78E4] hover:bg-[#1E40AF] transition-colors"
                     onClick={() => handleButtonClick("add-weight")}
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Add
-                  </Button>
+                  </Button> */}
                 </div>
               </CardHeader>
               <CardContent className="p-5">

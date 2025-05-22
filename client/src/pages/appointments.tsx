@@ -98,8 +98,6 @@ const Appointments = () => {
 
   const isLoading = appointmentsLoading || patientsLoading;
 
-  console.log("Appointments data:", appointmentsData);
-
   // Cập nhật cách lấy danh sách cuộc hẹn đã lọc
   const filteredAppointments = useMemo(() => {
     if (!appointmentsData || !Array.isArray(appointmentsData.data)) {

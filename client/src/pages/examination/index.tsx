@@ -860,7 +860,7 @@ const Examination: React.FC = () => {
                     </TooltipProvider>
 
                     {/* Fill all normal button */}
-                    <Button
+                    {/* <Button
                       variant="outline"
                       size="sm"
                       className="bg-white border-gray-200 text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#2C78E4] text-xs h-8 rounded-lg"
@@ -874,7 +874,7 @@ const Examination: React.FC = () => {
                     >
                       <Check className="h-3.5 w-3.5 mr-1.5" />
                       Fill All Normal
-                    </Button>
+                    </Button> */}
                   </div>
                 </div>
 

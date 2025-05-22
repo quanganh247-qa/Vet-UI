@@ -222,13 +222,13 @@ export const PatientsPage: React.FC = () => {
                 className="text-sm bg-transparent border-none focus:outline-none text-white"
               />
             </div>
-            <Button
+            {/* <Button
               onClick={() => setLocation("/patients/new")}
               className="bg-white text-[#2C78E4] hover:bg-white/90 rounded-xl shadow-sm"
               size="sm"
             >
               <Plus className="h-4 w-4 mr-2" /> New Patient
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>
