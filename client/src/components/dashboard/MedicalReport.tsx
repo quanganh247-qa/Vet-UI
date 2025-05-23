@@ -1,9 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMedicalRecordsReport } from "@/hooks/use-report";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Loader2 } from "lucide-react";
-
-const COLORS = ["#4f46e5", "#7c3aed", "#2563eb", "#8b5cf6", "#3b82f6", "#a78bfa", "#ec4899", "#8b5cf6"];
 
 interface MedicalReportProps {
   startDate: string;
@@ -29,36 +27,6 @@ const MedicalReport = ({ startDate, endDate }: MedicalReportProps) => {
     );
   }
 
-  // Prepare data for pie chart - show top 5 diseases and group others
-  const diseaseData = (() => {
-    const sortedDiseases = [...data.common_diseases].sort((a, b) => b.count - a.count);
-    const topDiseases = sortedDiseases.slice(0, 5);
-    const otherDiseases = sortedDiseases.slice(5);
-    
-    if (otherDiseases.length > 0) {
-      const othersCount = otherDiseases.reduce((sum, disease) => sum + disease.count, 0);
-      const othersPercentage = otherDiseases.reduce((sum, disease) => sum + disease.percentage, 0);
-      return [
-        ...topDiseases.map(item => ({
-          name: item.disease,
-          value: item.count,
-          percentage: item.percentage
-        })),
-        {
-          name: 'Others',
-          value: othersCount,
-          percentage: othersPercentage
-        }
-      ];
-    }
-    
-    return sortedDiseases.map(item => ({
-      name: item.disease,
-      value: item.count,
-      percentage: item.percentage
-    }));
-  })();
-
   // Prepare monthly trend data
   const monthlyTrendData = data.monthly_trends
     .filter(item => item.examinations > 0)
@@ -66,12 +34,6 @@ const MedicalReport = ({ startDate, endDate }: MedicalReportProps) => {
       ...item,
       month: item.month.substring(5) // Just show MM from YYYY-MM format
     }));
-
-  // Prepare data for examinations by type
-  const examinationsByTypeData = Object.entries(data.examinations_by_type).map(([name, value]) => ({
-    name,
-    value
-  }));
 
   return (
     <div className="space-y-6">
@@ -83,80 +45,31 @@ const MedicalReport = ({ startDate, endDate }: MedicalReportProps) => {
         </CardHeader>
       </Card>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Common Diseases Chart */}
-        <Card className="border-none shadow-md">
-          <CardHeader>
-            <CardTitle className="text-lg text-indigo-900">Common Diseases</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={diseaseData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                    nameKey="name"
-                    label={({ name, percentage }) => `${name}: ${percentage.toFixed(2)}%`}
-                  >
-                    {diseaseData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => `${value} cases`} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Monthly Examination Trends */}
-        <Card className="border-none shadow-md">
-          <CardHeader>
-            <CardTitle className="text-lg text-indigo-900">Monthly Examination Trends</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyTrendData}>
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `${value} examinations`} />
-                  <Bar dataKey="examinations" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Examinations by Type */}
-      {examinationsByTypeData.some(item => item.value > 0) && (
-        <Card className="border-none shadow-md">
-          <CardHeader>
-            <CardTitle className="text-lg text-indigo-900">Examinations by Type</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={examinationsByTypeData} layout="vertical">
-                  <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" width={80} />
-                  <Tooltip formatter={(value) => `${value} examinations`} />
-                  <Bar dataKey="value" fill="#7c3aed" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Monthly Examination Trends */}
+      <Card className="border-none shadow-md">
+        <CardHeader>
+          <CardTitle className="text-lg text-indigo-900">Monthly Examination Trends</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyTrendData}>
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip formatter={(value) => `${value} examinations`} />
+                <Line 
+                  type="monotone" 
+                  dataKey="examinations" 
+                  stroke="#4f46e5" 
+                  strokeWidth={3}
+                  dot={{ fill: "#4f46e5", strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: "#4f46e5", strokeWidth: 2 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

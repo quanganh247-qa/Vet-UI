@@ -90,13 +90,13 @@ const InventoryPage: React.FC = () => {
               <Package className="w-4 h-4 mr-2" />
               Stock Movements
             </TabsTrigger>
-            <TabsTrigger
+            {/* <TabsTrigger
               value="medicines"
               className="rounded-none border-r border-[#2C78E4]/20 data-[state=active]:bg-white data-[state=active]:text-[#2C78E4] flex items-center justify-center py-3"
             >
               <Pill className="w-4 h-4 mr-2" />
               Medicines
-            </TabsTrigger>
+            </TabsTrigger> */}
             <TabsTrigger
               value="suppliers"
               className="rounded-none border-r border-[#2C78E4]/20 data-[state=active]:bg-white data-[state=active]:text-[#2C78E4] flex items-center justify-center py-3"
@@ -114,7 +114,7 @@ const InventoryPage: React.FC = () => {
             <AllStockMovements />
           </TabsContent>
 
-          <TabsContent value="medicines" className="p-0">
+          {/* <TabsContent value="medicines" className="p-0">
             <MedicineTable
               searchQuery={searchQuery}
               onEditMedicine={handleEditMedicine}
@@ -129,7 +129,7 @@ const InventoryPage: React.FC = () => {
                 initialData={selectedMedicine}
               />
             )}
-          </TabsContent>
+          </TabsContent> */}
 
           <TabsContent value="suppliers" className="p-0">
             <SupplierList

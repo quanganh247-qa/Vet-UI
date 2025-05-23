@@ -68,27 +68,69 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   
   // Hợp nhất thông báo từ long polling và từ database
   useEffect(() => {
+    let hasChanged = false;
+    
     if (longPollData) {
+      // console.log("Long poll data received:", longPollData);
       // Khi có dữ liệu mới từ long polling, cập nhật notifications
       const longPollNotifications = Array.isArray(longPollData) ? longPollData : [longPollData];
       
       // Thêm thông báo mới từ long polling
       setNotifications(prevNotifications => {
-        const currentIds = new Set(prevNotifications.map(n => n.id));
-        const newNotifications = longPollNotifications.filter(n => !currentIds.has(n.id));
+        
+        // Create a more robust deduplication using both ID and content
+        const currentNotifications = new Map();
+        
+        // First, add all existing notifications to the map
+        prevNotifications.forEach(n => {
+          if (n && n.id) {
+            const key = `${n.id}-${n.title}-${n.created_at}`;
+            currentNotifications.set(key, n);
+            currentNotifications.set(n.id, n); // Also map by ID for simple lookup
+          }
+        });
+        
+        // Filter new notifications that don't already exist
+        const newNotifications = longPollNotifications.filter(n => {
+          if (!n || !n.id) return false;
+          
+          const key = `${n.id}-${n.title}-${n.created_at}`;
+          const existsByKey = currentNotifications.has(key);
+          const existsById = currentNotifications.has(n.id);
+          
+          if (existsByKey || existsById) {
+            // console.log("Skipping duplicate notification:", n.id, n.title);
+            return false;
+          }
+          
+          return true;
+        });
+        
+        // console.log("New notifications to add:", newNotifications.length);
         
         // Nếu có thông báo mới, show toast và phát âm thanh
         if (newNotifications.length > 0) {
+          hasChanged = true;
           showToastForNewNotifications(newNotifications);
+          // console.log("Added new notifications:", newNotifications.map(n => n.id));
+          return [...newNotifications, ...prevNotifications];
         }
         
-        return [...newNotifications, ...prevNotifications];
+        // console.log("No new notifications to add");
+        return prevNotifications; // Return same reference to prevent unnecessary re-renders
       });
     } 
     // Nếu longPollData là null/undefined nhưng có dbNotifications, sử dụng dbNotifications
-    else if (dbNotifications) {
-      setNotifications(Array.isArray(dbNotifications) ? dbNotifications : [dbNotifications]);
+    else if (dbNotifications && notifications.length === 0) {
+      // console.log("Setting initial notifications from DB:", dbNotifications.length);
+      const dbNotificationsArray = Array.isArray(dbNotifications) ? dbNotifications : [dbNotifications];
+      setNotifications(dbNotificationsArray);
+      hasChanged = true;
     }
+    
+    // if (hasChanged) {
+    //   // console.log("Notifications state was updated");
+    // }
   }, [longPollData, dbNotifications]);
   
   // Update unread count whenever notifications change

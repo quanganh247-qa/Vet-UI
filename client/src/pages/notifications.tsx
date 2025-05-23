@@ -196,9 +196,9 @@ const NotificationsList = memo(
   }) => {
     return (
       <div className="divide-y divide-[#F9FAFB]">
-        {notifications.map((notification, index) => (
+        {notifications.map((notification) => (
           <NotificationItem
-            key={`${notification.id}-${index}`}
+            key={notification.id}
             notification={notification}
             onClick={onItemClick}
           />
@@ -224,8 +224,8 @@ const NotificationsPage = () => {
   // Track if this is the first load
   const isFirstLoad = useRef(true);
 
-  // Transform notifications to match UI requirements - using useMemo to optimize
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  // Remove the extra notifications state - use rawNotifications directly from context
+  // const [notifications, setNotifications] = useState<Notification[]>([]);
   const [sortOrder, setSortOrder] = useState<string>("unread-first");
   const [selectedNotificationID, setSelectedNotificationID] =
     useState<number>();
@@ -245,9 +245,10 @@ const NotificationsPage = () => {
       "Processing raw notifications, count:",
       rawNotifications.length
     );
+    // console.log("Raw notifications IDs:", rawNotifications.map(n => n.id));
 
     // Map database fields to UI fields - this is a heavy operation that we should memoize
-    return rawNotifications
+    const processed = rawNotifications
       .filter((notification) => {
         // Ensure we only process valid notifications
         // Check for required fields and valid state (state = 1 or undefined)
@@ -259,6 +260,8 @@ const NotificationsPage = () => {
       })
       .map((notification: any) => {
         try {
+          // console.log("Processing notification with ID:", notification.id, "Type:", typeof notification.id);
+          
           let appointmentId = notification.related_id;
           let date = notification.datetime
             ? new Date(notification.datetime)
@@ -372,7 +375,7 @@ const NotificationsPage = () => {
             day: "numeric",
           });
 
-          return {
+          const processedNotification = {
             ...notification,
             message: notification.content || "",
             appointmentId,
@@ -385,6 +388,9 @@ const NotificationsPage = () => {
             serviceName,
             owner,
           };
+          
+          // console.log("Processed notification ID:", processedNotification.id, "Type:", typeof processedNotification.id);
+          return processedNotification;
         } catch (error) {
           // Handle any unexpected errors to prevent breaking the entire notification list
           console.error(
@@ -406,21 +412,48 @@ const NotificationsPage = () => {
           };
         }
       });
-  }, [rawNotifications]);
 
-  // Update the notifications state only when processed notifications change
-  useEffect(() => {
-    if (processedNotifications.length > 0) {
-      setNotifications(processedNotifications);
-      setIsLoading(false);
-      console.log("Set notifications, count:", processedNotifications.length);
-    } else {
-      // If there are no notifications, make sure to set an empty array
-      setNotifications([]);
-      setIsLoading(isNotificationsLoading);
-      console.log("No notifications to display");
-    }
-  }, [processedNotifications, isNotificationsLoading]);
+    console.log("Processed notifications IDs:", processed.map(n => n.id));
+
+    // More robust deduplication - check by ID, title, content, and created_at
+    const seenNotifications = new Map();
+    const seenAppointments = new Map();
+    const deduplicatedNotifications = processed.filter((notification) => {
+      // Normalize ID to string for consistent comparison
+      const normalizedId = String(notification.id);
+      
+      // Create a unique key based on multiple fields to catch different types of duplicates
+      const uniqueKey = `${normalizedId}-${notification.title}-${notification.content}-${notification.created_at}`;
+      
+      // Check for appointment-based duplicates
+      if (notification.related_id && notification.related_type === "appointment") {
+        const appointmentKey = `${notification.related_id}-${notification.title}`;
+        if (seenAppointments.has(appointmentKey)) {
+          // console.log("Removing duplicate appointment notification:", appointmentKey, "ID:", notification.id);
+          return false;
+        }
+        seenAppointments.set(appointmentKey, notification);
+      }
+      
+      if (seenNotifications.has(normalizedId)) {
+        // console.log("Removing duplicate notification with normalized ID:", normalizedId, "Original ID:", notification.id, "Title:", notification.title);
+        return false;
+      }
+      
+      if (seenNotifications.has(uniqueKey)) {
+        // console.log("Removing duplicate notification with unique key:", uniqueKey);
+        return false;
+      }
+      
+      seenNotifications.set(normalizedId, notification);
+      seenNotifications.set(uniqueKey, notification);
+      return true;
+    });
+
+    console.log("After deduplication, count:", deduplicatedNotifications.length);
+    // console.log("Final notification IDs:", deduplicatedNotifications.map(n => n.id));
+    return deduplicatedNotifications;
+  }, [rawNotifications]);
 
   const { mutateAsync: sendNotificationAsync } = useSendNotification();
 
@@ -446,9 +479,9 @@ const NotificationsPage = () => {
 
   // Sắp xếp thông báo dựa trên trạng thái đã đọc/chưa đọc và thời gian
   const sortedNotifications = useMemo(() => {
-    if (!notifications || notifications.length === 0) return [];
+    if (!processedNotifications || processedNotifications.length === 0) return [];
 
-    const notificationsCopy = [...notifications];
+    const notificationsCopy = [...processedNotifications];
 
     switch (sortOrder) {
       case "unread-first":
@@ -478,7 +511,7 @@ const NotificationsPage = () => {
       default:
         return notificationsCopy;
     }
-  }, [notifications, sortOrder]);
+  }, [processedNotifications, sortOrder]);
 
   // Filter notifications using the transformed and sorted notifications
   const filteredNotifications = useMemo(() => {
@@ -486,10 +519,11 @@ const NotificationsPage = () => {
       return [];
     }
 
-    console.log(
-      "Filtering notifications, count before filter:",
-      sortedNotifications.length
-    );
+      // console.log(
+      //   "Filtering notifications, count before filter:",
+      //   sortedNotifications.length
+      // );
+      // console.log("Sorted notifications IDs:", sortedNotifications.map(n => n.id));
 
     const filtered = sortedNotifications.filter(
       (notification: Notification) => {
@@ -523,7 +557,8 @@ const NotificationsPage = () => {
       }
     );
 
-    console.log("After filtering, count:", filtered.length);
+    // console.log("After filtering, count:", filtered.length);
+    // console.log("Filtered notifications IDs:", filtered.map(n => n.id));
     return filtered;
   }, [sortedNotifications, searchTerm, filterStatus]);
 
@@ -576,11 +611,11 @@ const NotificationsPage = () => {
         await markAsRead(notification.id);
 
         // Update UI immediately to show notification as read
-        setNotifications((prev) =>
-          prev.map((item) =>
-            item.id === notification.id ? { ...item, is_read: true } : item
-          )
-        );
+        // setNotifications((prev) =>
+        //   prev.map((item) =>
+        //     item.id === notification.id ? { ...item, is_read: true } : item
+        //   )
+        // );
       } catch (error) {
         console.error("Error marking notification as read:", error);
       }
@@ -966,7 +1001,7 @@ const NotificationsPage = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {(notifications.length > 0 ||
+              {(processedNotifications.length > 0 ||
                 lowStockNotifications.length > 0) && (
                 <Button
                   variant="outline"
@@ -987,9 +1022,9 @@ const NotificationsPage = () => {
                 <div className="flex items-center">
                   All notifications
                   {/* Show unread notification count */}
-                  {notifications.filter((n) => !n.is_read).length > 0 && (
+                  {processedNotifications.filter((n: Notification) => !n.is_read).length > 0 && (
                     <Badge className="ml-3 bg-red-100 text-red-700 border-red-200 rounded-full">
-                      {notifications.filter((n) => !n.is_read).length} unread
+                      {processedNotifications.filter((n: Notification) => !n.is_read).length} unread
                     </Badge>
                   )}
                 </div>

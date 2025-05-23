@@ -42,6 +42,8 @@ const ProductManagement = lazy(() => import("@/pages/catalog-management/product-
 const InventoryPage = lazy(() => import("@/pages/inventory"));
 const HealthCard = lazy(() => import("@/pages/patient/health-card"));
 const PaymentListPage = lazy(() => import("@/pages/payment-list"));
+const MedicineManagement = lazy(() => import("@/pages/catalog-management/medicine-management"));
+const TestManagement = lazy(() => import("@/pages/test-management"));
 
 // Create LoginPage component that uses LoginForm
 const LoginPage = () => {
@@ -75,6 +77,7 @@ function Router() {
         <Route path="/treatment" component={TreatmentManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/invoice" component={PrescriptionInvoice as React.ComponentType<RouteComponentProps>} />
         {/* <Route path="/follow-up" component={FollowUp as React.ComponentType<RouteComponentProps>} /> */}
+        <Route path="/medicine-management" component={MedicineManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/examination" component={Examination as React.ComponentType<RouteComponentProps>} />
         <Route path="/lab-management" component={LabManagement as React.ComponentType<RouteComponentProps>} />
         {/* <Route path="/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} /> */}
@@ -99,7 +102,7 @@ function Router() {
         <Route path="/billing" component={Billing as React.ComponentType<RouteComponentProps>} />
         <Route path="/catalog-management" component={ProductManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/services-management" component={ServicesManagement as React.ComponentType<RouteComponentProps>} />
-        {/* <Route path="/schedule-management" component={ScheduleManagement as React.ComponentType<RouteComponentProps>} /> */}
+        <Route path="/test-management" component={TestManagement as React.ComponentType<RouteComponentProps>} />
         {/* <Route path="/shift-management" component={ShiftManagement as React.ComponentType<RouteComponentProps>} /> */}
         <Route path="/shift-assignment" component={ShiftAssignment as React.ComponentType<RouteComponentProps>} />
         <Route path="/staff/new" component={StaffPage as React.ComponentType<RouteComponentProps>} />

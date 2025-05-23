@@ -28,6 +28,8 @@ import {
   Receipt,
   Wrench,
   ShoppingBag,
+  Pill,
+  TestTube,
 } from "lucide-react";
 
 const navigation = [
@@ -71,6 +73,11 @@ const navigation = [
     href: "/inventory",
     icon: <Package className="h-5 w-5" />,
   },
+  {
+    name: "Medicine",
+    href: "/medicine-management",
+    icon: <Pill className="h-5 w-5" />,
+  },
 
   {
     name: "Services",
@@ -82,7 +89,11 @@ const navigation = [
     href: "/catalog-management",
     icon: <ShoppingBag className="h-5 w-5" />,
   },
-
+  {
+    name: "Test",
+    href: "/test-management",
+    icon: <TestTube className="h-5 w-5" />,
+  },
 ];
 
 const secondaryNavigation = [
