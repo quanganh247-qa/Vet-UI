@@ -643,3 +643,21 @@ export interface SOAPData {
   assessment: AssessmentData;
   plan: string; // Change from number to string for rich text support
 }
+
+// Medicine interface based on the API response
+export interface Medicine {
+  id: number;
+  medicine_name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  side_effects: string;
+  quantity: number;
+  expiration_date: string;
+  description: string;
+  usage: string;
+  supplier_id: number;
+  unit_price: number;
+  reorder_level: number;
+  supplier_name?: string;
+}

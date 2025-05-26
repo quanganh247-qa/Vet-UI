@@ -35,6 +35,7 @@ import {
   Receipt,
   Filter,
   Plus,
+  ListChecks,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -88,6 +89,12 @@ import { usePatientData } from "@/hooks/use-pet";
 import { useAppointmentData } from "@/hooks/use-appointment";
 import { useGetTestByAppointmentID } from "@/hooks/use-test";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface Test {
   id: string;
@@ -108,6 +115,14 @@ interface ApiItem {
   type?: string;
 }
 
+// Interface for a Test Category
+interface TestCategory {
+  id: string;
+  name: string;
+  description: string;
+  items: Test[];
+}
+
 const LabManagement: React.FC = () => {
   const { id: routeId } = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
@@ -119,6 +134,7 @@ const LabManagement: React.FC = () => {
   const [notes, setNotes] = useState("");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState(""); // Add search query state
+  const [activeAccordionItem, setActiveAccordionItem] = useState<string | undefined>(undefined);
 
   // Quản lý tham số workflow
   const [workflowParams, setWorkflowParams] = useState<{
@@ -202,45 +218,51 @@ const LabManagement: React.FC = () => {
     }
   }, [effectiveAppointmentId, notes, toast]);
 
-  // Transform API items to a flat list of tests
-  const allTests = React.useMemo(() => {
+  // Transform API items to categorized structure
+  const testCategories = React.useMemo(() => {
     if (!apiItems) return [];
 
-    // Extract all items from all categories
-    const items: Test[] = [];
-    
-    // Handle different response formats
+    // Handle different response formats - apiItems should be an array of categories
     const categories = Array.isArray(apiItems) ? apiItems : [apiItems];
     
-    categories.forEach(category => {
-      if (category.items && Array.isArray(category.items)) {
-        category.items.forEach((item: ApiItem) => {
-          items.push({
-            id: item.id.toString(),
-            name: item.name,
-            description: item.description || "",
-            price: item.price ? `${item.price.toLocaleString("vi-VN")} đ` : undefined,
-            turnaroundTime: item.turnaround_time,
-            type: item.type
-          });
-        });
-      }
-    });
-    
-    return items;
+    return categories.map(category => ({
+      id: category.id || 'unknown',
+      name: category.name || 'Unknown Category',
+      description: category.description || '',
+      items: (category.items || []).map((item: ApiItem) => ({
+        id: item.id.toString(),
+        name: item.name,
+        description: item.description || "",
+        price: item.price ? `${item.price.toLocaleString("vi-VN")} đ` : undefined,
+        turnaroundTime: item.turnaround_time,
+        type: item.type
+      }))
+    }));
   }, [apiItems]);
 
-  // Filter tests based on search query
-  const filteredTests = React.useMemo(() => {
-    if (!searchQuery) return allTests;
+  // Get all tests in a flat array for selection logic
+  const allTests = React.useMemo(() => {
+    return testCategories.flatMap(category => category.items);
+  }, [testCategories]);
+
+  // Filter categories based on search query
+  const filteredCategories = React.useMemo(() => {
+    if (!searchQuery) return testCategories;
 
     const query = searchQuery.toLowerCase();
-    return allTests.filter(
-      (test) =>
-        test.name.toLowerCase().includes(query) ||
-        (test.description && test.description.toLowerCase().includes(query))
+    return testCategories.map((category: TestCategory) => ({
+      ...category,
+      items: category.items.filter((item: Test) => 
+        item.name.toLowerCase().includes(query) ||
+        (item.description && item.description.toLowerCase().includes(query)) ||
+        item.id.toLowerCase().includes(query)
+      )
+    })).filter((category: TestCategory) => 
+      category.items.length > 0 || 
+      category.name.toLowerCase().includes(query) || 
+      searchQuery === ""
     );
-  }, [allTests, searchQuery]);
+  }, [testCategories, searchQuery]);
 
   // Count selected tests
   const selectedTestsCount =
@@ -475,7 +497,7 @@ const LabManagement: React.FC = () => {
     );
   }
   
-  if (filteredTests.length === 0 && !searchQuery) {
+  if (filteredCategories.length === 0 && !searchQuery) {
     return (
       <div className="max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
         {/* Header with gradient background */}
@@ -517,23 +539,30 @@ const LabManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-4 md:px-8 md:py-5 rounded-xl shadow-md mb-6 text-white">
-        {/* Header Row */}
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-white flex items-center hover:bg-white/10 rounded-lg mr-4"
-            onClick={handleBackToExamination}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            <span>Back</span>
-          </Button>
-          <h1 className="text-white font-semibold text-lg">Lab Tests</h1>
+      {/* Clinical Header */}
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#1E40AF] px-6 py-5 rounded-xl shadow-lg text-white">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
+              onClick={handleBackToExamination}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              <span className="text-sm font-medium">Back to Examination</span>
+            </Button>
+            <div>
+              <h1 className="text-white font-bold text-xl">
+                Lab Tests
+              </h1>
+              <p className="text-blue-100 text-sm mt-1">
+                Lab Tests - {patient?.name} 
+              </p>
+            </div>
+          </div>
         </div>
       </div>
-
       <WorkflowNavigation
         appointmentId={effectiveAppointmentId}
         petId={patient?.pet_id?.toString()}
@@ -563,69 +592,114 @@ const LabManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Main content - Modern Card-Based View */}
+      {/* Main content - Accordion-Based Category View */}
       <div className="px-6">
-        {filteredTests.length > 0 ? (
+        {filteredCategories.length > 0 ? (
           <div className="space-y-4">
             {/* Test Counter */}
             <div className="flex items-center text-sm text-gray-500 mb-2">
               <span>
-                {filteredTests.length} test{filteredTests.length !== 1 ? "s" : ""} available
+                {filteredCategories.reduce((total, category) => total + category.items.length, 0)} test
+                {filteredCategories.reduce((total, category) => total + category.items.length, 0) !== 1 ? "s" : ""} available
                 {searchQuery ? ` for "${searchQuery}"` : ""}
               </span>
             </div>
 
-            {/* Modern Card Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTests.map((test) => (
-                <div
-                  key={test.id}
-                  className={cn(
-                    "border rounded-xl p-4 cursor-pointer transition-all bg-white",
-                    selectedTests[test.id]
-                      ? "border-[#2C78E4] ring-1 ring-[#2C78E4]/20 bg-[#F0F7FF]"
-                      : "border-gray-200 hover:border-[#2C78E4] hover:shadow-sm"
-                  )}
-                  onClick={() => toggleTest(test.id)}
+            {/* Accordion Layout */}
+            <Accordion 
+              type="single" 
+              collapsible 
+              className="w-full space-y-3"
+              value={activeAccordionItem}
+              onValueChange={setActiveAccordionItem}
+            >
+              {filteredCategories.map((category) => (
+                <AccordionItem 
+                  value={category.id} 
+                  key={category.id} 
+                  className="border border-[#2C78E4]/10 rounded-xl overflow-hidden bg-white hover:shadow-md transition-shadow"
                 >
-                  <div className="flex items-start space-x-3">
-                    <Checkbox
-                      checked={selectedTests[test.id] || false}
-                      onCheckedChange={() => toggleTest(test.id)}
-                      className="mt-1 border-gray-300 data-[state=checked]:bg-[#2C78E4] data-[state=checked]:border-[#2C78E4]"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                          {test.type || "Test"}
-                        </span>
-                      </div>
-                      <h3 className="font-medium text-gray-900 mb-1">
-                        {test.name}
-                      </h3>
-                      {test.description && (
-                        <p className="text-sm text-gray-500 mb-3 line-clamp-2">
-                          {test.description}
-                        </p>
-                      )}
-                      <div className="flex flex-wrap items-center gap-3 mt-1">
-                        {test.price && (
-                          <span className="text-xs font-medium text-[#2C78E4] px-2 py-1 rounded-full bg-[#F0F7FF]">
-                            {test.price}
-                          </span>
-                        )}
-                        {test.turnaroundTime && (
-                          <span className="text-xs text-gray-500 flex items-center">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {test.turnaroundTime}
-                          </span>
-                        )}
+                  <AccordionTrigger className="px-6 py-4 text-lg font-medium text-[#111827] hover:bg-[#F0F7FF] data-[state=open]:bg-[#E0F2FE] data-[state=open]:text-[#0C4A6E]">
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center">
+                        <Beaker className="h-5 w-5 mr-3 text-[#2C78E4]" /> 
+                        {category.name}
+                        <Badge variant="outline" className="ml-3 bg-white border-[#2C78E4]/30 text-[#2C78E4]">
+                          {category.items.length} items
+                        </Badge>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-0 pt-0 pb-2 bg-white">
+                    {category.items.length > 0 ? (
+                      <Table className="mt-0">
+                        <TableHeader className="bg-[#F9FAFB]">
+                          <TableRow>
+                            <TableHead className="pl-6 w-12"></TableHead>
+                            <TableHead className="font-semibold text-[#111827]">Test Name</TableHead>
+                            <TableHead className="font-semibold text-[#111827]">Description</TableHead>
+                            <TableHead className="font-semibold text-[#111827]">Price</TableHead>
+                            <TableHead className="font-semibold text-[#111827]">Turnaround</TableHead>
+                            <TableHead className="font-semibold text-[#111827]">Type</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {category.items.map((test: Test) => (
+                            <TableRow 
+                              key={test.id} 
+                              className={cn(
+                                "hover:bg-[#F9FAFB]/50 cursor-pointer transition-all",
+                                selectedTests[test.id]
+                                  ? "bg-[#F0F7FF] hover:bg-[#E3F2FD]"
+                                  : ""
+                              )}
+                              onClick={() => toggleTest(test.id)}
+                            >
+                              <TableCell className="pl-6">
+                                <Checkbox
+                                  checked={selectedTests[test.id] || false}
+                                  onCheckedChange={() => toggleTest(test.id)}
+                                  className="border-gray-300 data-[state=checked]:bg-[#2C78E4] data-[state=checked]:border-[#2C78E4]"
+                                />
+                              </TableCell>
+                              <TableCell className="font-medium text-[#111827]">
+                                {test.name}
+                              </TableCell>
+                              <TableCell className="text-sm text-[#4B5563] max-w-xs truncate" title={test.description}>
+                                {test.description || "N/A"}
+                              </TableCell>
+                              <TableCell className="text-sm text-[#4B5563]">
+                                {test.price || "N/A"}
+                              </TableCell>
+                              <TableCell className="text-sm text-[#4B5563] flex items-center">
+                                {test.turnaroundTime && (
+                                  <>
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    {test.turnaroundTime}
+                                  </>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-sm text-[#4B5563]">
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-xs bg-gray-50 border-gray-200"
+                                >
+                                  {test.type || "Test"}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <p className="px-6 py-4 text-sm text-gray-500">
+                        No test items found in this category{searchQuery ? " matching your search" : ""}.
+                      </p>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
               ))}
-            </div>
+            </Accordion>
           </div>
         ) : (
           <div className="py-12 text-center">

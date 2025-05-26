@@ -11,6 +11,7 @@ import {
   listTestOrders,
   getAllTestOrders,
   getTestByAppointmentID,
+  CreateTestRequest,
 } from "@/services/test-services";
 import { TestByAppointment } from "@/types";
 // Hook lấy danh sách xét nghiệm theo petID
@@ -37,31 +38,6 @@ export const useTestByID = (testID?: number | string) => {
   });
 };
 
-// Hook tạo xét nghiệm mới
-export const useCreateTest = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      petID,
-      doctorID,
-      testType,
-    }: {
-      petID: number;
-      doctorID: number;
-      testType: string;
-    }) => {
-      return createTest(petID, doctorID, testType);
-    },
-    onSuccess: (_, variables) => {
-      // Invalidate queries to refetch data
-      queryClient.invalidateQueries({
-        queryKey: ["tests", "pet", variables.petID],
-      });
-      queryClient.invalidateQueries({ queryKey: ["tests", "pending"] });
-    },
-  });
-};
 
 // Hook cập nhật trạng thái xét nghiệm
 export const useUpdateTestStatus = () => {
@@ -78,21 +54,6 @@ export const useUpdateTestStatus = () => {
   });
 };
 
-// // Hook thêm kết quả xét nghiệm
-// export const useAddTestResult = () => {
-//   const queryClient = useQueryClient();
-
-//   return useMutation({
-//     mutationFn: ({ testID, result }: { testID: number; result: TestResult }) => {
-//       return addTestResult(testID, result);
-//     },
-//     onSuccess: (_, variables) => {
-//       // Invalidate specific test query
-//       queryClient.invalidateQueries({ queryKey: ['test', variables.testID] });
-//       queryClient.invalidateQueries({ queryKey: ['tests'] });
-//     }
-//   });
-// };
 
 // Hook lấy danh sách xét nghiệm đang chờ
 export const usePendingTests = () => {
@@ -199,5 +160,13 @@ export const useGetTestByAppointmentID = (appointmentID: number | undefined) => 
         } as TestByAppointment;
       });
     }
+  });
+};
+
+export const useCreateTest = () => {
+  return useMutation({
+    mutationFn: (test: CreateTestRequest) => {
+      return createTest(test);
+    },
   });
 };

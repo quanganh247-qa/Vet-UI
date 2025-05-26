@@ -1273,17 +1273,6 @@ const TreatmentManagement: React.FC = () => {
                 <span>Back to List</span>
               </Button>
             )}
-            {activeView === "list" && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
-                onClick={() => setActiveView("new")}
-              >
-                <PlusCircle className="h-4 w-4 mr-1" />
-                <span>New Treatment</span>
-              </Button>
-            )}
 
             <Button
               variant="outline"
@@ -1295,21 +1284,6 @@ const TreatmentManagement: React.FC = () => {
               <span>Complete Appointment</span>
             </Button>
 
-            {/* <Button
-              variant="outline"
-              size="sm"
-              className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
-              onClick={() => {
-                const params = new URLSearchParams();
-                if (appointmentId || id)
-                  params.append("appointmentId", appointmentId || id || "");
-                if (petId) params.append("petId", petId.toString());
-                navigate(`/vaccination?${params.toString()}`);
-              }}
-            >
-              <Syringe className="h-4 w-4 mr-1" />
-              <span>Go to Vaccination</span>
-            </Button> */}
           </div>
         </div>
       </div>

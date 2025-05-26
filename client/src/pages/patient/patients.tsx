@@ -305,9 +305,7 @@ export const PatientsPage: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                       Gender
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-[#4B5563] uppercase tracking-wider">
-                      Actions
-                    </th>
+                    
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
@@ -394,65 +392,7 @@ export const PatientsPage: React.FC = () => {
                             {patient.gender || "Unknown"}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-[#4B5563] hover:bg-[#F0F4FC] rounded-full"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              onClick={(e) => e.stopPropagation()}
-                              className="bg-white rounded-xl shadow-md border-none"
-                            >
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handlePatientClick(patient.petid)
-                                }
-                                className="text-[#4B5563] hover:bg-[#F0F4FC] cursor-pointer"
-                              >
-                                <User className="mr-2 h-4 w-4 text-[#2C78E4]" />
-                                <span>View Details</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={(e) =>
-                                  handleEditPatient(patient.petid, e)
-                                }
-                                className="text-[#4B5563] hover:bg-[#F0F4FC] cursor-pointer"
-                              >
-                                <Pencil className="mr-2 h-4 w-4 text-[#2C78E4]" />
-                                <span>Edit</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-gray-100" />
-                              <DropdownMenuItem
-                                onClick={(e) =>
-                                  handleVaccination(patient.petid, e)
-                                }
-                                className="text-[#4B5563] hover:bg-[#F0F4FC] cursor-pointer"
-                              >
-                                <Syringe className="mr-2 h-4 w-4 text-[#FFA726]" />
-                                <span>Vaccination</span>
-                              </DropdownMenuItem>
-
-                              <DropdownMenuSeparator className="bg-gray-100" />
-                              <DropdownMenuItem
-                                className="text-red-600 focus:text-red-600 hover:bg-red-50 cursor-pointer"
-                                onClick={(e) =>
-                                  handleDeletePatient(patient.petid, e)
-                                }
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                <span>Delete</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
+                   
                       </tr>
                     ))
                   )}

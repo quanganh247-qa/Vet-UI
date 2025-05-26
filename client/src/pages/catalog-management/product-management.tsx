@@ -776,6 +776,7 @@ const ProductManagement: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold text-white">Product Management</h1>
+            <p className="text-sm text-white">Manage your product catalog and inventory</p>
           </div>
         </div>
       </div>
@@ -884,15 +885,7 @@ const ProductManagement: React.FC = () => {
                         <span className="font-medium">Stock</span>
                         <span>{product.stock_quantity} units</span>
                       </div>
-                      {/* <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] rounded-xl transition-colors"
-                        onClick={() => handleOpenStockDialog(product)}
-                      >
-                        <ShoppingBag className="h-4 w-4 mr-2" />
-                        Manage Stock
-                      </Button> */}
+                  
                     </div>
                   </CardContent>
                 </Card>

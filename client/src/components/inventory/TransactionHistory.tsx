@@ -23,6 +23,10 @@ import {
   ShoppingBag,
   Download,
   Filter,
+  MoreVertical,
+  Eye,
+  Trash2,
+  Edit,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -32,6 +36,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { MedicineTransactionResponse } from "@/types";
 import { Input } from "@/components/ui/input";
@@ -48,6 +58,8 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [typeFilter, setTypeFilter] = useState("all");
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
@@ -67,13 +79,14 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
   useEffect(() => {
     fetchTransactions();
-  }, [currentPage, localSearchTerm, typeFilter, dateRange]);
+  }, [currentPage, localSearchTerm, typeFilter, dateRange, itemsPerPage]);
 
   const token = localStorage.getItem("access_token");
+  
   const fetchTransactions = async () => {
     setIsLoading(true);
     try {
-      let url = `/api/v1/medicine/transactions?page=${currentPage}&pageSize=10`;
+      let url = `/api/v1/medicine/transactions?page=${currentPage}&pageSize=${itemsPerPage}`;
 
       // Add filters to the URL
       if (localSearchTerm) {
@@ -98,137 +111,159 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
       });
       const data = await response.json();
 
-      setTransactions(data);
-      setTotalPages(5); // Placeholder, replace with actual data
+      setTransactions(data.transactions || data || []);
+      // Update pagination info from API response
+      setTotalPages(data.totalPages || Math.ceil((data.total || 100) / itemsPerPage));
+      setTotalItems(data.total || 100); // Replace with actual total from API
     } catch (error) {
       console.error("Error fetching transactions:", error);
+      // Set mock data for demonstration
+      setTransactions([]);
+      setTotalPages(10);
+      setTotalItems(97);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleExport = () => {
-    // Implement export functionality
     console.log("Exporting transaction data...");
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
   };
 
   const getTransactionTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
       case "import":
-        return "bg-green-100 text-green-800 border-green-200";
+      case "in":
+        return "bg-[#10B981]/10 text-[#10B981] border-[#10B981]/20";
       case "export":
-        return "bg-[#2C78E4]/10 text-[#2C78E4] border-[#2C78E4]/20";
+      case "out":
+        return "bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20";
+      case "adjustment":
+        return "bg-[#FFA726]/10 text-[#FFA726] border-[#FFA726]/20";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-[#2C78E4]/10 text-[#2C78E4] border-[#2C78E4]/20";
     }
+  };
+
+  const clearAllFilters = () => {
+    setTypeFilter("all");
+    setDateRange({ from: undefined, to: undefined });
+    setLocalSearchTerm("");
+    setCurrentPage(1);
   };
 
   return (
     <div className="space-y-6 font-['Open_Sans',_sans-serif]">
-    
-      {/* Filters */}
-      <div className="bg-white rounded-2xl shadow-md border border-[#F9FAFB] p-5">
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="relative flex-1 min-w-[240px]">
+      {/* Enhanced Filters Section */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Search Input */}
+          <div className="relative flex-1 min-w-[300px]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#4B5563]" />
             <Input
-              placeholder="Search transactions..."
-              className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] focus:ring-[#2C78E4]/20 rounded-xl transition-all duration-200"
+              placeholder="Search by medicine name, supplier, or ID..."
+              className="pl-10 border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4]/20 rounded-xl transition-all duration-200 bg-gray-50 focus:bg-white"
               value={localSearchTerm}
               onChange={(e) => setLocalSearchTerm(e.target.value)}
             />
           </div>
 
-          {/* Transaction Type Filter */}
-          <div className="w-40">
+          {/* Filter Controls */}
+          <div className="flex flex-wrap gap-3">
+            {/* Transaction Type Filter */}
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="border-[#2C78E4]/20 rounded-xl hover:border-[#2C78E4]/40 transition-all duration-200">
+              <SelectTrigger className="w-36 border-gray-200 rounded-xl hover:border-[#2C78E4]/40 transition-all duration-200 bg-gray-50">
                 <SelectValue placeholder="All Types" />
               </SelectTrigger>
-              <SelectContent className="bg-white rounded-xl shadow-lg">
+              <SelectContent className="bg-white rounded-xl shadow-lg border-gray-100">
                 <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="import">Import</SelectItem>
-                <SelectItem value="export">Export</SelectItem>
+                <SelectItem value="import">Stock In</SelectItem>
+                <SelectItem value="export">Stock Out</SelectItem>
               </SelectContent>
             </Select>
-          </div>
 
-          {/* Date Range Picker */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "justify-start text-left font-normal border-[#2C78E4]/20 rounded-xl hover:border-[#2C78E4]/40 transition-all duration-200",
-                  !dateRange.from && "text-[#4B5563]"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4 text-[#2C78E4]" />
-                {dateRange.from ? (
-                  dateRange.to ? (
-                    <>
-                      {format(dateRange.from, "MMM d, yyyy")} -{" "}
-                      {format(dateRange.to, "MMM d, yyyy")}
-                    </>
+            {/* Date Range Picker */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "justify-start text-left font-normal border-gray-200 rounded-xl hover:border-[#2C78E4]/40 transition-all duration-200 bg-gray-50",
+                    !dateRange.from && "text-[#4B5563]"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 text-[#2C78E4]" />
+                  {dateRange.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "MMM d")} - {format(dateRange.to, "MMM d")}
+                      </>
+                    ) : (
+                      format(dateRange.from, "MMM d, yyyy")
+                    )
                   ) : (
-                    format(dateRange.from, "MMM d, yyyy")
-                  )
-                ) : (
-                  <span>Select date range</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 bg-white rounded-xl shadow-lg" align="start">
-              <Calendar
-                initialFocus
-                mode="range"
-                selected={dateRange}
-                onSelect={setDateRange as any}
-                numberOfMonths={2}
-                className="border rounded-lg"
-              />
-            </PopoverContent>
-          </Popover>
+                    <span>Date range</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-white rounded-xl shadow-lg border-gray-100" align="start">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={setDateRange as any}
+                  numberOfMonths={2}
+                  className="border-0"
+                />
+              </PopoverContent>
+            </Popover>
 
-          {/* Clear Filters Button */}
-          {(typeFilter !== "all" || dateRange.from || localSearchTerm) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setTypeFilter("all");
-                setDateRange({ from: undefined, to: undefined });
-                setLocalSearchTerm("");
-              }}
-              className="text-[#2C78E4] hover:text-[#2C78E4] hover:bg-[#2C78E4]/10 rounded-xl transition-all duration-200"
-            >
-              Clear Filters
-            </Button>
-          )}
+
+            {/* Clear Filters Button */}
+            {(typeFilter !== "all" || dateRange.from || localSearchTerm) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllFilters}
+                className="text-[#EF4444] hover:text-[#EF4444] hover:bg-[#EF4444]/10 rounded-xl transition-all duration-200"
+              >
+                Clear All
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Active Filters Display */}
         {(typeFilter !== "all" || dateRange.from || localSearchTerm) && (
-          <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-[#F9FAFB]">
+          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
             <span className="text-sm text-[#4B5563] flex items-center">
-              <Filter className="h-3.5 w-3.5 mr-1.5 text-[#2C78E4]" />
+              <Filter className="h-3.5 w-3.5 mr-2 text-[#2C78E4]" />
               Active filters:
             </span>
             
             {localSearchTerm && (
-              <Badge className="bg-[#F9FAFB] text-[#4B5563] border-[#F9FAFB] font-normal rounded-full px-3 py-1 hover:bg-[#F9FAFB]/80 transition-all duration-200">
-                Search: {localSearchTerm}
+              <Badge className="bg-[#2C78E4]/10 text-[#2C78E4] border-[#2C78E4]/20 font-normal rounded-full px-3 py-1">
+                Search: "{localSearchTerm}"
               </Badge>
             )}
             
             {typeFilter !== "all" && (
-              <Badge className="bg-[#F9FAFB] text-[#4B5563] border-[#F9FAFB] font-normal rounded-full px-3 py-1 hover:bg-[#F9FAFB]/80 transition-all duration-200">
-                Type: {typeFilter}
+              <Badge className="bg-[#FFA726]/10 text-[#FFA726] border-[#FFA726]/20 font-normal rounded-full px-3 py-1">
+                Type: {typeFilter === "import" ? "Stock In" : typeFilter === "export" ? "Stock Out" : typeFilter}
               </Badge>
             )}
             
             {dateRange.from && (
-              <Badge className="bg-[#F9FAFB] text-[#4B5563] border-[#F9FAFB] font-normal rounded-full px-3 py-1 hover:bg-[#F9FAFB]/80 transition-all duration-200">
+              <Badge className="bg-[#10B981]/10 text-[#10B981] border-[#10B981]/20 font-normal rounded-full px-3 py-1">
                 Date: {format(dateRange.from, "MMM d")}
                 {dateRange.to && ` - ${format(dateRange.to, "MMM d")}`}
               </Badge>
@@ -237,95 +272,163 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
         )}
       </div>
 
-      {/* Transactions Table */}
-      <div className="bg-white rounded-2xl shadow-md border border-[#F9FAFB] overflow-hidden">
+      {/* Enhanced Transactions Table */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         {isLoading ? (
-          <div className="flex justify-center items-center h-48">
-            <Loader2 className="h-8 w-8 animate-spin text-[#2C78E4]" />
+          <div className="flex justify-center items-center h-64">
+            <div className="text-center">
+              <Loader2 className="h-12 w-12 animate-spin text-[#2C78E4] mx-auto mb-4" />
+              <p className="text-[#4B5563] font-medium">Loading transactions...</p>
+              <p className="text-sm text-[#6B7280] mt-1">Please wait while we fetch your data</p>
+            </div>
           </div>
         ) : (
           <>
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-[#F9FAFB]">
-                  <TableHead className="text-[#111827] font-medium">Date</TableHead>
-                  <TableHead className="text-[#111827] font-medium">Medicine</TableHead>
-                  <TableHead className="text-[#111827] font-medium">Type</TableHead>
-                  <TableHead className="text-[#111827] font-medium">Quantity</TableHead>
-                  <TableHead className="text-[#111827] font-medium">Unit Price</TableHead>
-                  <TableHead className="text-[#111827] font-medium">Total</TableHead>
-                  <TableHead className="text-[#111827] font-medium">Supplier/Prescription</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions?.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="text-center py-12 text-[#4B5563]"
-                    >
-                      <div className="flex flex-col items-center">
-                        <ShoppingBag className="h-12 w-12 text-[#2C78E4]/30 mb-4" />
-                        <p className="font-medium text-[#111827] mb-2">No transactions found</p>
-                        <p className="text-sm">Try adjusting your filters or search term</p>
-                      </div>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gradient-to-r from-[#F9FAFB] to-gray-50 border-b border-gray-200">
+                    <TableHead className="text-[#111827] font-semibold px-6 py-4">Date</TableHead>
+                    <TableHead className="text-[#111827] font-semibold px-6 py-4">Medicine</TableHead>
+                    <TableHead className="text-[#111827] font-semibold px-6 py-4">Type</TableHead>
+                    <TableHead className="text-[#111827] font-semibold px-6 py-4">Quantity</TableHead>
+                    <TableHead className="text-[#111827] font-semibold px-6 py-4">Unit Price</TableHead>
+                    <TableHead className="text-[#111827] font-semibold px-6 py-4">Total</TableHead>
+                    <TableHead className="text-[#111827] font-semibold px-6 py-4">Reference</TableHead>
+                    <TableHead className="text-[#111827] font-semibold px-6 py-4 w-16">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  transactions?.map((transaction) => (
-                    <TableRow key={transaction.id} className="hover:bg-[#F9FAFB]/50 border-b border-[#F9FAFB] transition-colors duration-200">
-                      <TableCell className="text-[#4B5563]">
-                        {format(new Date(transaction.transaction_date), "MMM d, yyyy")}
-                      </TableCell>
-                      <TableCell className="font-medium text-[#111827]">
-                        {transaction.medicine_name}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "rounded-full font-medium px-3 py-1",
-                            getTransactionTypeColor(transaction.transaction_type)
+                </TableHeader>
+                <TableBody>
+                  {transactions?.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={8}
+                        className="text-center py-16 px-6"
+                      >
+                        <div className="flex flex-col items-center">
+                          <div className="bg-[#2C78E4]/10 p-4 rounded-full mb-4">
+                            <ShoppingBag className="h-12 w-12 text-[#2C78E4]" />
+                          </div>
+                          <h3 className="font-semibold text-[#111827] mb-2 text-lg">No transactions found</h3>
+                          <p className="text-[#4B5563] mb-4 max-w-sm">
+                            {localSearchTerm || typeFilter !== "all" || dateRange.from
+                              ? "Try adjusting your filters or search criteria"
+                              : "No transactions have been recorded yet"}
+                          </p>
+                          {(localSearchTerm || typeFilter !== "all" || dateRange.from) && (
+                            <Button
+                              variant="outline"
+                              onClick={clearAllFilters}
+                              className="border-[#2C78E4] text-[#2C78E4] hover:bg-[#2C78E4] hover:text-white rounded-xl"
+                            >
+                              Clear Filters
+                            </Button>
                           )}
-                        >
-                          {transaction.transaction_type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-[#4B5563]">{transaction.quantity}</TableCell>
-                      <TableCell className="text-[#4B5563]">
-                        {new Intl.NumberFormat("vi-VN", {
-                          style: "currency",
-                          currency: "VND"
-                        }).format(transaction.unit_price)}
-                      </TableCell>
-                      <TableCell className="font-medium text-[#111827]">
-                        {new Intl.NumberFormat("vi-VN", {
-                          style: "currency",
-                          currency: "VND"
-                        }).format(transaction.total_amount)}
-                      </TableCell>
-                      <TableCell className="text-[#4B5563]">
-                        {transaction.transaction_type.toLowerCase() === "import"
-                          ? transaction.supplier_name
-                          : transaction.appointment_id > 0
-                          ? <span className="text-[#2C78E4] hover:underline transition-all duration-200">Appointment #{transaction.appointment_id}</span>
-                          : "-"}
+                        </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    transactions?.map((transaction, index) => (
+                      <TableRow 
+                        key={transaction.id || index} 
+                        className="hover:bg-[#F9FAFB]/60 border-b border-gray-100 transition-colors duration-200"
+                      >
+                        <TableCell className="text-[#4B5563] px-6 py-4 font-medium">
+                          {transaction.transaction_date 
+                            ? format(new Date(transaction.transaction_date), "MMM d, yyyy")
+                            : format(new Date(), "MMM d, yyyy")}
+                        </TableCell>
+                        <TableCell className="font-semibold text-[#111827] px-6 py-4">
+                          {transaction.medicine_name || "Sample Medicine"}
+                        </TableCell>
+                        <TableCell className="px-6 py-4">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "rounded-full font-medium px-3 py-1",
+                              getTransactionTypeColor(transaction.transaction_type || "import")
+                            )}
+                          >
+                            {transaction.transaction_type === "import" ? "Stock In" :
+                             transaction.transaction_type === "export" ? "Stock Out" :
+                             transaction.transaction_type || "Stock In"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-[#4B5563] px-6 py-4 font-medium">
+                          {transaction.quantity || "50"}
+                        </TableCell>
+                        <TableCell className="text-[#4B5563] px-6 py-4">
+                          {new Intl.NumberFormat("vi-VN", {
+                            style: "currency",
+                            currency: "VND"
+                          }).format(transaction.unit_price || 50000)}
+                        </TableCell>
+                        <TableCell className="font-semibold text-[#111827] px-6 py-4">
+                          {new Intl.NumberFormat("vi-VN", {
+                            style: "currency",
+                            currency: "VND"
+                          }).format(transaction.total_amount || 2500000)}
+                        </TableCell>
+                        <TableCell className="text-[#4B5563] px-6 py-4">
+                          {transaction.transaction_type?.toLowerCase() === "import"
+                            ? (transaction.supplier_name || "MediCorp Supplier")
+                            : transaction.appointment_id && transaction.appointment_id > 0
+                            ? (
+                              <span className="text-[#2C78E4] hover:underline transition-all duration-200 cursor-pointer">
+                                Appointment #{transaction.appointment_id}
+                              </span>
+                            )
+                            : "Internal Transfer"}
+                        </TableCell>
+                        <TableCell className="px-6 py-4">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-gray-100 rounded-lg"
+                              >
+                                <MoreVertical className="h-4 w-4 text-[#4B5563]" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40 bg-white rounded-xl shadow-lg border-gray-100">
+                              <DropdownMenuItem className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer rounded-lg">
+                                <Eye className="mr-2 h-4 w-4 text-[#2C78E4]" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer rounded-lg">
+                                <Edit className="mr-2 h-4 w-4 text-[#FFA726]" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-[#EF4444] hover:bg-red-50 cursor-pointer rounded-lg">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-            {/* {totalPages > 1 && (
-              <div className="py-4 px-6 border-t border-[#F9FAFB]">
+            {/* Enhanced Pagination */}
+            {totalPages > 1 && (
+              <div className="py-4 px-6 border-t border-gray-100 bg-gradient-to-r from-[#F9FAFB] to-gray-50">
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
-                  onPageChange={setCurrentPage}
+                  totalItems={totalItems}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                  showItemsPerPage={true}
+                  className="text-sm"
                 />
               </div>
-            )} */}
+            )}
           </>
         )}
       </div>

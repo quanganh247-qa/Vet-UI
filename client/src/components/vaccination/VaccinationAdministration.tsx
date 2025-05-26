@@ -359,15 +359,6 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
               </div>
             </div>
           </CardContent>
-          {/* <CardFooter className="flex justify-center py-4 bg-gray-50 border-t">
-            <Button
-              onClick={handleComplete}
-              className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-2"
-            >
-              <span>Continue to Next Step</span>
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </CardFooter> */}
         </Card>
       ) : (
         <form className="space-y-6">

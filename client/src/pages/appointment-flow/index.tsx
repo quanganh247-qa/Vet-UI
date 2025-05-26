@@ -319,7 +319,7 @@ const AppointmentFlow = () => {
         </Button>
       </div>
 
-      <div className="flex items-center bg-[#F0F4FC] rounded-2xl p-4 mb-4">
+      {/* <div className="flex items-center bg-[#F0F4FC] rounded-2xl p-4 mb-4">
         <Calendar className="h-5 w-5 text-[#2C78E4] mr-3" />
         <input
           type="date"
@@ -327,7 +327,7 @@ const AppointmentFlow = () => {
           onChange={handleDateChange}
           className="text-sm bg-transparent border-none focus:outline-none w-full text-[#111827]"
         />
-      </div>
+      </div> */}
     </div>
   );
 
@@ -367,45 +367,7 @@ const AppointmentFlow = () => {
         </div>
       </div>
 
-      {/* Search and filter section */}
-      <Card className="border-none shadow-md rounded-2xl overflow-hidden bg-white">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="relative flex-grow md:max-w-md">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-                <Search className="h-4 w-4 text-[#4B5563]" />
-              </div>
-              <Input
-                type="search"
-                placeholder="Search appointments..."
-                className="pl-10 pr-3 py-2 border border-[#2C78E4]/20 rounded-xl text-sm placeholder-[#4B5563] focus:outline-none focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] w-full"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
 
-            <Select
-              value={statusFilter || "all"}
-              onValueChange={(value) =>
-                setStatusFilter(value === "all" ? null : value)
-              }
-            >
-              <SelectTrigger className="w-[180px] border-gray-200 rounded-xl bg-white">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent className="bg-white rounded-xl shadow-md border-none">
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="scheduled">Waiting</SelectItem>
-                <SelectItem value="in progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-
-            
-          </div>
-        </CardContent>
-      </Card>
 
         <Card className="bg-white rounded-2xl border-none shadow-md overflow-hidden">
           

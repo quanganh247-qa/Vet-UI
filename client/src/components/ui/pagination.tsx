@@ -1,78 +1,161 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import React from 'react';
+import { Button } from './button';
+import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 
-interface PaginationProps {
+export interface PaginationProps {
   currentPage: number;
   totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
   onPageChange: (page: number) => void;
+  onItemsPerPageChange: (itemsPerPage: number) => void;
+  showItemsPerPage?: boolean;
   className?: string;
 }
 
-const Pagination: React.FC<PaginationProps> = ({
+export const Pagination: React.FC<PaginationProps> = ({
   currentPage,
   totalPages,
+  totalItems,
+  itemsPerPage,
   onPageChange,
-  className = "",
+  onItemsPerPageChange,
+  showItemsPerPage = true,
+  className = '',
 }) => {
-  if (totalPages <= 1) return null;
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
-  const getPageNumbers = () => {
-    const maxPageButtons = 5;
-    let startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(startPage + maxPageButtons - 1, totalPages);
-    
-    if (endPage - startPage + 1 < maxPageButtons) {
-      startPage = Math.max(1, endPage - maxPageButtons + 1);
+  const getVisiblePages = () => {
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+
+    for (
+      let i = Math.max(2, currentPage - delta);
+      i <= Math.min(totalPages - 1, currentPage + delta);
+      i++
+    ) {
+      range.push(i);
     }
-    
-    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+
+    if (currentPage - delta > 2) {
+      rangeWithDots.push(1, '...');
+    } else {
+      rangeWithDots.push(1);
+    }
+
+    rangeWithDots.push(...range);
+
+    if (currentPage + delta < totalPages - 1) {
+      rangeWithDots.push('...', totalPages);
+    } else if (totalPages > 1) {
+      rangeWithDots.push(totalPages);
+    }
+
+    return rangeWithDots;
   };
 
+  const visiblePages = getVisiblePages();
+
+  const handlePrevious = () => {
+    if (currentPage > 1) {
+      onPageChange(currentPage - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) {
+      onPageChange(currentPage + 1);
+    }
+  };
+
+  if (totalPages <= 1) return null;
+
   return (
-    <div className={`flex flex-col items-center space-y-4 mt-6 pb-4 ${className}`}>
-      <p className="text-sm text-indigo-600 font-medium">
-        Page {currentPage} of {totalPages}
-      </p>
-      <div className="flex justify-center items-center space-x-2 bg-indigo-50 px-4 py-3 rounded-lg shadow-sm border border-indigo-100">
+    <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 ${className}`}>
+      {/* Items per page selector */}
+      {showItemsPerPage && (
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-[#4B5563]">Show</span>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+            className="px-3 py-1 border border-gray-200 rounded-lg text-sm text-[#111827] bg-white hover:border-[#2C78E4] focus:outline-none focus:ring-2 focus:ring-[#2C78E4]/20 focus:border-[#2C78E4]"
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+          <span className="text-sm text-[#4B5563]">per page</span>
+        </div>
+      )}
+
+      {/* Page info */}
+      <div className="text-sm text-[#4B5563]">
+        Showing <span className="font-medium text-[#111827]">{startItem}</span> to{' '}
+        <span className="font-medium text-[#111827]">{endItem}</span> of{' '}
+        <span className="font-medium text-[#111827]">{totalItems}</span> results
+      </div>
+
+      {/* Pagination controls */}
+      <div className="flex items-center space-x-1">
+        {/* Previous button */}
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onPageChange(currentPage - 1)}
+          onClick={handlePrevious}
           disabled={currentPage === 1}
-          className="border-indigo-200 text-indigo-600 hover:bg-indigo-100"
+          className="px-3 py-2 border-gray-200 text-[#4B5563] hover:bg-[#2C78E4] hover:text-white hover:border-[#2C78E4] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
         >
           <ChevronLeft className="h-4 w-4" />
-          <span className="sr-only">Previous page</span>
         </Button>
-        
-        {getPageNumbers().map((pageNumber) => (
-          <Button
-            key={pageNumber}
-            variant={currentPage === pageNumber ? "default" : "outline"}
-            size="sm"
-            onClick={() => onPageChange(pageNumber)}
-            className={
-              currentPage === pageNumber
-                ? "bg-indigo-600 text-white font-bold hover:bg-indigo-700"
-                : "border-indigo-200 text-indigo-600 hover:bg-indigo-100"
+
+        {/* Page numbers */}
+        <div className="flex items-center space-x-1">
+          {visiblePages.map((page, index) => {
+            if (page === '...') {
+              return (
+                <div
+                  key={`dots-${index}`}
+                  className="px-3 py-2 text-[#4B5563]"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </div>
+              );
             }
-            aria-label={`Page ${pageNumber}`}
-            aria-current={currentPage === pageNumber ? "page" : undefined}
-          >
-            {pageNumber}
-          </Button>
-        ))}
-        
+
+            const pageNumber = page as number;
+            const isActive = pageNumber === currentPage;
+
+            return (
+              <Button
+                key={pageNumber}
+                variant={isActive ? "default" : "outline"}
+                size="sm"
+                onClick={() => onPageChange(pageNumber)}
+                className={`px-3 py-2 min-w-[40px] rounded-lg ${
+                  isActive
+                    ? 'bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90 border-[#2C78E4]'
+                    : 'border-gray-200 text-[#4B5563] hover:bg-[#2C78E4] hover:text-white hover:border-[#2C78E4]'
+                }`}
+              >
+                {pageNumber}
+              </Button>
+            );
+          })}
+        </div>
+
+        {/* Next button */}
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onPageChange(currentPage + 1)}
+          onClick={handleNext}
           disabled={currentPage === totalPages}
-          className="border-indigo-200 text-indigo-600 hover:bg-indigo-100"
+          className="px-3 py-2 border-gray-200 text-[#4B5563] hover:bg-[#2C78E4] hover:text-white hover:border-[#2C78E4] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
         >
           <ChevronRight className="h-4 w-4" />
-          <span className="sr-only">Next page</span>
         </Button>
       </div>
     </div>

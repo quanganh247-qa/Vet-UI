@@ -53,25 +53,12 @@ import {
   Package,
   DollarSign,
   ShoppingBag,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import { Medicine } from "@/types";
 
-// Medicine interface based on the API response
-interface Medicine {
-  id: number;
-  medicine_name: string;
-  dosage: string;
-  frequency: string;
-  duration: string;
-  side_effects: string;
-  quantity: number;
-  expiration_date: string;
-  description: string;
-  usage: string;
-  supplier_id: number;
-  unit_price: number;
-  reorder_level: number;
-  supplier_name?: string;
-}
+
 
 // Format currency
 const formatCurrency = (amount: number) => {
@@ -141,7 +128,7 @@ const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
 const MedicineManagement: React.FC = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10; // Items per page for table
+  const pageSize = 10; // Items per page for table - increased to ensure we get all medicines
 
   // State variables
   const [searchTerm, setSearchTerm] = useState("");
@@ -168,15 +155,14 @@ const MedicineManagement: React.FC = () => {
     reorder_level: 0,
   });
 
-  // Hooks
+  // Hooks - fetch with larger page size to get all medicines initially
   const { toast } = useToast();
   const {
     data: medicinesData,
     isLoading: isLoadingMedicines,
     error: medicinesError,
-  } = useGetAllMedicines(currentPage, pageSize);
+  } = useGetAllMedicines(1, 100); // Fetch first 100 medicines to ensure we get all
 
-  console.log(medicinesData);
   const { mutateAsync: createMedicine, isPending: isCreating } =
     useCreateMedicine();
   const { mutateAsync: updateMedicine, isPending: isUpdating } =
@@ -192,7 +178,37 @@ const MedicineManagement: React.FC = () => {
       return medicinesData;
     }
 
+    // If medicinesData has a data property that's an array
+    if (medicinesData.data && Array.isArray(medicinesData.data)) {
+      return medicinesData.data;
+    }
+
     return [];
+  })();
+
+  // Get total count and pagination info
+  const totalCount = (() => {
+    if (!medicinesData) return 0;
+    
+    // Try to get total from different possible structures
+    if (typeof medicinesData.total === 'number') {
+      return medicinesData.total;
+    }
+    
+    if (typeof medicinesData.count === 'number') {
+      return medicinesData.count;
+    }
+    
+    // Fallback to array length
+    if (Array.isArray(medicinesData)) {
+      return medicinesData.length;
+    }
+    
+    if (medicinesData.data && Array.isArray(medicinesData.data)) {
+      return medicinesData.data.length;
+    }
+    
+    return 0;
   })();
 
   // Filter medicines based on search term
@@ -209,16 +225,20 @@ const MedicineManagement: React.FC = () => {
     );
   });
 
-  console.log("Search term:", searchTerm);
-  console.log("Total medicines:", medicines.length);
-  console.log("Filtered medicines:", filteredMedicines.length);
-  console.log("First medicine (if any):", medicines[0]);
+  // Use client-side pagination for all scenarios since we fetch all medicines
+  const displayedMedicines = searchTerm ? filteredMedicines : medicines;
+  const totalPages = Math.ceil(displayedMedicines.length / pageSize);
+  
+  // Implement client-side pagination for all cases
+  const paginatedDisplayMedicines = displayedMedicines.slice(
+    (currentPage - 1) * pageSize, 
+    currentPage * pageSize
+  );
+
 
   // Reset pagination when search changes
   useEffect(() => {
-    if (searchTerm) {
-      setCurrentPage(1);
-    }
+    setCurrentPage(1);
   }, [searchTerm]);
 
   // Handle opening add dialog
@@ -338,7 +358,9 @@ const MedicineManagement: React.FC = () => {
 
   // Handle pagination
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   return (
@@ -394,7 +416,7 @@ const MedicineManagement: React.FC = () => {
               Please try again later
             </p>
           </div>
-        ) : filteredMedicines.length === 0 ? (
+        ) : displayedMedicines.length === 0 ? (
           <EmptyState onAdd={handleOpenAddDialog} />
         ) : (
           <>
@@ -426,7 +448,7 @@ const MedicineManagement: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMedicines.map((medicine: Medicine) => (
+                  {paginatedDisplayMedicines.map((medicine: Medicine) => (
                     <TableRow
                       key={medicine.id}
                       className="hover:bg-[#F9FAFB]/50"
@@ -492,11 +514,128 @@ const MedicineManagement: React.FC = () => {
               </Table>
             </div>
 
-            {/* Pagination info - simplified since we don't have pagination data */}
-            {medicines.length > 0 && (
+            {/* Pagination Controls */}
+            {displayedMedicines.length > 0 && totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-4 border-t border-[#2C78E4]/10">
+                {/* Pagination Info */}
+                <div className="text-sm text-[#4B5563]">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, displayedMedicines.length)} of {displayedMedicines.length} medicines
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="flex items-center space-x-2">
+                  {/* Previous Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F0F7FF] hover:text-[#2C78E4] hover:border-[#2C78E4] rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </Button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center space-x-1">
+                    {(() => {
+                      const pages = [];
+                      const maxPagesToShow = 5;
+                      let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+                      let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+                      // Adjust start page if we're near the end
+                      if (endPage - startPage + 1 < maxPagesToShow) {
+                        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+                      }
+
+                      // Add first page and ellipsis if needed
+                      if (startPage > 1) {
+                        pages.push(
+                          <Button
+                            key={1}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(1)}
+                            className="border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F0F7FF] hover:text-[#2C78E4] hover:border-[#2C78E4] rounded-xl h-9 w-9 p-0"
+                          >
+                            1
+                          </Button>
+                        );
+                        if (startPage > 2) {
+                          pages.push(
+                            <span key="ellipsis1" className="text-[#4B5563] px-2">
+                              ...
+                            </span>
+                          );
+                        }
+                      }
+
+                      // Add page numbers
+                      for (let i = startPage; i <= endPage; i++) {
+                        pages.push(
+                          <Button
+                            key={i}
+                            variant={currentPage === i ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handlePageChange(i)}
+                            className={
+                              currentPage === i
+                                ? "bg-[#2C78E4] text-white hover:bg-[#1E40AF] rounded-xl h-9 w-9 p-0"
+                                : "border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F0F7FF] hover:text-[#2C78E4] hover:border-[#2C78E4] rounded-xl h-9 w-9 p-0"
+                            }
+                          >
+                            {i}
+                          </Button>
+                        );
+                      }
+
+                      // Add last page and ellipsis if needed
+                      if (endPage < totalPages) {
+                        if (endPage < totalPages - 1) {
+                          pages.push(
+                            <span key="ellipsis2" className="text-[#4B5563] px-2">
+                              ...
+                            </span>
+                          );
+                        }
+                        pages.push(
+                          <Button
+                            key={totalPages}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(totalPages)}
+                            className="border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F0F7FF] hover:text-[#2C78E4] hover:border-[#2C78E4] rounded-xl h-9 w-9 p-0"
+                          >
+                            {totalPages}
+                          </Button>
+                        );
+                      }
+
+                      return pages;
+                    })()}
+                  </div>
+
+                  {/* Next Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F0F7FF] hover:text-[#2C78E4] hover:border-[#2C78E4] rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Simple count for single page or no pagination needed */}
+            {displayedMedicines.length > 0 && totalPages <= 1 && (
               <div className="flex justify-center mt-8 pb-2">
                 <p className="text-sm text-[#4B5563] font-medium">
-                  Showing {filteredMedicines.length} medicines
+                  Showing {displayedMedicines.length} medicine{displayedMedicines.length !== 1 ? 's' : ''}
                 </p>
               </div>
             )}

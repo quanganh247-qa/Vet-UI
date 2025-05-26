@@ -57,113 +57,108 @@ const ReportsDashboard = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        {/* <h2 className="text-2xl font-semibold text-indigo-900">Clinic Reports</h2> */}
-          
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="h-9 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-              onClick={() => setDateRangePreset(1)}
-            >
-              1M
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="h-9 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-              onClick={() => setDateRangePreset(3)}
-            >
-              3M
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="h-9 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-              onClick={() => setDateRangePreset(6)}
-            >
-              6M
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="h-9 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-              onClick={() => setDateRangePreset(12)}
-            >
-              1Y
-            </Button>
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center">
-              <Label className="mr-2 text-sm text-gray-600">From:</Label>
-              <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="h-9 border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-[130px] justify-start"
-                  >
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    {dateRange.startDate}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={new Date(dateRange.startDate)}
-                    onSelect={handleStartDateSelect}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="flex items-center">
-              <Label className="mr-2 text-sm text-gray-600">To:</Label>
-              <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="h-9 border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-[130px] justify-start"
-                  >
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    {dateRange.endDate}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={new Date(dateRange.endDate)}
-                    onSelect={handleEndDateSelect}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-          
-       
-        </div>
-      </div>
-
       <Card className="border-none shadow-md overflow-hidden">
         <Tabs defaultValue="financial" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-3 border-b">
-            <TabsList className="grid grid-cols-2 max-w-[400px]">
-              <TabsTrigger value="financial" className="flex items-center">
-                <PieChart className="h-4 w-4 mr-2" />
-                Financial
-              </TabsTrigger>
-              <TabsTrigger value="medical" className="flex items-center">
-                <Activity className="h-4 w-4 mr-2" />
-                Medical Records
-              </TabsTrigger>
-            </TabsList>
+          <CardHeader className="bg-gradient-to-r from-[#2C78E4]/5 to-white border-none shadow-md hover:shadow-lg transition-shadow duration-300 rounded-2xl">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <TabsList className="grid grid-cols-2 max-w-[400px]">
+                <TabsTrigger value="financial" className="flex items-center">
+                  <PieChart className="h-4 w-4 mr-2" />
+                  Financial
+                </TabsTrigger>
+                <TabsTrigger value="medical" className="flex items-center">
+                  <Activity className="h-4 w-4 mr-2" />
+                  Medical Records
+                </TabsTrigger>
+              </TabsList>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="h-9 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                    onClick={() => setDateRangePreset(1)}
+                  >
+                    1M
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="h-9 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                    onClick={() => setDateRangePreset(3)}
+                  >
+                    3M
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="h-9 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                    onClick={() => setDateRangePreset(6)}
+                  >
+                    6M
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="h-9 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                    onClick={() => setDateRangePreset(12)}
+                  >
+                    1Y
+                  </Button>
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center">
+                    <Label className="mr-2 text-sm text-gray-600">From:</Label>
+                    <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+                      <PopoverTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="h-9 border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-[130px] justify-start"
+                        >
+                          <CalendarIcon className="h-4 w-4 mr-2" />
+                          {dateRange.startDate}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={new Date(dateRange.startDate)}
+                          onSelect={handleStartDateSelect}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <Label className="mr-2 text-sm text-gray-600">To:</Label>
+                    <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                      <PopoverTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="h-9 border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-[130px] justify-start"
+                        >
+                          <CalendarIcon className="h-4 w-4 mr-2" />
+                          {dateRange.endDate}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={new Date(dateRange.endDate)}
+                          onSelect={handleEndDateSelect}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-6">
             <TabsContent value="financial" className="mt-0">

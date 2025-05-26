@@ -210,6 +210,7 @@ export type ExportStockRequest = {
 
 export type ProductStockMovementResponse = {
     id: number,
+    product_name: string,
     product_id: number
     movement_type: string
     quantity: number,
@@ -271,6 +272,7 @@ export const getProductStockMovements = async (
         const transformMovement = (movement: any): ProductStockMovementResponse => ({
             id: movement.id,
             product_id: movement.product_id,
+            product_name: movement.product_name,
             movement_type: movement.movement_type,
             quantity: movement.quantity,
             reason: movement.reason,

@@ -7,60 +7,54 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Expand, Plus, PlusCircle, X } from "lucide-react";
+import { Calendar, Plus, PlusCircle, X, UserPlus } from "lucide-react";
 import { WalkInRegistrationForm } from "./WalkInRegistrationForm";
 import { cn } from "@/lib/utils";
 
 export const WalkInDialog: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           variant="default"
-          size="sm"
-          className="bg-white text-[#2C78E4] hover:bg-white/90 flex items-center gap-2 rounded-xl px-4 py-2 shadow-sm"
+          className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 py-3 flex items-center gap-3 border-0"
           onClick={() => setOpen(true)}
         >
-          <PlusCircle className="h-4 w-4" />
-          <span className="hidden sm:inline">New Appointment</span>
+          <div className="bg-white/20 rounded-full p-1">
+            <UserPlus className="h-4 w-4" />
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm font-bold">Quick Registration</span>
+            <span className="text-xs opacity-90 hidden sm:block">New Walk-in Patient</span>
+          </div>
         </Button>
       </DialogTrigger>
 
       <DialogContent
-        className={cn(
-          "p-0 border-none overflow-hidden rounded-2xl shadow-2xl",
-          "backdrop:bg-[#111827]/20 backdrop:backdrop-blur-sm",
-          isExpanded ? "w-screen h-screen max-w-none" : "max-w-3xl"
-        )}
+        className="p-0 border-none overflow-hidden rounded-2xl shadow-2xl max-w-5xl w-[95vw] h-[90vh] flex flex-col"
       >
-        <div className="relative bg-white rounded-2xl">
-          {/* Header */}
-          <div className="sticky top-0 z-20 bg-[#F9FAFB] flex items-center justify-between px-8 py-6 border-b border-gray-100">
-            <DialogHeader className="space-y-0">
-              <DialogTitle className="text-2xl font-bold text-[#111827]">
-                New Walk-in Registration
-                <div className="text-sm font-normal text-[#4B5563] mt-1">
-                  Register a new walk-in appointment
+        <div className="relative bg-white rounded-2xl h-full flex flex-col overflow-hidden">
+          {/* Enhanced Header - Fixed */}
+          <div className="flex-shrink-0 bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-6 rounded-t-2xl">
+            <div className="flex items-center justify-between">
+              <DialogHeader className="space-y-0">
+                <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
+                  <div className="bg-white/20 rounded-full p-2">
+                    <UserPlus className="h-6 w-6" />
+                  </div>
+                  Quick Patient Registration
+                </DialogTitle>
+                <div className="text-green-100 mt-2">
+                  Fast and easy walk-in appointment booking for busy reception desk
                 </div>
-              </DialogTitle>
-            </DialogHeader>
+              </DialogHeader>
 
-            <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-[#4B5563] hover:bg-[#2C78E4]/10 hover:text-[#2C78E4] rounded-lg"
-                onClick={() => setIsExpanded(!isExpanded)}
-              >
-                <Expand className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-[#4B5563] hover:bg-[#2C78E4]/10 hover:text-[#2C78E4] rounded-lg"
+                className="text-white hover:bg-white/20 rounded-lg h-10 w-10"
                 onClick={() => setOpen(false)}
               >
                 <X className="h-5 w-5" />
@@ -68,20 +62,12 @@ export const WalkInDialog: React.FC = () => {
             </div>
           </div>
 
-          {/* Content Area */}
-          <div
-            className={cn(
-              "overflow-y-auto bg-white",
-              isExpanded ? "h-[calc(100vh-88px)]" : "max-h-[75vh]"
-            )}
-          >
-            <div className="p-8">
-              <WalkInRegistrationForm
-                onSuccess={() => setOpen(false)}
-                onCancel={() => setOpen(false)}
-                className="space-y-6"
-              />
-            </div>
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            <WalkInRegistrationForm
+              onSuccess={() => setOpen(false)}
+              onCancel={() => setOpen(false)}
+            />
           </div>
         </div>
       </DialogContent>

@@ -13,7 +13,6 @@ import Chatbot from "./pages/chatbot";
 import ScheduleManagement from "./pages/schedule-management";
 import ShiftManagement from "@/pages/shift-management";
 import StaffPageDetail from "@/pages/staff";
-import { WalkInDialog } from "./components/appointment/WalkInDialog";
 import Settings from "./pages/settings";
 import EditProfilePage from "./pages/profile";
 import StaffDetailPage from "@/pages/staff/index";
@@ -44,6 +43,7 @@ const HealthCard = lazy(() => import("@/pages/patient/health-card"));
 const PaymentListPage = lazy(() => import("@/pages/payment-list"));
 const MedicineManagement = lazy(() => import("@/pages/catalog-management/medicine-management"));
 const TestManagement = lazy(() => import("@/pages/test-management"));
+const WalkInPage = lazy(() => import("@/pages/walk-in"));
 
 // Create LoginPage component that uses LoginForm
 const LoginPage = () => {
@@ -65,7 +65,7 @@ function Router() {
         <Route path="/analytics" component={Analytics as React.ComponentType<RouteComponentProps>} />
         <Route path="/inventory" component={InventoryPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointment-flow" component={AppointmentFlow as React.ComponentType<RouteComponentProps>} />
-        <Route path="/appointment/walk-in" component={WalkInDialog as React.ComponentType<RouteComponentProps>} />
+        <Route path="/walk-in" component={WalkInPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/payment-list" component={PaymentListPage as React.ComponentType<RouteComponentProps>} />
 
         {/* Workflow routes - updated to use query params instead of route params */}

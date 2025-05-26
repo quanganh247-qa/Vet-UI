@@ -35,7 +35,6 @@ export const createShift = async (data: {
             end_time: formatDateIfNeeded(data.end_time)
         };
 
-        console.log("Sending to API:", formattedData);
         const response = await api.post('/api/v1/doctor/shifts', formattedData);
         return response.data;
     } catch (error) {
@@ -47,7 +46,6 @@ export const createShift = async (data: {
 export const getShiftByDoctorId = async (doctor_id: number) => {
     try {
         const response = await api.get(`/api/v1/doctor/${doctor_id}/shifts`);
-        console.log("response", response);
         return response.data;
     } catch (error) {
         console.error("Error fetching shifts by doctor ID:", error);
@@ -81,7 +79,6 @@ export const updateShift = async (shift_id: number, data: {
             end_time: formatDateIfNeeded(data.end_time)
         };
 
-        console.log("Updating shift with data:", formattedData);
         const response = await api.put(`/api/v1/doctor/shifts/${shift_id}`, formattedData);
         return response.data;
     } catch (error) {

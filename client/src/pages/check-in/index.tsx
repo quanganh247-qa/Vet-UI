@@ -40,6 +40,15 @@ import {
   DollarSign,
   Plus,
   Trash2,
+  Heart,
+  History,
+  UtensilsCrossed,
+  Home,
+  Pill,
+  Search,
+  FileText,
+  Activity,
+  RotateCcw,
 } from "lucide-react";
 
 import { checkInAppointment } from "@/services/appointment-services";
@@ -57,18 +66,66 @@ import { Textarea } from "@/components/ui/textarea";
 import { CashPaymentDialog } from "@/components/payment";
 import { set } from "lodash";
 
-// Common pre-defined keys for subjective data
-const COMMON_SUBJECTIVE_KEYS = [
-  "Chief Complaint",
-  "Duration",
-  "Onset",
-  "Previous Treatment",
-  "Diet Changes",
-  "Behavior Changes",
-  "Environmental Changes",
-  "Vaccination Status",
-  "Current Medications",
-  "Allergies",
+// Common pre-defined keys for subjective data organized by category
+const MEDICAL_CATEGORIES = {
+  "Chief Complaint": {
+    icon: Heart,
+    color: "bg-red-50 border-red-200 text-red-800",
+    fields: ["Chief Complaint", "Primary Concern", "Main Issue"]
+  },
+  "History": {
+    icon: History,
+    color: "bg-blue-50 border-blue-200 text-blue-800", 
+    fields: ["Duration", "Onset", "Previous Treatment"]
+  },
+  "Behavior & Diet": {
+    icon: UtensilsCrossed,
+    color: "bg-green-50 border-green-200 text-green-800",
+    fields: ["Diet Changes", "Behavior Changes", "Appetite"]
+  },
+  "Environment": {
+    icon: Home,
+    color: "bg-purple-50 border-purple-200 text-purple-800",
+    fields: ["Environmental Changes", "Living Situation", "Travel History"]
+  },
+  "Physical Signs": {
+    icon: Search,
+    color: "bg-indigo-50 border-indigo-200 text-indigo-800",
+    fields: ["Observable Symptoms", "Physical Condition", "Mobility Issues"]
+  }
+};
+
+// Quick templates for common scenarios
+const QUICK_TEMPLATES = [
+  {
+    name: "General Checkup",
+    icon: CheckCircle,
+    fields: [
+      { key: "Chief Complaint", value: "Routine health examination" },
+      { key: "Duration", value: "Annual checkup" },
+      { key: "Vaccination Status", value: "Up to date" },
+      { key: "Behavior Changes", value: "Normal behavior reported" }
+    ]
+  },
+  {
+    name: "Sick Visit",
+    icon: Activity,
+    fields: [
+      { key: "Chief Complaint", value: "" },
+      { key: "Duration", value: "" },
+      { key: "Onset", value: "" },
+      { key: "Observable Symptoms", value: "" }
+    ]
+  },
+  {
+    name: "Follow-up",
+    icon: RotateCcw,
+    fields: [
+      { key: "Previous Treatment", value: "" },
+      { key: "Current Medications", value: "" },
+      { key: "Progress Notes", value: "" }
+    ]
+  }
 ];
 
 // Interface for subjective key-value pairs
@@ -76,9 +133,10 @@ interface SubjectiveEntry {
   id: string;
   key: string;
   value: string;
+  category?: string;
 }
 
-// Component for key-value style subjective data entry
+// Component for professional medical note-taking
 const SubjectiveKeyValueEditor = ({ 
   value, 
   onChange 
@@ -113,7 +171,7 @@ const SubjectiveKeyValueEditor = ({
           // If no colon found, add as a note
           entries.push({
             id: crypto.randomUUID(),
-            key: "Note",
+            key: "Additional Notes",
             value: line.trim()
           });
         }
@@ -127,28 +185,28 @@ const SubjectiveKeyValueEditor = ({
   };
 
   const [entries, setEntries] = useState<SubjectiveEntry[]>(parseInitialData());
-  const [newKeyInput, setNewKeyInput] = useState("");
-  const [isAddingCustomKey, setIsAddingCustomKey] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [customFieldName, setCustomFieldName] = useState("");
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Update parent component when entries change
   useEffect(() => {
-    // Convert entries to JSON string, maintaining the structured data
     const jsonData = JSON.stringify(entries);
-    
-    // Update the parent component with the JSON string
     onChange(jsonData);
   }, [entries, onChange]);
 
-  const addEntry = (key: string = "") => {
+  const addEntry = (key: string = "", defaultValue: string = "", category?: string) => {
     const newEntry: SubjectiveEntry = {
       id: crypto.randomUUID(),
-      key: key || "Note",
-      value: ""
+      key: key || "Additional Notes",
+      value: defaultValue,
+      category: category
     };
     
     setEntries([...entries, newEntry]);
-    setIsAddingCustomKey(false);
-    setNewKeyInput("");
+    setCustomFieldName("");
+    setSelectedCategory("");
   };
 
   const updateEntry = (id: string, field: 'key' | 'value', newValue: string) => {
@@ -161,127 +219,179 @@ const SubjectiveKeyValueEditor = ({
     setEntries(entries.filter(entry => entry.id !== id));
   };
 
-  // Format entries for display in the UI (for debugging or previewing)
-  const getFormattedText = () => {
-    return entries
-      .map(entry => `${entry.key}: ${entry.value}`)
-      .join('\n\n');
+  const applyTemplate = (template: any) => {
+    const templateEntries = template.fields.map((field: any) => ({
+      id: crypto.randomUUID(),
+      key: field.key,
+      value: field.value,
+    }));
+    setEntries(templateEntries);
+    setShowTemplates(false);
+  };
+
+  const clearAll = () => {
+    setEntries([]);
+  };
+
+  // Filter available fields based on search
+  const getFilteredFields = () => {
+    const allFields = Object.values(MEDICAL_CATEGORIES).flatMap(cat => 
+      cat.fields.map(field => ({ field, category: cat }))
+    );
+    
+    if (!searchTerm) return allFields;
+    
+    return allFields.filter(({ field }) => 
+      field.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
-      <div className="p-4 space-y-4">
-        {entries.length === 0 ? (
-          <div className="text-center py-6 text-gray-500">
-            <p>No subjective data added yet. Use the buttons below to add information.</p>
-          </div>
-        ) : (
-          entries.map((entry) => (
-            <div key={entry.id} className="grid grid-cols-12 gap-3 items-start group border border-gray-100 rounded-md p-3 bg-gray-50">
-              <div className="col-span-4 lg:col-span-3">
-                <Input
-                  value={entry.key}
-                  onChange={(e) => updateEntry(entry.id, 'key', e.target.value)}
-                  className="font-medium text-gray-700"
-                  placeholder="Category"
-                />
-              </div>
-              <div className="col-span-7 lg:col-span-8">
-                <Textarea
-                  value={entry.value}
-                  onChange={(e) => updateEntry(entry.id, 'value', e.target.value)}
-                  placeholder="Enter details here..."
-                  className="resize-none min-h-[80px] bg-white"
-                />
-              </div>
-              <div className="col-span-1 flex justify-end">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeEntry(entry.id)}
-                  className="h-9 w-9 opacity-70 hover:opacity-100 text-red-500 hover:text-red-600 hover:bg-red-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ))
-        )}
-
-        {/* UI for adding a new custom key */}
-        {isAddingCustomKey ? (
-          <div className="flex items-center mt-2 space-x-2 p-3 border border-dashed border-indigo-200 rounded-md bg-indigo-50">
-            <Input
-              value={newKeyInput}
-              onChange={(e) => setNewKeyInput(e.target.value)}
-              placeholder="Enter custom category..."
-              className="flex-1"
-              autoFocus
-            />
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="sm"
-              onClick={() => addEntry(newKeyInput)}
-              className="whitespace-nowrap bg-white"
-              disabled={!newKeyInput.trim()}
-            >
-              Add
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsAddingCustomKey(false)}
-              className="h-9 w-9"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <div>
+    <div className="space-y-4">
+      {/* Header with templates and actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTemplates(!showTemplates)}
+            className="bg-white hover:bg-blue-50 border-blue-200 text-blue-700"
+          >
+            <FileText className="h-4 w-4 mr-1" />
+            Quick Templates
+          </Button>
+          {entries.length > 0 && (
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setIsAddingCustomKey(true)}
-              className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 mb-2"
+              onClick={clearAll}
+              className="bg-white hover:bg-red-50 border-red-200 text-red-600"
             >
-              <Plus className="h-3.5 w-3.5" />
-              Add Custom Field
+              <Trash2 className="h-4 w-4 mr-1" />
+              Clear All
             </Button>
-            
-            <div className="flex flex-wrap gap-2">
-              {COMMON_SUBJECTIVE_KEYS.map((key) => (
+          )}
+        </div>
+        <div className="text-xs text-blue-600 font-medium">
+          {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
+        </div>
+      </div>
+
+      {/* Quick Templates */}
+      {showTemplates && (
+        <div className="p-4 bg-white border border-blue-200 rounded-lg shadow-sm">
+          <h4 className="font-medium text-sm mb-3 text-gray-700">Quick Start Templates</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {QUICK_TEMPLATES.map((template, index) => {
+              const IconComponent = template.icon;
+              return (
                 <Button
-                  key={key}
+                  key={index}
                   type="button"
                   variant="outline"
-                  size="sm"
-                  onClick={() => addEntry(key)}
-                  className="bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                  onClick={() => applyTemplate(template)}
+                  className="h-auto p-3 text-left flex flex-col items-start hover:bg-blue-50 border-gray-200"
                 >
-                  {key}
+                  <div className="flex items-center gap-2 mb-1">
+                    <IconComponent className="h-4 w-4" />
+                    <span className="font-medium text-sm">{template.name}</span>
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {template.fields.length} fields
+                  </span>
                 </Button>
-              ))}
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Existing Entries */}
+      {entries.length > 0 && (
+        <div className="space-y-3">
+          {entries.map((entry) => (
+            <div key={entry.id} className="group border border-gray-200 rounded-lg p-4 bg-white hover:border-blue-300 transition-colors">
+              <div className="grid grid-cols-12 gap-3 items-start">
+                <div className="col-span-12 sm:col-span-4">
+                  <Input
+                    value={entry.key}
+                    onChange={(e) => updateEntry(entry.id, 'key', e.target.value)}
+                    className="font-medium text-gray-700 border-gray-200 focus:border-blue-500"
+                    placeholder="Field name"
+                  />
+                </div>
+                <div className="col-span-11 sm:col-span-7">
+                  <Textarea
+                    value={entry.value}
+                    onChange={(e) => updateEntry(entry.id, 'value', e.target.value)}
+                    placeholder="Enter details..."
+                    className="resize-none min-h-[80px] border-gray-200 focus:border-blue-500"
+                  />
+                </div>
+                <div className="col-span-1 flex justify-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeEntry(entry.id)}
+                    className="h-8 w-8 opacity-60 hover:opacity-100 text-red-500 hover:text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {entries.length === 0 && (
+        <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+          <Stethoscope className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+          <p className="text-gray-600 mb-2">No subjective data recorded yet</p>
+          <p className="text-sm text-gray-500">Use quick templates or add fields below to start documenting</p>
+        </div>
+      )}
+
+      {/* Add New Field Section */}
+      <div className="border border-gray-200 rounded-lg bg-gray-50">
+        <div className="p-4">
+          <h4 className="font-medium text-sm mb-3 text-gray-700 flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Medical Information
+          </h4>
+          
+          {/* Custom Field */}
+          <div className="mt-4 pt-4 border-t border-gray-300">
+            <div className="flex gap-2">
+              <Input
+                value={customFieldName}
+                onChange={(e) => setCustomFieldName(e.target.value)}
+                placeholder="Custom field name..."
+                className="flex-1 border-gray-200 focus:border-blue-500"
+              />
+              <Button
+                type="button"
+                onClick={() => addEntry(customFieldName)}
+                disabled={!customFieldName.trim()}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4"
+              >
+                Add
+              </Button>
             </div>
           </div>
-        )}
-      
-
-   
+        </div>
       </div>
     </div>
   );
 };
 
-
-
 const CheckIn = () => {
   const { id } = useParams<{ id?: string }>();
   const [, setLocation] = useLocation();
-  const [selectedTab, setSelectedTab] = useState("check-in");
   const [selectedRoom, setSelectedRoom] = useState("");
   const [priority, setPriority] = useState("Normal");
   const [subjective, setSubjective] = useState("");
@@ -492,16 +602,6 @@ const CheckIn = () => {
                 </p>
               </div>
             </div>
-
-            {/* <div className="flex gap-3">
-              <Button
-                onClick={handleCompleteCheckIn}
-                className="bg-white hover:bg-white/90 text-[#2C78E4] border-transparent font-medium px-5 py-2.5 rounded-xl shadow-sm transition-all duration-200"
-              >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Complete Check-in
-              </Button>
-            </div> */}
           </div>
         </div>
 
@@ -509,10 +609,10 @@ const CheckIn = () => {
         <div className="grid grid-cols-1 md:grid-cols-7 gap-6">
           {/* Left Column - Patient Details & Check-in Form */}
           <div className="md:col-span-4 flex flex-col gap-6">
-            {/* Patient Card */}
+            {/* Combined Patient & Owner Information Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="flex items-center p-6 bg-gradient-to-r from-blue-50 to-white border-b border-gray-100">
-                <div className="relative h-28 w-28 rounded-2xl shadow-sm overflow-hidden flex-shrink-0 border-2 border-white bg-blue-100 mr-5">
+                <div className="relative h-24 w-24 rounded-2xl shadow-sm overflow-hidden flex-shrink-0 border-2 border-white bg-blue-100 mr-4">
                   <div className="absolute inset-0 flex items-center justify-center">
                     {patient.data_image ? (
                       <img
@@ -526,232 +626,215 @@ const CheckIn = () => {
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full w-full text-[#2C78E4]/40">
-                        <PawPrint className="h-16 w-16" />
+                        <PawPrint className="h-12 w-12" />
                       </div>
                     )}
                   </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">
-                    {patient.name}
-                  </h2>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-1">
-                    <Badge className="bg-[#2C78E4]/10 text-[#2C78E4] border-[#2C78E4]/20 px-3 py-0.5 rounded-xl text-sm font-medium">
-                      {patient.breed}
-                    </Badge>
-                    <div className="text-gray-600 text-sm flex items-center gap-3 ml-1">
-                      <span className="flex items-center">
-                        <span className="font-medium text-gray-700">ID:</span>
-                        <span className="ml-1">{patient.petid}</span>
-                      </span>
+                <div className="flex-1">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900 mb-1">
+                        {patient.name}
+                      </h2>
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <Badge className="bg-[#2C78E4]/10 text-[#2C78E4] border-[#2C78E4]/20 px-2 py-0.5 rounded-lg text-xs font-medium">
+                          {patient.breed}
+                        </Badge>
+                        <span className="text-xs text-gray-500">ID: {patient.petid}</span>
+                      </div>
+                    </div>
+                    <div className="text-right text-sm">
+                      <div className="font-medium text-gray-900">{appointment.owner.owner_name}</div>
+                      <div className="text-xs text-gray-500">Owner</div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Combined content without tabs */}
-              <div className="px-6 py-5 space-y-6">
-                {/* Owner Information */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="px-5 py-3 bg-gradient-to-r from-[#2C78E4]/10 to-white border-b border-gray-100">
-                    <h3 className="text-sm font-medium text-gray-800 flex items-center">
-                      <User className="mr-2 h-4 w-4 text-[#2C78E4]" />
-                      Owner Information
-                    </h3>
-                  </div>
-                  <div className="p-5 space-y-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-[#2C78E4]/30 transition-colors">
-                        <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                          Owner Name
-                        </label>
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium text-gray-900">
-                            {appointment.owner.owner_name}
-                          </div>
-                
-                        </div>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-[#2C78E4]/30 transition-colors">
-                        <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                          Phone Number
-                        </label>
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium text-gray-900">
-                            {appointment.owner.owner_phone}
-                          </div>
-                        
-                        </div>
-                      </div>
+              {/* Combined content */}
+              <div className="px-6 py-4 space-y-4">
+                {/* Patient & Owner Information Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                      Owner Phone
+                    </label>
+                    <div className="font-medium text-gray-900 text-sm">
+                      {appointment.owner.owner_phone}
                     </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                      Pet Type
+                    </label>
+                    <div className="font-medium text-gray-900 text-sm">
+                      {patient.type}
+                    </div>
+                  </div>
 
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-[#2C78E4]/30 transition-colors">
-                      <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                        Address
-                      </label>
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium text-gray-900">
-                          {appointment.owner.owner_address}
-                        </div>
-                      
-                      </div>
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                      Pet Age
+                    </label>
+                    <div className="font-medium text-gray-900 text-sm">
+                      {patient.age} years
                     </div>
                   </div>
                 </div>
 
-                {/* Appointment Details */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="px-5 py-3 bg-gradient-to-r from-[#2C78E4]/10 to-white border-b border-gray-100">
-                    <h3 className="text-sm font-medium text-gray-800 flex items-center">
-                      <Clock className="mr-2 h-4 w-4 text-[#2C78E4]" />
-                      Appointment Details
-                    </h3>
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <label className="block text-xs text-gray-500 uppercase font-medium mb-1">
+                    Owner Address
+                  </label>
+                  <div className="font-medium text-gray-900 text-sm">
+                    {appointment.owner.owner_address}
                   </div>
-                  <div className="p-5 space-y-5">
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-[#2C78E4]/30 transition-colors">
-                      <label className="block text-xs text-gray-500 uppercase font-medium mb-2">
-                        Appointment Reason
-                      </label>
-                      <div className="text-gray-700 font-medium">
-                        {appointment.reason}
-                      </div>
-                    </div>
+                </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-[#2C78E4]/30 transition-colors">
-                        <label className="block text-xs text-gray-500 uppercase font-medium mb-2 flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-gray-500" />
-                          Select Room
-                        </label>
-                        <Select
-                          value={selectedRoom}
-                          onValueChange={setSelectedRoom}
+                {/* Appointment Reason */}
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                  <label className="block text-xs text-blue-600 uppercase font-medium mb-1">
+                    Appointment Reason
+                  </label>
+                  <div className="text-gray-800 font-medium text-sm">
+                    {appointment.reason}
+                  </div>
+                </div>
+
+                {/* Room Selection and Priority - Compact Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <label className="block text-xs text-gray-500 uppercase font-medium mb-2 flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-gray-500" />
+                      Select Room
+                    </label>
+                    <Select
+                      value={selectedRoom}
+                      onValueChange={setSelectedRoom}
+                    >
+                      <SelectTrigger className="w-full bg-white border-gray-200 focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] rounded-lg h-9">
+                        <SelectValue placeholder="Choose a room" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2 }}
                         >
-                          <SelectTrigger className="w-full bg-white border-gray-200 focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] rounded-lg">
-                            <SelectValue placeholder="Choose a room" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <motion.div
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.2 }}
+                          {availableRooms.map((room) => (
+                            <SelectItem
+                              key={room.id}
+                              value={room.name}
+                              disabled={room.status === "occupied"}
+                              className={cn(
+                                "flex items-center justify-between py-2",
+                                room.status === "occupied"
+                                  ? "opacity-50"
+                                  : ""
+                              )}
                             >
-                              {availableRooms.map((room) => (
-                                <SelectItem
-                                  key={room.id}
-                                  value={room.name}
-                                  disabled={room.status === "occupied"}
+                              <div className="flex items-center gap-2">
+                                <div
                                   className={cn(
-                                    "flex items-center justify-between py-2",
-                                    room.status === "occupied"
-                                      ? "opacity-50"
-                                      : ""
+                                    "w-2 h-2 rounded-full",
+                                    room.status === "available"
+                                      ? "bg-green-500"
+                                      : "bg-gray-400"
                                   )}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className={cn(
-                                        "w-2 h-2 rounded-full",
-                                        room.status === "available"
-                                          ? "bg-green-500"
-                                          : "bg-gray-400"
-                                      )}
-                                    />
-                                    {room.name}
-                                  </div>
-                                  {room.status === "occupied" && (
-                                    <span className="text-xs text-gray-500">
-                                      (Occupied)
-                                    </span>
-                                  )}
-                                </SelectItem>
-                              ))}
-                            </motion.div>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-[#2C78E4]/30 transition-colors">
-                        <label className="block text-xs text-gray-500 uppercase font-medium mb-2 flex items-center gap-1">
-                          <AlertTriangle className="w-3.5 h-3.5 text-gray-500" />
-                          Priority
-                        </label>
-                        <Select value={priority} onValueChange={setPriority}>
-                          <SelectTrigger className="w-full bg-white border-gray-200 focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] rounded-lg">
-                            <SelectValue placeholder="Select priority" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <motion.div
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <SelectItem
-                                value="Normal"
-                                className="flex items-center gap-2"
-                              >
-                                <div className="w-2 h-2 rounded-full bg-green-500" />
-                                <span>Normal</span>
-                              </SelectItem>
-                              <SelectItem
-                                value="High"
-                                className="flex items-center gap-2"
-                              >
-                                <div className="w-2 h-2 rounded-full bg-[#FFA726]" />
-                                <span>High</span>
-                              </SelectItem>
-                              <SelectItem
-                                value="Urgent"
-                                className="flex items-center gap-2"
-                              >
-                                <div className="w-2 h-2 rounded-full bg-red-500" />
-                                <span>Urgent</span>
-                              </SelectItem>
-                            </motion.div>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                                />
+                                {room.name}
+                              </div>
+                              {room.status === "occupied" && (
+                                <span className="text-xs text-gray-500">
+                                  (Occupied)
+                                </span>
+                              )}
+                            </SelectItem>
+                          ))}
+                        </motion.div>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
 
-                {/* Subjective Notes - Replace RichTextEditor with SubjectiveKeyValueEditor */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="px-5 py-3 bg-gradient-to-r from-[#2C78E4]/10 to-white border-b border-gray-100">
-                    <h3 className="text-sm font-medium text-gray-800 flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Stethoscope className="mr-2 h-4 w-4 text-[#2C78E4]" />
-                        Subjective Notes
-                      </div>
-                      
-                    </h3>
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <label className="block text-xs text-gray-500 uppercase font-medium mb-2 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 text-gray-500" />
+                      Priority
+                    </label>
+                    <Select value={priority} onValueChange={setPriority}>
+                      <SelectTrigger className="w-full bg-white border-gray-200 focus:ring-2 focus:ring-[#2C78E4] focus:border-[#2C78E4] rounded-lg h-9">
+                        <SelectValue placeholder="Select priority" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <SelectItem
+                            value="Normal"
+                            className="flex items-center gap-2"
+                          >
+                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                            <span>Normal</span>
+                          </SelectItem>
+                          <SelectItem
+                            value="High"
+                            className="flex items-center gap-2"
+                          >
+                            <div className="w-2 h-2 rounded-full bg-[#FFA726]" />
+                            <span>High</span>
+                          </SelectItem>
+                          <SelectItem
+                            value="Urgent"
+                            className="flex items-center gap-2"
+                          >
+                            <div className="w-2 h-2 rounded-full bg-red-500" />
+                            <span>Urgent</span>
+                          </SelectItem>
+                        </motion.div>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="p-5">
-                    <SubjectiveKeyValueEditor
-                      value={subjective}
-                      onChange={setSubjective}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-8 flex justify-end space-x-3">
-                  <Button
-                    variant="outline"
-                    onClick={handleCancel}
-                    className="flex items-center gap-1.5 bg-white shadow-sm border-gray-200 hover:bg-gray-50 transition-colors rounded-xl px-5"
-                  >
-                    <X className="w-4 h-4" />
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleCompleteCheckIn}
-                    className="bg-[#2C78E4] hover:bg-[#2C78E4]/90 text-white flex items-center gap-1.5 shadow-sm rounded-xl px-5"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    Complete Check-in
-                  </Button>
                 </div>
               </div>
+            </div>
+
+            {/* Subjective Notes - Compact version */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-4 py-3 bg-gradient-to-r from-[#2C78E4]/10 to-white border-b border-gray-100">
+                <h3 className="text-sm font-medium text-gray-800 flex items-center">
+                  <Stethoscope className="mr-2 h-4 w-4 text-[#2C78E4]" />
+                  Subjective Notes
+                </h3>
+              </div>
+              <div className="p-4">
+                <SubjectiveKeyValueEditor
+                  value={subjective}
+                  onChange={setSubjective}
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={handleCancel}
+                className="flex items-center gap-1.5 bg-white shadow-sm border-gray-200 hover:bg-gray-50 transition-colors rounded-xl px-4 py-2"
+              >
+                <X className="w-4 h-4" />
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCompleteCheckIn}
+                className="bg-[#2C78E4] hover:bg-[#2C78E4]/90 text-white flex items-center gap-1.5 shadow-sm rounded-xl px-4 py-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Complete Check-in
+              </Button>
             </div>
           </div>
 

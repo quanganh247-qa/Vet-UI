@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMedicalRecordsReport } from "@/hooks/use-report";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Loader2 } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
+import { Loader2, Activity, TrendingUp, Calendar, Stethoscope } from "lucide-react";
 
 interface MedicalReportProps {
   startDate: string;
@@ -13,16 +13,21 @@ const MedicalReport = ({ startDate, endDate }: MedicalReportProps) => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
+      <div className="flex flex-col justify-center items-center h-64 bg-white rounded-2xl shadow-md">
+        <Loader2 className="h-10 w-10 text-[#2C78E4] animate-spin mb-4" />
+        <p className="text-[#4B5563] font-medium">Loading medical records...</p>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="p-4 bg-red-50 text-red-600 rounded-md">
-        Failed to load medical records data. Please try again later.
+      <div className="p-6 bg-gradient-to-br from-red-50 to-red-100 text-red-700 rounded-2xl border border-red-200 shadow-md">
+        <div className="flex items-center mb-2">
+          <Activity className="h-5 w-5 mr-2" />
+          <span className="font-semibold">Error Loading Data</span>
+        </div>
+        <p className="text-red-600">Failed to load medical records data. Please try again later.</p>
       </div>
     );
   }
@@ -32,44 +37,171 @@ const MedicalReport = ({ startDate, endDate }: MedicalReportProps) => {
     .filter(item => item.examinations > 0)
     .map(item => ({
       ...item,
-      month: item.month.substring(5) // Just show MM from YYYY-MM format
+      month: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short' })
     }));
+
+  // Calculate growth rate
+  const currentMonth = monthlyTrendData[monthlyTrendData.length - 1]?.examinations || 0;
+  const previousMonth = monthlyTrendData[monthlyTrendData.length - 2]?.examinations || 0;
+  const growthRate = previousMonth > 0 ? ((currentMonth - previousMonth) / previousMonth * 100) : 0;
 
   return (
     <div className="space-y-6">
-      {/* Medical Statistics Card */}
-      <Card className="bg-gradient-to-br from-indigo-50 to-white border-none shadow-md">
-        <CardHeader className="pb-2">
-          <CardDescription className="text-indigo-500">Total Examinations</CardDescription>
-          <CardTitle className="text-2xl text-indigo-700">{data.total_examinations}</CardTitle>
-        </CardHeader>
-      </Card>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Total Examinations */}
+        <Card className="bg-gradient-to-br from-[#2C78E4]/5 to-white border-none shadow-md hover:shadow-lg transition-shadow duration-300 rounded-2xl">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardDescription className="text-[#2C78E4] font-medium text-sm">Total Examinations</CardDescription>
+                <CardTitle className="text-3xl font-bold text-[#2C78E4] mt-1">{data.total_examinations.toLocaleString()}</CardTitle>
+              </div>
+              <div className="bg-[#2C78E4]/10 p-3 rounded-xl">
+                <Activity className="h-6 w-6 text-[#2C78E4]" />
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
 
-      {/* Monthly Examination Trends */}
-      <Card className="border-none shadow-md">
-        <CardHeader>
-          <CardTitle className="text-lg text-indigo-900">Monthly Examination Trends</CardTitle>
+        {/* Monthly Average */}
+        <Card className="bg-gradient-to-br from-[#FFA726]/5 to-white border-none shadow-md hover:shadow-lg transition-shadow duration-300 rounded-2xl">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardDescription className="text-[#FFA726] font-medium text-sm">Monthly Average</CardDescription>
+                <CardTitle className="text-3xl font-bold text-[#FFA726] mt-1">
+                  {monthlyTrendData.length > 0 ? 
+                    Math.round(monthlyTrendData.reduce((sum, item) => sum + item.examinations, 0) / monthlyTrendData.length).toLocaleString() 
+                    : '0'
+                  }
+                </CardTitle>
+              </div>
+              <div className="bg-[#FFA726]/10 p-3 rounded-xl">
+                <Calendar className="h-6 w-6 text-[#FFA726]" />
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Growth Rate */}
+        <Card className="bg-gradient-to-br from-[#10B981]/5 to-white border-none shadow-md hover:shadow-lg transition-shadow duration-300 rounded-2xl">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardDescription className="text-[#10B981] font-medium text-sm">Monthly Growth</CardDescription>
+                <CardTitle className="text-3xl font-bold text-[#10B981] mt-1">
+                  {growthRate > 0 ? '+' : ''}{growthRate.toFixed(1)}%
+                </CardTitle>
+              </div>
+              <div className="bg-[#10B981]/10 p-3 rounded-xl">
+                <TrendingUp className="h-6 w-6 text-[#10B981]" />
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+      </div>
+
+      {/* Monthly Examination Trends Chart */}
+      <Card className="border-none shadow-md rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-[#F9FAFB] to-white border-b border-gray-100 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl font-bold text-[#111827]">Monthly Examination Trends</CardTitle>
+              <CardDescription className="text-[#4B5563] mt-1">Track examination volume over time</CardDescription>
+            </div>
+            <div className="flex items-center text-sm text-[#4B5563]">
+              <div className="w-3 h-3 bg-[#2C78E4] rounded-full mr-2"></div>
+              Examinations
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyTrendData}>
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => `${value} examinations`} />
-                <Line 
+              <AreaChart data={monthlyTrendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="examinationGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2C78E4" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#2C78E4" stopOpacity={0.05}/>
+                  </linearGradient>
+                </defs>
+                <XAxis 
+                  dataKey="month" 
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#4B5563', fontSize: 12 }}
+                />
+                <YAxis 
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#4B5563', fontSize: 12 }}
+                />
+                <Tooltip 
+                  formatter={(value) => [`${value} examinations`, 'Total']}
+                  labelStyle={{ color: '#111827', fontWeight: 'bold' }}
+                  contentStyle={{ 
+                    backgroundColor: 'white', 
+                    border: 'none', 
+                    borderRadius: '12px', 
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)' 
+                  }}
+                />
+                <Area 
                   type="monotone" 
                   dataKey="examinations" 
-                  stroke="#4f46e5" 
+                  stroke="#2C78E4" 
                   strokeWidth={3}
-                  dot={{ fill: "#4f46e5", strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: "#4f46e5", strokeWidth: 2 }}
+                  fill="url(#examinationGradient)"
+                  dot={{ fill: "#2C78E4", strokeWidth: 2, r: 5 }}
+                  activeDot={{ r: 7, stroke: "#2C78E4", strokeWidth: 3, fill: "white" }}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
+          </div>
+          
+          {/* Chart Footer */}
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-[#4B5563]">
+                Data from {monthlyTrendData.length} months
+              </span>
+              <span className="text-[#4B5563]">
+                Peak: {Math.max(...monthlyTrendData.map(item => item.examinations)).toLocaleString()} examinations
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Additional Insights */}
+      {monthlyTrendData.length > 0 && (
+        <div className="bg-gradient-to-br from-[#2C78E4]/5 to-[#FFA726]/5 rounded-2xl p-6 border border-gray-100">
+          <h3 className="text-lg font-bold text-[#111827] mb-4">Key Insights</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white rounded-xl p-4 shadow-sm">
+              <div className="flex items-center mb-2">
+                <div className="w-2 h-2 bg-[#2C78E4] rounded-full mr-2"></div>
+                <span className="text-sm font-medium text-[#4B5563]">Busiest Month</span>
+              </div>
+              <p className="text-lg font-bold text-[#111827]">
+                {monthlyTrendData.reduce((max, item) => 
+                  item.examinations > max.examinations ? item : max
+                ).month}
+              </p>
+            </div>
+            <div className="bg-white rounded-xl p-4 shadow-sm">
+              <div className="flex items-center mb-2">
+                <div className="w-2 h-2 bg-[#FFA726] rounded-full mr-2"></div>
+                <span className="text-sm font-medium text-[#4B5563]">Total Months</span>
+              </div>
+              <p className="text-lg font-bold text-[#111827]">
+                {monthlyTrendData.length} months
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

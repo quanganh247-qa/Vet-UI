@@ -622,6 +622,7 @@ const StaffPage = () => {
                 Staff Management
               </h1>
             </div>
+            <p className="text-sm text-white">Manage your staff members</p>
           </div>
           <div className="flex gap-2">
             <Button

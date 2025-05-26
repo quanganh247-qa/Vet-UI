@@ -51,17 +51,31 @@ export const listTestOrders = async (appointmentID: number) => {
   }
 };
 
+export type CreateTestRequest = {
+	test_id: string;
+	category_id: string;
+	name: string;
+	description: string;
+	price: number;
+	turnaround_time: string;
+	type: string;
+	medicine_id: number;
+}
+
 // Tạo xét nghiệm mới
 export const createTest = async (
-  petID: number,
-  doctorID: number,
-  testType: string
+  test: CreateTestRequest
 ) => {
   try {
-    const response = await api.post(`/api/v1/tests`, {
-      pet_id: petID,
-      doctor_id: doctorID,
-      test_type: testType,
+    const response = await api.post(`/api/v1/items`, {
+      test_id: test.test_id,
+      category_id: test.category_id,
+      name: test.name,
+      description: test.description,
+      price: test.price,
+      turnaround_time: test.turnaround_time,
+      type: test.type,
+      medicine_id: test.medicine_id,
     });
     return response.data;
   } catch (error) {
@@ -69,6 +83,11 @@ export const createTest = async (
     throw error;
   }
 };
+
+
+		// permsRoute([]perms.Permission{perms.ManageTest}).POST("/items", controller.CreateTest)
+
+  
 
 // Cập nhật trạng thái xét nghiệm
 export const updateTestStatus = async (testID: number, status: string) => {

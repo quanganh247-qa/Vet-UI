@@ -72,11 +72,9 @@ const Dashboard = () => {
     <div className="space-y-6">
       {/* Header with gradient background */}
       <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-semibold">
-              Dashboard Overview
-            </h1>
+            <h1 className="text-xl font-semibold">Dashboard Overview</h1>
             {doctor && (
               <Badge className="bg-white/20 text-white hover:bg-white/30 rounded-full">
                 {doctor.username}
@@ -84,7 +82,7 @@ const Dashboard = () => {
             )}
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <div className="flex items-center bg-white/10 text-white border-white/20 rounded-xl px-3 py-2 transition-all hover:bg-white/15">
               <CalendarIcon className="h-4 w-4 text-white/80 mr-2" />
               <input
@@ -145,23 +143,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Reports Dashboard */}
-      <Card className="border border-[#F9FAFB] shadow-sm rounded-2xl overflow-hidden bg-white">
-        <CardHeader className="bg-white pb-4 border-b border-[#F9FAFB]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <BarChart2 className="h-5 w-5 mr-2 text-[#2C78E4]" />
-              <CardTitle className="text-lg font-semibold text-[#111827]">
-                Performance Overview
-              </CardTitle>
-            </div>
-           
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          <ReportsDashboard />
-        </CardContent>
-      </Card>
+      <ReportsDashboard />
     </div>
   );
 };

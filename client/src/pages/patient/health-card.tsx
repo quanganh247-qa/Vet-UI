@@ -593,9 +593,14 @@ const HealthCard: React.FC<HealthCardProps> = ({
               <ChevronLeft className="h-4 w-4 mr-2" />
               <span className="text-sm font-medium">Back</span>
             </Button>
-            <h1 className="text-white font-semibold text-lg">
-              Patient Health Card
-            </h1>
+            <div>
+              <h1 className="text-white font-bold text-xl">
+                Patient Health Card
+              </h1>
+              <p className="text-blue-100 text-sm mt-1">
+                Health Card - {displayPatientInfo.name}
+              </p>
+          </div>
           </div>
 
           {showDebug && (
@@ -811,14 +816,7 @@ const HealthCard: React.FC<HealthCardProps> = ({
                       kg
                     </Button>
                   </div>
-                  {/* <Button
-                    size="sm"
-                    className="bg-[#2C78E4] hover:bg-[#1E40AF] transition-colors"
-                    onClick={() => handleButtonClick("add-weight")}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </Button> */}
+                  
                 </div>
               </CardHeader>
               <CardContent className="p-5">
@@ -996,70 +994,7 @@ const HealthCard: React.FC<HealthCardProps> = ({
                         Vaccination History
                       </h3>
                       <div className="flex space-x-2">
-                        <div className="flex rounded-lg border overflow-hidden">
-                          <Button
-                            variant={
-                              preventiveFilter === "all" ? "default" : "outline"
-                            }
-                            size="sm"
-                            className={`rounded-none ${
-                              preventiveFilter === "all"
-                                ? "bg-[#2C78E4] hover:bg-[#1E40AF]"
-                                : ""
-                            }`}
-                            onClick={() => setPreventiveFilter("all")}
-                          >
-                            All
-                          </Button>
-                          <Button
-                            variant={
-                              preventiveFilter === "upcoming"
-                                ? "default"
-                                : "outline"
-                            }
-                            size="sm"
-                            className={`rounded-none ${
-                              preventiveFilter === "upcoming"
-                                ? "bg-[#2C78E4] hover:bg-[#1E40AF]"
-                                : ""
-                            }`}
-                            onClick={() => setPreventiveFilter("upcoming")}
-                          >
-                            Upcoming
-                          </Button>
-                          <Button
-                            variant={
-                              preventiveFilter === "due-soon"
-                                ? "default"
-                                : "outline"
-                            }
-                            size="sm"
-                            className={`rounded-none ${
-                              preventiveFilter === "due-soon"
-                                ? "bg-[#2C78E4] hover:bg-[#1E40AF]"
-                                : ""
-                            }`}
-                            onClick={() => setPreventiveFilter("due-soon")}
-                          >
-                            Due Soon
-                          </Button>
-                          <Button
-                            variant={
-                              preventiveFilter === "overdue"
-                                ? "default"
-                                : "outline"
-                            }
-                            size="sm"
-                            className={`rounded-none ${
-                              preventiveFilter === "overdue"
-                                ? "bg-[#2C78E4] hover:bg-[#1E40AF]"
-                                : ""
-                            }`}
-                            onClick={() => setPreventiveFilter("overdue")}
-                          >
-                            Overdue
-                          </Button>
-                        </div>
+                        
                         <Button
                           size="sm"
                           className="bg-[#2C78E4] hover:bg-[#1E40AF] transition-colors"
@@ -1183,16 +1118,7 @@ const HealthCard: React.FC<HealthCardProps> = ({
                                 >
                                   {statusLabel}
                                 </span>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-gray-400 hover:text-[#2C78E4] hover:bg-[#E3F2FD] rounded-full"
-                                  onClick={() =>
-                                    handleButtonClick("edit-vaccination", item)
-                                  }
-                                >
-                                  <Edit3 className="h-3.5 w-3.5" />
-                                </Button>
+                                
                               </div>
                             </div>
                           );
@@ -1534,15 +1460,7 @@ const HealthCard: React.FC<HealthCardProps> = ({
                   <Download className="h-4 w-4 mr-1" />
                   Download
                 </Button>
-                <DialogClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-gray-500 hover:text-[#2C78E4] hover:bg-[#E3F2FD] rounded-full h-8 w-8"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </DialogClose>
+                
               </div>
             </div>
           </DialogHeader>

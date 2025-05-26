@@ -17,6 +17,17 @@ import {
   Stethoscope,
   CheckCircle,
   Tag,
+  Copy,
+  Edit,
+  MoreVertical,
+  UserPlus,
+  CalendarDays,
+  Timer,
+  Award,
+  TrendingUp,
+  Eye,
+  Settings,
+  RefreshCw,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -62,6 +73,14 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/use-toast";
 import { useDoctors } from "@/hooks/use-doctor";
 import { useShifts, useShiftMutations } from "@/hooks/use-shifts";
@@ -97,6 +116,14 @@ const defaultTemplates: ShiftTemplate[] = [
     color: "bg-[#FFA726]/10 border-[#FFA726]/30 text-[#FFA726]",
     recurring: false,
   },
+  {
+    id: "3",
+    name: "Night Shift",
+    startTime: "18:00",
+    endTime: "22:00",
+    color: "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 text-[#8B5CF6]",
+    recurring: false,
+  },
 ];
 
 // Assignment type for the week view
@@ -104,7 +131,7 @@ type DoctorAssignment = {
   id: string;
   doctorId: number;
   doctorName: string;
-  date: string; // Date stored as string
+  date: string;
   shiftTemplateId: string;
   startTime: string;
   endTime: string;
@@ -127,17 +154,15 @@ const ShiftAssignmentPage = () => {
     recurring: false,
     days: [],
   });
+
   // Data fetching
   const { data: doctorsData, isLoading: doctorsLoading } = useDoctors();
   const { data: assignmentsData, isLoading: assignmentsLoading } = useShifts();
-
-  const { createMutation, updateMutation, deleteMutation } =
-    useShiftMutations();
+  const { createMutation, updateMutation, deleteMutation } = useShiftMutations();
 
   // Format doctors data
   const doctors = useMemo(() => {
     if (!doctorsData?.data) return [];
-    // Filter to only include doctors with role "doctor" or "Doctor"
     return doctorsData.data.filter((doc: Doctor) => 
       doc.role?.toLowerCase() === "doctor"
     );
@@ -152,17 +177,12 @@ const ShiftAssignmentPage = () => {
         (d: Doctor) => d.doctor_id === shift.doctor_id
       );
 
-      // Find matching template or use the first template as fallback
       const templateMatch =
         templates.find(
           (t) =>
             t.startTime === format(new Date(shift.start_time), "HH:mm") &&
             t.endTime === format(new Date(shift.end_time), "HH:mm")
         ) || templates[0];
-
-      // Ensure we're working with valid dates
-      const startDate = new Date(shift.start_time);
-      const isValidDate = !isNaN(startDate.getTime());
 
       return {
         id: shift.id.toString(),
@@ -183,7 +203,7 @@ const ShiftAssignmentPage = () => {
 
   // Get week range based on current date
   const weekRange = useMemo(() => {
-    const start = startOfWeek(currentDate, { weekStartsOn: 1 }); // Week starts on Monday
+    const start = startOfWeek(currentDate, { weekStartsOn: 1 });
     const end = endOfWeek(currentDate, { weekStartsOn: 1 });
 
     const days = [];
@@ -210,52 +230,7 @@ const ShiftAssignmentPage = () => {
     setCurrentDate(new Date());
   };
 
-  // Template management
-  const handleAddTemplate = () => {
-    if (!newTemplate.name || !newTemplate.startTime || !newTemplate.endTime) {
-      toast({
-        title: "Invalid Template",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    const templateWithId: ShiftTemplate = {
-      id: `template_${Date.now()}`,
-      name: newTemplate.name || "New Shift",
-      startTime: newTemplate.startTime || "09:00",
-      endTime: newTemplate.endTime || "17:00",
-      color: "bg-[#2C78E4]/10 border-[#2C78E4]/30 text-[#2C78E4]",
-      recurring: newTemplate.recurring || false,
-      days: newTemplate.days,
-    };
-
-    setTemplates((prev) => [...prev, templateWithId]);
-    setNewTemplate({
-      name: "",
-      startTime: "09:00",
-      endTime: "17:00",
-      recurring: false,
-      days: [],
-    });
-    setShowTemplateDialog(false);
-
-    toast({
-      title: "Template Created",
-      description: "New shift template has been created",
-      className: "bg-green-50 text-green-800 border-green-200",
-    });
-  };
-
-  const handleDeleteTemplate = (id: string) => {
-    setTemplates((prev) => prev.filter((t) => t.id !== id));
-    toast({
-      title: "Template Deleted",
-      description: "Shift template has been removed",
-      className: "bg-red-50 text-red-800 border-red-200",
-    });
-  };
 
   // Assignment handling
   const handleAssignShift = (
@@ -279,9 +254,7 @@ const ShiftAssignmentPage = () => {
 
     if (!doctor || !template) return;
 
-    // Create the shift on the backend
     const shiftStartTime = new Date(date);
-    // Ensure date is valid
     if (isNaN(shiftStartTime.getTime())) {
       toast({
         title: "Invalid Date",
@@ -306,7 +279,7 @@ const ShiftAssignmentPage = () => {
       0
     );
 
-    // Check for time overlaps with existing shifts
+    // Check for time overlaps
     const dateStr = format(date, "yyyy-MM-dd");
     const existingShifts = assignments.filter(
       (a) =>
@@ -329,8 +302,7 @@ const ShiftAssignmentPage = () => {
     if (hasOverlap) {
       toast({
         title: "Time Conflict",
-        description:
-          "This shift overlaps with an existing shift for this doctor",
+        description: "This shift overlaps with an existing shift for this doctor",
         variant: "destructive",
       });
       return;
@@ -347,7 +319,6 @@ const ShiftAssignmentPage = () => {
 
     createMutation.mutate(shiftData, {
       onSuccess: (data) => {
-        // Clear selections and close dialog
         setSelectedDoctor(null);
         setSelectedTemplate(null);
         setShowAssignDialog(false);
@@ -371,7 +342,6 @@ const ShiftAssignmentPage = () => {
   };
 
   const handleDeleteAssignment = (id: string) => {
-    // Delete from backend
     deleteMutation.mutate(parseInt(id), {
       onSuccess: () => {
         toast({
@@ -390,131 +360,93 @@ const ShiftAssignmentPage = () => {
     });
   };
 
-  // Get template info for an assignment
   const getTemplateForAssignment = (assignment: DoctorAssignment) => {
     return templates.find((t) => t.id === assignment.shiftTemplateId);
   };
 
-  // Effect to set current date to match data when component loads
-  useEffect(() => {
-    if (assignments.length > 0) {
-      try {
-        // Find the earliest date in assignments that is valid and not in the past
-        const now = new Date();
-        now.setHours(0, 0, 0, 0); // Set to midnight for comparison
-
-        // Filter valid dates and those not in the past
-        const validDates = assignments
-          .map((a) => new Date(a.date))
-          .filter((date) => !isNaN(date.getTime()) && date >= now);
-
-        if (validDates.length > 0) {
-          // Sort dates in ascending order and take the earliest
-          const earliestFutureDate = new Date(
-            Math.min(...validDates.map((d) => d.getTime()))
-          );
-          setCurrentDate(earliestFutureDate);
-          console.log(
-            "Set current date to earliest valid future assignment date:",
-            format(earliestFutureDate, "yyyy-MM-dd")
-          );
-        } else {
-          // If no valid future dates, use current date
-          setCurrentDate(new Date());
-          console.log("No valid future assignments found, using current date");
-        }
-      } catch (error) {
-        console.error("Error setting initial date:", error);
-        // Default to current date on error
-        setCurrentDate(new Date());
-      }
-    }
-  }, [assignments]);
-
-  // Render week view
   const renderWeekView = () => {
-    console.log("Current assignments:", assignments);
-    console.log(
-      "Week range:",
-      weekRange.map((day) => format(day, "yyyy-MM-dd"))
-    );
-
-    // If no assignments are loaded yet, show loading state
     if (assignmentsLoading) {
       return (
-        <div className="flex items-center justify-center h-64 border rounded-lg bg-[#F9FAFB] mt-4">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-5 w-5 animate-spin text-[#2C78E4]" />
-            <p className="text-[#4B5563]">Loading assignments...</p>
+        <div className="flex items-center justify-center h-64 border rounded-2xl bg-[#F9FAFB] mt-4">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-[#2C78E4]" />
+            <p className="text-[#4B5563] font-medium">Loading shifts...</p>
+            <p className="text-sm text-[#6B7280]">Please wait while we fetch the schedule</p>
           </div>
         </div>
       );
     }
 
     return (
-      <div className="border rounded-lg overflow-hidden mt-4">
-        <div className="grid grid-cols-8 border-b">
-          <div className="p-3 border-r font-medium bg-[#F9FAFB] flex items-center justify-center text-[#4B5563]">
+      <div className="border rounded-2xl overflow-hidden mt-6 shadow-md bg-white">
+        <div className="grid grid-cols-8 border-b bg-gradient-to-r from-[#F9FAFB] to-gray-50">
+          <div className="p-4 border-r font-semibold bg-white flex items-center justify-center text-[#111827]">
+            <Users className="h-4 w-4 mr-2 text-[#2C78E4]" />
             Doctors
           </div>
           {weekRange.map((day, index) => (
             <div
               key={index}
-              className={`p-3 text-center font-medium border-r last:border-r-0 ${
+              className={`p-4 text-center font-semibold border-r last:border-r-0 ${
                 isSameDay(day, new Date())
-                  ? "bg-[#2C78E4]/5 text-[#2C78E4]"
+                  ? "bg-[#2C78E4]/10 text-[#2C78E4]"
                   : "text-[#111827]"
               }`}
             >
-              <div>{format(day, "EEE")}</div>
-              <div className="text-sm text-[#4B5563]">
-                {format(day, "MMM dd")}
+              <div className="text-sm">{format(day, "EEE")}</div>
+              <div className="text-lg font-bold mt-1">{format(day, "d")}</div>
+              <div className="text-xs text-[#4B5563] mt-1">
+                {format(day, "MMM")}
               </div>
             </div>
           ))}
         </div>
 
         {doctorsLoading ? (
-          <div className="p-8 text-center text-[#4B5563] flex flex-col items-center gap-2">
-            <Loader2 className="h-5 w-5 animate-spin text-[#2C78E4]" />
-            <span>Loading doctors...</span>
+          <div className="p-12 text-center text-[#4B5563] flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-[#2C78E4]" />
+            <span className="font-medium">Loading doctors...</span>
           </div>
         ) : doctors.length === 0 ? (
-          <div className="p-8 text-center text-[#4B5563]">
-            No doctors available
+          <div className="p-12 text-center">
+            <div className="bg-[#2C78E4]/10 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <Users className="h-8 w-8 text-[#2C78E4]" />
+            </div>
+            <h3 className="font-semibold text-[#111827] mb-2">No doctors available</h3>
+            <p className="text-[#4B5563]">Add doctors to start scheduling shifts</p>
           </div>
         ) : (
           doctors.map((doctor: Doctor) => (
             <div
               key={doctor.doctor_id}
-              className="grid grid-cols-8 border-b last:border-b-0"
+              className="grid grid-cols-8 border-b last:border-b-0 hover:bg-[#F9FAFB]/50 transition-colors"
             >
-              <div className="p-3 border-r flex flex-col justify-center">
-                <div className="font-medium text-[#111827]">
-                  {doctor.doctor_name}
-                </div>
-                <div className="text-sm text-[#4B5563]">
-                  {doctor.specialization || "Doctor"}
+              <div className="p-4 border-r flex flex-col justify-center bg-white">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-[#2C78E4]/10 p-2 rounded-full">
+                    <Stethoscope className="h-4 w-4 text-[#2C78E4]" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[#111827]">
+                      {doctor.doctor_name}
+                    </div>
+                    <div className="text-sm text-[#4B5563]">
+                      {doctor.specialization || "General Practice"}
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {weekRange.map((day, index) => {
-                // Format date string for comparison
                 const dayStr = format(day, "yyyy-MM-dd");
-
-                // Get assignments for this day/doctor
                 const dayAssignments = assignments
                   .filter(
                     (a) =>
                       a.date === dayStr &&
                       (a.doctorId === doctor.doctor_id ||
-                        a.doctorId?.toString() ===
-                          doctor.doctor_id?.toString() ||
-                        (a.doctorName === doctor.doctor_name &&
-                          a.doctorName === "DHQA RCC")) // Special handling for test data
+                        a.doctorId?.toString() === doctor.doctor_id?.toString())
                   )
                   .sort((a, b) => {
-                    // Sort by start time
                     const timeA = a.startTime || "00:00";
                     const timeB = b.startTime || "00:00";
                     return timeA.localeCompare(timeB);
@@ -523,47 +455,72 @@ const ShiftAssignmentPage = () => {
                 return (
                   <div
                     key={index}
-                    className={`p-2 border-r last:border-r-0 min-h-[100px] relative ${
+                    className={`p-3 border-r last:border-r-0 min-h-[120px] relative ${
                       isSameDay(day, new Date()) ? "bg-[#2C78E4]/5" : ""
                     }`}
                   >
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       {dayAssignments.length > 0
                         ? dayAssignments.map((assignment) => {
-                            const template =
-                              getTemplateForAssignment(assignment);
+                            const template = getTemplateForAssignment(assignment);
                             return (
                               <div
                                 key={assignment.id}
                                 className={`p-2 rounded-lg border text-xs ${
                                   template?.color || "bg-gray-100"
-                                } relative group hover:shadow-md transition-shadow`}
+                                } relative group hover:shadow-md transition-all duration-200`}
                               >
-                                <div className="font-medium">
+                                <div className="font-semibold">
                                   {template?.name}
                                 </div>
-                                <div className="text-xs mt-1">
+                                <div className="text-xs mt-1 flex items-center">
+                                  <Clock className="h-3 w-3 mr-1" />
                                   {assignment.startTime} - {assignment.endTime}
                                 </div>
-                                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                  <Trash2
-                                    className="h-4 w-4 text-red-500 hover:text-red-700"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteAssignment(assignment.id);
-                                    }}
-                                  />
+                                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0 hover:bg-white/50 rounded-md"
+                                      >
+                                        <MoreVertical className="h-3 w-3" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-32">
+                                      
+                                      <DropdownMenuItem className="text-xs">
+                                        <Edit className="h-3 w-3 mr-2" />
+                                        Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem className="text-xs">
+                                        <Copy className="h-3 w-3 mr-2" />
+                                        Copy
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem 
+                                        className="text-xs text-red-600"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteAssignment(assignment.id);
+                                        }}
+                                      >
+                                        <Trash2 className="h-3 w-3 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </div>
                               </div>
                             );
                           })
                         : null}
 
-                      {/* Always show the Assign button, even when there are existing assignments */}
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full flex flex-col items-center justify-center text-[#4B5563] hover:text-[#2C78E4] hover:bg-[#F9FAFB] mt-1"
+                        className="w-full flex flex-col items-center justify-center text-[#4B5563] hover:text-[#2C78E4] hover:bg-[#2C78E4]/10 border-2 border-dashed border-gray-200 hover:border-[#2C78E4]/30 rounded-lg py-2 transition-all duration-200"
                         onClick={() => {
                           setCurrentDate(day);
                           setSelectedDoctor(doctor.doctor_id.toString());
@@ -571,7 +528,7 @@ const ShiftAssignmentPage = () => {
                         }}
                       >
                         <Plus className="h-4 w-4 mb-1" />
-                        {/* <span className="text-xs">Assign Shift</span> */}
+                        {/* <span className="text-xs">Add Shift</span> */}
                       </Button>
                     </div>
                   </div>
@@ -584,95 +541,125 @@ const ShiftAssignmentPage = () => {
     );
   };
 
-  // Render list view of all assignments
   const renderListView = () => {
-    // Sort by parsing date strings - ensure valid dates
     const sortedAssignments = [...assignments]
       .filter((a) => {
         const date = new Date(a.date);
-        return !isNaN(date.getTime()); // Filter out invalid dates
+        return !isNaN(date.getTime());
       })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return (
-      <div className="rounded-lg border border-gray-200 mt-4 overflow-hidden">
+      <div className="rounded-2xl border border-gray-100 mt-6 overflow-hidden shadow-md bg-white">
         <Table>
-          <TableHeader className="bg-[#F9FAFB]">
+          <TableHeader className="bg-gradient-to-r from-[#F9FAFB] to-gray-50">
             <TableRow>
-              <TableHead className="font-medium text-[#111827]">
-                Doctor
-              </TableHead>
-              <TableHead className="font-medium text-[#111827]">Date</TableHead>
-              <TableHead className="font-medium text-[#111827]">
-                Shift
-              </TableHead>
-              <TableHead className="font-medium text-[#111827]">Time</TableHead>
-              <TableHead className="font-medium text-[#111827]">
-                Status
-              </TableHead>
-              <TableHead className="font-medium text-[#111827] text-right">
-                Actions
-              </TableHead>
+              <TableHead className="font-semibold text-[#111827]">Doctor</TableHead>
+              <TableHead className="font-semibold text-[#111827]">Date</TableHead>
+              <TableHead className="font-semibold text-[#111827]">Shift</TableHead>
+              <TableHead className="font-semibold text-[#111827]">Time</TableHead>
+              <TableHead className="font-semibold text-[#111827]">Status</TableHead>
+              <TableHead className="font-semibold text-[#111827] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedAssignments.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="h-24 text-center text-[#4B5563]"
-                >
-                  No shift assignments found
+                <TableCell colSpan={6} className="h-32 text-center">
+                  <div className="flex flex-col items-center">
+                    <div className="bg-[#2C78E4]/10 p-4 rounded-full mb-4">
+                      <CalendarDays className="h-8 w-8 text-[#2C78E4]" />
+                    </div>
+                    <h3 className="font-semibold text-[#111827] mb-2">No shifts assigned</h3>
+                    <p className="text-[#4B5563] mb-4">Start by creating shift assignments</p>
+                    <Button
+                      onClick={() => setShowAssignDialog(true)}
+                      className="bg-[#2C78E4] hover:bg-[#2C78E4]/90 text-white rounded-lg"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Assign First Shift
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
               sortedAssignments.map((assignment) => {
                 const template = getTemplateForAssignment(assignment);
                 const assignmentDate = new Date(assignment.date);
-                // Use current date as fallback if date is invalid
                 const displayDate = !isNaN(assignmentDate.getTime())
                   ? format(assignmentDate, "MMM dd, yyyy")
                   : format(new Date(), "MMM dd, yyyy");
 
                 return (
-                  <TableRow key={assignment.id} className="hover:bg-[#F9FAFB]">
-                    <TableCell className="font-medium text-[#111827]">
-                      {assignment.doctorName}
+                  <TableRow key={assignment.id} className="hover:bg-[#F9FAFB]/60">
+                    <TableCell className="font-semibold text-[#111827]">
+                      <div className="flex items-center space-x-2">
+                        <div className="bg-[#2C78E4]/10 p-1 rounded-full">
+                          <Stethoscope className="h-3 w-3 text-[#2C78E4]" />
+                        </div>
+                        <span>{assignment.doctorName}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-[#111827]">{displayDate}</TableCell>
+                    <TableCell>
+                      <Badge className={cn("rounded-full", template?.color)}>
+                        {template?.name}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-[#111827]">
-                      {displayDate}
-                    </TableCell>
-                    <TableCell className="text-[#111827]">
-                      {template?.name}
-                    </TableCell>
-                    <TableCell className="text-[#111827]">
-                      {assignment.startTime} - {assignment.endTime}
+                      <div className="flex items-center">
+                        <Clock className="h-3 w-3 mr-1 text-[#4B5563]" />
+                        {assignment.startTime} - {assignment.endTime}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={
-                          assignment.status === "published"
-                            ? "default"
-                            : "outline"
-                        }
+                        variant={assignment.status === "published" ? "default" : "outline"}
                         className={
                           assignment.status === "published"
-                            ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-100"
-                            : "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100"
+                            ? "bg-[#10B981]/10 text-[#10B981] border-[#10B981]/20"
+                            : assignment.status === "confirmed"
+                            ? "bg-[#2C78E4]/10 text-[#2C78E4] border-[#2C78E4]/20"
+                            : "bg-[#FFA726]/10 text-[#FFA726] border-[#FFA726]/20"
                         }
                       >
                         {assignment.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteAssignment(assignment.id)}
-                        className="h-8 w-8 rounded-full hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-gray-100 rounded-lg"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuItem>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Shift
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteAssignment(assignment.id)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 );
@@ -687,233 +674,141 @@ const ShiftAssignmentPage = () => {
   return (
     <div className="space-y-6">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
-        <div className="flex justify-between items-center">
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Shift Assignment</h1>
-            
+            <h1 className="text-xl font-semibold text-white">Shift Management</h1>
+            <p className="text-sm text-white">Efficiently manage doctor shifts and schedules</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="md:col-span-4">
-          <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
-            <CardHeader className="bg-white pb-3 border-b border-gray-100">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-lg font-semibold text-[#111827] flex items-center">
-                  <Calendar className="h-5 w-5 mr-2 text-[#2C78E4]" />
-                  Shift Schedule
-                </CardTitle>
-                <Tabs
-                  value={activeView}
-                  onValueChange={(v) => setActiveView(v as "week" | "list")}
-                  className="w-[200px]"
-                >
-                  <TabsList className="grid grid-cols-2">
-                    <TabsTrigger
-                      value="week"
-                      className="flex items-center gap-1.5"
-                    >
-                      <Calendar className="h-4 w-4" />
-                      Week View
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="list"
-                      className="flex items-center gap-1.5"
-                    >
-                      <Users className="h-4 w-4" />
-                      List View
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 md:p-6">
-              <Tabs value={activeView} className="w-full">
-                <TabsContent value="week" className="mt-0 p-0">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={prevWeek}
-                        className="border-gray-200 rounded-lg hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20"
-                      >
-                        <ChevronLeft className="h-4 w-4 text-[#4B5563]" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={todayWeek}
-                        className="border-gray-200 rounded-lg hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20 text-[#4B5563]"
-                      >
-                        Today
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={nextWeek}
-                        className="border-gray-200 rounded-lg hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20"
-                      >
-                        <ChevronRight className="h-4 w-4 text-[#4B5563]" />
-                      </Button>
-                      <h3 className="font-medium text-[#111827] ml-2">
-                        {format(weekRange[0], "MMM d")} -{" "}
-                        {format(weekRange[6], "MMM d, yyyy")}
-                      </h3>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowAssignDialog(true)}
-                      className="border-gray-200 rounded-lg hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20 text-[#4B5563]"
-                    >
-                      <Plus className="h-4 w-4 mr-2 text-[#2C78E4]" />
-                      Quick Assign
-                    </Button>
-                  </div>
-                  {renderWeekView()}
-                </TabsContent>
-
-                <TabsContent value="list" className="mt-0 p-0">
-                  {renderListView()}
-                </TabsContent>
+      {/* Main Schedule Card */}
+      <Card className="border-none shadow-lg rounded-2xl overflow-hidden bg-white">
+        <CardHeader className="bg-gradient-to-r from-[#F9FAFB] to-white border-b border-gray-100 pb-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-center space-x-4">
+              <CardTitle className="text-xl font-bold text-[#111827] flex items-center">
+                <Calendar className="h-6 w-6 mr-2 text-[#2C78E4]" />
+                Shift Schedule
+              </CardTitle>
+              
+              <Tabs
+                value={activeView}
+                onValueChange={(v) => setActiveView(v as "week" | "list")}
+                className="ml-4"
+              >
+                <TabsList className="grid grid-cols-2 bg-gray-100 rounded-lg">
+                  <TabsTrigger
+                    value="week"
+                    className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#2C78E4]"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Week View
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="list"
+                    className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#2C78E4]"
+                  >
+                    <Users className="h-4 w-4" />
+                    List View
+                  </TabsTrigger>
+                </TabsList>
               </Tabs>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
 
-      </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowTemplateDialog(true)}
+                className="border-gray-200 rounded-lg hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Templates
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowAssignDialog(true)}
+                className="border-gray-200 rounded-lg hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Quick Assign
+              </Button>
 
-      {/* New Template Dialog */}
+              {activeView === "week" && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={prevWeek}
+                    className="border-gray-200 rounded-lg hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={todayWeek}
+                    className="border-gray-200 rounded-lg hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20 text-[#4B5563] px-4"
+                  >
+                    Today
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={nextWeek}
+                    className="border-gray-200 rounded-lg hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <div className="text-lg font-semibold text-[#111827] ml-2">
+                    {format(weekRange[0], "MMM d")} - {format(weekRange[6], "MMM d, yyyy")}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="p-6">
+          {activeView === "week" ? renderWeekView() : renderListView()}
+        </CardContent>
+      </Card>
+
+      {/* Template Dialog */}
       <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
-        <DialogContent className="sm:max-w-[550px] border-none shadow-md bg-white rounded-lg">
+        <DialogContent className="sm:max-w-[600px] border-none shadow-lg bg-white rounded-2xl">
           <DialogHeader className="border-b border-gray-100 pb-4">
-            <DialogTitle className="text-[#111827]">
-              Create Shift Template
+            <DialogTitle className="text-xl font-bold text-[#111827]">
+              Shift Templates
             </DialogTitle>
             <DialogDescription className="text-[#4B5563]">
-              Define a new shift template that can be assigned to doctors.
+              Manage shift templates to streamline scheduling
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-1 gap-2">
-              <Label htmlFor="template-name" className="text-[#111827]">
-                Template Name
-              </Label>
-              <Input
-                id="template-name"
-                placeholder="e.g., Morning Shift"
-                value={newTemplate.name}
-                onChange={(e) =>
-                  setNewTemplate({ ...newTemplate, name: e.target.value })
-                }
-                className="border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] rounded-xl"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="start-time" className="text-[#111827]">
-                  Start Time
-                </Label>
-                <Input
-                  id="start-time"
-                  type="time"
-                  value={newTemplate.startTime}
-                  onChange={(e) =>
-                    setNewTemplate({
-                      ...newTemplate,
-                      startTime: e.target.value,
-                    })
-                  }
-                  className="border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] rounded-xl"
-                />
-              </div>
-              <div>
-                <Label htmlFor="end-time" className="text-[#111827]">
-                  End Time
-                </Label>
-                <Input
-                  id="end-time"
-                  type="time"
-                  value={newTemplate.endTime}
-                  onChange={(e) =>
-                    setNewTemplate({ ...newTemplate, endTime: e.target.value })
-                  }
-                  className="border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] rounded-xl"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="recurring"
-                  checked={newTemplate.recurring}
-                  onCheckedChange={(checked) =>
-                    setNewTemplate({
-                      ...newTemplate,
-                      recurring: checked === true,
-                    })
-                  }
-                  className="text-[#2C78E4] border-gray-300 rounded focus:ring-[#2C78E4]"
-                />
-                <Label htmlFor="recurring" className="text-[#111827]">
-                  Recurring Shift
-                </Label>
-              </div>
-
-              {newTemplate.recurring && (
-                <div className="bg-[#F9FAFB] p-4 rounded-xl border border-gray-200">
-                  <Label className="mb-3 block text-[#111827] font-medium">
-                    Repeat on days
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
-                      (day, index) => (
-                        <div key={day} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`day-${index}`}
-                            checked={newTemplate.days?.includes(index)}
-                            onCheckedChange={(checked) => {
-                              const days = [...(newTemplate.days || [])];
-                              if (checked) {
-                                if (!days.includes(index)) days.push(index);
-                              } else {
-                                const dayIndex = days.indexOf(index);
-                                if (dayIndex !== -1) days.splice(dayIndex, 1);
-                              }
-                              setNewTemplate({ ...newTemplate, days });
-                            }}
-                            className="text-[#2C78E4] border-gray-300 rounded focus:ring-[#2C78E4]"
-                          />
-                          <Label
-                            htmlFor={`day-${index}`}
-                            className="text-[#4B5563]"
-                          >
-                            {day}
-                          </Label>
-                        </div>
-                      )
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
+          <div className="space-y-6 py-4">
+            {/* Existing Templates */}
             <div>
-              <Label htmlFor="template-notes" className="text-[#111827]">
-                Notes (Optional)
-              </Label>
-              <Textarea
-                id="template-notes"
-                placeholder="Additional information about this shift template"
-                className="min-h-[80px] border-gray-200 focus:border-[#2C78E4] focus:ring-[#2C78E4] rounded-lg"
-              />
+              <h3 className="font-semibold text-[#111827] mb-3">Current Templates</h3>
+              <div className="space-y-2">
+                {templates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`px-3 py-1 rounded-lg text-sm ${template.color}`}>
+                        {template.name}
+                      </div>
+                      <span className="text-sm text-[#4B5563]">
+                        {template.startTime} - {template.endTime}
+                      </span>
+                    </div>
+      
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -921,15 +816,9 @@ const ShiftAssignmentPage = () => {
             <Button
               variant="outline"
               onClick={() => setShowTemplateDialog(false)}
-              className="border-gray-200 hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20 rounded-lg text-[#4B5563]"
+              className="border-gray-200 hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20 rounded-xl text-[#4B5563]"
             >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddTemplate}
-              className="bg-[#2C78E4] hover:bg-[#2C78E4]/90 text-white rounded-lg"
-            >
-              Create Template
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -937,68 +826,33 @@ const ShiftAssignmentPage = () => {
 
       {/* Assign Shift Dialog */}
       <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
-        <DialogContent className="sm:max-w-[550px] border-none shadow-md bg-white rounded-lg">
+        <DialogContent className="sm:max-w-[500px] border-none shadow-lg bg-white rounded-2xl">
           <DialogHeader className="border-b border-gray-100 pb-4">
-            <DialogTitle className="text-[#111827]">Assign Shift</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-[#111827]">
+              Assign Shift
+            </DialogTitle>
             <DialogDescription className="text-[#4B5563]">
-              Assign a shift template to a doctor on a specific date.
+              Quickly assign a shift to a doctor
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="assign-date" className="text-[#111827]">
+              <Label htmlFor="assign-date" className="text-[#111827] font-medium">
                 Date
               </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal mt-1 border-gray-200 hover:border-[#2C78E4]/20 rounded-lg"
-                  >
-                    <Calendar className="mr-2 h-4 w-4 text-[#2C78E4]" />
-                    {format(currentDate, "PPP")}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-auto p-0 border-gray-200"
-                  align="start"
-                >
-                  {/* Here you would typically have a date picker component */}
-                  <div className="p-4">
-                    <div className="text-center mb-2 text-[#111827] font-medium">
-                      Select a date
-                    </div>
-                    <div className="grid grid-cols-7 gap-1">
-                      {weekRange.map((day, i) => (
-                        <Button
-                          key={i}
-                          variant={
-                            isSameDay(day, currentDate) ? "default" : "outline"
-                          }
-                          size="sm"
-                          className={cn(
-                            "w-10 h-10 rounded-lg",
-                            isSameDay(day, currentDate)
-                              ? "bg-[#2C78E4] hover:bg-[#2C78E4]/90 text-white"
-                              : "border-gray-200 hover:border-[#2C78E4]/20 hover:bg-[#F9FAFB] text-[#4B5563]"
-                          )}
-                          onClick={() => {
-                            setCurrentDate(day);
-                            // Close popover would go here
-                          }}
-                        >
-                          {format(day, "d")}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <div className="mt-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="flex items-center">
+                  <Calendar className="mr-2 h-4 w-4 text-[#2C78E4]" />
+                  <span className="font-medium text-[#111827]">
+                    {format(currentDate, "EEEE, MMMM d, yyyy")}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div>
-              <Label htmlFor="assign-doctor" className="text-[#111827]">
+              <Label htmlFor="assign-doctor" className="text-[#111827] font-medium">
                 Doctor
               </Label>
               <Select
@@ -1007,17 +861,20 @@ const ShiftAssignmentPage = () => {
               >
                 <SelectTrigger
                   id="assign-doctor"
-                  className="mt-1 border-gray-200 hover:border-[#2C78E4]/20 rounded-lg"
+                  className="mt-2 border-gray-200 hover:border-[#2C78E4]/40 rounded-xl"
                 >
                   <SelectValue placeholder="Select a doctor" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200 rounded-lg">
+                <SelectContent className="bg-white border-gray-200 rounded-xl">
                   {doctors.map((doctor: Doctor) => (
                     <SelectItem
                       key={doctor.doctor_id}
                       value={doctor.doctor_id.toString()}
                     >
-                      {doctor.doctor_name}
+                      <div className="flex items-center space-x-2">
+                        <Stethoscope className="h-4 w-4 text-[#2C78E4]" />
+                        <span>{doctor.doctor_name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1025,7 +882,7 @@ const ShiftAssignmentPage = () => {
             </div>
 
             <div>
-              <Label htmlFor="assign-template" className="text-[#111827]">
+              <Label htmlFor="assign-template" className="text-[#111827] font-medium">
                 Shift Template
               </Label>
               <Select
@@ -1034,30 +891,23 @@ const ShiftAssignmentPage = () => {
               >
                 <SelectTrigger
                   id="assign-template"
-                  className="mt-1 border-gray-200 hover:border-[#2C78E4]/20 rounded-lg"
+                  className="mt-2 border-gray-200 hover:border-[#2C78E4]/40 rounded-xl"
                 >
                   <SelectValue placeholder="Select a shift template" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200 rounded-lg">
+                <SelectContent className="bg-white border-gray-200 rounded-xl">
                   {templates.map((template) => (
                     <SelectItem key={template.id} value={template.id}>
-                      {template.name} ({template.startTime} - {template.endTime}
-                      )
+                      <div className="flex items-center justify-between w-full">
+                        <span>{template.name}</span>
+                        <span className="text-sm text-[#4B5563] ml-4">
+                          {template.startTime} - {template.endTime}
+                        </span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div>
-              <div className="flex items-center mb-2">
-                <AlertCircle className="h-4 w-4 mr-2 text-[#FFA726]" />
-                <Label className="text-[#111827]">Conflicts</Label>
-              </div>
-
-              <div className="text-sm text-[#4B5563]">
-                No scheduling conflicts detected.
-              </div>
             </div>
           </div>
 
@@ -1065,7 +915,7 @@ const ShiftAssignmentPage = () => {
             <Button
               variant="outline"
               onClick={() => setShowAssignDialog(false)}
-              className="border-gray-200 hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20 rounded-lg text-[#4B5563]"
+              className="border-gray-200 hover:bg-[#F9FAFB] hover:border-[#2C78E4]/20 rounded-xl text-[#4B5563]"
             >
               Cancel
             </Button>
@@ -1078,8 +928,9 @@ const ShiftAssignmentPage = () => {
                 )
               }
               disabled={!selectedDoctor || !selectedTemplate}
-              className="bg-[#2C78E4] hover:bg-[#2C78E4]/90 text-white rounded-lg"
+              className="bg-[#2C78E4] hover:bg-[#2C78E4]/90 text-white rounded-xl disabled:opacity-50"
             >
+              <UserPlus className="h-4 w-4 mr-2" />
               Assign Shift
             </Button>
           </DialogFooter>
