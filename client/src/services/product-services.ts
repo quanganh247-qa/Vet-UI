@@ -69,6 +69,53 @@ export const createProduct = async (
     }
 };
 
+export interface UpdateProductRequest {
+    name: string;              // Product name (required)
+    description?: string;      // Product description (optional)
+    price: number;             // Product price (required)
+    stock_quantity?: number;    // Stock quantity (optional)
+    category?: string;         // Product category (optional)
+    isAvailable?: boolean;     // Availability status (optional)
+}
+
+/**
+ * Updates an existing product with the provided information and optional image
+ * @param productId - The ID of the product to update
+ * @param productData - The product data including name, price, etc.
+ * @param imageFile - Optional image file to upload
+ * @returns Promise with the updated product response
+ */
+export const updateProduct = async (
+    productId: number,
+    productData: UpdateProductRequest,
+    imageFile?: File
+): Promise<ProductResponse> => {
+    try {
+        const formData = new FormData();
+
+        // Add the product data as a JSON string in the 'data' field
+        formData.append('data', JSON.stringify(productData));
+
+        // Add the image file if provided
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
+
+        const response = await api.put(`/api/v1/products/${productId}`, formData, {
+            headers: {
+                // Don't set Content-Type - axios will set it automatically with boundary
+                'Content-Type': 'multipart/form-data',
+                'Accept': 'application/json'
+            }
+        });
+
+        return response.data.data || response.data;
+    } catch (error) {
+        console.error('Error updating product:', error);
+        throw error;
+    }
+};
+
 /**
  * Retrieves a paginated list of products
  * @param page - Page number to retrieve (default: 1)

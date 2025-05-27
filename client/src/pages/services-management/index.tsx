@@ -33,6 +33,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -47,6 +61,7 @@ import {
   Loader2,
   Receipt,
   AlertCircle,
+  Stethoscope,
 } from "lucide-react";
 
 // Service interface for type safety
@@ -58,6 +73,13 @@ interface Service {
   cost: number;
   category: string;
   notes?: string;
+}
+
+// Service Category interface
+interface ServiceCategory {
+  id: string;
+  name: string;
+  services: Service[];
 }
 
 // Format currency
@@ -98,8 +120,7 @@ const ServicesManagement: React.FC = () => {
   const [isEditingItem, setIsEditingItem] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9;
+  const [activeAccordionItem, setActiveAccordionItem] = useState<string | undefined>(undefined);
 
   // Form state
   const [formData, setFormData] = useState<CreateServiceRequest>({
@@ -122,26 +143,39 @@ const ServicesManagement: React.FC = () => {
   const updateService = useUpdateService();
   const deleteService = useDeleteService();
 
-  // Filter services based on search term
-  const filteredServices =
-    services?.filter(
-      (service: any) =>
-        service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        service.category.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+  // Group services by category
+  const serviceCategories: ServiceCategory[] = React.useMemo(() => {
+    if (!services) return [];
+    
+    const groupedServices = (services as any[]).reduce((acc: { [key: string]: Service[] }, service: any) => {
+      const category = service.category || "Uncategorized";
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(service as Service);
+      return acc;
+    }, {});
 
-  // Pagination calculations
-  const totalItems = filteredServices.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-  const paginatedServices = filteredServices.slice(startIndex, endIndex);
+    return Object.entries(groupedServices).map(([categoryName, categoryServices]) => ({
+      id: categoryName.toLowerCase().replace(/\s+/g, '-'),
+      name: categoryName,
+      services: categoryServices,
+    }));
+  }, [services]);
 
-  // Reset pagination when search changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
+  // Filter service categories based on search term
+  const filteredCategories = serviceCategories.map(category => ({
+    ...category,
+    services: category.services.filter(service => 
+      service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.category.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  })).filter(category => 
+    category.services.length > 0 || 
+    category.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    searchTerm === ""
+  );
 
   // Handle opening add dialog
   const handleOpenAddDialog = () => {
@@ -261,37 +295,35 @@ const ServicesManagement: React.FC = () => {
     });
   };
 
-  // Handle pagination
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
   return (
     <div className="space-y-6">
-    {/* Header with gradient background */}
-    <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6 text-white">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-            <h1 className="text-xl font-semibold">Services Management</h1>
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold text-white">Services Management</h1>
+            <p className="text-blue-100 text-sm mt-1">
+              Browse and manage service categories and individual services.
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="bg-white shadow-md rounded-2xl border border-[#2C78E4]/10 p-6 mb-8">
+      <div className="bg-white rounded-2xl border border-[#2C78E4]/20 shadow-sm p-6 mb-6">
         {/* Search and add section */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 bg-[#F9FAFB] p-4 rounded-2xl border border-[#2C78E4]/10">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 bg-[#F9FAFB] p-4 rounded-xl border border-[#2C78E4]/20">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#4B5563]" />
             <Input
-              placeholder="Search services..."
-              className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] focus:ring-[#2C78E4]/20 rounded-xl"
+              placeholder="Search by category, service name..."
+              className="pl-10 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl bg-white"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <Button
             onClick={handleOpenAddDialog}
-            className="w-full sm:w-auto bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-xl shadow-md transition-all duration-200 hover:shadow-lg"
+            className="w-full sm:w-auto bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
           >
             <PlusCircle className="h-4 w-4 mr-2" />
             Add New Service
@@ -314,137 +346,98 @@ const ServicesManagement: React.FC = () => {
               Please try again later
             </p>
           </div>
-        ) : filteredServices.length === 0 ? (
+        ) : filteredCategories.length === 0 ? (
           <EmptyState onAdd={handleOpenAddDialog} />
         ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginatedServices.map((service: any) => (
-                <Card
-                  key={service.id}
-                  className="hover:shadow-lg transition-all duration-300 border border-[#2C78E4]/10 rounded-2xl overflow-hidden"
-                >
-                  <CardHeader className="pb-3 border-b border-[#2C78E4]/5">
-                    <CardTitle className="flex justify-between items-start">
-                      <div>
-                        <span className="text-lg font-semibold text-[#111827]">
-                          {service.name}
-                        </span>
-                        <Badge className="ml-2 bg-[#F0F7FF] text-[#2C78E4] border border-[#2C78E4]/20 rounded-full font-normal">
-                          {service.category}
-                        </Badge>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-[#2C78E4] hover:bg-[#F0F7FF] rounded-xl"
-                          onClick={() => handleOpenEditDialog(service)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:bg-red-50 rounded-xl"
-                          onClick={() => handleOpenDeleteDialog(service.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center text-sm text-[#4B5563]">
-                          <Clock className="h-4 w-4 mr-1.5 text-[#2C78E4]" />
-                          {service.duration} minutes
-                        </div>
-                        <span className="font-medium text-[#FFA726] px-2 py-0.5 bg-[#FFA726]/10 rounded-lg">
-                          {formatCurrency(service.cost)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-[#4B5563] leading-relaxed">
-                        {service.description}
-                      </p>
-                      {service.notes && (
-                        <div className="bg-[#F9FAFB] p-3 rounded-xl text-xs text-[#4B5563] border border-[#2C78E4]/10">
-                          <strong className="text-[#2C78E4]">Notes:</strong>{" "}
-                          {service.notes}
-                        </div>
-                      )}
+          <Accordion 
+            type="single" 
+            collapsible 
+            className="w-full space-y-3"
+            value={activeAccordionItem}
+            onValueChange={setActiveAccordionItem}
+          >
+            {filteredCategories.map((category) => (
+              <AccordionItem 
+                value={category.id} 
+                key={category.id} 
+                className="border border-[#2C78E4]/10 rounded-xl overflow-hidden bg-white hover:shadow-md transition-shadow"
+              >
+                <AccordionTrigger className="px-6 py-4 text-lg font-medium text-[#111827] hover:bg-[#F0F7FF] data-[state=open]:bg-[#E0F2FE] data-[state=open]:text-[#0C4A6E]">
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center">
+                      <Stethoscope className="h-5 w-5 mr-3 text-[#2C78E4]" /> 
+                      {category.name}
+                      <Badge variant="outline" className="ml-3 bg-white border-[#2C78E4]/30 text-[#2C78E4]">
+                        {category.services.length} service{category.services.length !== 1 ? 's' : ''}
+                      </Badge>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Pagination controls */}
-            {totalPages > 1 && (
-              <div className="flex flex-col items-center space-y-4 mt-10 pb-2">
-                <p className="text-sm text-[#4B5563] font-medium">
-                  Page {currentPage} / {totalPages} • Showing {startIndex + 1}-
-                  {endIndex} of {totalItems} services
-                </p>
-                <div className="flex justify-center items-center space-x-2 bg-[#F9FAFB] px-5 py-4 rounded-xl shadow-sm border border-[#2C78E4]/10">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] rounded-xl transition-colors"
-                  >
-                    Previous
-                  </Button>
-
-                  {Array.from({ length: Math.min(5, totalPages) }).map(
-                    (_, index) => {
-                      // Calculate which page numbers to show
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = index + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = index + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + index;
-                      } else {
-                        pageNum = currentPage - 2 + index;
-                      }
-
-                      return (
-                        <Button
-                          key={index}
-                          variant={
-                            currentPage === pageNum ? "default" : "outline"
-                          }
-                          size="sm"
-                          onClick={() => handlePageChange(pageNum)}
-                          className={
-                            currentPage === pageNum
-                              ? "bg-[#2C78E4] text-white font-bold hover:bg-[#1E40AF] rounded-xl shadow-md"
-                              : "border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F0F7FF] hover:text-[#2C78E4] rounded-xl transition-colors"
-                          }
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    }
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-0 pt-0 pb-2 bg-white">
+                  {category.services.length > 0 ? (
+                    <Table className="mt-0">
+                      <TableHeader className="bg-[#F9FAFB]">
+                        <TableRow>
+                          <TableHead className="pl-6 font-semibold text-[#111827]">Service Name</TableHead>
+                          <TableHead className="font-semibold text-[#111827]">Description</TableHead>
+                          <TableHead className="font-semibold text-[#111827]">Duration</TableHead>
+                          <TableHead className="font-semibold text-[#111827]">Cost</TableHead>
+                          <TableHead className="font-semibold text-[#111827]">Notes</TableHead>
+                          <TableHead className="font-semibold text-[#111827] text-right pr-6">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {category.services.map((service) => (
+                          <TableRow key={service.id} className="hover:bg-[#F9FAFB]/50">
+                            <TableCell className="pl-6 font-medium text-[#111827]">{service.name}</TableCell>
+                            <TableCell className="text-sm text-[#4B5563] max-w-xs truncate" title={service.description}>
+                              {service.description}
+                            </TableCell>
+                            <TableCell className="text-sm text-[#4B5563]">
+                              <div className="flex items-center">
+                                <Clock className="h-4 w-4 mr-1.5 text-[#2C78E4]" />
+                                {service.duration} min
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm font-medium text-[#FFA726]">
+                              {formatCurrency(service.cost)}
+                            </TableCell>
+                            <TableCell className="text-sm text-[#4B5563] max-w-xs truncate" title={service.notes}>
+                              {service.notes || "N/A"}
+                            </TableCell>
+                            <TableCell className="text-right pr-6">
+                              <div className="flex justify-end space-x-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-[#2C78E4] hover:bg-[#F0F7FF] rounded-xl"
+                                  onClick={() => handleOpenEditDialog(service)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-600 hover:bg-red-50 rounded-xl"
+                                  onClick={() => handleOpenDeleteDialog(service.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p className="px-6 py-4 text-sm text-gray-500">
+                      No services found in this category{searchTerm ? " matching your search" : ""}.
+                    </p>
                   )}
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="border-[#2C78E4]/20 text-[#2C78E4] hover:bg-[#F0F7FF] rounded-xl transition-colors"
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         )}
       </div>
 

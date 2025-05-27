@@ -618,21 +618,19 @@ const StaffPage = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-white">
-                Staff Management
-              </h1>
+            <h1 className="text-xl text-white font-semibold">Staff Management</h1>
             </div>
             <p className="text-sm text-white">Manage your staff members</p>
           </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setLocation("/staff/new")}
-              className="bg-white text-[#2C78E4] hover:bg-white/90 flex items-center gap-1.5 shadow-sm rounded-2xl"
-            >
-              <Plus className="w-4 h-4" />
-              Add New Staff
-            </Button>
-          </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setLocation("/staff/new")}
+            className="bg-white text-[#2C78E4] hover:bg-white/90 flex items-center gap-1.5 shadow-sm rounded-2xl"
+          >
+            <Plus className="w-4 h-4" />
+            Add New Staff
+          </Button>
+        </div>
         </div>
       </div>
 

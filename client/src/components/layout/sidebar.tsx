@@ -1,109 +1,15 @@
-import React, { useState, useEffect, Dispatch, SetStateAction } from "react";
-import { Link, useLocation } from "wouter";
-import { AnimatePresence, motion } from "framer-motion";
+import React, { useState, Dispatch, SetStateAction } from "react";
+import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
-import { Badge } from "@/components/ui/badge";
 import { useNotificationsContext } from "@/context/notifications-context";
-import {
-  ChevronRight,
-  ChevronLeft,
-  LayoutDashboard,
-  Calendar,
-  Users,
-  User,
-  LineChart,
-  Settings,
-  Bell,
-  LogOut,
-  MessageSquare,
-  PawPrint,
-  CreditCard,
-  LifeBuoy,
-  Clock,
-  Bot,
-  CalendarRange,
-  Package,
-  Syringe,
-  Receipt,
-  Wrench,
-  ShoppingBag,
-  Pill,
-  TestTube,
-} from "lucide-react";
+import { PawPrint } from "lucide-react";
 
-const navigation = [
-  {
-    name: "Dashboard",
-    href: "/dashboard",
-    icon: <LayoutDashboard className="h-5 w-5" />,
-  },
-  {
-    name: "Appointments",
-    href: "/appointments",
-    icon: <Calendar className="h-5 w-5" />,
-  },
-  {
-    name: "Workflow",
-    href: "/appointment-flow",
-    icon: <Clock className="h-5 w-5" />,
-  },
-  {
-    name: "Patients",
-    href: "/patients",
-    icon: <PawPrint className="h-5 w-5" />,
-  },
-  {
-    name: "Staff",
-    href: "/staff",
-    icon: <Users className="h-5 w-5" />,
-  },
-  {
-    name: "Schedule",
-    href: "/shift-assignment",
-    icon: <CalendarRange className="h-5 w-5" />,
-  },
-  {
-    name: "Billing",
-    href: "/billing",
-    icon: <CreditCard className="h-5 w-5" />,
-  },
-  {
-    name: "Inventory",
-    href: "/inventory",
-    icon: <Package className="h-5 w-5" />,
-  },
-  {
-    name: "Medicine",
-    href: "/medicine-management",
-    icon: <Pill className="h-5 w-5" />,
-  },
-
-  {
-    name: "Services",
-    href: "/services-management",
-    icon: <Wrench className="h-5 w-5" />,
-  },
-  {
-    name: "Catalog",
-    href: "/catalog-management",
-    icon: <ShoppingBag className="h-5 w-5" />,
-  },
-  {
-    name: "Test",
-    href: "/test-management",
-    icon: <TestTube className="h-5 w-5" />,
-  },
-];
-
-const secondaryNavigation = [
-  { name: "Settings", href: "/settings", icon: <Settings className="h-5 w-5" /> },
-  {
-    name: "Notifications",
-    href: "/notifications",
-    icon: <Bell className="h-5 w-5" />,
-  },
-];
+// Import the new layered components
+import SidebarHeader from "./sidebar/sidebar-header";
+import NavigationSection from "./sidebar/navigation-section";
+import UserProfile from "./sidebar/user-profile";
+import { mainNavigation, secondaryNavigation } from "./sidebar/navigation-config";
 
 interface SidebarContentProps {
   className?: string;
@@ -136,162 +42,36 @@ const SidebarContent = ({ className }: SidebarContentProps) => {
         className
       )}
     >
-      {/* Logo */}
-      <div className={cn("p-5 flex items-center", isExpanded ? "justify-between" : "justify-center")}>
-        {isExpanded ? (
-          <div className="flex items-center">
-            <PawPrint className="h-8 w-8 text-[#2C78E4]" />
-            <span className="ml-2 text-xl font-semibold text-[#111827]">VetCare</span>
-          </div>
-        ) : (
-          <PawPrint className="h-8 w-8 text-[#2C78E4]" />
-        )}
-        <button
-          onClick={toggleSidebar}
-          className="p-2 rounded-full hover:bg-[#F9FAFB] text-[#4B5563] transition-colors"
-        >
-          {isExpanded ? (
-            <ChevronLeft className="h-5 w-5" />
-          ) : (
-            <ChevronRight className="h-5 w-5" />
-          )}
-        </button>
-      </div>
+      {/* Header Layer */}
+      <SidebarHeader isExpanded={isExpanded} onToggle={toggleSidebar} />
 
-      {/* Main navigation */}
+      {/* Navigation Layer */}
       <div className="mt-4 flex flex-col flex-1 overflow-y-auto px-3">
-        <nav className="flex-1 space-y-1.5">
-          {navigation.map((item) => {
-            const isActiveItem = isActive(item.href);
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all",
-                  isActiveItem
-                    ? "bg-[#2C78E4]/10 text-[#2C78E4]"
-                    : "text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#2C78E4]"
-                )}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center">
-                    <div className={cn(
-                      isActiveItem ? "text-[#2C78E4]" : "text-[#4B5563] group-hover:text-[#2C78E4]",
-                      "transition-colors"
-                    )}>
-                      {item.icon}
-                    </div>
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.span
-                          initial={{ opacity: 0, width: 0 }}
-                          animate={{ opacity: 1, width: "auto" }}
-                          exit={{ opacity: 0, width: 0 }}
-                          className="ml-3 whitespace-nowrap"
-                        >
-                          {item.name}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  {item.name === "Notifications" && unreadCount > 0 && (
-                    <Badge className="bg-red-500 text-white">
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </Badge>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
+        {/* Main Navigation */}
+        <NavigationSection
+          items={mainNavigation}
+          isExpanded={isExpanded}
+          isActive={isActive}
+          className="flex-1"
+        />
 
-        <div className="space-y-1.5 mt-6 mb-4">
-          <div className={cn(
-            "py-2 px-3",
-            isExpanded ? "block" : "hidden"
-          )}>
-            <p className="text-xs font-semibold text-[#4B5563] uppercase tracking-wider">
-              Settings
-            </p>
-          </div>
-          {secondaryNavigation.map((item) => {
-            const isActiveItem = isActive(item.href);
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all",
-                  isActiveItem
-                    ? "bg-[#2C78E4]/10 text-[#2C78E4]"
-                    : "text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#2C78E4]"
-                )}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center">
-                    <div className={cn(
-                      isActiveItem ? "text-[#2C78E4]" : "text-[#4B5563] group-hover:text-[#2C78E4]",
-                      "transition-colors"
-                    )}>
-                      {item.icon}
-                    </div>
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.span
-                          initial={{ opacity: 0, width: 0 }}
-                          animate={{ opacity: 1, width: "auto" }}
-                          exit={{ opacity: 0, width: 0 }}
-                          className="ml-3 whitespace-nowrap"
-                        >
-                          {item.name}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  {item.name === "Notifications" && unreadCount > 0 && (
-                    <Badge className="bg-red-500 text-white">
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </Badge>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+        {/* Secondary Navigation */}
+        <NavigationSection
+          title="Settings"
+          items={secondaryNavigation}
+          isExpanded={isExpanded}
+          isActive={isActive}
+          unreadCount={unreadCount}
+          className="mt-6 mb-4"
+        />
       </div>
 
-      {/* User profile */}
-      <div
-        className={cn(
-          "border-t border-gray-100 p-4 mt-auto bg-[#F9FAFB]",
-          isExpanded ? "" : "flex justify-center"
-        )}
-      >
-        {isExpanded ? (
-          <div className="flex items-center">
-            <div className="w-10 h-10 rounded-full bg-[#2C78E4]/10 flex items-center justify-center text-[#2C78E4]">
-              <User className="h-5 w-5" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-[#111827]">{doctor?.username || "User"}</p>
-              <button
-                onClick={logout}
-                className="flex items-center text-xs text-[#4B5563] hover:text-[#2C78E4] transition-colors"
-              >
-                <LogOut className="h-3.5 w-3.5 mr-1" /> Logout
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={logout}
-            className="p-2 rounded-full hover:bg-[#2C78E4]/10 text-[#4B5563] hover:text-[#2C78E4] transition-colors"
-          >
-            <LogOut className="h-5 w-5" />
-          </button>
-        )}
-      </div>
+      {/* User Profile Layer */}
+      <UserProfile
+        isExpanded={isExpanded}
+        username={doctor?.username}
+        onLogout={logout}
+      />
     </div>
   );
 };

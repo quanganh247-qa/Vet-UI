@@ -257,7 +257,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
       await createWalkInMutation.mutateAsync(appointmentData as AppointmentRequest);
       
       toast({
-        title: "✅ Success!",
+        title: "Success!",
         description: "Walk-in appointment created successfully",
         variant: "default",
         className: "bg-green-50 border-green-200 text-green-800",
@@ -267,7 +267,7 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
     } catch (error) {
       console.error("Error creating appointment:", error);
       toast({
-        title: "❌ Error",
+        title: "Error",
         description: "Error creating walk-in appointment",
         variant: "destructive",
       });
@@ -461,21 +461,11 @@ export const WalkInRegistrationForm: React.FC<WalkInRegistrationFormProps> = ({
                       </div>
                       <div>
                         <Label className="text-lg font-medium mb-2 block">Species *</Label>
-                        <Select
-                          value={form.watch("pet.pet_species")}
-                          onValueChange={(value) => form.setValue("pet.pet_species", value)}
-                        >
-                          <SelectTrigger className="py-3 text-lg border-2 focus:border-green-500">
-                            <SelectValue placeholder="Select species" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="dog">🐕 Dog</SelectItem>
-                            <SelectItem value="cat">🐱 Cat</SelectItem>
-                            <SelectItem value="bird">🐦 Bird</SelectItem>
-                            <SelectItem value="reptile">🦎 Reptile</SelectItem>
-                            <SelectItem value="other">🐾 Other</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          {...form.register("pet.pet_species")}
+                          placeholder="e.g., Dog, Cat, Bird, Rabbit..."
+                          className="py-3 text-lg border-2 focus:border-green-500"
+                        />
                       </div>
                     </div>
 

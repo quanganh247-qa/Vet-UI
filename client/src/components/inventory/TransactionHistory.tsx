@@ -55,6 +55,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   searchQuery,
 }) => {
   const [transactions, setTransactions] = useState<MedicineTransactionResponse[]>([]);
+  const [allFetchedTransactions, setAllFetchedTransactions] = useState<MedicineTransactionResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -68,18 +69,38 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
     from: undefined,
     to: undefined,
   });
-  const [localSearchTerm, setLocalSearchTerm] = useState("");
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchQuery);
   
-  // Use the search query from props when it changes
-  useEffect(() => {
-    if (searchQuery) {
-      setLocalSearchTerm(searchQuery);
-    }
-  }, [searchQuery]);
-
   useEffect(() => {
     fetchTransactions();
-  }, [currentPage, localSearchTerm, typeFilter, dateRange, itemsPerPage]);
+  }, [currentPage, localSearchTerm, itemsPerPage]);
+
+  useEffect(() => {
+    let filtered = [...allFetchedTransactions];
+
+    if (typeFilter !== "all") {
+      filtered = filtered.filter(t => t.transaction_type && t.transaction_type.toLowerCase() === typeFilter.toLowerCase());
+    }
+
+    if (dateRange.from) {
+      filtered = filtered.filter(t => {
+        if (!t.transaction_date) return false;
+        const transactionDate = new Date(t.transaction_date);
+        const fromDate = new Date(dateRange.from!);
+        
+        transactionDate.setHours(0, 0, 0, 0);
+        fromDate.setHours(0, 0, 0, 0);
+
+        if (dateRange.to) {
+          const toDate = new Date(dateRange.to!);
+          toDate.setHours(0, 0, 0, 0);
+          return transactionDate >= fromDate && transactionDate <= toDate;
+        }
+        return transactionDate.getTime() === fromDate.getTime(); 
+      });
+    }
+    setTransactions(filtered);
+  }, [allFetchedTransactions, typeFilter, dateRange]);
 
   const token = localStorage.getItem("access_token");
   
@@ -88,22 +109,10 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
     try {
       let url = `/api/v1/medicine/transactions?page=${currentPage}&pageSize=${itemsPerPage}`;
 
-      // Add filters to the URL
       if (localSearchTerm) {
         url += `&search=${encodeURIComponent(localSearchTerm)}`;
       }
       
-      if (typeFilter !== "all") {
-        url += `&type=${encodeURIComponent(typeFilter)}`;
-      }
-      
-      if (dateRange.from) {
-        url += `&startDate=${format(dateRange.from, "yyyy-MM-dd")}`;
-        if (dateRange.to) {
-          url += `&endDate=${format(dateRange.to, "yyyy-MM-dd")}`;
-        }
-      }
-
       const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -111,13 +120,11 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
       });
       const data = await response.json();
 
-      setTransactions(data.transactions || data || []);
-      // Update pagination info from API response
+      setAllFetchedTransactions(data.transactions || data || []);
       setTotalPages(data.totalPages || Math.ceil((data.total || 100) / itemsPerPage));
-      setTotalItems(data.total || 100); // Replace with actual total from API
+      setTotalItems(data.total || 100);
     } catch (error) {
       console.error("Error fetching transactions:", error);
-      // Set mock data for demonstration
       setTransactions([]);
       setTotalPages(10);
       setTotalItems(97);
@@ -136,7 +143,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Reset to first page when changing items per page
+    setCurrentPage(1);
   };
 
   const getTransactionTypeColor = (type: string) => {
@@ -163,10 +170,8 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
   return (
     <div className="space-y-6 font-['Open_Sans',_sans-serif]">
-      {/* Enhanced Filters Section */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
         <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search Input */}
           <div className="relative flex-1 min-w-[300px]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#4B5563]" />
             <Input
@@ -177,9 +182,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
             />
           </div>
 
-          {/* Filter Controls */}
           <div className="flex flex-wrap gap-3">
-            {/* Transaction Type Filter */}
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-36 border-gray-200 rounded-xl hover:border-[#2C78E4]/40 transition-all duration-200 bg-gray-50">
                 <SelectValue placeholder="All Types" />
@@ -191,7 +194,6 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
               </SelectContent>
             </Select>
 
-            {/* Date Range Picker */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -227,8 +229,6 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
               </PopoverContent>
             </Popover>
 
-
-            {/* Clear Filters Button */}
             {(typeFilter !== "all" || dateRange.from || localSearchTerm) && (
               <Button
                 variant="ghost"
@@ -242,7 +242,6 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
           </div>
         </div>
 
-        {/* Active Filters Display */}
         {(typeFilter !== "all" || dateRange.from || localSearchTerm) && (
           <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
             <span className="text-sm text-[#4B5563] flex items-center">
@@ -272,7 +271,6 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
         )}
       </div>
 
-      {/* Enhanced Transactions Table */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
@@ -295,7 +293,6 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                     <TableHead className="text-[#111827] font-semibold px-6 py-4">Unit Price</TableHead>
                     <TableHead className="text-[#111827] font-semibold px-6 py-4">Total</TableHead>
                     <TableHead className="text-[#111827] font-semibold px-6 py-4">Reference</TableHead>
-                    <TableHead className="text-[#111827] font-semibold px-6 py-4 w-16">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -380,33 +377,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                             )
                             : "Internal Transfer"}
                         </TableCell>
-                        <TableCell className="px-6 py-4">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-gray-100 rounded-lg"
-                              >
-                                <MoreVertical className="h-4 w-4 text-[#4B5563]" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 bg-white rounded-xl shadow-lg border-gray-100">
-                              <DropdownMenuItem className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer rounded-lg">
-                                <Eye className="mr-2 h-4 w-4 text-[#2C78E4]" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-[#4B5563] hover:bg-[#F9FAFB] cursor-pointer rounded-lg">
-                                <Edit className="mr-2 h-4 w-4 text-[#FFA726]" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-[#EF4444] hover:bg-red-50 cursor-pointer rounded-lg">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
+                        
                       </TableRow>
                     ))
                   )}
@@ -414,7 +385,6 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
               </Table>
             </div>
 
-            {/* Enhanced Pagination */}
             {totalPages > 1 && (
               <div className="py-4 px-6 border-t border-gray-100 bg-gradient-to-r from-[#F9FAFB] to-gray-50">
                 <Pagination

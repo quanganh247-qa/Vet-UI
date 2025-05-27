@@ -20,6 +20,7 @@ import { NotificationsProvider } from "@/context/notifications-context";
 import 'react-toastify/dist/ReactToastify.css';
 // Lazy load the TestNotificationListener to avoid hook errors
 const NotificationsPage = lazy(() => import("@/pages/notifications"));
+const LandingPage = lazy(() => import("@/pages/landing-page"));
 // Use lazy loading for new components
 const AppointmentFlow = lazy(() => import("@/pages/appointment-flow"));
 const CheckIn = lazy(() => import("@/pages/check-in"));
@@ -59,7 +60,8 @@ function Router() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center h-full"><p>Loading...</p></div>}>
       <Switch>
-        <Route path="/dashboard" component={Dashboard as React.ComponentType<RouteComponentProps>} />
+        <Route path="/" component={Dashboard as React.ComponentType<RouteComponentProps>} />
+        <Route path="/home" component={LandingPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/appointments" component={Appointments as React.ComponentType<RouteComponentProps>} />
         <Route path="/staff" component={Staff as React.ComponentType<RouteComponentProps>} />
         <Route path="/analytics" component={Analytics as React.ComponentType<RouteComponentProps>} />
@@ -121,7 +123,7 @@ function App() {
   const [location] = useLocation();
 
   React.useEffect(() => {
-    if (!localStorage.getItem('access_token') && location !== '/login') {
+    if (!localStorage.getItem('access_token') && location !== '/login' && location !== '/home') {
       window.location.href = '/login';
     }
   }, [location]);
@@ -132,6 +134,15 @@ function App() {
       <>
         <LoginPage />
       </>
+    );
+  }
+
+  // If we're on the home page (landing page), render it without sidebar
+  if (location === '/home') {
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center h-screen"><p>Loading...</p></div>}>
+        <LandingPage />
+      </Suspense>
     );
   }
 

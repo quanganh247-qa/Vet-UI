@@ -4,7 +4,9 @@ import {
   useGetAllMedicines,
   useUpdateMedicine,
 } from "@/hooks/use-medicine";
+import { useSuppliers } from "@/hooks/use-supplier";
 import { MedicineRequest } from "@/services/medicine-services";
+import { MedicineSupplierResponse } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,8 +59,13 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Medicine } from "@/types";
-
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Format currency
 const formatCurrency = (amount: number) => {
@@ -168,6 +175,58 @@ const MedicineManagement: React.FC = () => {
   const { mutateAsync: updateMedicine, isPending: isUpdating } =
     useUpdateMedicine();
 
+  // Add suppliers hook
+  const {
+    data: suppliersData,
+    isLoading: isLoadingSuppliers,
+    error: suppliersError,
+    refetch: refetchSuppliers,
+  } = useSuppliers(1, 100); // Fetch all suppliers
+
+  // Extract suppliers array with better error handling and debugging
+  const extractSuppliersArray = (data: any): MedicineSupplierResponse[] => {
+    console.log("Raw suppliers data:", data);
+
+    if (!data) {
+      console.log("No suppliers data");
+      return [];
+    }
+
+    // Try different possible data structures
+    if (Array.isArray(data)) {
+      console.log("Suppliers data is array:", data);
+      return data;
+    }
+
+    // If data has a data property that's an array
+    if (data.data && Array.isArray(data.data)) {
+      console.log("Suppliers data.data is array:", data.data);
+      return data.data;
+    }
+
+    // Check if it's a paginated response
+    if (data.suppliers && Array.isArray(data.suppliers)) {
+      console.log("Suppliers data.suppliers is array:", data.suppliers);
+      return data.suppliers;
+    }
+
+    // Check other possible property names
+    for (const key of ["items", "results", "content"]) {
+      if (data[key] && Array.isArray(data[key])) {
+        console.log(`Suppliers data.${key} is array:`, data[key]);
+        return data[key];
+      }
+    }
+
+    console.log("Could not extract suppliers array from:", data);
+    return [];
+  };
+
+  const suppliers: MedicineSupplierResponse[] =
+    extractSuppliersArray(suppliersData);
+
+  console.log(suppliers);
+
   const medicines: Medicine[] = (() => {
     if (!medicinesData) {
       return [];
@@ -189,25 +248,25 @@ const MedicineManagement: React.FC = () => {
   // Get total count and pagination info
   const totalCount = (() => {
     if (!medicinesData) return 0;
-    
+
     // Try to get total from different possible structures
-    if (typeof medicinesData.total === 'number') {
+    if (typeof medicinesData.total === "number") {
       return medicinesData.total;
     }
-    
-    if (typeof medicinesData.count === 'number') {
+
+    if (typeof medicinesData.count === "number") {
       return medicinesData.count;
     }
-    
+
     // Fallback to array length
     if (Array.isArray(medicinesData)) {
       return medicinesData.length;
     }
-    
+
     if (medicinesData.data && Array.isArray(medicinesData.data)) {
       return medicinesData.data.length;
     }
-    
+
     return 0;
   })();
 
@@ -228,13 +287,12 @@ const MedicineManagement: React.FC = () => {
   // Use client-side pagination for all scenarios since we fetch all medicines
   const displayedMedicines = searchTerm ? filteredMedicines : medicines;
   const totalPages = Math.ceil(displayedMedicines.length / pageSize);
-  
+
   // Implement client-side pagination for all cases
   const paginatedDisplayMedicines = displayedMedicines.slice(
-    (currentPage - 1) * pageSize, 
+    (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
-
 
   // Reset pagination when search changes
   useEffect(() => {
@@ -243,7 +301,18 @@ const MedicineManagement: React.FC = () => {
 
   // Handle opening add dialog
   const handleOpenAddDialog = () => {
-    setFormData({
+    // Get the first available supplier ID or use 0 as fallback
+    let defaultSupplierId: number = 0;
+
+    if (suppliers.length > 0 && suppliers[0]?.id) {
+      defaultSupplierId = suppliers[0].id;
+      console.log(
+        "Setting default supplier from available suppliers:",
+        defaultSupplierId
+      );
+    }
+
+    const newFormData = {
       medicine_name: "",
       dosage: "",
       frequency: "",
@@ -253,10 +322,20 @@ const MedicineManagement: React.FC = () => {
       expiration_date: "",
       description: "",
       usage: "",
-      supplier_id: 1,
+      supplier_id: defaultSupplierId,
       unit_price: 0,
       reorder_level: 0,
-    });
+    };
+
+    console.log("=== INITIALIZING ADD FORM ===");
+    console.log("New form data:", newFormData);
+    console.log("Default supplier_id set to:", defaultSupplierId);
+    console.log(
+      "Available suppliers:",
+      suppliers.map((s) => ({ id: s.id, name: s.name }))
+    );
+
+    setFormData(newFormData);
     setIsAddingItem(true);
   };
 
@@ -311,11 +390,30 @@ const MedicineManagement: React.FC = () => {
     if (
       !formData.medicine_name ||
       formData.unit_price <= 0 ||
-      formData.quantity < 0
+      formData.quantity < 0 ||
+      !formData.supplier_id ||
+      formData.supplier_id <= 0
     ) {
+      let validationMessage =
+        "Please fill in all required fields with valid values";
+      if (!formData.medicine_name) {
+        validationMessage = "Medicine name is required";
+      } else if (formData.unit_price <= 0) {
+        validationMessage = "Unit price must be greater than 0";
+      } else if (formData.quantity < 0) {
+        validationMessage = "Quantity cannot be negative";
+      } else if (!formData.supplier_id || formData.supplier_id <= 0) {
+        if (suppliers.length === 0) {
+          validationMessage =
+            "No suppliers available. Please add suppliers first in the Inventory section.";
+        } else {
+          validationMessage = "Please select a supplier";
+        }
+      }
+
       toast({
         title: "Invalid data",
-        description: "Please fill in all required fields with valid values",
+        description: validationMessage,
         variant: "destructive",
       });
       return;
@@ -323,7 +421,13 @@ const MedicineManagement: React.FC = () => {
 
     try {
       if (isAddingItem) {
-        await createMedicine(formData);
+        const medicineData = {
+          ...formData,
+          supplier_id: Number(formData.supplier_id),
+        };
+
+        const result = await createMedicine(medicineData);
+
         toast({
           title: "Medicine created successfully",
           description: "The new medicine has been added to your inventory.",
@@ -331,10 +435,21 @@ const MedicineManagement: React.FC = () => {
         });
         setIsAddingItem(false);
       } else if (isEditingItem && selectedMedicineId) {
-        await updateMedicine({
-          data: formData,
+        const medicineData = {
+          ...formData,
+          supplier_id: Number(formData.supplier_id),
+        };
+        console.log("=== UPDATING MEDICINE ===");
+        console.log(
+          "Complete medicineData being sent for update:",
+          medicineData
+        );
+
+        const result = await updateMedicine({
+          data: medicineData,
           medicine_id: selectedMedicineId,
         });
+
         toast({
           title: "Medicine updated successfully",
           description: "The medicine has been updated in your inventory.",
@@ -478,7 +593,6 @@ const MedicineManagement: React.FC = () => {
                           <span className="font-medium">
                             {medicine.quantity}
                           </span>
-                          {getStockStatusBadge(medicine.quantity)}
                         </div>
                       </TableCell>
                       <TableCell className="text-[#4B5563]">
@@ -519,7 +633,9 @@ const MedicineManagement: React.FC = () => {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-4 border-t border-[#2C78E4]/10">
                 {/* Pagination Info */}
                 <div className="text-sm text-[#4B5563]">
-                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, displayedMedicines.length)} of {displayedMedicines.length} medicines
+                  Showing {(currentPage - 1) * pageSize + 1} to{" "}
+                  {Math.min(currentPage * pageSize, displayedMedicines.length)}{" "}
+                  of {displayedMedicines.length} medicines
                 </div>
 
                 {/* Pagination Controls */}
@@ -541,8 +657,14 @@ const MedicineManagement: React.FC = () => {
                     {(() => {
                       const pages = [];
                       const maxPagesToShow = 5;
-                      let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-                      let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+                      let startPage = Math.max(
+                        1,
+                        currentPage - Math.floor(maxPagesToShow / 2)
+                      );
+                      let endPage = Math.min(
+                        totalPages,
+                        startPage + maxPagesToShow - 1
+                      );
 
                       // Adjust start page if we're near the end
                       if (endPage - startPage + 1 < maxPagesToShow) {
@@ -564,7 +686,10 @@ const MedicineManagement: React.FC = () => {
                         );
                         if (startPage > 2) {
                           pages.push(
-                            <span key="ellipsis1" className="text-[#4B5563] px-2">
+                            <span
+                              key="ellipsis1"
+                              className="text-[#4B5563] px-2"
+                            >
                               ...
                             </span>
                           );
@@ -594,7 +719,10 @@ const MedicineManagement: React.FC = () => {
                       if (endPage < totalPages) {
                         if (endPage < totalPages - 1) {
                           pages.push(
-                            <span key="ellipsis2" className="text-[#4B5563] px-2">
+                            <span
+                              key="ellipsis2"
+                              className="text-[#4B5563] px-2"
+                            >
                               ...
                             </span>
                           );
@@ -635,7 +763,8 @@ const MedicineManagement: React.FC = () => {
             {displayedMedicines.length > 0 && totalPages <= 1 && (
               <div className="flex justify-center mt-8 pb-2">
                 <p className="text-sm text-[#4B5563] font-medium">
-                  Showing {displayedMedicines.length} medicine{displayedMedicines.length !== 1 ? 's' : ''}
+                  Showing {displayedMedicines.length} medicine
+                  {displayedMedicines.length !== 1 ? "s" : ""}
                 </p>
               </div>
             )}
@@ -738,53 +867,17 @@ const MedicineManagement: React.FC = () => {
                 </div>
                 <div>
                   <Label
-                    htmlFor="reorder_level"
+                    htmlFor="expiration_date"
                     className="text-[#111827] font-medium"
                   >
-                    Reorder Level
+                    Expiration Date
                   </Label>
                   <Input
-                    id="reorder_level"
-                    name="reorder_level"
-                    type="number"
-                    value={formData.reorder_level}
+                    id="expiration_date"
+                    name="expiration_date"
+                    type="date"
+                    value={formData.expiration_date}
                     onChange={handleInputChange}
-                    placeholder="0"
-                    className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label
-                    htmlFor="frequency"
-                    className="text-[#111827] font-medium"
-                  >
-                    Frequency
-                  </Label>
-                  <Input
-                    id="frequency"
-                    name="frequency"
-                    value={formData.frequency}
-                    onChange={handleInputChange}
-                    placeholder="e.g. Twice daily"
-                    className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
-                  />
-                </div>
-                <div>
-                  <Label
-                    htmlFor="duration"
-                    className="text-[#111827] font-medium"
-                  >
-                    Duration
-                  </Label>
-                  <Input
-                    id="duration"
-                    name="duration"
-                    value={formData.duration}
-                    onChange={handleInputChange}
-                    placeholder="e.g. 7 days"
                     className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
                   />
                 </div>
@@ -792,19 +885,98 @@ const MedicineManagement: React.FC = () => {
 
               <div>
                 <Label
-                  htmlFor="expiration_date"
+                  htmlFor="supplier_id"
                   className="text-[#111827] font-medium"
                 >
-                  Expiry date*
+                  Supplier*
                 </Label>
-                <Input
-                  id="expiration_date"
-                  name="expiration_date"
-                  type="date"
-                  value={formData.expiration_date}
-                  onChange={handleInputChange}
-                  className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
-                />
+                <Select
+                  value={
+                    formData.supplier_id > 0
+                      ? formData.supplier_id.toString()
+                      : ""
+                  }
+                  onValueChange={(value) => {
+                    console.log(
+                      "Selected supplier value (string from Select):",
+                      value
+                    );
+                    const numericValue = value ? Number(value) : 0;
+                    console.log(
+                      "Selected supplier value (numeric):",
+                      numericValue
+                    );
+                    console.log(
+                      "Current formData.supplier_id before change:",
+                      formData.supplier_id
+                    );
+                    setFormData((prev) => ({
+                      ...prev,
+                      supplier_id: numericValue,
+                    }));
+                    console.log(
+                      "Updated formData.supplier_id to:",
+                      numericValue
+                    );
+                  }}
+                >
+                  <SelectTrigger className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl">
+                    <SelectValue placeholder="Select a supplier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingSuppliers ? (
+                      <SelectItem value="loading" disabled>
+                        Loading suppliers...
+                      </SelectItem>
+                    ) : suppliersError ? (
+                      <SelectItem value="error" disabled>
+                        Error loading suppliers
+                      </SelectItem>
+                    ) : suppliers.length === 0 ? (
+                      <SelectItem value="none" disabled>
+                        No suppliers found
+                      </SelectItem>
+                    ) : (
+                      suppliers.map((supplier: MedicineSupplierResponse) => {
+                        console.log("Rendering supplier option:", {
+                          id: supplier.id,
+                          name: supplier.name,
+                        });
+                        return (
+                          <SelectItem
+                            key={supplier.id}
+                            value={supplier.id.toString()}
+                          >
+                            {supplier.name || `Unnamed Supplier ${supplier.id}`}
+                          </SelectItem>
+                        );
+                      })
+                    )}
+                  </SelectContent>
+                </Select>
+                {suppliersError && (
+                  <div className="mt-2 text-sm text-red-600 flex items-center justify-between">
+                    <span>
+                      Failed to load suppliers. Please try refreshing.
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => refetchSuppliers()}
+                      className="ml-2 h-6 text-xs"
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                )}
+                {!isLoadingSuppliers &&
+                  suppliers.length === 0 &&
+                  !suppliersError && (
+                    <div className="mt-2 text-sm text-[#4B5563]">
+                      No suppliers available. Please add suppliers first in the
+                      Inventory section.
+                    </div>
+                  )}
               </div>
 
               <div>
@@ -821,57 +993,6 @@ const MedicineManagement: React.FC = () => {
                   onChange={handleInputChange}
                   placeholder="Enter medicine description"
                   rows={3}
-                  className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="usage" className="text-[#111827] font-medium">
-                  Usage Instructions
-                </Label>
-                <Textarea
-                  id="usage"
-                  name="usage"
-                  value={formData.usage}
-                  onChange={handleInputChange}
-                  placeholder="Enter usage instructions"
-                  rows={2}
-                  className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
-                />
-              </div>
-
-              <div>
-                <Label
-                  htmlFor="side_effects"
-                  className="text-[#111827] font-medium"
-                >
-                  Side Effects
-                </Label>
-                <Textarea
-                  id="side_effects"
-                  name="side_effects"
-                  value={formData.side_effects}
-                  onChange={handleInputChange}
-                  placeholder="List any known side effects"
-                  rows={2}
-                  className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
-                />
-              </div>
-
-              <div>
-                <Label
-                  htmlFor="supplier_id"
-                  className="text-[#111827] font-medium"
-                >
-                  Supplier ID
-                </Label>
-                <Input
-                  id="supplier_id"
-                  name="supplier_id"
-                  type="number"
-                  value={formData.supplier_id}
-                  onChange={handleInputChange}
-                  placeholder="1"
                   className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
                 />
               </div>
@@ -894,7 +1015,9 @@ const MedicineManagement: React.FC = () => {
                 isCreating ||
                 isUpdating ||
                 !formData.medicine_name ||
-                formData.unit_price <= 0
+                formData.unit_price <= 0 ||
+                !formData.supplier_id ||
+                formData.supplier_id <= 0
               }
               onClick={handleSubmit}
               className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"

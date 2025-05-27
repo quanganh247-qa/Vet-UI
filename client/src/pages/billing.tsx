@@ -34,6 +34,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -51,6 +65,7 @@ import {
 } from "@/hooks/use-payment";
 import { useToast } from "@/components/ui/use-toast";
 import { useUpdateInvoiceStatus } from "@/hooks/use-invoice";
+import React from "react";
 
 // Default QR code information
 const defaultQRInfo: QRCodeInformation = {
@@ -71,6 +86,13 @@ const formatCurrency = (amount: number) => {
     currency: "VND",
   }).format(amount);
 };
+
+// Invoice Category interface
+interface InvoiceCategory {
+  id: string;
+  name: string;
+  invoices: any[];
+}
 
 const BillingPage = () => {
   // Cargar facturas desde el backend
@@ -99,6 +121,7 @@ const BillingPage = () => {
   const [cashChange, setCashChange] = useState<number>(0);
   const [paymentID, setPaymentID] = useState<number>(0);
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+  const [activeAccordionItem, setActiveAccordionItem] = useState<string | undefined>(undefined);
 
   // Get the QR mutation hook at the component level
   const { mutate: generateQR } = useQR();
@@ -106,6 +129,56 @@ const BillingPage = () => {
     useConfirmPayment();
   const { mutate: createCashPayment } = useCreateCashPayment();
   const { mutate: updateInvoiceStatus } = useUpdateInvoiceStatus();
+
+  // Group invoices by status
+  const invoiceCategories: InvoiceCategory[] = React.useMemo(() => {
+    if (!invoicesData?.invoices) return [];
+    
+    const groupedInvoices = (invoicesData.invoices as any[]).reduce((acc: { [key: string]: any[] }, invoice: any) => {
+      const status = invoice.status === "paid" ? "paid" : "unpaid";
+      const categoryKey = status === "paid" ? "Paid Invoices" : "Unpaid Invoices";
+      
+      if (!acc[categoryKey]) {
+        acc[categoryKey] = [];
+      }
+      acc[categoryKey].push(invoice);
+      return acc;
+    }, {});
+
+    return Object.entries(groupedInvoices).map(([categoryName, categoryInvoices]) => ({
+      id: categoryName.toLowerCase().replace(/\s+/g, '-'),
+      name: categoryName,
+      invoices: categoryInvoices,
+    }));
+  }, [invoicesData]);
+
+  // Filter invoice categories based on search term and status filter
+  const filteredCategories = invoiceCategories.map(category => ({
+    ...category,
+    invoices: category.invoices.filter(invoice => {
+      // Filter by status
+      if (filterStatus !== "all" && invoice.status !== filterStatus) {
+        return false;
+      }
+
+      // Filter by search term
+      if (searchQuery) {
+        const lowerCaseQuery = searchQuery.toLowerCase();
+        return (
+          invoice.invoice_number.toLowerCase().includes(lowerCaseQuery) ||
+          invoice.description.toLowerCase().includes(lowerCaseQuery) ||
+          (invoice.customer_name &&
+            invoice.customer_name.toLowerCase().includes(lowerCaseQuery))
+        );
+      }
+
+      return true;
+    })
+  })).filter(category => 
+    category.invoices.length > 0 || 
+    searchQuery === ""
+  );
+
   // Establecer la primera factura como activa cuando cargan los datos
   useEffect(() => {
     if (
@@ -257,29 +330,6 @@ const BillingPage = () => {
     }
   }, [cashAmount, activeInvoice]);
 
-  // Filtrar facturas según el estado y la búsqueda
-  const filteredInvoices = invoicesData?.invoices
-    ? invoicesData.invoices.filter((invoice: any) => {
-        // Filtrar por estado
-        if (filterStatus !== "all" && invoice.status !== filterStatus) {
-          return false;
-        }
-
-        // Filtrar por término de búsqueda
-        if (searchQuery) {
-          const lowerCaseQuery = searchQuery.toLowerCase();
-          return (
-            invoice.invoice_number.toLowerCase().includes(lowerCaseQuery) ||
-            invoice.description.toLowerCase().includes(lowerCaseQuery) ||
-            (invoice.customer_name &&
-              invoice.customer_name.toLowerCase().includes(lowerCaseQuery))
-          );
-        }
-
-        return true;
-      })
-    : [];
-
   // Payment confirmation handler
   const handleConfirmPayment = () => {
     if (!activeInvoice) return;
@@ -364,18 +414,21 @@ const BillingPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold">Billing & Payments</h1>
+            <p className="text-sm text-white">Manage your invoices and payments</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Invoice List */}
         <div className="lg:col-span-1">
           <Card className="shadow-md border border-[#F9FAFB] rounded-2xl">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center justify-between text-[#111827]">
                 <span>Invoices</span>
-                <Badge className="ml-2 bg-[#F9FAFB] text-[#2C78E4] border-[#2C78E4]/20">{filteredInvoices.length}</Badge>
+                <Badge className="ml-2 bg-[#F9FAFB] text-[#2C78E4] border-[#2C78E4]/20">
+                  {filteredCategories.reduce((total, category) => total + category.invoices.length, 0)}
+                </Badge>
               </CardTitle>
               <CardDescription className="text-[#4B5563]">View and manage your invoices</CardDescription>
 
@@ -390,7 +443,7 @@ const BillingPage = () => {
                   />
                 </div>
 
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4 text-[#4B5563]" />
                   <Select defaultValue="all" onValueChange={setFilterStatus}>
                     <SelectTrigger className="w-full border-[#2C78E4]/20 rounded-2xl h-10 bg-white">
@@ -402,73 +455,115 @@ const BillingPage = () => {
                       <SelectItem value="unpaid">Unpaid</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
               </div>
             </CardHeader>
 
             <Separator className="bg-[#F9FAFB]" />
 
-            <CardContent className="p-0 max-h-[990px] overflow-y-auto">
-              <div className="grid grid-cols-1 divide-y divide-[#F9FAFB]">
-                {filteredInvoices.map((invoice: any) => (
-                  <div
-                    key={invoice.id}
-                    className={cn(
-                      "p-4 hover:bg-[#F9FAFB] cursor-pointer transition-colors rounded-2xl mx-1 my-0.5",
-                      activeInvoice?.id === invoice.id &&
-                        "bg-[#F9FAFB]"
-                    )}
-                    onClick={() => setActiveInvoice(invoice)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-medium text-[#111827]">
-                          {invoice.invoice_number}
-                        </h3>
-                        <p className="text-sm text-[#4B5563] mt-0.5">
-                          {invoice.description}
-                        </p>
-                      </div>
-                      <Badge
-                        variant={
-                          invoice.status === "paid" ? "default" : "outline"
-                        }
-                        className={cn(
-                          "rounded-full",
-                          invoice.status === "paid"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-[#FFA726]/10 text-[#FFA726] border-[#FFA726]/20"
+            <CardContent className="p-0 max-h-[800px] overflow-y-auto">
+              {filteredCategories.length === 0 ? (
+                <div className="p-8 text-center text-[#4B5563]">
+                  No invoices found matching your criteria.
+                </div>
+              ) : (
+                <Accordion 
+                  type="single" 
+                  collapsible 
+                  className="w-full"
+                  value={activeAccordionItem}
+                  onValueChange={setActiveAccordionItem}
+                >
+                  {filteredCategories.map((category) => (
+                    <AccordionItem 
+                      value={category.id} 
+                      key={category.id} 
+                      className="border-b border-[#F9FAFB]"
+                    >
+                      <AccordionTrigger className="px-4 py-3 text-base font-medium text-[#111827] hover:bg-[#F9FAFB] data-[state=open]:bg-[#F0F7FF]">
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-3">
+                            <Receipt className="h-5 w-5 text-[#2C78E4]" />
+                            <span>{category.name}</span>
+                            <Badge variant="outline" className="bg-white border-[#2C78E4]/30 text-[#2C78E4]">
+                              {category.invoices.length} invoice{category.invoices.length !== 1 ? 's' : ''}
+                            </Badge>
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-0 pt-0 pb-2">
+                        {category.invoices.length > 0 ? (
+                          <Table>
+                            <TableHeader className="bg-[#F9FAFB]">
+                              <TableRow>
+                                <TableHead className="pl-4 py-2 font-semibold text-[#111827] text-sm">Invoice</TableHead>
+                                <TableHead className="py-2 font-semibold text-[#111827] text-sm">Description</TableHead>
+                                <TableHead className="py-2 font-semibold text-[#111827] text-sm">Due Date</TableHead>
+                                <TableHead className="py-2 font-semibold text-[#111827] text-sm">Amount</TableHead>
+                                <TableHead className="py-2 font-semibold text-[#111827] text-sm">Status</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {category.invoices.map((invoice: any) => (
+                                <TableRow 
+                                  key={invoice.id} 
+                                  className={cn(
+                                    "hover:bg-[#F9FAFB]/50 cursor-pointer h-12",
+                                    activeInvoice?.id === invoice.id && "bg-[#F0F7FF]"
+                                  )}
+                                  onClick={() => setActiveInvoice(invoice)}
+                                >
+                                  <TableCell className="pl-4 py-2">
+                                    <div>
+                                      <div className="font-medium text-[#111827] text-sm">{invoice.invoice_number}</div>
+                                      <div className="text-xs text-[#4B5563]">ID: {invoice.id}</div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-sm text-[#4B5563] max-w-xs truncate py-2" title={invoice.description}>
+                                    {invoice.description}
+                                  </TableCell>
+                                  <TableCell className="text-sm text-[#4B5563] py-2">
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-3 w-3" />
+                                      <span className="text-xs">{format(new Date(invoice.due_date), "MMM dd")}</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-sm font-medium text-[#111827] py-2">
+                                    <div className="text-xs">{formatCurrency(invoice.amount)}</div>
+                                  </TableCell>
+                                  <TableCell className="text-sm py-2">
+                                    <Badge
+                                      variant={invoice.status === "paid" ? "default" : "outline"}
+                                      className={cn(
+                                        "rounded-full text-xs px-2 py-0.5",
+                                        invoice.status === "paid"
+                                          ? "bg-green-100 text-green-800"
+                                          : "bg-[#FFA726]/10 text-[#FFA726] border-[#FFA726]/20"
+                                      )}
+                                    >
+                                      {invoice.status === "paid" ? "Paid" : "Unpaid"}
+                                    </Badge>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        ) : (
+                          <div className="px-6 py-4 text-sm text-gray-500">
+                            No invoices found in this category{searchQuery ? " matching your search" : ""}.
+                          </div>
                         )}
-                      >
-                        {invoice.status === "paid" ? "Paid" : "Unpaid"}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <div className="flex items-center gap-1 text-[#4B5563]">
-                        <Calendar className="h-3.5 w-3.5" />
-                        <span>
-                          {format(new Date(invoice.due_date), "MMM dd, yyyy")}
-                        </span>
-                      </div>
-                      <div className="font-medium text-[#111827]">
-                        {formatCurrency(invoice.amount)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {filteredInvoices.length === 0 && (
-                  <div className="p-8 text-center text-[#4B5563]">
-                    No invoices found matching your criteria.
-                  </div>
-                )}
-              </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              )}
             </CardContent>
           </Card>
         </div>
 
         {/* Invoice Details and Payment */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-1">
           {activeInvoice ? (
             <Card className="shadow-md border border-[#F9FAFB] rounded-2xl">
               <CardHeader className="pb-3">
@@ -866,10 +961,10 @@ const BillingPage = () => {
                         This invoice has been paid already. Thank you for your
                         payment.
                       </p>
-                      <Button variant="outline" size="sm" className="mt-3 rounded-2xl border-green-200 text-green-600 hover:bg-green-50">
+                      {/* <Button variant="outline" size="sm" className="mt-3 rounded-2xl border-green-200 text-green-600 hover:bg-green-50">
                         <Download className="mr-2 h-4 w-4" />
                         Download Receipt
-                      </Button>
+                      </Button> */}
                     </div>
                   </div>
                 )}

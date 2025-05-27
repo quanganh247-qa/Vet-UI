@@ -93,9 +93,7 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery, onOperationCom
       setIsLoading(true);
       setError(null);
       
-      const response = await api.get(`/api/v1/medicine/suppliers?page=${currentPage}&pageSize=${itemsPerPage}`);
-      console.log("Suppliers API response:", response.data);
-      
+      const response = await api.get(`/api/v1/medicine/suppliers?page=${currentPage}&pageSize=${itemsPerPage}`);      
       if (response.data && response.data.data && Array.isArray(response.data.data)) {
         setSuppliers(response.data.data);
         setTotalItems(response.data.meta?.total || response.data.data.length);
@@ -105,7 +103,6 @@ const SupplierList: React.FC<SupplierListProps> = ({ searchQuery, onOperationCom
           setTotalPages(response.data.meta.totalPages || response.data.meta.total_pages || 1);
         }
       } else {
-        console.warn("Unexpected API response format:", response.data);
         // Try to handle any possible response format
         if (Array.isArray(response.data)) {
           setSuppliers(response.data);

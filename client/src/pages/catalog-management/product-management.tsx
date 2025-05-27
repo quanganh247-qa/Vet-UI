@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import {
   useProducts,
   useCreateProduct,
+  useUpdateProduct,
   useImportProductStock,
   useExportProductStock,
   useProductStockMovements,
 } from "@/hooks/use-product";
 import {
   CreateProductRequest,
+  UpdateProductRequest,
   ImportStockRequest,
   ExportStockRequest,
   ProductStockMovementResponse,
@@ -65,6 +67,12 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 // Product interface for type safety
 interface Product {
@@ -77,6 +85,13 @@ interface Product {
   dataImage?: Uint8Array;
   originalImage?: string;
   isAvailable?: boolean;
+}
+
+// Product Category interface
+interface ProductCategory {
+  id: string;
+  name: string;
+  products: Product[];
 }
 
 // Format currency
@@ -566,24 +581,17 @@ const StockManagementDialog: React.FC<StockManagementDialogProps> = ({
 };
 
 const ProductManagement: React.FC = () => {
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 9; // Items per page
-
   // State variables
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [isEditingItem, setIsEditingItem] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(
-    null
-  );
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [stockDialogOpen, setStockDialogOpen] = useState(false);
-  const [stockDialogProduct, setStockDialogProduct] = useState<Product | null>(
-    null
-  );
+  const [stockDialogProduct, setStockDialogProduct] = useState<Product | null>(null);
+  const [activeAccordionItem, setActiveAccordionItem] = useState<string | undefined>(undefined);
 
   // Form state
   const [formData, setFormData] = useState<CreateProductRequest>({
@@ -603,23 +611,43 @@ const ProductManagement: React.FC = () => {
     isLoading: isLoadingProducts,
     error: productsError,
     refetch,
-  } = useProducts(currentPage, pageSize);
+  } = useProducts(1, 9999); // Get all products
   const { createProduct, isLoading: isCreating } = useCreateProduct();
+  const { updateProduct, isLoading: isUpdating } = useUpdateProduct();
 
-  // Filter products based on search term
-  const filteredProducts = products.filter(
-    (product) =>
+  // Group products by category
+  const productCategories: ProductCategory[] = React.useMemo(() => {
+    if (!products) return [];
+    
+    const groupedProducts = (products as any[]).reduce((acc: { [key: string]: Product[] }, product: any) => {
+      const category = product.category || "Uncategorized";
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(product as Product);
+      return acc;
+    }, {});
+
+    return Object.entries(groupedProducts).map(([categoryName, categoryProducts]) => ({
+      id: categoryName.toLowerCase().replace(/\s+/g, '-'),
+      name: categoryName,
+      products: categoryProducts,
+    }));
+  }, [products]);
+
+  // Filter product categories based on search term
+  const filteredCategories = productCategories.map(category => ({
+    ...category,
+    products: category.products.filter(product => 
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (product.category &&
-        product.category.toLowerCase().includes(searchTerm.toLowerCase()))
+      product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    )
+  })).filter(category => 
+    category.products.length > 0 || 
+    category.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    searchTerm === ""
   );
-
-  // Reset pagination when search changes
-  useEffect(() => {
-    if (searchTerm) {
-      setCurrentPage(1);
-    }
-  }, [searchTerm]);
 
   // Handle opening add dialog
   const handleOpenAddDialog = () => {
@@ -761,12 +789,59 @@ const ProductManagement: React.FC = () => {
           },
         }
       );
-    }
-  };
+    } else if (isEditingItem && selectedProductId) {
+      console.log('Updating product with data:', formData);
 
-  // Handle pagination
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+      if (!formData.name || formData.price <= 0) {
+        toast({
+          title: "Invalid data",
+          description: "Please fill in all required fields with valid values",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Transform the data to match API expectations for update
+      const updateData: UpdateProductRequest = {
+        name: formData.name,
+        description: formData.description,
+        price: formData.price,
+        stock_quantity: formData.stock_quantity,
+        category: formData.category,
+        isAvailable: formData.isAvailable,
+      };
+
+      updateProduct(
+        {
+          productId: selectedProductId,
+          productData: updateData,
+          imageFile: selectedImage || undefined, // Convert null to undefined
+        },
+        {
+          onSuccess: () => {
+            toast({
+              title: "Product updated successfully",
+              description: "The product has been updated in your catalog.",
+              className: "bg-green-50 text-green-800 border-green-200",
+            });
+            setIsEditingItem(false);
+            setSelectedImage(null);
+            setImagePreview(null);
+            refetch();
+          },
+          onError: (error) => {
+            toast({
+              title: "Error updating product",
+              description:
+                error instanceof Error
+                  ? error.message
+                  : "An unexpected error occurred",
+              variant: "destructive",
+            });
+          },
+        }
+      );
+    }
   };
 
   return (
@@ -805,94 +880,144 @@ const ProductManagement: React.FC = () => {
         {/* Products listing */}
         {isLoadingProducts ? (
           <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-[#2C78E4]" />
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-10 w-10 animate-spin text-[#2C78E4]" />
+              <p className="text-[#4B5563]">Loading products...</p>
+            </div>
           </div>
         ) : productsError ? (
           <div className="flex flex-col items-center justify-center h-64 text-red-600">
-            <AlertCircle className="h-10 w-10 mb-2" />
-            <p>Error loading products. Please try again later.</p>
+            <AlertCircle className="h-12 w-12 mb-3" />
+            <p className="text-lg font-medium">Error loading products</p>
+            <p className="text-sm text-[#4B5563] mt-1">
+              Please try again later
+            </p>
           </div>
-        ) : filteredProducts.length === 0 ? (
+        ) : filteredCategories.length === 0 ? (
           <EmptyState onAdd={handleOpenAddDialog} />
         ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredProducts.map((product) => (
-                <Card
-                  key={product.productId}
-                  className="hover:shadow-lg transition-all duration-200 border border-[#2C78E4]/10 rounded-2xl overflow-hidden bg-white"
-                >
-                  <CardHeader className="pb-2 space-y-1">
-                    <CardTitle className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <span className="text-lg font-semibold text-[#111827]">
-                          {product.name}
-                        </span>
-                        <Badge className="bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20 rounded-full">
-                          {product.category}
-                        </Badge>
-                      </div>
-                      <div className="flex space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-[#4B5563] hover:text-[#2C78E4] hover:bg-[#F0F7FF] rounded-xl h-8 w-8 p-0"
-                          onClick={() => handleOpenEditDialog(product)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-[#4B5563] hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
-                          onClick={() => handleOpenDeleteDialog(product.productId)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {product.originalImage && (
-                        <div className="h-32 rounded-xl overflow-hidden bg-[#F9FAFB] flex items-center justify-center border border-[#2C78E4]/10">
-                          <img
-                            src={product.originalImage}
-                            alt={product.name}
-                            className="object-contain h-full w-full"
-                          />
-                        </div>
-                      )}
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center text-sm text-[#4B5563]">
-                          <span
-                            className={`w-2 h-2 rounded-full mr-2 ${
-                              product.isAvailable ? "bg-green-500" : "bg-red-500"
-                            }`}
-                          ></span>
-                          {product.isAvailable ? "Available" : "Not available"}
-                        </div>
-                        <span className="font-medium text-[#111827]">
-                          {formatCurrency(product.price)}
-                        </span>
-                      </div>
-                      {product.description && (
-                        <p className="text-sm text-[#4B5563] line-clamp-2">
-                          {product.description}
-                        </p>
-                      )}
-                      <div className="bg-[#F9FAFB] p-3 rounded-xl text-sm text-[#4B5563] border border-[#2C78E4]/10 flex items-center justify-between">
-                        <span className="font-medium">Stock</span>
-                        <span>{product.stock_quantity} units</span>
-                      </div>
-                  
+          <Accordion 
+            type="single" 
+            collapsible 
+            className="w-full space-y-3"
+            value={activeAccordionItem}
+            onValueChange={setActiveAccordionItem}
+          >
+            {filteredCategories.map((category) => (
+              <AccordionItem 
+                value={category.id} 
+                key={category.id} 
+                className="border border-[#2C78E4]/10 rounded-xl overflow-hidden bg-white hover:shadow-md transition-shadow"
+              >
+                <AccordionTrigger className="px-6 py-4 text-lg font-medium text-[#111827] hover:bg-[#F0F7FF] data-[state=open]:bg-[#E0F2FE] data-[state=open]:text-[#0C4A6E]">
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center">
+                      <Package className="h-5 w-5 mr-3 text-[#2C78E4]" /> 
+                      {category.name}
+                      <Badge variant="outline" className="ml-3 bg-white border-[#2C78E4]/30 text-[#2C78E4]">
+                        {category.products.length} product{category.products.length !== 1 ? 's' : ''}
+                      </Badge>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-          </>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-0 pt-0 pb-2 bg-white">
+                  {category.products.length > 0 ? (
+                    <Table className="mt-0">
+                      <TableHeader className="bg-[#F9FAFB]">
+                        <TableRow>
+                          <TableHead className="pl-6 font-semibold text-[#111827]">Product</TableHead>
+                          <TableHead className="font-semibold text-[#111827]">Description</TableHead>
+                          <TableHead className="font-semibold text-[#111827]">Price</TableHead>
+                          <TableHead className="font-semibold text-[#111827]">Stock</TableHead>
+                          <TableHead className="font-semibold text-[#111827]">Status</TableHead>
+                          <TableHead className="font-semibold text-[#111827] text-right pr-6">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {category.products.map((product) => (
+                          <TableRow key={product.productId} className="hover:bg-[#F9FAFB]/50">
+                            <TableCell className="pl-6">
+                              <div className="flex items-center gap-3">
+                                {product.originalImage && (
+                                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#F9FAFB] flex items-center justify-center border border-[#2C78E4]/10">
+                                    <img
+                                      src={product.originalImage}
+                                      alt={product.name}
+                                      className="object-contain w-full h-full"
+                                    />
+                                  </div>
+                                )}
+                                <div>
+                                  <div className="font-medium text-[#111827]">{product.name}</div>
+                                  <div className="text-xs text-[#4B5563]">ID: {product.productId}</div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-[#4B5563] max-w-xs truncate" title={product.description}>
+                              {product.description || "N/A"}
+                            </TableCell>
+                            <TableCell className="text-sm font-medium text-[#FFA726]">
+                              {formatCurrency(product.price)}
+                            </TableCell>
+                            <TableCell className="text-sm text-[#4B5563]">
+                              <div className="flex items-center gap-2">
+                                <span>{product.stock_quantity} units</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-[#2C78E4] hover:bg-[#F0F7FF] rounded-lg h-6 w-6 p-0"
+                                  onClick={() => handleOpenStockDialog(product)}
+                                  title="Manage stock"
+                                >
+                                  <Package className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              <div className="flex items-center">
+                                <span
+                                  className={`w-2 h-2 rounded-full mr-2 ${
+                                    product.isAvailable ? "bg-green-500" : "bg-red-500"
+                                  }`}
+                                ></span>
+                                <span className={product.isAvailable ? "text-green-700" : "text-red-700"}>
+                                  {product.isAvailable ? "Available" : "Unavailable"}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right pr-6">
+                              <div className="flex justify-end space-x-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-[#2C78E4] hover:bg-[#F0F7FF] rounded-xl"
+                                  onClick={() => handleOpenEditDialog(product)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-600 hover:bg-red-50 rounded-xl"
+                                  onClick={() => handleOpenDeleteDialog(product.productId)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p className="px-6 py-4 text-sm text-gray-500">
+                      No products found in this category{searchTerm ? " matching your search" : ""}.
+                    </p>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         )}
       </div>
 
@@ -1055,6 +1180,7 @@ const ProductManagement: React.FC = () => {
             <Button
               disabled={
                 isCreating ||
+                isUpdating ||
                 !formData.name ||
                 formData.price <= 0 ||
                 (isAddingItem && !selectedImage)
@@ -1062,15 +1188,15 @@ const ProductManagement: React.FC = () => {
               onClick={handleSubmit}
               className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
             >
-              {isCreating ? (
+              {isCreating || isUpdating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
+                  {isAddingItem ? "Creating..." : "Updating..."}
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Save changes
+                  {isAddingItem ? "Create Product" : "Update Product"}
                 </>
               )}
             </Button>
@@ -1100,6 +1226,15 @@ const ProductManagement: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Stock Management Dialog */}
+      <StockManagementDialog
+        open={stockDialogOpen}
+        onOpenChange={setStockDialogOpen}
+        productId={stockDialogProduct?.productId || null}
+        productName={stockDialogProduct?.name || ""}
+        currentStock={stockDialogProduct?.stock_quantity || 0}
+      />
     </div>
   );
 };

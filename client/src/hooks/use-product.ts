@@ -4,7 +4,9 @@ import {
   createProduct,
   getProducts,
   getProductById,
+  updateProduct,
   CreateProductRequest,
+  UpdateProductRequest,
   ProductResponse,
   PaginatedProductResponse,
   importProductStock,
@@ -90,6 +92,44 @@ export const useCreateProduct = () => {
 
   return {
     createProduct: mutation.mutate,
+    isLoading: mutation.isPending || isUploading,
+    isSuccess: mutation.isSuccess,
+    isError: mutation.isError,
+    error: mutation.error,
+  };
+};
+
+export const useUpdateProduct = () => {
+  const queryClient = useQueryClient();
+  const [isUploading, setIsUploading] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: ({
+      productId,
+      productData,
+      imageFile,
+    }: {
+      productId: number;
+      productData: UpdateProductRequest;
+      imageFile?: File;
+    }) => {
+      setIsUploading(true);
+      return updateProduct(productId, productData, imageFile);
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate products queries to refetch the updated data
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      // Also invalidate the specific product query
+      queryClient.invalidateQueries({ queryKey: ["product", variables.productId] });
+      setIsUploading(false);
+    },
+    onError: () => {
+      setIsUploading(false);
+    },
+  });
+
+  return {
+    updateProduct: mutation.mutate,
     isLoading: mutation.isPending || isUploading,
     isSuccess: mutation.isSuccess,
     isError: mutation.isError,

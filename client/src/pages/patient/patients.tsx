@@ -211,6 +211,7 @@ export const PatientsPage: React.FC = () => {
               </Badge>
             )}
           </div>
+          
 
           <div className="flex items-center space-x-3">
             <div className="flex items-center bg-white/10 text-white border-white/20 rounded-xl px-4 py-2 transition-all hover:bg-white/15">
@@ -222,13 +223,7 @@ export const PatientsPage: React.FC = () => {
                 className="text-sm bg-transparent border-none focus:outline-none text-white"
               />
             </div>
-            {/* <Button
-              onClick={() => setLocation("/patients/new")}
-              className="bg-white text-[#2C78E4] hover:bg-white/90 rounded-xl shadow-sm"
-              size="sm"
-            >
-              <Plus className="h-4 w-4 mr-2" /> New Patient
-            </Button> */}
+           
           </div>
         </div>
       </div>

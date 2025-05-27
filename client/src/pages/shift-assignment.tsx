@@ -559,7 +559,7 @@ const ShiftAssignmentPage = () => {
               <TableHead className="font-semibold text-[#111827]">Shift</TableHead>
               <TableHead className="font-semibold text-[#111827]">Time</TableHead>
               <TableHead className="font-semibold text-[#111827]">Status</TableHead>
-              <TableHead className="font-semibold text-[#111827] text-right">Actions</TableHead>
+              {/* <TableHead className="font-semibold text-[#111827] text-right">Actions</TableHead> */}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -626,7 +626,7 @@ const ShiftAssignmentPage = () => {
                         {assignment.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    {/* <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -660,7 +660,7 @@ const ShiftAssignmentPage = () => {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </TableCell>
+                    </TableCell> */}
                   </TableRow>
                 );
               })

@@ -502,7 +502,6 @@ const HealthCard: React.FC<HealthCardProps> = ({
       fileExt || ""
     );
     const isPdf = fileExt === "pdf";
-    const isViewableInBrowser = isPdf || isImage;
 
     if (isImage) {
       return (
@@ -515,12 +514,13 @@ const HealthCard: React.FC<HealthCardProps> = ({
         </div>
       );
     } else if (isPdf) {
+      // Ensure PDF is rendered directly in an iframe
       return (
-        <div className="h-[70vh] w-full p-4">
+        <div className="h-[75vh] w-full flex items-center justify-center bg-gray-50">
           <iframe
             src={`${selectedFile.url}#view=FitH`}
             title={fileName}
-            className="w-full h-full border-0 rounded-xl shadow-sm"
+            className="w-full h-full border-0 shadow-sm"
           />
         </div>
       );
@@ -1134,14 +1134,14 @@ const HealthCard: React.FC<HealthCardProps> = ({
                         <FileText className="h-4 w-4 mr-2 text-[#2C78E4]" />
                         Current & Past Medications
                       </h3>
-                      <Button
+                      {/* <Button
                         size="sm"
                         className="bg-[#2C78E4] hover:bg-[#1E40AF] transition-colors"
                         onClick={() => handleButtonClick("upload-file")}
                       >
                         <Plus className="h-4 w-4 mr-1" />
                         Upload File
-                      </Button>
+                      </Button> */}
                     </div>
 
                     {filesLoading ? (

@@ -543,43 +543,7 @@ const ClinicalAssessmentEditor = ({
           className="resize-none min-h-[120px] bg-white rounded-lg border-red-200 focus:ring-red-400 focus:border-red-400 text-lg"
         />
 
-        {/* Severity and Confidence */}
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          <div>
-            <label className="block text-sm font-medium text-red-700 mb-2">
-              Severity Assessment
-            </label>
-            <select
-              value={assessment.severity || ""}
-              onChange={(e) => handleInputChange("severity", e.target.value)}
-              className="w-full p-2 border border-red-200 rounded-lg focus:ring-red-400 focus:border-red-400"
-            >
-              <option value="">Select severity...</option>
-              {severityOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-red-700 mb-2">
-              Diagnostic Confidence
-            </label>
-            <select
-              value={assessment.confidence || ""}
-              onChange={(e) => handleInputChange("confidence", e.target.value)}
-              className="w-full p-2 border border-red-200 rounded-lg focus:ring-red-400 focus:border-red-400"
-            >
-              <option value="">Select confidence...</option>
-              {confidenceOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+
       </div>
 
       {/* Differential Diagnoses */}

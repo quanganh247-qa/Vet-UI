@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import { 
   ArrowLeft, 
   UserCircle, 
-  Calendar, 
   Edit, 
   Plus, 
   Image as ImageIcon,
@@ -17,17 +16,16 @@ import {
   Rabbit,
   ClipboardList,
   Pencil,
-  Trash,
+  Trash2,
   Weight,
   CalendarDays,
   QrCode,
   Mail,
   Phone,
   MapPin,
-  Stethoscope,
-  Heart
+  Loader2
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -38,8 +36,6 @@ import { usePetOwnerByPetId } from '@/hooks/use-pet';
 import { useVaccineData } from '@/hooks/use-vaccine';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Vaccination } from '@/types';
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,34 +48,19 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-// Component definitions moved here to fix linter errors
 const DetailItem: React.FC<{ label: string; value: string | number | undefined | null }> = ({ label, value }) => (
   <div className="space-y-1">
-    <div className="text-xs text-slate-500 uppercase tracking-wider font-medium">{label}</div>
-    <div className="text-sm font-semibold text-slate-800">{value || <span className="text-slate-400 italic">Not specified</span>}</div>
-  </div>
-);
-
-const DetailItemWithIcon: React.FC<{ 
-  icon: React.ReactNode;
-  label: string; 
-  value: string | number | undefined | null 
-}> = ({ icon, label, value }) => (
-  <div className="flex items-start space-x-3">
-    <div className="mt-1 p-1">{icon}</div>
-    <div className="space-y-1">
-      <div className="text-xs text-slate-500 uppercase tracking-wider font-medium">{label}</div>
-      <div className="text-sm font-semibold text-slate-800">{value || <span className="text-slate-400 italic">Not specified</span>}</div>
-    </div>
+    <div className="text-sm text-[#4B5563] font-medium">{label}</div>
+    <div className="text-sm text-[#111827]">{value || <span className="text-[#9CA3AF]">Not specified</span>}</div>
   </div>
 );
 
 const getPetTypeIcon = (type: string) => {
   switch (type?.toLowerCase()) {
-    case 'dog': return <Dog className="h-4 w-4 inline-block mr-1 text-slate-500" />;
-    case 'cat': return <Cat className="h-4 w-4 inline-block mr-1 text-slate-500" />;
-    case 'bird': return <Bird className="h-4 w-4 inline-block mr-1 text-slate-500" />;
-    case 'rabbit': return <Rabbit className="h-4 w-4 inline-block mr-1 text-slate-500" />;
+    case 'dog': return <Dog className="h-4 w-4" />;
+    case 'cat': return <Cat className="h-4 w-4" />;
+    case 'bird': return <Bird className="h-4 w-4" />;
+    case 'rabbit': return <Rabbit className="h-4 w-4" />;
     default: return null;
   }
 };
@@ -87,23 +68,19 @@ const getPetTypeIcon = (type: string) => {
 const PatientDetailsPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("details");
 
-  // Get appointmentId from URL query parameter
   const [appointmentId, setAppointmentId] = useState<string | null>(null);
   
   useEffect(() => {
-    // Extract appointmentId from URL search params
     const searchParams = new URLSearchParams(window.location.search);
     const urlAppointmentId = searchParams.get("appointmentId");
     setAppointmentId(urlAppointmentId);
   }, []);
 
   const { data: patientData, isLoading: isPatientLoading, error: patientError } = usePatientData(id);
-  const { data: ownerData, isLoading: isOwnerLoading, error: ownerError } = usePetOwnerByPetId(patientData?.petid);
-  const { data: vaccinations, isLoading: isVaccinationsLoading, error: vaccinationsError } = useVaccineData(id ? parseInt(id) : 0);
+  const { data: ownerData, isLoading: isOwnerLoading } = usePetOwnerByPetId(patientData?.petid);
+  const { data: vaccinations, isLoading: isVaccinationsLoading } = useVaccineData(id ? parseInt(id) : 0);
   
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filteredVaccinations, setFilteredVaccinations] = useState<Vaccination[]>([]);
@@ -133,74 +110,32 @@ const PatientDetailsPage: React.FC = () => {
     navigate(`/patients/${id}/edit`);
   };
 
-  const handleAddVaccination = () => {
-    setIsAddVaccineDialogOpen(true);
-  };
-
   const handleDeleteClick = () => {
     setIsDeleteDialogOpen(true);
   };
 
   if (isPatientLoading || isOwnerLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="container max-w-7xl mx-auto p-4 md:p-6 animate-pulse">
-          <div className="bg-gradient-to-r from-slate-200 to-slate-300 h-24 -mx-4 -mt-4 md:-mx-6 md:-mt-6 px-6 py-4 md:px-8 md:py-6 mb-8 rounded-br-2xl rounded-bl-2xl shadow-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Skeleton className="h-10 w-10 mr-3 rounded-full" />
-                <div>
-                  <Skeleton className="h-7 w-40 mb-2" />
-                  <Skeleton className="h-4 w-56" />
-                </div>
+      <div className="space-y-6">
+        <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Skeleton className="h-10 w-10 mr-3 rounded-xl" />
+              <div>
+                <Skeleton className="h-7 w-40 mb-2" />
+                <Skeleton className="h-4 w-56" />
               </div>
-              <div className="flex gap-2">
-                <Skeleton className="h-10 w-20 rounded-lg" />
-                <Skeleton className="h-10 w-24 rounded-lg" />
-              </div>
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-20 rounded-xl" />
+              <Skeleton className="h-10 w-24 rounded-xl" />
             </div>
           </div>
-          
-          <Skeleton className="h-12 w-96 mb-6 rounded-xl" />
-          
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <Card className="lg:col-span-1 border-0 shadow-xl rounded-2xl overflow-hidden">
-                <Skeleton className="h-80 w-full bg-slate-200" />
-                <CardContent className="p-6">
-                  <Skeleton className="h-6 w-3/4 mb-3" />
-                  <Skeleton className="h-4 w-1/2 mb-4" />
-                  <div className="space-y-3">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-2/3" />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="lg:col-span-2 border-0 shadow-xl rounded-2xl">
-                <CardHeader className="pb-4">
-                  <Skeleton className="h-6 w-48 mb-2" />
-                  <Skeleton className="h-4 w-64" />
-                </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <Skeleton className="h-4 w-32 mb-3" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-4 w-2/3" />
-                    </div>
-                    <div className="space-y-3">
-                      <Skeleton className="h-4 w-32 mb-3" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-4 w-2/3" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+        </div>
+        
+        <div className="bg-white rounded-2xl border border-[#2C78E4]/20 shadow-sm p-6">
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-[#2C78E4]" />
           </div>
         </div>
       </div>
@@ -209,20 +144,27 @@ const PatientDetailsPage: React.FC = () => {
 
   if (patientError || !patientData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="container max-w-7xl mx-auto p-6">
-          <div className="min-h-[70vh] flex flex-col items-center justify-center bg-white rounded-2xl border border-red-100 shadow-xl p-12 text-center">
-            <div className="bg-red-50 rounded-full p-4 mb-6">
-              <AlertCircle className="h-16 w-16 text-red-500" />
+      <div className="space-y-6">
+        <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-semibold text-white">Patient Details</h1>
+              <p className="text-sm text-white">Unable to load patient information</p>
             </div>
-            <h2 className="text-2xl font-bold text-red-700 mb-3">Unable to Load Patient</h2>
-            <p className="text-red-600 mb-8 max-w-md leading-relaxed">
-              {(patientError as any)?.message || 'The requested patient could not be found or there was an error loading the data.'}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-[#2C78E4]/20 shadow-sm p-6">
+          <div className="flex flex-col items-center justify-center h-64 text-red-600">
+            <AlertCircle className="h-10 w-10 mb-2" />
+            <h2 className="text-xl font-semibold text-red-700 mb-2">Unable to Load Patient</h2>
+            <p className="text-red-600 mb-6">
+              {(patientError as any)?.message || 'The requested patient could not be found.'}
             </p>
             <Button 
               variant="outline" 
               onClick={handleBackClick}
-              className="border-red-200 text-red-700 hover:bg-red-50 px-6 py-3 rounded-xl"
+              className="border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F9FAFB] rounded-xl"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Return to Patients
@@ -236,167 +178,133 @@ const PatientDetailsPage: React.FC = () => {
   const PetIcon = getPetTypeIcon(patientData.type);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="container max-w-7xl mx-auto p-4 md:p-6">
-        {/* Enhanced Header with modern gradient */}
-        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 -mx-4 -mt-4 md:-mx-6 md:-mt-6 px-6 py-8 md:px-8 md:py-10 mb-8 rounded-br-2xl rounded-bl-2xl shadow-2xl relative overflow-hidden">
-          {/* Background decoration */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent"></div>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-white/5 to-transparent rounded-full -translate-y-48 translate-x-48"></div>
-          
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="mr-4 h-12 w-12 text-white hover:bg-white/20 rounded-xl transition-all duration-200"
-                onClick={handleBackClick}
-                aria-label="Back to patients list"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold text-white tracking-tight flex items-center mb-2">
-                  {PetIcon && <span className="mr-3 text-white/90">{React.cloneElement(PetIcon, { className: "h-7 w-7 inline-block text-white/90" })}</span>}
-                  {patientData.name}
-                  <Heart className="h-6 w-6 ml-3 text-red-300" fill="currentColor" />
-                </h1>
-                <div className="text-sm text-white/90 flex items-center gap-3">
-                  <span className="bg-white/20 px-3 py-1 rounded-full">{patientData.type}</span>
-                  <span className="text-white/70">•</span>
-                  <span>{patientData.breed}</span>
-                  <span className="text-white/70">•</span>
-                  <span>{patientData.gender}</span>
-                  <span className="text-white/70">•</span>
-                  <span>{patientData.age} years old</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm transition-all duration-200 px-4 py-2 rounded-xl"
-                onClick={handleEditClick}
-              >
-                <Pencil className="h-4 w-4 mr-2" /> Edit Profile
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="bg-white/20 text-white border-white/30 hover:bg-red-500/30 backdrop-blur-sm transition-all duration-200 px-4 py-2 rounded-xl"
-                onClick={handleDeleteClick}
-              >
-                <Trash className="h-4 w-4 mr-2" /> Remove
-              </Button>
+    <div className="space-y-6">
+      {/* Header with gradient background matching product management */}
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mr-4 h-10 w-10 text-white hover:bg-white/20 rounded-xl transition-all duration-200"
+              onClick={handleBackClick}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-xl font-semibold text-white flex items-center gap-2">
+                {PetIcon && <span className="text-white">{React.cloneElement(PetIcon, { className: "h-5 w-5 text-white" })}</span>}
+                {patientData.name}
+              </h1>
+              <p className="text-sm text-white">
+                {patientData.breed} • {patientData.gender} • {patientData.age} years old
+              </p>
             </div>
           </div>
-        </div>
 
-        {/* Enhanced Tabs with modern design */}
-        <Tabs defaultValue="details" className="mb-8" onValueChange={setActiveTab}>
-          <TabsList className="bg-white/70 backdrop-blur-sm p-1.5 rounded-2xl mb-8 border border-slate-200/50 shadow-lg inline-flex">
-            <TabsTrigger 
-              value="details" 
-              className="data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-md text-slate-600 hover:text-slate-800 px-6 py-3 rounded-xl transition-all duration-200 font-medium"
+          {/* <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm transition-all duration-200 rounded-xl"
+              onClick={handleEditClick}
             >
-              <Stethoscope className="h-4 w-4 mr-2" />
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white/20 text-white border-white/30 hover:bg-red-500/30 backdrop-blur-sm transition-all duration-200 rounded-xl"
+              onClick={handleDeleteClick}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div> */}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-[#2C78E4]/20 shadow-sm p-6">
+        <Tabs defaultValue="details" className="space-y-6">
+          <TabsList className="bg-[#F9FAFB] border border-[#2C78E4]/20 rounded-xl">
+            <TabsTrigger 
+              value="details"
+              className="data-[state=active]:bg-white data-[state=active]:text-[#2C78E4] data-[state=active]:shadow-sm text-[#4B5563] hover:text-[#111827] rounded-xl"
+            >
               Patient Details
             </TabsTrigger>
             <TabsTrigger 
-              value="vaccinations" 
-              className="data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-md text-slate-600 hover:text-slate-800 px-6 py-3 rounded-xl transition-all duration-200 font-medium"
+              value="vaccinations"
+              className="data-[state=active]:bg-white data-[state=active]:text-[#2C78E4] data-[state=active]:shadow-sm text-[#4B5563] hover:text-[#111827] rounded-xl"
             >
-              <FlaskConical className="h-4 w-4 mr-2" />
               Vaccinations
             </TabsTrigger>
-            <TabsTrigger 
-              value="soap" 
-              className="data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-md text-slate-600 hover:text-slate-800 px-6 py-3 rounded-xl transition-all duration-200 font-medium"
-            >
-              <ClipboardList className="h-4 w-4 mr-2" />
-              Medical Records
-            </TabsTrigger>
+           
           </TabsList>
 
-          {/* Patient Details Tab - Enhanced */}
-          <TabsContent value="details" className="mt-0 space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Patient Photo Card */}
-              <Card className="border-0 shadow-2xl overflow-hidden lg:col-span-1 bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 rounded-2xl">
+          <TabsContent value="details" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="border border-[#2C78E4]/10 rounded-2xl overflow-hidden bg-white">
                 <div className="aspect-square relative">
                   {patientData.data_image ? (
                     <img 
                       src={`data:image/png;base64,${patientData.data_image}`} 
-                      alt={`${patientData.name}, ${patientData.breed}`}
+                      alt={`${patientData.name}`}
                       className="h-full w-full object-cover"
-                      loading="lazy"
                     />
                   ) : (
-                    <div className="h-full w-full flex items-center justify-center text-blue-400 bg-gradient-to-br from-blue-50 to-indigo-100">
-                      <ImageIcon size={80} strokeWidth={1.5} />
+                    <div className="h-full w-full flex items-center justify-center bg-[#F9FAFB] border border-[#2C78E4]/10">
+                      <ImageIcon className="h-16 w-16 text-[#9CA3AF]" />
                     </div>
                   )}
                   <Badge 
                     variant="secondary" 
-                    className={`absolute bottom-4 right-4 text-xs font-bold shadow-lg rounded-full px-3 py-1.5 backdrop-blur-sm ${
+                    className={`absolute bottom-2 right-2 rounded-full ${
                       patientData.gender === "Male" 
-                        ? "bg-blue-500/90 text-white border-blue-600/50" 
-                        : "bg-pink-500/90 text-white border-pink-600/50"
+                        ? "bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20" 
+                        : "bg-pink-100 text-pink-800 border-pink-200"
                     }`}
                   >
-                    {patientData.gender === "Male" ? "♂ MALE" : "♀ FEMALE"}
+                    {patientData.gender}
                   </Badge>
                 </div>
-                <CardContent className="p-6">
-                  <div className="mb-4">
-                    <h3 className="text-2xl font-bold text-slate-800 mb-1">{patientData.name}</h3>
-                    <p className="text-slate-600 flex items-center text-sm">
-                      {PetIcon && React.cloneElement(PetIcon, { className: "h-4 w-4 inline-block mr-2 text-blue-500" })}
-                      {patientData.breed} {patientData.type}
-                    </p>
-                  </div>
+                <CardContent className="p-4">
+                  <h3 className="text-lg font-semibold mb-1 text-[#111827]">{patientData.name}</h3>
+                  <p className="text-[#4B5563] text-sm mb-4">
+                    {patientData.breed} {patientData.type}
+                  </p>
                   
-                  <Separator className="my-5" />
-
-                  <div className="space-y-4">
-                    <DetailItemWithIcon 
-                      icon={<Weight className="h-4 w-4 text-blue-500" />}
-                      label="Weight"
-                      value={`${patientData.weight} kg`}
-                    />
-                    <DetailItemWithIcon 
-                      icon={<CalendarDays className="h-4 w-4 text-blue-500" />}
-                      label="Birth Date"
-                      value={patientData.birth_date ? format(new Date(patientData.birth_date), 'MMMM d, yyyy') : 'Unknown'}
-                    />
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Weight className="h-4 w-4 text-[#4B5563]" />
+                      <span className="text-sm text-[#4B5563]">{patientData.weight} kg</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4 text-[#4B5563]" />
+                      <span className="text-sm text-[#4B5563]">
+                        {patientData.birth_date ? format(new Date(patientData.birth_date), 'MMM d, yyyy') : 'Unknown'}
+                      </span>
+                    </div>
                     {patientData.microchip_number && (
-                      <DetailItemWithIcon 
-                        icon={<QrCode className="h-4 w-4 text-blue-500" />}
-                        label="Microchip"
-                        value={patientData.microchip_number}
-                      />
+                      <div className="flex items-center gap-2">
+                        <QrCode className="h-4 w-4 text-[#4B5563]" />
+                        <span className="text-sm text-[#4B5563]">{patientData.microchip_number}</span>
+                      </div>
                     )}
                   </div>
                 </CardContent>
               </Card>
               
-              {/* Information Card */}
-              <Card className="border-0 shadow-2xl lg:col-span-2 rounded-2xl bg-white">
-                <CardHeader className="pb-4 border-b bg-gradient-to-r from-slate-50 to-blue-50/50 rounded-t-2xl">
-                  <CardTitle className="text-xl font-bold text-slate-800 flex items-center">
-                    <Stethoscope className="h-6 w-6 mr-3 text-blue-600" />
-                    Complete Patient Profile
-                  </CardTitle>
-                  <CardDescription className="text-slate-600">Comprehensive information about patient and owner</CardDescription>
+              <Card className="lg:col-span-2 border border-[#2C78E4]/10 rounded-2xl bg-white">
+                <CardHeader className="border-b border-[#2C78E4]/10">
+                  <CardTitle className="text-[#111827]">Patient Information</CardTitle>
+                  <CardDescription className="text-[#4B5563]">Complete information about patient and owner</CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-5">
-                      <h4 className="text-sm font-bold text-blue-600 border-b border-blue-100 pb-2 mb-4 flex items-center">
-                        <Dog className="h-4 w-4 mr-2 text-blue-600" /> Pet Information
-                      </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-[#111827] border-b border-[#2C78E4]/10 pb-2">Pet Information</h4>
                       
                       <div className="grid grid-cols-2 gap-4">
                         <DetailItem label="Age" value={`${patientData.age} years`} />
@@ -413,10 +321,8 @@ const PatientDetailsPage: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="space-y-5">
-                      <h4 className="text-sm font-bold text-blue-600 border-b border-blue-100 pb-2 mb-4 flex items-center">
-                        <UserCircle className="h-4 w-4 mr-2 text-blue-600" /> Owner Information
-                      </h4>
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-[#111827] border-b border-[#2C78E4]/10 pb-2">Owner Information</h4>
                       
                       {isOwnerLoading ? (
                         <div className="space-y-3">
@@ -425,44 +331,37 @@ const PatientDetailsPage: React.FC = () => {
                           <Skeleton className="h-4 w-2/3" />
                         </div>
                       ) : ownerData ? (
-                        <div className="space-y-4">
-                          <DetailItemWithIcon 
-                            icon={<UserCircle className="h-4 w-4 text-blue-500" />}
-                            label="Full Name" 
-                            value={ownerData.username || 'N/A'} 
-                          />
-                          <DetailItemWithIcon 
-                            icon={<Phone className="h-4 w-4 text-blue-500" />}
-                            label="Phone Number" 
-                            value={ownerData.phone_number || 'N/A'} 
-                          />
-                          <DetailItemWithIcon 
-                            icon={<Mail className="h-4 w-4 text-blue-500" />}
-                            label="Email Address" 
-                            value={ownerData.email || 'N/A'} 
-                          />
-                          <DetailItemWithIcon 
-                            icon={<MapPin className="h-4 w-4 text-blue-500" />}
-                            label="Home Address" 
-                            value={ownerData.address || 'N/A'} 
-                          />
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <UserCircle className="h-4 w-4 text-[#4B5563]" />
+                            <span className="text-sm text-[#4B5563]">{ownerData.username || 'N/A'}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-[#4B5563]" />
+                            <span className="text-sm text-[#4B5563]">{ownerData.phone_number || 'N/A'}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-[#4B5563]" />
+                            <span className="text-sm text-[#4B5563]">{ownerData.email || 'N/A'}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-[#4B5563]" />
+                            <span className="text-sm text-[#4B5563]">{ownerData.address || 'N/A'}</span>
+                          </div>
                         </div>
                       ) : (
-                        <div className="text-center py-8 bg-slate-50 rounded-xl border border-slate-100">
-                          <UserCircle className="h-12 w-12 text-slate-400 mx-auto mb-3" />
-                          <p className="text-sm text-slate-500 italic">Owner information unavailable</p>
+                        <div className="text-center py-4 bg-[#F9FAFB] rounded-xl border border-[#2C78E4]/10">
+                          <UserCircle className="h-8 w-8 text-[#9CA3AF] mx-auto mb-2" />
+                          <p className="text-sm text-[#4B5563]">Owner information unavailable</p>
                         </div>
                       )}
                     </div>
                   </div>
 
                   {patientData.notes && (
-                    <div className="mt-8 pt-6 border-t border-slate-100">
-                      <h4 className="text-sm font-bold text-blue-600 mb-3 flex items-center">
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        Additional Notes
-                      </h4>
-                      <div className="text-sm text-slate-700 whitespace-pre-wrap bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100">
+                    <div className="mt-6 pt-6 border-t border-[#2C78E4]/10">
+                      <h4 className="font-medium text-[#111827] mb-2">Additional Notes</h4>
+                      <div className="text-sm text-[#4B5563] bg-[#F9FAFB] p-3 rounded-xl border border-[#2C78E4]/10">
                         {patientData.notes}
                       </div>
                     </div>
@@ -472,37 +371,36 @@ const PatientDetailsPage: React.FC = () => {
             </div>
           </TabsContent>
 
-          {/* Vaccination History Tab - Enhanced */}
-          <TabsContent value="vaccinations" className="mt-0">
+          <TabsContent value="vaccinations">
             <AlertDialog>
-              <Card className="border-0 shadow-2xl rounded-2xl bg-white">
-                <CardHeader className="bg-gradient-to-r from-slate-50 to-blue-50/50 pb-6 border-b rounded-t-2xl">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <Card className="border border-[#2C78E4]/10 rounded-2xl bg-white">
+                <CardHeader className="border-b border-[#2C78E4]/10">
+                  <div className="flex justify-between items-center">
                     <div>
-                      <CardTitle className="text-xl font-bold text-slate-800 flex items-center mb-2">
-                        <FlaskConical className="h-6 w-6 mr-3 text-blue-600" />
-                        Vaccination Registry
+                      <CardTitle className="flex items-center gap-2 text-[#111827]">
+                        <FlaskConical className="h-5 w-5 text-[#2C78E4]" />
+                        Vaccination Records
                       </CardTitle>
-                      <CardDescription className="text-slate-600 text-base">
-                        Complete immunization history for {patientData.name}
+                      <CardDescription className="text-[#4B5563]">
+                        Immunization history for {patientData.name}
                       </CardDescription>
                     </div>
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                      <div className="relative flex-grow sm:flex-grow-0 sm:w-80">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#4B5563]" />
                         <Input 
                           type="search"
-                          placeholder="Search vaccination records..." 
+                          placeholder="Search records..." 
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-10 h-11 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 bg-white shadow-sm"
+                          className="pl-10 w-64 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl bg-white"
                         />
                       </div>
                       <AlertDialogTrigger asChild>
                         <Button 
                           size="sm" 
-                          className="h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 shadow-lg hover:shadow-xl transition-all duration-200"
                           onClick={() => setIsAddVaccineDialogOpen(true)}
+                          className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
                         >
                           <Plus className="h-4 w-4 mr-2" />
                           Add Record
@@ -513,83 +411,72 @@ const PatientDetailsPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="p-0">
                   {isVaccinationsLoading ? (
-                    <div className="p-8 space-y-4">
-                      <Skeleton className="h-12 w-full rounded-lg" />
-                      <Skeleton className="h-12 w-full rounded-lg" />
-                      <Skeleton className="h-12 w-full rounded-lg" />
+                    <div className="flex justify-center items-center h-64">
+                      <Loader2 className="h-8 w-8 animate-spin text-[#2C78E4]" />
                     </div>
                   ) : filteredVaccinations && filteredVaccinations.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <Table className="min-w-full">
-                        <TableHeader className="bg-gradient-to-r from-slate-50 to-blue-50">
-                          <TableRow className="border-b border-slate-200">
-                            <TableHead className="py-4 px-6 text-slate-700 font-semibold">Vaccine Name</TableHead>
-                            <TableHead className="py-4 px-6 text-slate-700 font-semibold">Date Given</TableHead>
-                            <TableHead className="py-4 px-6 text-slate-700 font-semibold">Next Due</TableHead>
-                            <TableHead className="py-4 px-6 text-slate-700 font-semibold">Provider</TableHead>
-                            <TableHead className="py-4 px-6 text-slate-700 font-semibold">Batch Number</TableHead>
-                            <TableHead className="py-4 px-6 text-slate-700 font-semibold">Status</TableHead>
-                            <TableHead className="py-4 px-6 text-slate-700 font-semibold">Notes</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredVaccinations.map((vaccination, index) => {
-                            const isOverdue = new Date(vaccination.next_due_date) < new Date();
-                            return (
-                              <TableRow 
-                                key={vaccination.vaccination_id} 
-                                className={`hover:bg-blue-50/50 transition-colors duration-200 border-b border-slate-100 ${
-                                  index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
-                                }`}
-                              >
-                                <TableCell className="font-semibold py-4 px-6 text-blue-700">{vaccination.vaccine_name}</TableCell>
-                                <TableCell className="py-4 px-6 text-slate-600">{format(new Date(vaccination.date_administered), 'MMM d, yyyy')}</TableCell>
-                                <TableCell className={`py-4 px-6 font-medium ${isOverdue ? 'text-red-600' : 'text-slate-600'}`}>
-                                  {format(new Date(vaccination.next_due_date), 'MMM d, yyyy')}
-                                </TableCell>
-                                <TableCell className="py-4 px-6 text-slate-600">{vaccination.vaccine_provider || 'N/A'}</TableCell> 
-                                <TableCell className="py-4 px-6 text-slate-600">{vaccination.batch_number || 'N/A'}</TableCell>
-                                <TableCell className="py-4 px-6">
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-xs font-bold rounded-full px-3 py-1 ${
-                                      isOverdue 
-                                        ? "bg-red-100 text-red-700 border-red-300" 
-                                        : "bg-green-100 text-green-700 border-green-300"
-                                    }`}
-                                  >
-                                    {isOverdue ? "OVERDUE" : "CURRENT"}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="py-4 px-6 max-w-xs truncate text-sm text-slate-600" title={vaccination.notes || ''}>
-                                  {vaccination.notes || '—'}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-b border-[#2C78E4]/10">
+                          <TableHead className="text-[#4B5563]">Vaccine Name</TableHead>
+                          <TableHead className="text-[#4B5563]">Date Given</TableHead>
+                          <TableHead className="text-[#4B5563]">Next Due</TableHead>
+                          <TableHead className="text-[#4B5563]">Provider</TableHead>
+                          <TableHead className="text-[#4B5563]">Batch Number</TableHead>
+                          <TableHead className="text-[#4B5563]">Status</TableHead>
+                          <TableHead className="text-[#4B5563]">Notes</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredVaccinations.map((vaccination) => {
+                          const isOverdue = new Date(vaccination.next_due_date) < new Date();
+                          return (
+                            <TableRow key={vaccination.vaccination_id} className="border-b border-[#2C78E4]/10 hover:bg-[#F9FAFB]">
+                              <TableCell className="font-medium text-[#111827]">{vaccination.vaccine_name}</TableCell>
+                              <TableCell className="text-[#4B5563]">{format(new Date(vaccination.date_administered), 'MMM d, yyyy')}</TableCell>
+                              <TableCell className={isOverdue ? 'text-red-600' : 'text-[#4B5563]'}>
+                                {format(new Date(vaccination.next_due_date), 'MMM d, yyyy')}
+                              </TableCell>
+                              <TableCell className="text-[#4B5563]">{vaccination.vaccine_provider || 'N/A'}</TableCell> 
+                              <TableCell className="text-[#4B5563]">{vaccination.batch_number || 'N/A'}</TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={isOverdue ? "destructive" : "default"}
+                                  className={isOverdue 
+                                    ? "bg-red-100 text-red-800 border-red-200 rounded-full" 
+                                    : "bg-green-100 text-green-800 border-green-200 rounded-full"
+                                  }
+                                >
+                                  {isOverdue ? "Overdue" : "Current"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="max-w-xs truncate text-[#4B5563]">
+                                {vaccination.notes || '—'}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
                   ) : (
-                    <div className="text-center py-20 px-8 bg-gradient-to-br from-slate-50 to-blue-50/30 rounded-b-2xl">
-                      <div className="bg-blue-100 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-                        <FlaskConical className="h-12 w-12 text-blue-500" strokeWidth={1.5} />
+                    <div className="flex flex-col items-center justify-center p-8 bg-[#F9FAFB] rounded-2xl border border-dashed border-[#2C78E4]/20 h-64 transition-all hover:border-[#2C78E4]/40">
+                      <div className="rounded-full bg-[#F0F7FF] p-4 mb-5 shadow-sm">
+                        <FlaskConical className="h-7 w-7 text-[#2C78E4]" />
                       </div>
-                      <h3 className="text-xl font-bold text-slate-700 mb-3">
+                      <h3 className="text-lg font-medium mb-2 text-[#111827]">
                         {searchQuery ? 'No Matching Records' : 'No Vaccination History'}
                       </h3>
-                      <p className="text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
+                      <p className="text-sm text-[#4B5563] text-center mb-6 max-w-xs">
                         {searchQuery 
-                          ? 'No vaccination records match your search criteria. Try adjusting your search terms.' 
-                          : 'Start building this patient\'s vaccination history by adding their first immunization record.'}
+                          ? 'No vaccination records match your search.' 
+                          : 'Start building this patient\'s vaccination history.'}
                       </p>
                       {!searchQuery && (
                         <AlertDialogTrigger asChild>
                           <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => setIsAddVaccineDialogOpen(true)} 
-                            className="border-blue-200 text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-xl"
+                            size="sm"
+                            onClick={() => setIsAddVaccineDialogOpen(true)}
+                            className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-2xl shadow-md transition-all duration-200 hover:shadow-lg"
                           >
                             <Plus className="h-4 w-4 mr-2" />
                             Add First Vaccination
@@ -601,12 +488,12 @@ const PatientDetailsPage: React.FC = () => {
                 </CardContent>
               </Card>
 
-              <AlertDialogContent className="rounded-2xl max-w-md">
+              <AlertDialogContent className="border border-[#2C78E4]/20 bg-white rounded-2xl">
                 <AlertDialogHeader>
-                  <AlertDialogTitle className="text-xl font-bold text-slate-800">Add Vaccination Record</AlertDialogTitle>
-                  <AlertDialogDescription className="text-slate-600">
+                  <AlertDialogTitle className="text-[#111827]">Add Vaccination Record</AlertDialogTitle>
+                  <AlertDialogDescription className="text-[#4B5563]">
                     Create a new vaccination entry for {patientData.name}.
-                    <div className="mt-6 p-4 border rounded-xl bg-amber-50 border-amber-200 text-amber-800 text-sm">
+                    <div className="mt-4 p-3 border rounded-xl bg-yellow-50 border-yellow-200 text-yellow-800 text-sm">
                       <div className="flex items-center">
                         <AlertCircle className="h-4 w-4 mr-2" />
                         Form implementation pending
@@ -614,11 +501,11 @@ const PatientDetailsPage: React.FC = () => {
                     </div>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter className="gap-3">
-                  <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                <AlertDialogFooter className="border-t border-[#2C78E4]/10 pt-4">
+                  <AlertDialogCancel className="border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F9FAFB] rounded-xl">Cancel</AlertDialogCancel>
                   <AlertDialogAction 
-                    onClick={() => console.log("Save vaccination")} 
-                    className="bg-blue-600 hover:bg-blue-700 rounded-xl"
+                    onClick={() => console.log("Save vaccination")}
+                    className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
                   >
                     Save Record
                   </AlertDialogAction>
@@ -627,23 +514,22 @@ const PatientDetailsPage: React.FC = () => {
             </AlertDialog>
           </TabsContent>
 
-          {/* SOAP History Tab - Enhanced */}
-          <TabsContent value="soap" className="mt-0">
-            <Card className="border-0 shadow-2xl overflow-hidden rounded-2xl bg-white">
-              <CardHeader className="pb-6 border-b bg-gradient-to-r from-slate-50 to-blue-50/50 flex flex-row justify-between items-center rounded-t-2xl">
+          <TabsContent value="soap">
+            <Card className="border border-[#2C78E4]/10 rounded-2xl bg-white">
+              <CardHeader className="border-b border-[#2C78E4]/10 flex flex-row justify-between items-center">
                 <div>
-                  <CardTitle className="text-xl font-bold text-slate-800 flex items-center mb-2">
-                    <ClipboardList className="h-6 w-6 text-blue-600 mr-3" />
-                    Medical SOAP Records
+                  <CardTitle className="flex items-center gap-2 text-[#111827]">
+                    <ClipboardList className="h-5 w-5 text-[#2C78E4]" />
+                    Medical Records
                   </CardTitle>
-                  <CardDescription className="text-slate-600 text-base">
-                    Comprehensive medical documentation and treatment history
+                  <CardDescription className="text-[#4B5563]">
+                    SOAP notes and treatment history
                   </CardDescription>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-white text-blue-600 border-blue-200 hover:bg-blue-50 rounded-xl px-4 py-3"
+                  className="border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F9FAFB] rounded-xl"
                   onClick={() => {
                     const params = new URLSearchParams();
                     if (appointmentId) params.append("appointmentId", appointmentId);
@@ -655,19 +541,17 @@ const PatientDetailsPage: React.FC = () => {
                 </Button>
               </CardHeader>
               <CardContent className="p-8">
-                <div className="flex flex-col items-center justify-center p-12 text-center bg-gradient-to-br from-slate-50 to-blue-50/30 rounded-2xl border border-dashed border-blue-200">
-                  <div className="bg-blue-100 rounded-full p-8 w-32 h-32 mx-auto mb-8 flex items-center justify-center">
-                    <ClipboardList className="h-16 w-16 text-blue-500" strokeWidth={1.5} />
+                <div className="flex flex-col items-center justify-center p-8 bg-[#F9FAFB] rounded-2xl border border-dashed border-[#2C78E4]/20 h-64 transition-all hover:border-[#2C78E4]/40">
+                  <div className="rounded-full bg-[#F0F7FF] p-4 mb-5 shadow-sm">
+                    <ClipboardList className="h-7 w-7 text-[#2C78E4]" />
                   </div>
-                  <h3 className="text-2xl font-bold text-blue-700 mb-4">Complete Medical History</h3>
-                  <p className="text-slate-600 text-lg max-w-2xl mx-auto mb-10 leading-relaxed">
-                    Access the complete SOAP (Subjective, Objective, Assessment, Plan) medical documentation 
-                    for {patientData.name}, including all clinical observations, diagnoses, and treatment protocols.
+                  <h3 className="text-lg font-medium mb-2 text-[#111827]">Complete Medical History</h3>
+                  <p className="text-sm text-[#4B5563] text-center mb-6 max-w-xs">
+                    Access the complete SOAP medical documentation for {patientData.name}.
                   </p>
                   <Button
-                    variant="default"
-                    size="lg"
-                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-8 py-4 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                    size="sm"
+                    className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white rounded-2xl shadow-md transition-all duration-200 hover:shadow-lg"
                     onClick={() => {
                       const params = new URLSearchParams();
                       if (appointmentId) params.append("appointmentId", appointmentId);
@@ -675,7 +559,7 @@ const PatientDetailsPage: React.FC = () => {
                       window.location.href = `/soap-history?${params.toString()}`;
                     }}
                   >
-                    <ClipboardList className="h-5 w-5 mr-3" />
+                    <ClipboardList className="h-4 w-4 mr-2" />
                     Open Medical Records
                   </Button>
                 </div>
@@ -683,29 +567,29 @@ const PatientDetailsPage: React.FC = () => {
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* Enhanced Delete Confirmation Dialog */}
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent className="rounded-2xl max-w-lg">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-xl font-bold text-red-700 flex items-center">
-                <AlertCircle className="h-6 w-6 mr-3" />
-                Delete Patient Record
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-slate-600 text-base leading-relaxed">
-                This action will permanently delete <strong>{patientData.name}'s</strong> complete medical record, 
-                including all vaccination history, SOAP notes, and associated data. This cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="gap-3">
-              <AlertDialogCancel className="rounded-xl">Keep Record</AlertDialogCancel>
-              <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white rounded-xl">
-                Delete Permanently
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="border border-red-200 bg-white rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              Delete Patient Record
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[#4B5563]">
+              This will permanently delete <strong>{patientData.name}'s</strong> complete medical record, 
+              including all vaccination history and SOAP notes. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="border-t border-red-100 pt-4">
+            <AlertDialogCancel className="border-[#2C78E4]/20 text-[#4B5563] hover:bg-[#F9FAFB] rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-sm transition-all duration-200 hover:shadow-md">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

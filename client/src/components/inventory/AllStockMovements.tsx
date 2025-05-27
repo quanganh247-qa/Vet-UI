@@ -307,7 +307,6 @@ const AllStockMovements: React.FC = () => {
                           </TableCell>
                           <TableCell className="px-6 py-4">
                             <div className="flex items-center space-x-2">
-                              <MovementIcon className="h-4 w-4 text-[#2C78E4]" />
                               <Badge
                                 variant="outline"
                                 className={cn(

@@ -1274,7 +1274,7 @@ const TreatmentManagement: React.FC = () => {
               </Button>
             )}
 
-            <Button
+            {/* <Button
               variant="outline"
               size="sm"
               className="bg-white/10 text-white border-white/20 hover:bg-white/20 flex items-center gap-1.5"
@@ -1282,7 +1282,7 @@ const TreatmentManagement: React.FC = () => {
             >
               <CheckSquare className="h-4 w-4 mr-1" />
               <span>Complete Appointment</span>
-            </Button>
+            </Button> */}
 
           </div>
         </div>
@@ -1330,75 +1330,69 @@ const TreatmentManagement: React.FC = () => {
                 treatments.map((treatment: Treatment) => (
                   <div
                     key={treatment.id}
-                    className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all cursor-pointer"
+                    className="bg-white rounded-xl shadow-lg border border-gray-200/80 overflow-hidden hover:shadow-xl transition-all duration-300 ease-in-out cursor-pointer group"
                     onClick={() => handleSelectTreatment(treatment.id)}
                   >
-                    <div className="px-6 py-5 flex justify-between items-start">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {treatment.type}
+                    <div className="p-5">
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className="text-lg font-semibold text-gray-800 group-hover:text-[#2C78E4] transition-colors">
+                          {treatment.name || treatment.type || "Untitled Treatment"}
                         </h3>
-                        <div className="mt-1 flex items-center text-sm text-gray-500">
-                          <Calendar
-                            size={14}
-                            className="mr-1.5 text-gray-400"
-                          />
-                          Started:{" "}
-                          {new Date(treatment.start_date).toLocaleDateString()}
-                        </div>
+                        <Badge
+                          className={
+                            treatment.status === "Completed"
+                              ? "bg-green-100 text-green-700 border-green-200 text-xs px-2.5 py-1"
+                              : treatment.status === "In Progress"
+                              ? "bg-blue-100 text-blue-700 border-blue-200 text-xs px-2.5 py-1"
+                              : treatment.status === "Not Started"
+                              ? "bg-yellow-100 text-yellow-700 border-yellow-200 text-xs px-2.5 py-1"
+                              : "bg-gray-100 text-gray-700 border-gray-200 text-xs px-2.5 py-1" // Active or other statuses
+                          }
+                        >
+                          {treatment.status}
+                        </Badge>
                       </div>
-                      <Badge
-                        className={
-                          treatment.status === "Completed"
-                            ? "bg-green-100 text-green-800 border-green-200"
-                            : treatment.status === "In Progress"
-                            ? "bg-blue-100 text-blue-800 border-blue-200"
-                            : treatment.status === "Not Started"
-                            ? "bg-gray-100 text-gray-800 border-gray-200"
-                            : "bg-[#F0F7FF] text-[#2C78E4] border-[#2C78E4]/20" // For Active status
-                        }
-                      >
-                        {treatment.status}
-                      </Badge>
+
+                      <p className="text-sm text-gray-500 mb-3 truncate" title={treatment.diseases || "No specific disease"}>
+                        <Activity size={14} className="inline-block mr-1.5 text-gray-400" />
+                        Disease: {treatment.diseases || "Not specified"}
+                      </p>
+                      
+                      <div className="flex items-center text-sm text-gray-500 mb-4">
+                        <Calendar
+                          size={14}
+                          className="inline-block mr-1.5 text-gray-400"
+                        />
+                        Started:{" "}
+                        {new Date(treatment.start_date).toLocaleDateString()}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-x-4 text-sm mb-1">
+                        <div className="flex items-center text-gray-600">
+                          <Layers className="h-4 w-4 mr-1.5 text-[#2C78E4]/70" />
+                          <span className="font-medium">{treatment.phases ? treatment.phases.length : "0"}</span>
+                          <span className="ml-1">Phase(s)</span>
+                        </div>
+                         <div className="flex items-center text-gray-600">
+                           <User className="h-4 w-4 mr-1.5 text-[#2C78E4]/70" />
+                           <span className="font-medium truncate" title={treatment.doctor_name || "N/A"}>{treatment.doctor_name || "N/A"}</span>
+                         </div>
+                      </div>
                     </div>
 
-                    <div className="px-6 pb-5 pt-2">
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        <div>
-                          <div className="text-xs text-gray-500 uppercase font-medium">
-                            Type
-                          </div>
-                          <div className="text-sm font-medium mt-1 text-gray-800">
-                            {treatment.type}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-500 uppercase font-medium">
-                            Disease
-                          </div>
-                          <div className="text-sm font-medium mt-1 text-gray-800">
-                            {treatment.diseases || "Not specified"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-                        <div className="flex items-center text-sm text-[#2C78E4]">
-                          <Layers className="h-4 w-4 mr-1.5" />
-                          {treatment.phases
-                            ? treatment.phases.length
-                            : "0"}{" "}
-                          Phase(s)
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 px-3 text-gray-500 hover:text-[#2C78E4] hover:bg-[#F0F7FF]"
-                        >
-                          <ArrowRight className="h-4 w-4" />
-                          <span className="sr-only">View details</span>
-                        </Button>
-                      </div>
+                    <div className="px-5 py-3 bg-gray-50 border-t border-gray-200/80 flex items-center justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-3 text-[#2C78E4] hover:text-[#1E40AF] hover:bg-[#F0F7FF] group-hover:bg-[#E3F2FD] transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent card click when button is clicked
+                          handleSelectTreatment(treatment.id);
+                        }}
+                      >
+                        View Details
+                        <ArrowRight className="h-4 w-4 ml-1.5 transform transition-transform group-hover:translate-x-1" />
+                      </Button>
                     </div>
                   </div>
                 ))
