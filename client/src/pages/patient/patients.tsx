@@ -118,7 +118,6 @@ export const PatientsPage: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    setLocation("/login");
   };
 
   const handlePageSizeChange = (newSize: number) => {

@@ -22,7 +22,7 @@ export const LoginForm: React.FC = () => {
     setError("");
     try {
       await login({ username, password });
-      setLocation("/dashboard");
+      setLocation("/");
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.message || "An unexpected error occurred";
       setError(errorMessage);

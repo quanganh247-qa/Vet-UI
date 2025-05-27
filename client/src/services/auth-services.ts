@@ -55,6 +55,7 @@ export const refreshAccessToken = async () => {
     localStorage.removeItem("doctor");
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    localStorage.removeItem("doctor_id");
     window.location.href = "/login";
     return false;
   }

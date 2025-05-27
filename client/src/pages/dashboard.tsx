@@ -65,7 +65,6 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
   };
 
   return (

@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useLongPollingNotifications } from '@/hooks/use-appointment';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useLocation } from 'wouter';
 
 interface Doctor {
   id: string;
@@ -30,6 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [enablePolling, setEnablePolling] = useState<boolean>(false);
   const [notificationCount, setNotificationCount] = useState<number>(0);
   const [allNotifications, setAllNotifications] = useState<any[]>([]);
+  const [, setLocation] = useLocation();
 
   // Long polling hook that will be active as soon as enablePolling is true
   const { data: notifications } = useLongPollingNotifications({
@@ -146,6 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('doctor');
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('doctor_id');
     
     setDoctor(null);
     setIsAuthenticated(false);
@@ -154,7 +157,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Dispatch custom event for auth state change
     window.dispatchEvent(new Event('auth-state-changed'));
-  }, []);
+    
+    // Navigate to login page
+    setLocation('/login');
+  }, [setLocation]);
 
   return (
     <AuthContext.Provider 

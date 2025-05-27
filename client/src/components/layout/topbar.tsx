@@ -28,7 +28,6 @@ const TopbarContent = ({ openSidebar }: TopbarProps) => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
   };
 
   const getInitials = (name: string) => {
