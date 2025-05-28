@@ -13,7 +13,7 @@ export default defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
   // Use API_URL from environment variables or fall back to localhost
-  const apiUrl = env.API_URL || env.VITE_API_URL || 'https://go-pet-care-production.up.railway.app';
+  const apiUrl = env.API_URL || env.VITE_API_URL || 'https://go-pet-care-production-6a6c.up.railway.app';
   console.log(`Using API URL: ${apiUrl} in ${mode} mode`);
 
   // Use PUSH_NOTI from environment variables or fall back to API URL
