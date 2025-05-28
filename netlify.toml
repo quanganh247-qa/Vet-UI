@@ -1,6 +1,6 @@
 [[redirects]]
   from = "/api/*"
-  to = "https://go-pet-care-production.up.railway.app/api/:splat"
+  to = "https://go-pet-care-production-6a6c.up.railway.app/api/:splat"
   status = 200
   force = true
 
