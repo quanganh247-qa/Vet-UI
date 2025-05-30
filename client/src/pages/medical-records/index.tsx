@@ -47,7 +47,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { usePatientData } from "@/hooks/use-pet";
-import { useAllergiesData } from "@/hooks/use-allergy";
 import { useMedicalHistory } from "@/hooks/use-medical-history";
 import {
   useMedicalRecord,
