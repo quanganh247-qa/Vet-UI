@@ -679,9 +679,16 @@ const SoapNotes = () => {
   const effectiveAppointmentId =
     workflowParams.appointmentId || appointmentId || urlAppointmentId || "";
 
-  const { data: soap, isLoading: isSoapLoading1 } = useGetSOAP(
+  const { data: soap, isLoading: isSoapLoading1, refetch: refetchSoap } = useGetSOAP(
     effectiveAppointmentId
   );
+
+  // Refetch SOAP data when appointmentId changes
+  useEffect(() => {
+    if (effectiveAppointmentId) {
+      refetchSoap();
+    }
+  }, [effectiveAppointmentId, refetchSoap]);
 
   console.log("soap", soap);
 

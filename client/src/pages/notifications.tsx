@@ -55,7 +55,7 @@ import {
 } from "@/hooks/use-appointment";
 import { useNotificationsContext } from "@/context/notifications-context";
 import { cn } from "@/lib/utils";
-import { useSendNotification } from "@/hooks/use-noti";
+import { useSendNotification, useScheduleAppointment } from "@/hooks/use-noti";
 
 // Define Notification interface based on database schema
 interface Notification {
@@ -456,6 +456,7 @@ const NotificationsPage = () => {
   }, [rawNotifications]);
 
   const { mutateAsync: sendNotificationAsync } = useSendNotification();
+  const { mutateAsync: scheduleAppointmentAsync } = useScheduleAppointment();
 
   // Selected notification for detail view
   const [selectedNotification, setSelectedNotification] =
@@ -476,6 +477,13 @@ const NotificationsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Debug states
+  const [debugUserId, setDebugUserId] = useState<string>("");
+  const [debugTitle, setDebugTitle] = useState<string>("Test Title");
+  const [debugBody, setDebugBody] = useState<string>("This is a test notification body.");
+  const [debugResult, setDebugResult] = useState<string>("");
+  const [isDebugging, setIsDebugging] = useState<boolean>(false);
 
   // Sắp xếp thông báo dựa trên trạng thái đã đọc/chưa đọc và thời gian
   const sortedNotifications = useMemo(() => {
@@ -662,40 +670,113 @@ const NotificationsPage = () => {
           await markAsRead(selectedNotificationID);
         }
 
-        // Get pet name and appointment details for notification
-        const petName =
+        // Get data for notification message (display formats)
+        const displayPetName =
           appointmentData?.pet?.pet_name ||
           selectedNotification.pet?.petName ||
           "Unknown Pet";
-        const appointmentDate =
+        const displayAppointmentDate =
           appointmentData?.date || selectedNotification.date;
-        const appointmentTime =
+        const displayAppointmentTime =
           appointmentData?.time_slot?.time ||
           selectedNotification.timeSlot?.startTime ||
           "scheduled time";
 
+        // --- Prepare date and time for API call (YYYY-MM-DD and HH:MM) ---
+        let apiDateFormatted: string;
+        let apiTimeFormatted: string;
+
+        if (appointmentData) {
+          apiDateFormatted = appointmentData.date; // Assume YYYY-MM-DD from API
+
+          if (appointmentData.time_slot && typeof appointmentData.time_slot.time === 'string') {
+            const timeParts = appointmentData.time_slot.time.split(':');
+            if (timeParts.length >= 2) {
+              const hoursInt = parseInt(timeParts[0]);
+              const minutesInt = parseInt(timeParts[1]);
+              if (!isNaN(hoursInt) && !isNaN(minutesInt)) {
+                apiTimeFormatted = `${hoursInt.toString().padStart(2, '0')}:${minutesInt.toString().padStart(2, '0')}`;
+              } else {
+                const now = new Date();
+                apiTimeFormatted = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                console.warn("Could not parse HH:MM from appointmentData.time_slot.time ('", appointmentData.time_slot.time, "'), using current time as fallback for API.");
+              }
+            } else {
+              const now = new Date();
+              apiTimeFormatted = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+              console.warn("appointmentData.time_slot.time ('", appointmentData.time_slot.time, "') was not in expected format, using current time as fallback for API.");
+            }
+          } else {
+            const now = new Date();
+            apiTimeFormatted = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            console.warn("appointmentData.time_slot.time was missing or not a string, using current time as fallback for API.");
+          }
+        } else if (selectedNotification) {
+          const sourceDateTimeStr = (selectedNotification as any).datetime || selectedNotification.created_at;
+          const dateObj = new Date(sourceDateTimeStr);
+
+          const year = dateObj.getFullYear();
+          const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+          const day = dateObj.getDate().toString().padStart(2, '0');
+          apiDateFormatted = `${year}-${month}-${day}`;
+
+          const hours = dateObj.getHours().toString().padStart(2, '0');
+          const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+          apiTimeFormatted = `${hours}:${minutes}`;
+        } else {
+          console.error("Critical: Missing appointment data for API call formatting.");
+          const now = new Date();
+          apiDateFormatted = now.toISOString().split('T')[0];
+          apiTimeFormatted = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        }
+        // --- End of date and time formatting for API ---
+
+        const reason =
+          appointmentData?.appointment_reason ||
+          selectedNotification.reason ||
+          "Unspecified"; // Default reason
+        const doctorName =
+          appointmentData?.doctor?.doctor_name ||
+          selectedNotification.doctor?.doctorName ||
+          "Unassigned";
+        const serviceName =
+          appointmentData?.service?.service_name ||
+          selectedNotification.serviceName ||
+          "General Service";
+
         // Send notification about confirmation
         try {
-          // Get owner_id preferably from appointmentData first
           const ownerId =
             appointmentData?.owner?.owner_id ||
             selectedNotification?.owner?.owner_id ||
-            8; // Fallback to a default ID (use a valid user ID from your system)
+            8; 
 
           await sendNotificationAsync({
             user_id: ownerId,
             title: "✅ Appointment Confirmed",
-            body: `Your appointment for ${petName} on ${appointmentDate} at ${appointmentTime} has been confirmed. We look forward to seeing you!`,
+            body: `Your appointment for ${displayPetName} on ${displayAppointmentDate} at ${displayAppointmentTime} has been confirmed. We look forward to seeing you!`,
           });
           console.log("Confirmation notification sent successfully");
+
+          await scheduleAppointmentAsync({
+            user_id: ownerId,
+            appointment_id: appointmentId.toString(),
+            pet_name: displayPetName, 
+            date: apiDateFormatted,
+            start_time: apiTimeFormatted,
+            reason: reason,
+            doctor_name: doctorName,
+            service_name: serviceName,
+          });
+          console.log("Appointment scheduled successfully via hook");
+
         } catch (error) {
-          // Just log the error but don't block the main confirmation flow
-          console.error("Error sending notification:", error);
+          console.error("Error sending notification or scheduling appointment:", error);
         }
 
         toast({
           title: "Appointment confirmed",
-          description: `Appointment with ${petName} has been confirmed.`,
+          description: `Appointment with ${displayPetName} has been confirmed.`,
           className: "bg-[#2C78E4] text-white",
           duration: 5000,
         });
@@ -730,7 +811,7 @@ const NotificationsPage = () => {
             8; // Fallback to a default ID (use a valid user ID from your system)
 
           await sendNotificationAsync({
-            user_id: ownerId.toString(),
+            user_id: ownerId,
             title: "⚠️ Appointment Booking Issue",
             body: `There was a problem confirming your appointment for ${petName}: ${errorMessage} Please contact the clinic for assistance.`,
           });
@@ -864,6 +945,7 @@ const NotificationsPage = () => {
       setIsConfirming(false);
     }
   };
+
 
   const handleClearAll = () => {
     clearAll();
@@ -1092,6 +1174,7 @@ const NotificationsPage = () => {
           </Card>
         </div>
       </div>
+
       {/* Appointment Detail Sheet */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetOverlay className="bg-gray-400/30" />

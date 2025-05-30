@@ -52,7 +52,7 @@ export const listTestOrders = async (appointmentID: number) => {
 };
 
 export type CreateTestRequest = {
-	test_id: string;
+	// test_id: string;
 	category_id: string;
 	name: string;
 	description: string;
@@ -68,7 +68,7 @@ export const createTest = async (
 ) => {
   try {
     const response = await api.post(`/api/v1/items`, {
-      test_id: test.test_id,
+      // test_id: test.test_id,
       category_id: test.category_id,
       name: test.name,
       description: test.description,

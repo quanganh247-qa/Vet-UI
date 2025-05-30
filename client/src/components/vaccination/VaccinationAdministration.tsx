@@ -22,8 +22,7 @@ import {
   CheckCircle,
   AlertCircle,
   Syringe,
-  Plus,
-  Check,
+
   Calendar,
   User,
   Loader2,
@@ -53,8 +52,6 @@ import {
 import { useGetTestByAppointmentID } from "@/hooks/use-test";
 import { useAllVaccines, useSaveVaccinationRecord } from "@/hooks/use-vaccine";
 import { useScheduleNotification } from "@/hooks/use-noti";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useAppointmentData } from "@/hooks/use-appointment";
 
@@ -249,21 +246,35 @@ const VaccinationAdministration: React.FC<VaccinationAdministrationProps> = ({
           
           // Default owner ID to use if we can't get one from the appointment
           // This ensures we can still send a notification even if owner data is missing
-          const fallbackOwnerId = "1"; 
+          const fallbackOwnerId = 1; 
           
-          // Get a string owner ID from the appointment if possible
+          // Get a numeric owner ID from the appointment if possible
           let ownerId = fallbackOwnerId;
           
           if (selectedAppointment?.owner) {
             // Try to safely access any owner identifier we can find
             const owner = selectedAppointment.owner as any;
             if (owner.owner_id) {
-              ownerId = owner.owner_id.toString();
+              ownerId = Number(owner.owner_id);
             } else if (owner.id) {
-              ownerId = owner.id.toString();
+              ownerId = Number(owner.id);
             }
           }
-     
+          
+          // Create a cron expression for the reminder date (at 9:00 AM)
+          const cronExpression = `0 9 ${reminderDate.getDate()} ${reminderDate.getMonth() + 1} *`;
+          const scheduleId = `vaccine_reminder_${vaccinationData.pet_id}_${Date.now()}`;
+          
+          await scheduleNotification({
+            user_id: ownerId,
+            title: "Vaccination Reminder",
+            body: `${vaccinationData.vaccine_name} vaccination is due for your pet on ${formattedDueDate}. Please schedule an appointment.`,
+            cronExpression,
+            schedule_id: scheduleId,
+            end_date: nextDueDate.toISOString(),
+          });
+          
+          console.log("Vaccination reminder scheduled successfully");
         } catch (notificationError) {
           console.error("Failed to schedule vaccine reminder:", notificationError);
           // Don't fail the whole operation if notification scheduling fails

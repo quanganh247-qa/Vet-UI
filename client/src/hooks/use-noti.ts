@@ -1,9 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
-import { scheduleNotification, sendNotification } from "@/services/noti-services";
+import { scheduleAppointment, scheduleNotification, sendNotification } from "@/services/noti-services";
 
 // Define a type for the notification payload
 type NotificationPayload = {
-  user_id: string;
+  user_id: number;
   title: string;
   body: string;
 };
@@ -26,3 +26,20 @@ export const useScheduleNotification = () => {
   });
 };
 
+
+type ScheduleAppointmentPayload = {
+  user_id: number;
+  appointment_id: string;
+  pet_name: string;
+  date: string;
+  start_time: string;
+  reason: string;
+  doctor_name: string;
+  service_name: string;
+};
+
+export const useScheduleAppointment = () => {
+  return useMutation<any, Error, ScheduleAppointmentPayload>({
+    mutationFn: ({ user_id, appointment_id, pet_name, date, start_time, reason, doctor_name, service_name }) => scheduleAppointment(user_id, appointment_id, pet_name, date, start_time, reason, doctor_name, service_name),
+  });
+};

@@ -253,7 +253,6 @@ export const createWalkInAppointment = async (
   appointmentData: AppointmentRequest
 ): Promise<any> => {
   try {
-    console.log("appointmentData", appointmentData);
     const response = await api.post(
       "/api/v1/appointments/walk-in",
       appointmentData,

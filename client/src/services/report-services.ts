@@ -51,3 +51,58 @@ export const getMedicalRecordsReport = async (start_date: string, end_date: stri
 
 
 
+
+
+// Doctor statistics request and response structures
+type DoctorStatsRequest = {
+	doctor_id: number;
+	start_date: string;
+	end_date: string;
+}
+
+export type DoctorStatsResponse = {
+	doctor_id: number;
+	doctor_name: string;
+	total_appointments: number;
+	completed_appointments: number;
+	scheduled_appointments: number;
+	cancelled_appointments: number;
+	unique_patients_served: number;
+	appointments_by_month: MonthlyAppointmentData[];
+	patients_by_month: MonthlyPatientData[];
+	completion_rate: number;
+	working_days: number;
+	avg_appointments_per_day: number;
+}
+
+type MonthlyAppointmentData = {
+	month: string;
+	year: number;
+	total: number;
+	completed: number;
+	scheduled: number;
+	cancelled: number;
+}
+
+type MonthlyPatientData = {
+	month: string;
+	year: number;
+	unique_patients: number;
+	new_patients: number;
+	return_patients: number;
+}
+
+// All doctors statistics response
+export type AllDoctorsStatsResponse = {
+	total_doctors: number;
+	period_stats: DoctorStatsResponse;
+	doctors_list: DoctorStatsResponse[];
+	top_performers: DoctorStatsResponse[];
+}
+
+export const getDoctorStats = async (start_date: string, end_date: string): Promise<AllDoctorsStatsResponse> => {
+	const { data } = await api.get(`/api/v1/reports/doctors`, {
+		params: { start_date, end_date }
+	});
+	return data;
+};

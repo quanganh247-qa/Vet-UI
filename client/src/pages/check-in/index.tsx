@@ -233,19 +233,6 @@ const SubjectiveKeyValueEditor = ({
     setEntries([]);
   };
 
-  // Filter available fields based on search
-  const getFilteredFields = () => {
-    const allFields = Object.values(MEDICAL_CATEGORIES).flatMap(cat => 
-      cat.fields.map(field => ({ field, category: cat }))
-    );
-    
-    if (!searchTerm) return allFields;
-    
-    return allFields.filter(({ field }) => 
-      field.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  };
-
   return (
     <div className="space-y-4">
       {/* Header with templates and actions */}
@@ -409,16 +396,22 @@ const CheckIn = () => {
   const { data: patient, error: patientError } = usePatientData(
     appointment?.pet?.pet_id
   );
-  const { data: rooms = [] } = useRoomData(
-    !!appointment?.service?.service_name
-  );
-
-  const { mutate: confirmPayment, isPending: isConfirmingPayment } =
-    useConfirmPayment();
-
-  // Use the mutation hook with proper methods
+  const { data: rooms = [], isLoading: isLoadingRooms, error: roomsError } = useRoomData();
+  const { mutate: confirmPayment, isPending: isConfirmingPayment } = useConfirmPayment();
   const qrMutation = useQR();
 
+  // Handle room errors
+  useEffect(() => {
+    if (roomsError) {
+      toast({
+        title: "Error Loading Rooms",
+        description: "Failed to load available rooms. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [roomsError, toast]);
+
+  // Handle QR code data
   useEffect(() => {
     if (qrMutation.data) {
       setQrImageUrl(qrMutation.data.url || qrMutation.data.quick_link || "");
@@ -426,14 +419,15 @@ const CheckIn = () => {
     }
   }, [qrMutation.data]);
 
-  const availableRooms = rooms;
-  if (!appointment || !patient) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p>Loading appointment details...</p>
-      </div>
-    );
-  }
+  const availableRooms = rooms || [];
+
+  // Format currency for VND
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
+  };
 
   const handleConfirmPayment = () => {
     confirmPayment({
@@ -453,13 +447,22 @@ const CheckIn = () => {
     });
   };
 
-  // Format currency for VND
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
+  // Loading states
+  if (!appointment || !patient) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p>Loading appointment details...</p>
+      </div>
+    );
+  }
+
+  if (isLoadingRooms) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p>Loading rooms...</p>
+      </div>
+    );
+  }
 
   const handleCompleteCheckIn = async () => {
     if (!selectedRoom) {
@@ -533,7 +536,6 @@ const CheckIn = () => {
     order_id: 0,
     appointment_id: parseInt(id || "0"),
   };
-
 
   const handleCancel = () => {
     setLocation("/appointment-flow");
