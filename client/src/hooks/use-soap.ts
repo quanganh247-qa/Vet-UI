@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createSOAP, getAllSOAPs, getSOAP, updateSOAP } from "@/services/soap-services";
 import { AssessmentData, ObjectiveData, SubjectiveData } from "@/types";
 
@@ -31,6 +31,7 @@ export const useGetSOAP = (appointmentID: string) => {
 };
 
 export const useUpdateSOAP = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: UpdateSOAPParams) => {
       if (!params.appointmentID) {
@@ -68,8 +69,10 @@ export const useUpdateSOAP = () => {
       // Gọi service function với một requestBody hoàn chỉnh thay vì từng trường riêng lẻ
       return updateSOAP(params.appointmentID, requestBody);
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       console.log('SOAP note updated successfully', data);
+      // Invalidate and refetch SOAP data
+      queryClient.invalidateQueries({ queryKey: ['soap', variables.appointmentID] });
     },
     onError: (error) => {
       console.error('Error updating SOAP note:', error);

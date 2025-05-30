@@ -13,11 +13,12 @@ export default defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
   // Use API_URL from environment variables or fall back to localhost
-  const apiUrl = env.API_URL || env.VITE_API_URL || 'https://go-pet-care-production.up.railway.app';
+  const apiUrl = env.VITE_API_URL
+  //  || 'https://go-pet-care-production-6a6c.up.railway.app';
   console.log(`Using API URL: ${apiUrl} in ${mode} mode`);
 
   // Use PUSH_NOTI from environment variables or fall back to API URL
-  const pushNotiUrl = env.PUSH_NOTI || env.VITE_PUSH_NOTI || apiUrl;
+  const pushNotiUrl = env.PUSH_NOTI;
   console.log(`Using Push Notification URL: ${pushNotiUrl} in ${mode} mode`);
 
   return {
@@ -41,12 +42,17 @@ export default defineConfig(async ({ mode }) => {
           changeOrigin: true
         }
       },
-      cors: true
+      cors: true,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': '*'
+      }
     },
     define: {
       // Make environment variables available to client code
       'import.meta.env.VITE_API_URL': JSON.stringify(apiUrl),
-      'import.meta.env.VITE_PUSH_NOTI': JSON.stringify(pushNotiUrl),
+      'import.meta.env.PUSH_NOTI': JSON.stringify(pushNotiUrl),
     },
     resolve: {
       alias: {

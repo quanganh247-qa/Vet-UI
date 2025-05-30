@@ -1,9 +1,10 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { refreshAccessToken } from '@/services/auth-services';
 
+
 // Create axios instance
 const api: AxiosInstance = axios.create({
-  baseURL: '/', // Using relative URL with proxy
+  baseURL: "/",
   headers: {
     'Content-Type': 'application/json',
   },

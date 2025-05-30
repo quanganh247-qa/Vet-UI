@@ -341,20 +341,28 @@ const MedicineManagement: React.FC = () => {
 
   // Handle opening edit dialog
   const handleOpenEditDialog = (medicine: Medicine) => {
+    console.log("Opening edit dialog with medicine:", medicine);
     setSelectedMedicineId(medicine.id);
+    
+    // Ensure supplier_id is properly set
+    const supplierIdToUse = medicine.supplier_id || 
+      (suppliers.length > 0 ? suppliers[0].id : 1);
+    
+    console.log("Setting supplier_id to:", supplierIdToUse);
+    
     setFormData({
-      medicine_name: medicine.medicine_name,
-      dosage: medicine.dosage,
-      frequency: medicine.frequency,
-      duration: medicine.duration,
-      side_effects: medicine.side_effects,
-      quantity: medicine.quantity,
-      expiration_date: medicine.expiration_date,
-      description: medicine.description,
-      usage: medicine.usage,
-      supplier_id: medicine.supplier_id,
-      unit_price: medicine.unit_price,
-      reorder_level: medicine.reorder_level,
+      medicine_name: medicine.medicine_name || "",
+      dosage: medicine.dosage || "",
+      frequency: medicine.frequency || "",
+      duration: medicine.duration || "",
+      side_effects: medicine.side_effects || "",
+      quantity: medicine.quantity || 0,
+      expiration_date: medicine.expiration_date || "",
+      description: medicine.description || "",
+      usage: medicine.usage || "",
+      supplier_id: supplierIdToUse,
+      unit_price: medicine.unit_price || 0,
+      reorder_level: medicine.reorder_level || 0,
     });
     setIsEditingItem(true);
   };
@@ -891,33 +899,14 @@ const MedicineManagement: React.FC = () => {
                   Supplier*
                 </Label>
                 <Select
-                  value={
-                    formData.supplier_id > 0
-                      ? formData.supplier_id.toString()
-                      : ""
-                  }
+                  value={formData.supplier_id?.toString() || ""}
                   onValueChange={(value) => {
-                    console.log(
-                      "Selected supplier value (string from Select):",
-                      value
-                    );
-                    const numericValue = value ? Number(value) : 0;
-                    console.log(
-                      "Selected supplier value (numeric):",
-                      numericValue
-                    );
-                    console.log(
-                      "Current formData.supplier_id before change:",
-                      formData.supplier_id
-                    );
-                    setFormData((prev) => ({
+                    const numericValue = parseInt(value, 10);
+                    console.log("Selected supplier ID:", numericValue);
+                    setFormData(prev => ({
                       ...prev,
-                      supplier_id: numericValue,
+                      supplier_id: numericValue
                     }));
-                    console.log(
-                      "Updated formData.supplier_id to:",
-                      numericValue
-                    );
                   }}
                 >
                   <SelectTrigger className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl">
@@ -937,28 +926,20 @@ const MedicineManagement: React.FC = () => {
                         No suppliers found
                       </SelectItem>
                     ) : (
-                      suppliers.map((supplier: MedicineSupplierResponse) => {
-                        console.log("Rendering supplier option:", {
-                          id: supplier.id,
-                          name: supplier.name,
-                        });
-                        return (
-                          <SelectItem
-                            key={supplier.id}
-                            value={supplier.id.toString()}
-                          >
-                            {supplier.name || `Unnamed Supplier ${supplier.id}`}
-                          </SelectItem>
-                        );
-                      })
+                      suppliers.map((supplier) => (
+                        <SelectItem
+                          key={supplier.id}
+                          value={supplier.id.toString()}
+                        >
+                          {supplier.name || `Supplier ${supplier.id}`}
+                        </SelectItem>
+                      ))
                     )}
                   </SelectContent>
                 </Select>
                 {suppliersError && (
                   <div className="mt-2 text-sm text-red-600 flex items-center justify-between">
-                    <span>
-                      Failed to load suppliers. Please try refreshing.
-                    </span>
+                    <span>Failed to load suppliers. Please try refreshing.</span>
                     <Button
                       variant="outline"
                       size="sm"
@@ -969,14 +950,11 @@ const MedicineManagement: React.FC = () => {
                     </Button>
                   </div>
                 )}
-                {!isLoadingSuppliers &&
-                  suppliers.length === 0 &&
-                  !suppliersError && (
-                    <div className="mt-2 text-sm text-[#4B5563]">
-                      No suppliers available. Please add suppliers first in the
-                      Inventory section.
-                    </div>
-                  )}
+                {!isLoadingSuppliers && suppliers.length === 0 && !suppliersError && (
+                  <div className="mt-2 text-sm text-[#4B5563]">
+                    No suppliers available. Please add suppliers first in the Inventory section.
+                  </div>
+                )}
               </div>
 
               <div>

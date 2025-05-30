@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMedicalRecordsReport } from "@/hooks/use-report";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Loader2, Activity, TrendingUp, Calendar, Stethoscope } from "lucide-react";
 
 interface MedicalReportProps {
@@ -37,7 +37,10 @@ const MedicalReport = ({ startDate, endDate }: MedicalReportProps) => {
     .filter(item => item.examinations > 0)
     .map(item => ({
       ...item,
-      month: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short' })
+      month: new Date(item.month + '-01').toLocaleDateString('vi-VN', { 
+        month: 'short',
+        timeZone: 'Asia/Ho_Chi_Minh'
+      })
     }));
 
   // Calculate growth rate
@@ -119,44 +122,41 @@ const MedicalReport = ({ startDate, endDate }: MedicalReportProps) => {
         <CardContent className="p-6">
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={monthlyTrendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="examinationGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2C78E4" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#2C78E4" stopOpacity={0.05}/>
-                  </linearGradient>
-                </defs>
+              <BarChart data={monthlyTrendData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
                 <XAxis 
                   dataKey="month" 
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: '#4B5563', fontSize: 12 }}
+                  dy={10}
                 />
                 <YAxis 
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: '#4B5563', fontSize: 12 }}
+                  dx={-10}
                 />
                 <Tooltip 
-                  formatter={(value) => [`${value} examinations`, 'Total']}
-                  labelStyle={{ color: '#111827', fontWeight: 'bold' }}
+                  cursor={{ fill: '#F3F4F6' }}
                   contentStyle={{ 
                     backgroundColor: 'white', 
                     border: 'none', 
                     borderRadius: '12px', 
-                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)' 
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                    padding: '12px' 
                   }}
+                  labelStyle={{ color: '#111827', fontWeight: 'bold', marginBottom: '4px' }}
+                  formatter={(value) => [`${value} examinations`, 'Total']}
                 />
-                <Area 
-                  type="monotone" 
+                <Bar 
                   dataKey="examinations" 
-                  stroke="#2C78E4" 
-                  strokeWidth={3}
-                  fill="url(#examinationGradient)"
-                  dot={{ fill: "#2C78E4", strokeWidth: 2, r: 5 }}
-                  activeDot={{ r: 7, stroke: "#2C78E4", strokeWidth: 3, fill: "white" }}
-                />
-              </AreaChart>
+                  fill="#2C78E4"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={50}
+                >
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
           

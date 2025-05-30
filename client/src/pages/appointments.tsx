@@ -425,19 +425,7 @@ const Appointments = () => {
               />
             </div>
             
-            {/* <Button
-              variant="default"
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 py-3 flex items-center gap-3 border-0"
-              onClick={() => setLocation("/walk-in")}
-            >
-              <div className="bg-white/20 rounded-full p-1">
-                <UserPlus className="h-4 w-4" />
-              </div>
-              <div className="flex flex-col items-start">
-                <span className="text-sm font-bold">Quick Registration</span>
-                <span className="text-xs opacity-90 hidden sm:block">New Walk-in Patient</span>
-              </div>
-            </Button> */}
+
 
             <div className="flex gap-2">
             <Button

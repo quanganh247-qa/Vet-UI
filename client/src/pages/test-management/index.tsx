@@ -220,7 +220,7 @@ const TestManagement: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.test_id || !formData.category_id || !formData.name || formData.price === "" || !formData.turnaround_time || !formData.itemApiType) {
+    if (!formData.category_id || !formData.name || formData.price === "" || !formData.turnaround_time || !formData.itemApiType) {
       toast({
         title: "Missing Information",
         description: "Please fill all required fields: Test ID, Category, Name, Price, Turnaround Time, and API Type.",
@@ -230,7 +230,7 @@ const TestManagement: React.FC = () => {
     }
 
     const newTestData: CreateTestRequest = {
-      test_id: formData.test_id,
+      // test_id: formData.test_id,
       category_id: formData.category_id,
       name: formData.name,
       description: formData.description,
@@ -372,7 +372,7 @@ const TestManagement: React.FC = () => {
           </DialogHeader>
 
           <div className="space-y-3 p-4 max-h-[70vh] overflow-y-auto">
-            <div>
+            {/* <div>
               <Label htmlFor="test_id" className="text-[#111827] font-medium">
                 Test Item ID*
               </Label>
@@ -384,7 +384,7 @@ const TestManagement: React.FC = () => {
                 placeholder="e.g., TST001, BLDPNL"
                 className="mt-1.5 border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
               />
-            </div>
+            </div> */}
             <div>
               <Label htmlFor="category_id" className="text-[#111827] font-medium">
                 Category*
@@ -458,7 +458,7 @@ const TestManagement: React.FC = () => {
             </div>
             <div>
               <Label htmlFor="itemApiType" className="text-[#111827] font-medium">
-                API Type Classification*
+                Type Classification*
               </Label>
               <Input
                 id="itemApiType"
@@ -510,7 +510,7 @@ const TestManagement: React.FC = () => {
             </Button>
             <Button
               disabled={isCreatingTest || 
-                        !formData.test_id || 
+                        // !formData.test_id || 
                         !formData.category_id || 
                         (formData.category_id === "vaccine" && !formData.medicine_id) || // Ensure medicine_id if category is vaccine
                         !formData.name || 

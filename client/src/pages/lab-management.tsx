@@ -36,6 +36,7 @@ import {
   Filter,
   Plus,
   ListChecks,
+  Loader2,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -95,13 +96,19 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useSaveVaccinationRecord } from "@/hooks/use-vaccine";
+import { useScheduleNotification } from "@/hooks/use-noti";
+import { Switch } from "@/components/ui/switch";
+import { cp } from "fs";
 
 interface Test {
   id: string;
   name: string;
   description: string;
   price?: string;
-  turnaroundTime?: string;
+  turnaround_time?: string;
+  batch_number?: string;
+  expiration_date?: string;
   type?: string;
 }
 
@@ -113,6 +120,8 @@ interface ApiItem {
   price?: number;
   turnaround_time?: string;
   type?: string;
+  batch_number?: string;
+  expiration_date?: string;
 }
 
 // Interface for a Test Category
@@ -122,6 +131,305 @@ interface TestCategory {
   description: string;
   items: Test[];
 }
+
+// Add new interface for vaccination dialog
+interface VaccinationDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  vaccine: Test | null;
+  appointmentId: string;
+  patient: any;
+}
+
+// Add VaccinationDialog component
+const VaccinationDialog: React.FC<VaccinationDialogProps> = ({
+  isOpen,
+  onClose,
+  vaccine,
+  appointmentId,
+  patient,
+}) => {
+  const { toast } = useToast();
+  const [notes, setNotes] = useState("");
+  const [scheduleReminder, setScheduleReminder] = useState(true);
+  const [batchNumber, setBatchNumber] = useState("");
+  const [vaccineProvider, setVaccineProvider] = useState("");
+  const [nextDueDate, setNextDueDate] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { mutate: saveVaccination, isPending: isSavingVaccination } = useSaveVaccinationRecord();
+  const { mutate: scheduleNotification } = useScheduleNotification();
+  const { data: appointment } = useAppointmentData(appointmentId);
+
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (isOpen && vaccine) {
+      setBatchNumber(vaccine.batch_number || "");
+      setVaccineProvider(vaccine.type || "");
+      setNotes("");
+      setNextDueDate(vaccine.expiration_date || "");
+    } else if (!isOpen) {
+      // Reset form when dialog closes
+      setBatchNumber("");
+      setVaccineProvider("");
+      setNotes("");
+      setNextDueDate("");
+      setScheduleReminder(true);
+    }
+  }, [isOpen, vaccine]);
+
+
+  const validateForm = () => {
+    if (!vaccine || !appointmentId || !patient) {
+      toast({
+        title: "Missing information",
+        description: "Required vaccination information is missing.",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return false;
+    }
+    
+    if (!batchNumber.trim()) {
+      toast({
+        title: "Batch number required",
+        description: "Please enter the vaccine batch number.",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return false;
+    }
+    
+    if (!vaccineProvider.trim()) {
+      toast({
+        title: "Vaccine provider required",
+        description: "Please enter the vaccine provider/manufacturer.",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      // Format dates properly for API
+      const formatDateForAPI = (dateString: string): string => {
+        if (!dateString) return '';
+        return `${dateString}T00:00:00Z`;
+      };
+
+      const vaccinationData = {
+        pet_id: Number(patient.petid),
+        vaccine_name: vaccine?.name || "",
+        date_administered: formatDateForAPI(new Date().toISOString().split("T")[0]),
+        next_due_date: formatDateForAPI(nextDueDate),
+        vaccine_provider: vaccineProvider.trim(),
+        batch_number: batchNumber.trim(),
+        notes: notes.trim(),
+        appointment_id: appointmentId.toString(),
+      };
+
+      console.log("Submitting vaccination data:", vaccinationData);
+
+      await saveVaccination(vaccinationData);
+
+      // Schedule reminder notification if requested
+      if (scheduleReminder && nextDueDate && vaccine) {
+        try {
+          const nextDueDateObj = new Date(nextDueDate);
+          const reminderDate = new Date(nextDueDateObj);
+          reminderDate.setDate(reminderDate.getDate() - 7); // 1 week before next due date
+          
+          // Create a cron expression for the reminder date (at 9:00 AM)
+          const cronExpression = `0 9 ${reminderDate.getDate()} ${reminderDate.getMonth() + 1} *`;
+          const scheduleId = `vaccine_reminder_${patient.petid}_${Date.now()}`;
+          
+          // Make sure we have a valid user ID
+          const userId = Number(appointment.owner?.owner_id);
+          if (isNaN(userId)) {
+            console.warn("Invalid user ID for notification:", patient);
+            return;
+          }
+          
+          await scheduleNotification({
+            user_id: userId,
+            title: "Vaccination Due Soon",
+            body: `Vaccination reminder: ${vaccine.name} is due for ${patient.name} on ${nextDueDateObj.toLocaleDateString()}`,
+            cronExpression,
+            schedule_id: scheduleId,
+            end_date: nextDueDateObj.toISOString(),
+          });
+        } catch (notificationError) {
+          console.warn("Failed to schedule reminder notification:", notificationError);
+          // Don't fail the vaccination recording if reminder fails
+        }
+      }
+
+      toast({
+        title: "Vaccination recorded",
+        description: "The vaccination has been successfully administered and recorded.",
+        className: "bg-green-50 border-green-200 text-green-800",
+        duration: 3000,
+      });
+
+      onClose();
+    } catch (error) {
+      console.error("Failed to save vaccination:", error);
+      toast({
+        title: "Error",
+        description: "Failed to record vaccination. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Syringe className="h-5 w-5 text-[#2C78E4]" />
+            Administer Vaccine
+          </DialogTitle>
+          <DialogDescription>
+            Record vaccination details for {patient?.name}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="bg-[#F9FAFB] rounded-lg p-4 border border-[#2C78E4]/10">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">{vaccine?.name}</span>
+                <Badge variant="outline" className="bg-[#F0F7FF] text-[#2C78E4]">
+                  {vaccine?.price}
+                </Badge>
+              </div>
+              <p className="text-sm text-gray-500">{vaccine?.description}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="batch_number">
+                Batch Number <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="batch_number"
+                value={batchNumber}
+                onChange={(e) => setBatchNumber(e.target.value)}
+                placeholder="Enter vaccine batch number"
+                className="bg-white border-[#2C78E4]/20"
+              />
+            </div>
+
+            {/* <div className="space-y-2">
+              <Label htmlFor="vaccine_provider">
+                Vaccine Provider <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="vaccine_provider"
+                value={vaccineProvider}
+                onChange={(e) => setVaccineProvider(e.target.value)}
+                placeholder="Enter provider/manufacturer"
+                className="bg-white border-[#2C78E4]/20"
+              />
+            </div> */}
+
+            <div className="space-y-2">
+              <Label htmlFor="administration_date">Administration Date</Label>
+              <Input
+                id="administration_date"
+                type="date"
+                value={new Date().toISOString().split("T")[0]}
+                disabled
+                className="bg-gray-50 border-[#2C78E4]/20"
+              />
+              <p className="text-xs text-gray-500">Automatically set to today</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="next_due_date">Next Due Date</Label>
+              <Input
+                id="next_due_date"
+                type="date"
+                value={nextDueDate}
+                onChange={(e) => setNextDueDate(e.target.value)}
+                className="bg-white border-[#2C78E4]/20"
+              />
+              <p className="text-xs text-gray-500">When is the next dose due?</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Enter any observations, reactions, or additional notes..."
+              className="min-h-[100px] bg-white border-[#2C78E4]/20"
+            />
+          </div>
+
+          <div className="flex items-center space-x-2 pt-2 bg-[#F9FAFB] rounded-lg p-3 border border-[#2C78E4]/10">
+            <Switch
+              id="schedule-reminder"
+              checked={scheduleReminder}
+              onCheckedChange={setScheduleReminder}
+              className="data-[state=checked]:bg-[#2C78E4]"
+            />
+            <div>
+              <Label htmlFor="schedule-reminder" className="text-sm font-medium">
+                Schedule reminder notification
+              </Label>
+              <p className="text-xs text-gray-500">
+                Send a reminder to pet owner 1 week before next vaccination due date
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="border-[#2C78E4]/20"
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting || isSavingVaccination}
+            className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white"
+          >
+            {isSubmitting || isSavingVaccination ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Recording...
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4 mr-2" />
+                Record Vaccination
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const LabManagement: React.FC = () => {
   const { id: routeId } = useParams<{ id?: string }>();
@@ -188,35 +496,13 @@ const LabManagement: React.FC = () => {
     appointment?.pet?.pet_id
   );
 
+
   // Fetch all items (tests and vaccines) with type="all"
   const { data: apiItems, isLoading: isItemsLoading } = useListTests("all");
   
   // Create test mutations
   const createTest = useCreateTest();
   const createTestOrders = useCreateTestOrder();
-
-  // Add useEffect to restore session if available
-  React.useEffect(() => {
-    if (effectiveAppointmentId) {
-      // Try to restore previous session data if it exists
-      const savedSessionData = localStorage.getItem(
-        `appointment_session_${effectiveAppointmentId}`
-      );
-
-      if (savedSessionData) {
-        try {
-          const sessionData = JSON.parse(savedSessionData);
-
-          // If we have notes from previous session and current notes are empty, restore them
-          if (sessionData.notes && !notes) {
-            setNotes(sessionData.notes);
-          }
-        } catch (e) {
-          console.error("Error restoring session:", e);
-        }
-      }
-    }
-  }, [effectiveAppointmentId, notes, toast]);
 
   // Transform API items to categorized structure
   const testCategories = React.useMemo(() => {
@@ -225,19 +511,27 @@ const LabManagement: React.FC = () => {
     // Handle different response formats - apiItems should be an array of categories
     const categories = Array.isArray(apiItems) ? apiItems : [apiItems];
     
-    return categories.map(category => ({
+    const transformed = categories.map(category => ({
       id: category.id || 'unknown',
       name: category.name || 'Unknown Category',
       description: category.description || '',
-      items: (category.items || []).map((item: ApiItem) => ({
-        id: item.id.toString(),
-        name: item.name,
-        description: item.description || "",
-        price: item.price ? `${item.price.toLocaleString("vi-VN")} đ` : undefined,
-        turnaroundTime: item.turnaround_time,
-        type: item.type
-      }))
+      items: (category.items || []).map((item: ApiItem) => {
+        console.log("Transforming item:", item);
+        return {
+          id: item.id.toString(),
+          name: item.name,
+          description: item.description || "",
+          price: item.price ? `${item.price.toLocaleString("vi-VN")} đ` : undefined,
+          turnaround_time: item.turnaround_time,
+          batch_number: item.batch_number,
+          expiration_date: item.expiration_date,
+          type: item.type
+        };
+      })
     }));
+
+    console.log("Transformed test categories:", transformed);
+    return transformed;
   }, [apiItems]);
 
   // Get all tests in a flat array for selection logic
@@ -319,6 +613,7 @@ const LabManagement: React.FC = () => {
         title: "Error",
         description: "Missing required information to order tests",
         variant: "destructive",
+        duration: 3000,
       });
       return;
     }
@@ -329,6 +624,7 @@ const LabManagement: React.FC = () => {
         title: "No tests selected",
         description: "Please select at least one test to order",
         variant: "destructive",
+        duration: 3000,
       });
       return;
     }
@@ -448,6 +744,7 @@ const LabManagement: React.FC = () => {
             patient?.name
           }, but there was an issue creating the invoice.`,
           className: "bg-yellow-50 border-yellow-200 text-yellow-800",
+          duration: 3000,
         });
       }
 
@@ -458,6 +755,7 @@ const LabManagement: React.FC = () => {
         description:
           "An error occurred while ordering tests. Please try again.",
         variant: "destructive",
+        duration: 3000,
       });
     }
   };
@@ -478,6 +776,18 @@ const LabManagement: React.FC = () => {
       petId: patient?.petid,
     };
     navigate(`/treatment${buildUrlParams(params)}`);
+  };
+
+  // Add new state for vaccination
+  const [selectedVaccine, setSelectedVaccine] = useState<Test | null>(null);
+
+  const [isVaccinationDialogOpen, setIsVaccinationDialogOpen] = useState(false);
+
+  // Modify the table row to handle vaccine administration
+  const handleVaccineAdminister = (test: Test, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row selection
+    setSelectedVaccine(test);
+    setIsVaccinationDialogOpen(true);
   };
 
   if (
@@ -639,8 +949,9 @@ const LabManagement: React.FC = () => {
                             <TableHead className="font-semibold text-[#111827]">Test Name</TableHead>
                             <TableHead className="font-semibold text-[#111827]">Description</TableHead>
                             <TableHead className="font-semibold text-[#111827]">Price</TableHead>
-                            <TableHead className="font-semibold text-[#111827]">Turnaround</TableHead>
+                            {/* <TableHead className="font-semibold text-[#111827]">Turnaround</TableHead> */}
                             <TableHead className="font-semibold text-[#111827]">Type</TableHead>
+                            {/* <TableHead className="font-semibold text-[#111827]">Action</TableHead> */}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -671,14 +982,14 @@ const LabManagement: React.FC = () => {
                               <TableCell className="text-sm text-[#4B5563]">
                                 {test.price || "N/A"}
                               </TableCell>
-                              <TableCell className="text-sm text-[#4B5563] flex items-center">
-                                {test.turnaroundTime && (
+                              {/* <TableCell className="text-sm text-[#4B5563] flex items-center">
+                                {test.turnaround_time && (
                                   <>
                                     <Clock className="h-3 w-3 mr-1" />
-                                    {test.turnaroundTime}
+                                    {test.turnaround_time}
                                   </>
                                 )}
-                              </TableCell>
+                              </TableCell> */}
                               <TableCell className="text-sm text-[#4B5563]">
                                 <Badge 
                                   variant="outline" 
@@ -686,6 +997,17 @@ const LabManagement: React.FC = () => {
                                 >
                                   {test.type || "Test"}
                                 </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {test.type === "vaccine" && (
+                                  <Button
+                                    onClick={(e) => handleVaccineAdminister(test, e)}
+                                    className="bg-[#2C78E4] hover:bg-[#1E40AF] text-white text-xs py-1 px-2 rounded-md"
+                                  >
+                                    <Syringe className="h-3 w-3 mr-1 inline-block" />
+                                    Record Vaccine
+                                  </Button>
+                                )}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -825,6 +1147,15 @@ const LabManagement: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Add Vaccination Dialog */}
+      <VaccinationDialog
+        isOpen={isVaccinationDialogOpen}
+        onClose={() => setIsVaccinationDialogOpen(false)}
+        vaccine={selectedVaccine}
+        appointmentId={effectiveAppointmentId}
+        patient={patient}
+      />
     </div>
   );
 };

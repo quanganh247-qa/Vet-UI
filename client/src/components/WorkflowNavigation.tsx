@@ -38,7 +38,7 @@ const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({ appointmentId, 
     { id: 'examination', label: 'Exam', icon: Calendar, path: `/examination${buildUrlParams()}` },
     { id: 'soap', label: 'SOAP', icon: Check, path: `/soap${buildUrlParams()}` },
     { id: 'diagnostic', label: 'Tests', icon: FileTextIcon, path: `/lab-management${buildUrlParams()}` },
-    { id: 'vaccination', label: 'Vaccine', icon: Clock, path: `/vaccination${buildUrlParams()}` },
+    // { id: 'vaccination', label: 'Vaccine', icon: Clock, path: `/vaccination${buildUrlParams()}` },
     { id: 'treatment', label: 'Treatment', icon: ShieldCheck, path: `/treatment${buildUrlParams()}` },
   ];
 

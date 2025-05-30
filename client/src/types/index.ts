@@ -374,6 +374,9 @@ export interface Test {
   description: string;
   price: string;
   turnaround_time: string;
+  batch_number?: string;
+  expiration_date?: string;
+  type?: string;
 }
 
 export interface CreateInvoiceRequest {

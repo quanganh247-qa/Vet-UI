@@ -3,7 +3,7 @@ import axios from "axios";
 // Create a separate axios instance for notification service with direct URL
 // This avoids using the proxy configuration in the main API client
 const notificationApi = axios.create({
-  baseURL: import.meta.env.VITE_PUSH_NOTI,
+  baseURL: import.meta.env.PUSH_NOTI,
   headers: {
     "Content-Type": "application/json",
   },
@@ -11,7 +11,7 @@ const notificationApi = axios.create({
 
 
 export const sendNotification = async (
-  user_id: string,
+  user_id: number,
   title: string,
   body: string
 ) => {
@@ -36,7 +36,7 @@ export const sendNotification = async (
 
 
 export const scheduleNotification = async (
-  user_id: string,
+  user_id: number,
   title: string,
   body: string,
   cronExpression: string,
@@ -59,4 +59,31 @@ export const scheduleNotification = async (
   }
 };
 
-
+// scheduleAppointment
+export const scheduleAppointment = async (
+  user_id: number,
+  appointment_id: string,
+  pet_name: string,
+  date: string,
+  start_time: string,
+  reason: string,
+  doctor_name: string,
+  service_name: string,
+) => {
+  try {
+    const response = await notificationApi.post("/scheduleAppointment", {
+      user_id,
+      appointment_id,
+      pet_name,
+      date,
+      start_time,
+      reason,
+      doctor_name,
+      service_name,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error scheduling appointment:", error);
+    throw error;
+  }
+};

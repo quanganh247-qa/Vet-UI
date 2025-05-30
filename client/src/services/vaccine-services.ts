@@ -1,5 +1,4 @@
 import api from "@/lib/api";
-import axios from "axios";
 
 export const getVaccinations = async (pet_id: number) => {
   try {
