@@ -5,7 +5,25 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Upload, Loader2, KeyRound } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  ArrowLeft, 
+  Upload, 
+  Loader2, 
+  KeyRound, 
+  UserCircle, 
+  Briefcase, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  GraduationCap,
+  Award,
+  FileText,
+  Shield,
+  User,
+  Settings
+} from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useDoctorProfile, useEditDoctorProfile, useUpdateUser, useUpdateUserAvatar, useUpdatePassword } from "@/hooks/use-doctor";
 import { Separator } from "@/components/ui/separator";
@@ -198,304 +216,466 @@ const EditProfilePage = () => {
   };
 
   return (
-    <div className="space-y-6 px-2 sm:px-4 md:px-6 max-w-[100vw]">
+    <div className="space-y-6">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4 rounded-xl shadow-md mb-6">
+      <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md">
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center">
             <Button
               variant="ghost"
-              size="icon"
-              className="mr-2 h-8 w-8 text-white hover:bg-white/20"
-              // onClick={() => navigate("/dashboard")}
+              size="sm"
+              className="text-white flex items-center hover:bg-white/10 rounded-lg px-3 py-2 transition-all mr-4"
               onClick={() => navigate("/")}
-
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              <span className="text-sm font-medium">Back</span>
             </Button>
-            <h1 className="text-2xl font-bold text-white">Edit Profile</h1>
+            <div>
+              <h1 className="text-xl font-semibold text-white">Profile Management</h1>
+              <p className="text-white/80 text-sm mt-1">
+                Update your personal and professional information
+              </p>
+            </div>
           </div>
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-            // onClick={() => navigate("/dashboard")}
-            className="bg-white text-indigo-700 hover:bg-indigo-50 flex items-center gap-1.5 shadow-sm"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Button>
+          
+          {/* Profile Status Badge */}
+          <div className="hidden md:flex items-center gap-3">
+            <Badge className="bg-white/20 text-white border-white/30">
+              <Shield className="h-3 w-3 mr-1" />
+              Verified Doctor
+            </Badge>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Personal Information Card */}
-          <Card className="border-2 border-gray-100 shadow-lg hover:border-indigo-100 transition-all duration-300">
-            <CardHeader className="border-b bg-gray-50/50 rounded-t-lg">
-              <CardTitle className="text-xl text-indigo-700">Personal Information</CardTitle>
-              <CardDescription>Update your personal details</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <form onSubmit={handlePersonalInfoSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Profile Photo</Label>
-                  <div className="flex items-center gap-4">
-                    <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                      {previewUrl || doctorData?.data_image ? (
-                        <img
-                          src={previewUrl || `data:image/png;base64,${doctorData?.data_image}`}
-                          alt="Profile"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-full w-full bg-gray-200 flex items-center justify-center">
-                          <Upload className="h-6 w-6 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                    <label className="cursor-pointer">
-                      <Button variant="outline" type="button" asChild>
-                        <span>
-                          <Upload className="h-4 w-4 mr-2" />
-                          Upload new photo
-                        </span>
-                      </Button>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleAvatarChange}
-                      />
-                    </label>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleInputChange}
+      {/* Profile Overview Card */}
+      <Card className="border-none shadow-lg rounded-2xl overflow-hidden">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-6">
+            {/* Profile Photo */}
+            <div className="relative">
+              <div className="h-24 w-24 rounded-full overflow-hidden bg-[#F9FAFB] flex items-center justify-center ring-4 ring-white shadow-lg">
+                {previewUrl || doctorData?.data_image ? (
+                  <img
+                    src={previewUrl || `data:image/png;base64,${doctorData?.data_image}`}
+                    alt="Profile"
+                    className="h-full w-full object-cover"
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="full_name">Full Name</Label>
-                  <Input
-                    id="full_name"
-                    name="full_name"
-                    value={formData.full_name}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone_number">Phone Number</Label>
-                  <Input
-                    id="phone_number"
-                    name="phone_number"
-                    value={formData.phone_number}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input
-                    id="address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="flex justify-end mt-4">
-                  <Button
-                    type="submit"
-                    disabled={updateUser.isPending}
-                    variant="default"
-                    className="bg-indigo-600 text-white hover:bg-indigo-700"
-                  >
-                    {updateUser.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Updating...
-                      </>
-                    ) : (
-                      'Update Personal Info'
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Professional Information Card */}
-          <Card className="border-2 border-gray-100 shadow-lg hover:border-indigo-100 transition-all duration-300">
-            <CardHeader className="border-b bg-gray-50/50 rounded-t-lg">
-              <CardTitle className="text-xl text-indigo-700">Professional Information</CardTitle>
-              <CardDescription>Update your professional details</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <form onSubmit={handleProfessionalInfoSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="specialization">Specialization</Label>
-                  <Input
-                    id="specialization"
-                    name="specialization"
-                    value={formData.specialization}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="years_of_experience">Years of Experience</Label>
-                  <Input
-                    id="years_of_experience"
-                    name="years_of_experience"
-                    type="number"
-                    value={formData.years_of_experience}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="education">Education</Label>
-                  <Input
-                    id="education"
-                    name="education"
-                    value={formData.education}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="certificate_number">Certificate Number</Label>
-                  <Input
-                    id="certificate_number"
-                    name="certificate_number"
-                    value={formData.certificate_number}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleInputChange}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="flex justify-end mt-4">
-                  <Button
-                    type="submit"
-                    disabled={editDoctorProfile.isPending}
-                    variant="default"
-                    className="bg-indigo-600 text-white hover:bg-indigo-700"
-                  >
-                    {editDoctorProfile.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Updating...
-                      </>
-                    ) : (
-                      'Update Professional Info'
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Password Update Card */}
-        <Card className="border-2 border-gray-100 shadow-lg hover:border-indigo-100 transition-all duration-300">
-          <CardHeader className="border-b bg-gray-50/50 rounded-t-lg">
-            <CardTitle className="flex items-center gap-2 text-xl text-indigo-700">
-              <KeyRound className="h-5 w-5 text-indigo-600" />
-              Change Password
-            </CardTitle>
-            <CardDescription>Update your account password</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <Input
-                  id="currentPassword"
-                  name="currentPassword"
-                  type="password"
-                  value={passwordData.currentPassword}
-                  onChange={handlePasswordChange}
-                  required
-                />
+                ) : (
+                  <UserCircle className="h-16 w-16 text-[#2C78E4]" />
+                )}
               </div>
-
-              <Separator className="my-4" />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
-                  <Input
-                    id="newPassword"
-                    name="newPassword"
-                    type="password"
-                    value={passwordData.newPassword}
-                    onChange={handlePasswordChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    value={passwordData.confirmPassword}
-                    onChange={handlePasswordChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end mt-4">
-                <Button
-                  type="submit"
-                  disabled={updatePassword.isPending}
-                  variant="default"
-                  className="bg-indigo-600 text-white hover:bg-indigo-700"
-                >
-                  {updatePassword.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating Password...
-                    </>
-                  ) : (
-                    'Update Password'
-                  )}
+              <label className="absolute -bottom-2 -right-2 cursor-pointer">
+                <Button size="sm" className="h-8 w-8 rounded-full p-0 bg-[#2C78E4] hover:bg-[#2C78E4]/90">
+                  <Upload className="h-4 w-4 text-white" />
                 </Button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+              </label>
+            </div>
+
+            {/* Profile Info */}
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-[#111827] mb-1">
+                {doctorData?.doctor_name || formData.full_name || "Doctor Name"}
+              </h2>
+              <p className="text-[#2C78E4] font-medium mb-2">
+                {doctorData?.specialization || "Veterinary Specialist"}
+              </p>
+              
+              <div className="flex flex-wrap gap-4 text-sm text-[#4B5563]">
+                {doctorData?.email && (
+                  <div className="flex items-center gap-1">
+                    <Mail className="h-4 w-4" />
+                    {doctorData.email}
+                  </div>
+                )}
+                {doctorData?.phone_number && (
+                  <div className="flex items-center gap-1">
+                    <Phone className="h-4 w-4" />
+                    {doctorData.phone_number}
+                  </div>
+                )}
+                {doctorData?.years_of_experience && (
+                  <div className="flex items-center gap-1">
+                    <Award className="h-4 w-4" />
+                    {doctorData.years_of_experience} years experience
+                  </div>
+                )}
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabbed Content */}
+      <Card className="border-none shadow-lg rounded-2xl overflow-hidden">
+        <Tabs defaultValue="personal" className="w-full">
+          <div className="border-b border-gray-200 bg-gradient-to-r from-[#F9FAFB] to-white px-6 py-4">
+            <TabsList className="grid w-full grid-cols-3 bg-white rounded-xl p-1 shadow-sm">
+              <TabsTrigger 
+                value="personal" 
+                className="flex items-center gap-2 data-[state=active]:bg-[#2C78E4] data-[state=active]:text-white rounded-lg"
+              >
+                <User className="h-4 w-4" />
+                Personal Info
+              </TabsTrigger>
+              <TabsTrigger 
+                value="professional"
+                className="flex items-center gap-2 data-[state=active]:bg-[#2C78E4] data-[state=active]:text-white rounded-lg"
+              >
+                <Briefcase className="h-4 w-4" />
+                Professional
+              </TabsTrigger>
+              <TabsTrigger 
+                value="security"
+                className="flex items-center gap-2 data-[state=active]:bg-[#2C78E4] data-[state=active]:text-white rounded-lg"
+              >
+                <Settings className="h-4 w-4" />
+                Security
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* Personal Information Tab */}
+          <TabsContent value="personal" className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="border border-gray-100 rounded-xl">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg text-[#111827] flex items-center gap-2">
+                    <UserCircle className="h-5 w-5 text-[#2C78E4]" />
+                    Basic Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handlePersonalInfoSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="username" className="text-sm font-medium text-[#374151]">Username</Label>
+                      <Input
+                        id="username"
+                        name="username"
+                        value={formData.username}
+                        onChange={handleInputChange}
+                        className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
+                        placeholder="Enter username"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="full_name" className="text-sm font-medium text-[#374151]">Full Name</Label>
+                      <Input
+                        id="full_name"
+                        name="full_name"
+                        value={formData.full_name}
+                        onChange={handleInputChange}
+                        className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
+                        placeholder="Enter full name"
+                      />
+                    </div>
+
+                    <div className="flex justify-end mt-6">
+                      <Button
+                        type="submit"
+                        disabled={updateUser.isPending}
+                        className="bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90 rounded-xl"
+                      >
+                        {updateUser.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          'Save Changes'
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-gray-100 rounded-xl">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg text-[#111827] flex items-center gap-2">
+                    <Mail className="h-5 w-5 text-[#2C78E4]" />
+                    Contact Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handlePersonalInfoSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-sm font-medium text-[#374151]">Email Address</Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
+                        placeholder="Enter email address"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="phone_number" className="text-sm font-medium text-[#374151]">Phone Number</Label>
+                      <Input
+                        id="phone_number"
+                        name="phone_number"
+                        value={formData.phone_number}
+                        onChange={handleInputChange}
+                        className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="address" className="text-sm font-medium text-[#374151]">Address</Label>
+                      <Textarea
+                        id="address"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
+                        placeholder="Enter address"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="flex justify-end mt-6">
+                      <Button
+                        type="submit"
+                        disabled={updateUser.isPending}
+                        className="bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90 rounded-xl"
+                      >
+                        {updateUser.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          'Save Changes'
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Professional Information Tab */}
+          <TabsContent value="professional" className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="border border-gray-100 rounded-xl">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg text-[#111827] flex items-center gap-2">
+                    <GraduationCap className="h-5 w-5 text-[#2C78E4]" />
+                    Education & Experience
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleProfessionalInfoSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="specialization" className="text-sm font-medium text-[#374151]">Specialization</Label>
+                      <Input
+                        id="specialization"
+                        name="specialization"
+                        value={formData.specialization}
+                        onChange={handleInputChange}
+                        className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
+                        placeholder="e.g., Small Animal Medicine"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="years_of_experience" className="text-sm font-medium text-[#374151]">Years of Experience</Label>
+                      <Input
+                        id="years_of_experience"
+                        name="years_of_experience"
+                        type="number"
+                        value={formData.years_of_experience}
+                        onChange={handleInputChange}
+                        className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
+                        placeholder="Enter years of experience"
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="education" className="text-sm font-medium text-[#374151]">Education</Label>
+                      <Input
+                        id="education"
+                        name="education"
+                        value={formData.education}
+                        onChange={handleInputChange}
+                        className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
+                        placeholder="e.g., DVM, University Name"
+                      />
+                    </div>
+
+                    <div className="flex justify-end mt-6">
+                      <Button
+                        type="submit"
+                        disabled={editDoctorProfile.isPending}
+                        className="bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90 rounded-xl"
+                      >
+                        {editDoctorProfile.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          'Save Changes'
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-gray-100 rounded-xl">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg text-[#111827] flex items-center gap-2">
+                    <Award className="h-5 w-5 text-[#2C78E4]" />
+                    Certifications & Bio
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleProfessionalInfoSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="certificate_number" className="text-sm font-medium text-[#374151]">Certificate Number</Label>
+                      <Input
+                        id="certificate_number"
+                        name="certificate_number"
+                        value={formData.certificate_number}
+                        onChange={handleInputChange}
+                        className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
+                        placeholder="Enter certificate number"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="bio" className="text-sm font-medium text-[#374151]">Professional Bio</Label>
+                      <Textarea
+                        id="bio"
+                        name="bio"
+                        value={formData.bio}
+                        onChange={handleInputChange}
+                        rows={6}
+                        className="border-[#2C78E4]/20 focus:border-[#2C78E4] rounded-xl"
+                        placeholder="Write a brief professional bio..."
+                      />
+                    </div>
+
+                    <div className="flex justify-end mt-6">
+                      <Button
+                        type="submit"
+                        disabled={editDoctorProfile.isPending}
+                        className="bg-[#2C78E4] text-white hover:bg-[#2C78E4]/90 rounded-xl"
+                      >
+                        {editDoctorProfile.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          'Save Changes'
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Security Tab */}
+          <TabsContent value="security" className="p-6">
+            <div className="max-w-2xl mx-auto">
+              <Card className="border border-orange-200 rounded-xl">
+                <CardHeader className="pb-4 bg-orange-50 rounded-t-xl">
+                  <CardTitle className="text-lg text-orange-900 flex items-center gap-2">
+                    <KeyRound className="h-5 w-5 text-orange-600" />
+                    Change Password
+                  </CardTitle>
+                  <CardDescription className="text-orange-700">
+                    Update your account password for better security
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="currentPassword" className="text-sm font-medium text-[#374151]">Current Password</Label>
+                      <Input
+                        id="currentPassword"
+                        name="currentPassword"
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={handlePasswordChange}
+                        className="border-orange-200 focus:border-orange-400 rounded-xl"
+                        placeholder="Enter current password"
+                        required
+                      />
+                    </div>
+
+                    <Separator className="my-4" />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="newPassword" className="text-sm font-medium text-[#374151]">New Password</Label>
+                        <Input
+                          id="newPassword"
+                          name="newPassword"
+                          type="password"
+                          value={passwordData.newPassword}
+                          onChange={handlePasswordChange}
+                          className="border-orange-200 focus:border-orange-400 rounded-xl"
+                          placeholder="Enter new password"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword" className="text-sm font-medium text-[#374151]">Confirm New Password</Label>
+                        <Input
+                          id="confirmPassword"
+                          name="confirmPassword"
+                          type="password"
+                          value={passwordData.confirmPassword}
+                          onChange={handlePasswordChange}
+                          className="border-orange-200 focus:border-orange-400 rounded-xl"
+                          placeholder="Confirm new password"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end mt-6">
+                      <Button
+                        type="submit"
+                        disabled={updatePassword.isPending}
+                        className="bg-orange-600 text-white hover:bg-orange-700 rounded-xl"
+                      >
+                        {updatePassword.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Updating Password...
+                          </>
+                        ) : (
+                          'Update Password'
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </Card>
     </div>
   );
 };

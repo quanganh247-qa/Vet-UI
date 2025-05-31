@@ -27,6 +27,8 @@ import {
   XCircle,
   CheckCircle,
   FileText,
+  RotateCcw,
+  MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,7 +51,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DoctorDetail } from "@/types";
-import { useDoctors, useAddNewStaff } from "@/hooks/use-doctor";
+import { useDoctors, useAddNewStaff, useResetDoctorPassword } from "@/hooks/use-doctor";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -73,6 +75,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const StaffPage = () => {
   const [location, setLocation] = useLocation();
@@ -82,6 +90,14 @@ const StaffPage = () => {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
+  
+  // Password reset state
+  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
+  const [resetPasswordData, setResetPasswordData] = useState({
+    doctor_username: "",
+    email: "",
+  });
+  const [selectedStaffForReset, setSelectedStaffForReset] = useState<DoctorDetail | null>(null);
 
   // Staff form state
   const [newStaff, setNewStaff] = useState({
@@ -97,6 +113,7 @@ const StaffPage = () => {
   });
 
   const { data: staffData, isLoading } = useDoctors();
+  const resetPasswordMutation = useResetDoctorPassword();
 
   // Check if we're on the new staff page
   const isNewStaffPage = location === "/staff/new";
@@ -160,6 +177,35 @@ const StaffPage = () => {
   const handleDeleteStaff = (staffId: number) => {
     setSelectedStaffId(staffId);
     setIsDeleteDialogOpen(true);
+  };
+
+  // Handle password reset
+  const handleResetPassword = (staff: DoctorDetail) => {
+    setSelectedStaffForReset(staff);
+    setResetPasswordData({
+      doctor_username: staff.username || "",
+      email: staff.email || "",
+    });
+    setIsResetPasswordDialogOpen(true);
+  };
+
+  const handleResetPasswordSubmit = () => {
+    if (!resetPasswordData.doctor_username || !resetPasswordData.email) {
+      toast({
+        title: "Error",
+        description: "Username and email are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    resetPasswordMutation.mutate(resetPasswordData, {
+      onSuccess: () => {
+        setIsResetPasswordDialogOpen(false);
+        setResetPasswordData({ doctor_username: "", email: "" });
+        setSelectedStaffForReset(null);
+      },
+    });
   };
 
   // Handle staff form submission
@@ -784,11 +830,11 @@ const StaffPage = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex justify-between items-center">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="text-[#2C78E4] hover:bg-[#F9FAFB] rounded-2xl"
+                        className="text-[#2C78E4] border-[#2C78E4]/20 hover:bg-[#F9FAFB] rounded-2xl"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleStaffClick(staff.doctor_id);
@@ -796,6 +842,41 @@ const StaffPage = () => {
                       >
                         View Profile <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-[#2C78E4] hover:bg-[#F9FAFB] h-8 w-8 p-0 rounded-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-48" align="end">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStaffClick(staff.doctor_id);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <UserCircle className="w-4 h-4 mr-2" />
+                            View Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleResetPassword(staff);
+                            }}
+                            className="cursor-pointer text-orange-600"
+                          >
+                            <RotateCcw className="w-4 h-4 mr-2" />
+                            Reset Password
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardContent>
                 </Card>
@@ -877,17 +958,40 @@ const StaffPage = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-[#2C78E4] hover:bg-[#F9FAFB] h-8 rounded-2xl"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStaffClick(staff.doctor_id);
-                            }}
-                          >
-                            View <ChevronRight className="w-4 h-4 ml-1" />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-[#2C78E4] hover:bg-[#F9FAFB] h-8 rounded-2xl"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-48" align="end">
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStaffClick(staff.doctor_id);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <UserCircle className="w-4 h-4 mr-2" />
+                                View Profile
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleResetPassword(staff);
+                                }}
+                                className="cursor-pointer text-orange-600"
+                              >
+                                <RotateCcw className="w-4 h-4 mr-2" />
+                                Reset Password
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                       </tr>
                     ))}
@@ -925,6 +1029,131 @@ const StaffPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Password Reset Dialog */}
+      <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-md border border-orange-200 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-600">
+              <RotateCcw className="h-5 w-5" />
+              Reset Password
+            </DialogTitle>
+            <DialogDescription className="text-[#4B5563]">
+              Send a password reset email to {selectedStaffForReset?.doctor_name}. 
+              Please verify the details below before proceeding.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Staff Info Display */}
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+                  {selectedStaffForReset?.data_image ? (
+                    <img
+                      src={`data:image/png;base64,${selectedStaffForReset.data_image}`}
+                      alt={selectedStaffForReset.doctor_name}
+                      className="h-full w-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <UserCircle className="h-8 w-8 text-orange-600" />
+                  )}
+                </div>
+                <div>
+                  <div className="font-semibold text-orange-900">
+                    {selectedStaffForReset?.doctor_name}
+                  </div>
+                  <div className="text-sm text-orange-700">
+                    {selectedStaffForReset?.role}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Form Fields */}
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="reset-username" className="text-sm font-medium">
+                  Username
+                </Label>
+                <Input
+                  id="reset-username"
+                  value={resetPasswordData.doctor_username}
+                  onChange={(e) => setResetPasswordData(prev => ({
+                    ...prev,
+                    doctor_username: e.target.value
+                  }))}
+                  className="mt-1 border-orange-200 focus:border-orange-400 rounded-xl"
+                  placeholder="Enter username"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="reset-email" className="text-sm font-medium">
+                  Email Address
+                </Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  value={resetPasswordData.email}
+                  onChange={(e) => setResetPasswordData(prev => ({
+                    ...prev,
+                    email: e.target.value
+                  }))}
+                  className="mt-1 border-orange-200 focus:border-orange-400 rounded-xl"
+                  placeholder="Enter email address"
+                />
+              </div>
+            </div>
+
+            {/* Warning Message */}
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+              <div className="flex gap-2">
+                <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                <div className="text-sm text-amber-800">
+                  <p className="font-medium mb-1">Important:</p>
+                  <ul className="list-disc pl-5 space-y-1 text-xs">
+                    <li>A password reset email will be sent to the provided email address</li>
+                    <li>The staff member will need to check their email and follow the reset link</li>
+                    <li>Their current password will remain active until they complete the reset process</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsResetPasswordDialogOpen(false);
+                setResetPasswordData({ doctor_username: "", email: "" });
+                setSelectedStaffForReset(null);
+              }}
+              className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleResetPasswordSubmit}
+              disabled={resetPasswordMutation.isPending || !resetPasswordData.doctor_username || !resetPasswordData.email}
+              className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl"
+            >
+              {resetPasswordMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send Reset Email
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

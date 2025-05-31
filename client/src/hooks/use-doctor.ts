@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { addNewStaff, editDoctorProfile, EditDoctorProfileRequest, getDoctorProfile, getDoctors, getDoctorById } from "@/services/doctor-services"; // Added updateUserAvatar, updateUser, UpdateUserParams
+import { addNewStaff, editDoctorProfile, EditDoctorProfileRequest, getDoctorProfile, getDoctors, getDoctorById, resetDoctorPassword, ResetDoctorPasswordRequest } from "@/services/doctor-services"; // Added updateUserAvatar, updateUser, UpdateUserParams
 import { queryClient } from "@/lib/queryClient";
 import { getAllStaff } from "@/services/staff-services";
 import { toast } from "./use-toast";
@@ -160,3 +160,31 @@ export const useUpdateUser = () => {
     });
 };
 
+
+export const useResetDoctorPassword = () => {
+    return useMutation({
+        mutationFn: (data: ResetDoctorPasswordRequest) => resetDoctorPassword(data),
+        onSuccess: () => {
+            toast({
+                title: "Success",
+                description: "Password reset email sent successfully!",
+                className: "bg-green-50 border-green-200 text-green-800",
+            });
+        },
+        onError: (error: any) => {
+            console.error('Error resetting doctor password:', error);
+            
+            // Extract error message from API response if available
+            let errorMessage = "Failed to reset doctor's password";
+            if (error?.message) {
+                errorMessage = error.message;
+            }
+            
+            toast({
+                title: "Error",
+                description: errorMessage,
+                variant: "destructive",
+            });
+        },
+    });
+}

@@ -71,3 +71,17 @@ export const editDoctorProfile = async (data: EditDoctorProfileRequest) => {
     }
 };
 
+
+
+export type ResetDoctorPasswordRequest =  {
+   doctor_username: string;
+   email: string;
+}
+export const resetDoctorPassword = async (data: ResetDoctorPasswordRequest) => {
+    try {
+        const response = await api.post('/api/v1/doctor/reset-password', data);
+        return response.data;
+    } catch (error: any) {
+        handleApiError(error); // Use the helper function
+    }
+}

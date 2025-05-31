@@ -14,6 +14,7 @@ import {
   Wrench,
   ShoppingBag,
   TestTube,
+  User,
 } from "lucide-react";
 
 export const mainNavigation = [
@@ -80,6 +81,11 @@ export const mainNavigation = [
 ];
 
 export const secondaryNavigation = [
+  { 
+    name: "Profile", 
+    href: "/profile", 
+    icon: <User className="h-5 w-5" /> 
+  },
   { 
     name: "Settings", 
     href: "/settings", 

@@ -399,63 +399,65 @@ const PhysicalExaminationDisplay = ({ data }: { data: any }) => {
     },
   ];
 
+  // Filter system groups to only show those with data
+  const systemGroupsWithData = systemGroups
+    .map((group) => ({
+      ...group,
+      systems: group.systems.filter((system) => system.value && system.value.trim() !== "")
+    }))
+    .filter((group) => group.systems.length > 0);
+
+  // Show message if no data exists
+  if (systemGroupsWithData.length === 0) {
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+        <Stethoscope className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-500">No physical examination findings documented</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {systemGroups.map((group, groupIndex) => {
-        const hasAnyFindings = group.systems.some((system) => system.value);
-
-        return (
-          <div
-            key={groupIndex}
-            className="bg-white border border-gray-200 rounded-xl overflow-hidden"
-          >
-            <div className="bg-gradient-to-r from-[#F0F7FF] to-white px-4 py-3 border-b border-gray-200">
-              <div className="flex items-center gap-2">
-                {group.icon}
-                <h3 className="font-semibold text-gray-800">{group.title}</h3>
-                {!hasAnyFindings && (
-                  <Badge variant="outline" className="text-xs">
-                    No findings
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            <div className="p-4">
-              {hasAnyFindings ? (
-                <div className="space-y-4">
-                  {group.systems.map((system, index) =>
-                    system.value ? (
-                      <div
-                        key={index}
-                        className="bg-[#F9FAFB] border border-gray-100 rounded-lg p-3"
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg">{system.icon}</span>
-                          <span className="font-medium text-gray-700">
-                            {system.name}
-                          </span>
-                        </div>
-                        <div className="ml-8">
-                          <p className="text-gray-800 whitespace-pre-line leading-relaxed">
-                            {system.value}
-                          </p>
-                        </div>
-                      </div>
-                    ) : null
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-6 text-gray-500">
-                  <span className="italic">
-                    No abnormal findings documented
-                  </span>
-                </div>
-              )}
+      {systemGroupsWithData.map((group, groupIndex) => (
+        <div
+          key={groupIndex}
+          className="bg-white border border-gray-200 rounded-xl overflow-hidden"
+        >
+          <div className="bg-gradient-to-r from-[#F0F7FF] to-white px-4 py-3 border-b border-gray-200">
+            <div className="flex items-center gap-2">
+              {group.icon}
+              <h3 className="font-semibold text-gray-800">{group.title}</h3>
+              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                {group.systems.length} finding{group.systems.length > 1 ? 's' : ''}
+              </Badge>
             </div>
           </div>
-        );
-      })}
+
+          <div className="p-4">
+            <div className="space-y-4">
+              {group.systems.map((system, index) => (
+                <div
+                  key={index}
+                  className="bg-[#F9FAFB] border border-gray-100 rounded-lg p-3"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">{system.icon}</span>
+                    <span className="font-medium text-gray-700">
+                      {system.name}
+                    </span>
+                  </div>
+                  <div className="ml-8">
+                    <p className="text-gray-800 whitespace-pre-line leading-relaxed">
+                      {system.value}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
