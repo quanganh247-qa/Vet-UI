@@ -119,8 +119,11 @@ export const useUpdatePassword = () => {
 export const useUpdateUserAvatar = () => {
     return useMutation({
         mutationFn: (data: FormData) => updateUserAvatar(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['doctor-profile'] });
+        onSuccess: async () => {            
+            // Invalidate all doctor profile related queries
+            await queryClient.invalidateQueries({ queryKey: ['doctor-profile'] });
+            await queryClient.refetchQueries({ queryKey: ['doctor-profile'] });
+                        
             toast({
                 title: "Success",
                 description: "Avatar updated successfully!",

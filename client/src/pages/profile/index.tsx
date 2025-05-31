@@ -75,8 +75,14 @@ const EditProfilePage = () => {
         certificate_number: doctorData.certificate_number || prev.certificate_number,
         bio: doctorData.bio || prev.bio
       }));
+
+      // Clear preview URL when doctor data updates (after successful upload)
+      if (previewUrl && doctorData.data_image) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
     }
-  }, [doctorData]);
+  }, [doctorData, previewUrl]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -89,26 +95,59 @@ const EditProfilePage = () => {
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      console.log('Selected file:', file);
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Please select a valid image file",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "Image size should be less than 5MB",
+          variant: "destructive"
+        });
+        return;
+      }
 
       // Create FormData and append file with the correct field name
       const formData = new FormData();
       formData.append('image', file);
+      console.log('FormData created:', formData.get('image'));
+
+      // Set preview before upload
+      const previewURL = URL.createObjectURL(file);
+      setPreviewUrl(previewURL);
+      console.log('Preview URL set:', previewURL);
 
       try {
-        // Set preview before upload
-        const previewURL = URL.createObjectURL(file);
-        setPreviewUrl(previewURL);
-
         // Upload avatar
-        await updateAvatar.mutateAsync(formData);
+        console.log('Starting avatar upload...');
+        const result = await updateAvatar.mutateAsync(formData);
+        console.log('Upload result:', result);
 
-
-        // Clean up preview URL to prevent memory leaks
-        URL.revokeObjectURL(previewURL);
-      } catch (error) {
-        // Error toast is handled by the mutation
+        // Success is handled by the mutation's onSuccess callback
+      } catch (error: any) {
+        console.error('Error uploading avatar:', error);
+        console.error('Error details:', error?.response?.data);
+        
         // Revert preview on error
+        URL.revokeObjectURL(previewURL);
         setPreviewUrl(null);
+        
+        // Don't show additional toast since the mutation's onError will handle it
+      } finally {
+        // Reset the file input
+        if (e.target) {
+          e.target.value = '';
+        }
       }
     }
   };
@@ -265,17 +304,31 @@ const EditProfilePage = () => {
                   <UserCircle className="h-16 w-16 text-[#2C78E4]" />
                 )}
               </div>
-              <label className="absolute -bottom-2 -right-2 cursor-pointer">
-                <Button size="sm" className="h-8 w-8 rounded-full p-0 bg-[#2C78E4] hover:bg-[#2C78E4]/90">
-                  <Upload className="h-4 w-4 text-white" />
-                </Button>
+              <div className="absolute -bottom-2 -right-2">
                 <input
                   type="file"
                   accept="image/*"
                   className="hidden"
+                  id="avatar-upload"
                   onChange={handleAvatarChange}
                 />
-              </label>
+                <Button 
+                  size="sm" 
+                  className="h-8 w-8 rounded-full p-0 bg-[#2C78E4] hover:bg-[#2C78E4]/90" 
+                  type="button"
+                  disabled={updateAvatar.isPending}
+                  onClick={() => {
+                    const fileInput = document.getElementById('avatar-upload') as HTMLInputElement;
+                    fileInput?.click();
+                  }}
+                >
+                  {updateAvatar.isPending ? (
+                    <Loader2 className="h-4 w-4 text-white animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4 text-white" />
+                  )}
+                </Button>
+              </div>
             </div>
 
             {/* Profile Info */}

@@ -6,20 +6,34 @@ import { Loader2, DollarSign, TrendingUp, TrendingDown, PieChart as PieChartIcon
 const COLORS = ["#2C78E4", "#FFA726", "#10B981", "#8B5CF6", "#F59E0B", "#EF4444"];
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0
-  }).format(value);
+  return new Intl.NumberFormat('vi-VN').format(value) + 'đ';
 };
 
 const formatCompactCurrency = (value: number) => {
   if (value >= 1000000000) {
-    return `${(value / 1000000000).toFixed(1)}B VND`;
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      maximumFractionDigits: 1,
+      notation: 'compact',
+      compactDisplay: 'short'
+    }).format(value);
   } else if (value >= 1000000) {
-    return `${(value / 1000000).toFixed(1)}M VND`;
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      maximumFractionDigits: 1,
+      notation: 'compact',
+      compactDisplay: 'short'
+    }).format(value);
   } else if (value >= 1000) {
-    return `${(value / 1000).toFixed(1)}K VND`;
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      maximumFractionDigits: 1,
+      notation: 'compact',
+      compactDisplay: 'short'
+    }).format(value);
   }
   return formatCurrency(value);
 };
@@ -59,12 +73,14 @@ const FinancialReport = ({ startDate, endDate }: FinancialReportProps) => {
     value
   }));
 
+  console.log("Service Revenue Data:", data.monthly_trends);
+
   // Prepare monthly trend data
   const monthlyTrendData = data.monthly_trends
     .filter(item => item.revenue > 0 || item.expenses > 0)
     .map(item => ({
       ...item,
-      month: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short' }),
+      month: new Date(item.month + '-01').toLocaleDateString('vi-VN', { month: 'short' }),
       profit_margin: item.revenue > 0 ? ((item.profit / item.revenue) * 100) : 0
     }));
 
@@ -89,7 +105,7 @@ const FinancialReport = ({ startDate, endDate }: FinancialReportProps) => {
               <div>
                 <CardDescription className="text-[#2C78E4] font-medium text-sm">Total Revenue</CardDescription>
                 <CardTitle className="text-2xl font-bold text-[#2C78E4] mt-1">
-                  {formatCompactCurrency(data.total_revenue)}
+                  {formatCurrency(data.total_revenue)}
                 </CardTitle>
               </div>
               <div className="bg-[#2C78E4]/10 p-3 rounded-xl">
@@ -105,7 +121,7 @@ const FinancialReport = ({ startDate, endDate }: FinancialReportProps) => {
               <div>
                 <CardDescription className="text-[#FFA726] font-medium text-sm">Total Expenses</CardDescription>
                 <CardTitle className="text-2xl font-bold text-[#FFA726] mt-1">
-                  {formatCompactCurrency(data.total_expenses)}
+                  {formatCurrency(data.total_expenses)}
                 </CardTitle>
               </div>
               <div className="bg-[#FFA726]/10 p-3 rounded-xl">
@@ -121,7 +137,7 @@ const FinancialReport = ({ startDate, endDate }: FinancialReportProps) => {
               <div>
                 <CardDescription className="text-[#10B981] font-medium text-sm">Net Profit</CardDescription>
                 <CardTitle className="text-2xl font-bold text-[#10B981] mt-1">
-                  {formatCompactCurrency(data.profit)}
+                  {formatCurrency(data.profit)}
                 </CardTitle>
               </div>
               <div className="bg-[#10B981]/10 p-3 rounded-xl">
@@ -225,24 +241,14 @@ const FinancialReport = ({ startDate, endDate }: FinancialReportProps) => {
           <CardContent className="p-6">
             <div className="h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart 
+                <BarChart 
                   data={monthlyTrendData.map(item => ({
                     ...item,
                     costs: item.revenue - item.profit
                   }))} 
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                  stackOffset="none"
+                  barCategoryGap="20%"
                 >
-                  <defs>
-                    <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.6}/>
-                    </linearGradient>
-                    <linearGradient id="costsGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2C78E4" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#2C78E4" stopOpacity={0.6}/>
-                    </linearGradient>
-                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
                   <XAxis 
                     dataKey="month" 
@@ -250,7 +256,6 @@ const FinancialReport = ({ startDate, endDate }: FinancialReportProps) => {
                     tickLine={false}
                     tick={{ fill: '#4B5563', fontSize: 12 }}
                     dy={10}
-                    padding={{ left: 20, right: 20 }}
                   />
                   <YAxis 
                     tickFormatter={(value) => formatCompactCurrency(value)}
@@ -274,23 +279,21 @@ const FinancialReport = ({ startDate, endDate }: FinancialReportProps) => {
                     ]}
                     wrapperStyle={{ zIndex: 1000 }}
                   />
-                  <Area 
-                    type="monotone"
+                  <Bar 
                     dataKey="costs"
-                    stackId="1"
-                    stroke="#2C78E4"
-                    fill="url(#costsGradient)"
+                    fill="#2C78E4"
                     name="costs"
+                    radius={[4, 4, 0, 0]}
+                    opacity={0.8}
                   />
-                  <Area 
-                    type="monotone"
+                  <Bar 
                     dataKey="profit"
-                    stackId="1"
-                    stroke="#10B981"
-                    fill="url(#profitGradient)"
+                    fill="#10B981"
                     name="profit"
+                    radius={[4, 4, 0, 0]}
+                    opacity={0.8}
                   />
-                </AreaChart>
+                </BarChart>
               </ResponsiveContainer>
             </div>
             

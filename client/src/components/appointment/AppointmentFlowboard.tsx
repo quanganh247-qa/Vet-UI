@@ -452,6 +452,29 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
         return timeFormatter.format(time as Date).replace(/^24:/, "00:");
       }, []);
 
+      // Format waiting time from UTC timestamp to display "Started at HH:MM"
+      const formatWaitingTime = useCallback((timestamp: string): string => {
+        if (!timestamp) return "0 min";
+        
+        try {
+          // Handle UTC timestamp format like "2025-05-31 15:24:45.443903 +0000 UTC"
+          const date = new Date(timestamp);
+          if (isNaN(date.getTime())) {
+            return "0 min";
+          }
+          
+          // Format in UTC to preserve the original time (15:24 should stay 15:24, not convert to local timezone)
+          const hours = date.getUTCHours().toString().padStart(2, '0');
+          const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+          
+          // Return formatted time as "Started at HH:MM"
+          return `Started at ${hours}:${minutes}`;
+        } catch (error) {
+          console.error("Error formatting waiting time:", error);
+          return "0 min";
+        }
+      }, []);
+
       // Filter appointments based on selected filters
       const filteredAppointments = useMemo(() => {
         return appointments.filter((appointment) => {
@@ -1225,13 +1248,10 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                                           </div>
                                           <div
                                             className={cn(
-                                              "text-sm font-semibold",
-                                              queueItem.actualWaitTime > "15 min"
-                                                ? "text-red-600"
-                                                : "text-gray-900"
+                                              "text-sm font-semibold text-gray-900"
                                             )}
                                           >
-                                            {queueItem.actualWaitTime || "0 min"}
+                                            {formatWaitingTime(queueItem.waitingSince)}
                                           </div>
                                         </div>
                                       </div>
@@ -1323,13 +1343,11 @@ const EnhancedAppointmentFlowboard: React.FC<EnhancedAppointmentFlowboardProps> 
                                         </div>
                                         <div
                                           className={cn(
-                                            "text-sm font-semibold",
-                                            queueItem.actualWaitTime > "15 min"
-                                              ? "text-red-600"
-                                              : "text-gray-900"
+                                            "text-sm font-semibold text-gray-900"
+                                            
                                           )}
                                         >
-                                          {queueItem.actualWaitTime || "0 min"}
+                                          {formatWaitingTime(queueItem.waitingSince)}
                                         </div>
                                       </div>
                                     </div>

@@ -78,11 +78,9 @@ function Router() {
         <Route path="/soap" component={SoapNotes as React.ComponentType<RouteComponentProps>} />
         <Route path="/treatment" component={TreatmentManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/invoice" component={PrescriptionInvoice as React.ComponentType<RouteComponentProps>} />
-        {/* <Route path="/follow-up" component={FollowUp as React.ComponentType<RouteComponentProps>} /> */}
         <Route path="/medicine-management" component={MedicineManagement as React.ComponentType<RouteComponentProps>} />
         <Route path="/examination" component={Examination as React.ComponentType<RouteComponentProps>} />
         <Route path="/lab-management" component={LabManagement as React.ComponentType<RouteComponentProps>} />
-        {/* <Route path="/medical-records" component={MedicalRecords as React.ComponentType<RouteComponentProps>} /> */}
 
         {/* Maintain legacy routes for backward compatibility */}
         <Route path="/appointment/:id/check-in" component={CheckIn as React.ComponentType<RouteComponentProps>} />

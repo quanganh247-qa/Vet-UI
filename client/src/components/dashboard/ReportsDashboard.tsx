@@ -85,13 +85,13 @@ const ReportsDashboard = () => {
                   <PieChart className="h-4 w-4" />
                   Financial
                 </TabsTrigger>
-                <TabsTrigger 
+                {/* <TabsTrigger 
                   value="medical" 
                   className="flex items-center gap-2 px-4 py-2.5 data-[state=active]:bg-[#2C78E4] data-[state=active]:text-white rounded-lg transition-all"
                 >
                   <Activity className="h-4 w-4" />
                   Medical Records
-                </TabsTrigger>
+                </TabsTrigger> */}
                 <TabsTrigger 
                   value="doctor-performance" 
                   className="flex items-center gap-2 px-4 py-2.5 data-[state=active]:bg-[#2C78E4] data-[state=active]:text-white rounded-lg transition-all"
