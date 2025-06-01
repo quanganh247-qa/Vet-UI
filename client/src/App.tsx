@@ -45,6 +45,7 @@ const PaymentListPage = lazy(() => import("@/pages/payment-list"));
 const MedicineManagement = lazy(() => import("@/pages/catalog-management/medicine-management"));
 const TestManagement = lazy(() => import("@/pages/test-management"));
 const WalkInPage = lazy(() => import("@/pages/walk-in"));
+const DeepResearch = lazy(() => import("@/pages/deep-research"));
 
 // Create LoginPage component that uses LoginForm
 const LoginPage = () => {
@@ -98,6 +99,7 @@ function Router() {
         <Route path="/vaccination" component={Vaccination as React.ComponentType<RouteComponentProps>} />
         <Route path="/notifications" component={NotificationsPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/chatbot" component={Chatbot as React.ComponentType<RouteComponentProps>} />
+        <Route path="/deep-research" component={DeepResearch as React.ComponentType<RouteComponentProps>} />
         <Route path="/patients" component={PatientsPage as React.ComponentType<RouteComponentProps>} />
         <Route path="/billing" component={Billing as React.ComponentType<RouteComponentProps>} />
         <Route path="/catalog-management" component={ProductManagement as React.ComponentType<RouteComponentProps>} />

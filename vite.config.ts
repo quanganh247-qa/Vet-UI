@@ -53,6 +53,9 @@ export default defineConfig(async ({ mode }) => {
       // Make environment variables available to client code
       'import.meta.env.VITE_API_URL': JSON.stringify(apiUrl),
       'import.meta.env.PUSH_NOTI': JSON.stringify(pushNotiUrl),
+      'import.meta.env.VITE_DEEP_RESEARCH_BASE_URL': JSON.stringify(env.VITE_DEEP_RESEARCH_BASE_URL),
+      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
+      'import.meta.env.VITE_FIRECRAWL_API_KEY': JSON.stringify(env.VITE_FIRECRAWL_API_KEY),
     },
     resolve: {
       alias: {

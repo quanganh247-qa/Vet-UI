@@ -15,6 +15,7 @@ import {
   ShoppingBag,
   TestTube,
   User,
+  Brain,
 } from "lucide-react";
 
 export const mainNavigation = [
@@ -77,6 +78,11 @@ export const mainNavigation = [
     name: "Test",
     href: "/test-management",
     icon: <TestTube className="h-5 w-5" />,
+  },
+  {
+    name: "Deep Research",
+    href: "/deep-research",
+    icon: <Brain className="h-5 w-5" />,
   },
 ];
 
