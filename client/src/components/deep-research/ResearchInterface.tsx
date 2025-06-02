@@ -152,7 +152,7 @@ const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
             <Button
               type="submit"
               size="lg"
-              className="w-full font-semibold text-base py-6 shadow-md hover:shadow-lg transition-shadow"
+              className="w-full font-semibold text-base py-6 shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white"
               disabled={!canStartResearch}
             >
               {isLoading ? (
