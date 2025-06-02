@@ -280,9 +280,9 @@ const DeepResearchPage: React.FC = () => {
       <div className="bg-gradient-to-r from-[#2C78E4] to-[#2C78E4]/80 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-md">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold text-white">Deep Research Hub</h1>
-            <p className="text-blue-100 text-sm mt-1">
-              Uncover insights with automated, in-depth research capabilities
+            <h1 className="text-xl font-semibold text-white">AI Research</h1>
+            <p className="text-sm text-white">
+              This is a tool that allows you to perform deep research on a given topic.
             </p>
           </div>
         </div>
